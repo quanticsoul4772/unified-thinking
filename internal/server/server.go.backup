@@ -1,0 +1,333 @@
+package server
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"unified-thinking/internal/modes"
+	"unified-thinking/internal/storage"
+	"unified-thinking/internal/types"
+	"unified-thinking/internal/validation"
+)
+
+// UnifiedServer is the main server implementation
+type UnifiedServer struct {
+	storage   *storage.MemoryStorage
+	linear    *modes.LinearMode
+	tree      *modes.TreeMode
+	divergent *modes.DivergentMode
+	auto      *modes.AutoMode
+	validator *validation.LogicValidator
+}
+
+// NewUnifiedServer creates a new unified thinking server
+func NewUnifiedServer(
+	store *storage.MemoryStorage,
+	linear *modes.LinearMode,
+	tree *modes.TreeMode,
+	divergent *modes.DivergentMode,
+	auto *modes.AutoMode,
+	validator *validation.LogicValidator,
+) *UnifiedServer {
+	return &UnifiedServer{
+		storage:   store,
+		linear:    linear,
+		tree:      tree,
+		divergent: divergent,
+		auto:      auto,
+		validator: validator,
+	}
+}
+
+// RegisterTools registers all tools with the MCP server
+func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
+	// Main thinking tool
+	mcpServer.AddTool("think", mcp.ToolHandlerFor(s.handleThink))
+
+	// History tools
+	mcpServer.AddTool("history", mcp.ToolHandlerFor(s.handleHistory))
+
+	// Branch management
+	mcpServer.AddTool("list-branches", mcp.ToolHandlerFor(s.handleListBranches))
+	mcpServer.AddTool("focus-branch", mcp.ToolHandlerFor(s.handleFocusBranch))
+	mcpServer.AddTool("branch-history", mcp.ToolHandlerFor(s.handleBranchHistory))
+
+	// Validation
+	mcpServer.AddTool("validate", mcp.ToolHandlerFor(s.handleValidate))
+	mcpServer.AddTool("prove", mcp.ToolHandlerFor(s.handleProve))
+	mcpServer.AddTool("check-syntax", mcp.ToolHandlerFor(s.handleCheckSyntax))
+
+	// Search
+	mcpServer.AddTool("search", mcp.ToolHandlerFor(s.handleSearch))
+}
+
+// Tool input/output types
+
+type ThinkRequest struct {
+	Content              string            `json:"content"`
+	Mode                 string            `json:"mode"` // linear, tree, divergent, auto
+	Type                 string            `json:"type,omitempty"`
+	BranchID             string            `json:"branch_id,omitempty"`
+	ParentID             string            `json:"parent_id,omitempty"`
+	Confidence           float64           `json:"confidence,omitempty"`
+	KeyPoints            []string          `json:"key_points,omitempty"`
+	RequireValidation    bool              `json:"require_validation,omitempty"`
+	ChallengeAssumptions bool              `json:"challenge_assumptions,omitempty"`
+	ForceRebellion       bool              `json:"force_rebellion,omitempty"`
+	CrossRefs            []CrossRefInput   `json:"cross_refs,omitempty"`
+}
+
+type CrossRefInput struct {
+	ToBranch string  `json:"to_branch"`
+	Type     string  `json:"type"`
+	Reason   string  `json:"reason"`
+	Strength float64 `json:"strength"`
+}
+
+type ThinkResponse struct {
+	ThoughtID    string  `json:"thought_id"`
+	Mode         string  `json:"mode"`
+	BranchID     string  `json:"branch_id,omitempty"`
+	Status       string  `json:"status"`
+	Priority     float64 `json:"priority,omitempty"`
+	Confidence   float64 `json:"confidence"`
+	InsightCount int     `json:"insight_count,omitempty"`
+	IsValid      bool    `json:"is_valid,omitempty"`
+}
+
+// handleThink is the main thinking tool handler
+func (s *UnifiedServer) handleThink(ctx context.Context, req ThinkRequest) (*ThinkResponse, error) {
+	// Convert to internal format
+	input := modes.ThoughtInput{
+		Content:        req.Content,
+		Type:           req.Type,
+		BranchID:       req.BranchID,
+		ParentID:       req.ParentID,
+		Confidence:     req.Confidence,
+		KeyPoints:      req.KeyPoints,
+		ForceRebellion: req.ForceRebellion,
+		CrossRefs:      convertCrossRefs(req.CrossRefs),
+	}
+
+	if input.Confidence == 0 {
+		input.Confidence = 0.8 // Default
+	}
+
+	// Select mode
+	var result *modes.ThoughtResult
+	var err error
+
+	mode := types.ThinkingMode(req.Mode)
+	if mode == "" || mode == types.ModeAuto {
+		result, err = s.auto.ProcessThought(ctx, input)
+	} else {
+		switch mode {
+		case types.ModeLinear:
+			result, err = s.linear.ProcessThought(ctx, input)
+		case types.ModeTree:
+			result, err = s.tree.ProcessThought(ctx, input)
+		case types.ModeDivergent:
+			result, err = s.divergent.ProcessThought(ctx, input)
+		default:
+			return nil, fmt.Errorf("unknown mode: %s", mode)
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Optional validation
+	isValid := true
+	if req.RequireValidation {
+		thought, _ := s.storage.GetThought(result.ThoughtID)
+		if thought != nil {
+			validation, _ := s.validator.ValidateThought(thought)
+			if validation != nil {
+				isValid = validation.IsValid
+			}
+		}
+	}
+
+	response := &ThinkResponse{
+		ThoughtID:    result.ThoughtID,
+		Mode:         result.Mode,
+		BranchID:     result.BranchID,
+		Status:       "success",
+		Priority:     result.Priority,
+		Confidence:   result.Confidence,
+		InsightCount: result.InsightCount,
+		IsValid:      isValid,
+	}
+
+	return response, nil
+}
+
+type HistoryRequest struct {
+	Mode     string `json:"mode,omitempty"`
+	BranchID string `json:"branch_id,omitempty"`
+}
+
+type HistoryResponse struct {
+	Thoughts []*types.Thought `json:"thoughts"`
+}
+
+func (s *UnifiedServer) handleHistory(ctx context.Context, req HistoryRequest) (*HistoryResponse, error) {
+	var thoughts []*types.Thought
+
+	if req.BranchID != "" {
+		branch, err := s.storage.GetBranch(req.BranchID)
+		if err != nil {
+			return nil, err
+		}
+		thoughts = branch.Thoughts
+	} else {
+		mode := types.ThinkingMode(req.Mode)
+		thoughts = s.storage.SearchThoughts("", mode)
+	}
+
+	return &HistoryResponse{Thoughts: thoughts}, nil
+}
+
+type ListBranchesResponse struct {
+	Branches       []*types.Branch `json:"branches"`
+	ActiveBranchID string          `json:"active_branch_id"`
+}
+
+func (s *UnifiedServer) handleListBranches(ctx context.Context) (*ListBranchesResponse, error) {
+	branches := s.storage.ListBranches()
+
+	activeBranch, _ := s.storage.GetActiveBranch()
+	activeID := ""
+	if activeBranch != nil {
+		activeID = activeBranch.ID
+	}
+
+	return &ListBranchesResponse{
+		Branches:       branches,
+		ActiveBranchID: activeID,
+	}, nil
+}
+
+type FocusBranchRequest struct {
+	BranchID string `json:"branch_id"`
+}
+
+type FocusBranchResponse struct {
+	Status         string `json:"status"`
+	ActiveBranchID string `json:"active_branch_id"`
+}
+
+func (s *UnifiedServer) handleFocusBranch(ctx context.Context, req FocusBranchRequest) (*FocusBranchResponse, error) {
+	if err := s.storage.SetActiveBranch(req.BranchID); err != nil {
+		return nil, err
+	}
+
+	return &FocusBranchResponse{
+		Status:         "success",
+		ActiveBranchID: req.BranchID,
+	}, nil
+}
+
+type BranchHistoryRequest struct {
+	BranchID string `json:"branch_id"`
+}
+
+func (s *UnifiedServer) handleBranchHistory(ctx context.Context, req BranchHistoryRequest) (*modes.BranchHistory, error) {
+	return s.tree.GetBranchHistory(ctx, req.BranchID)
+}
+
+type ValidateRequest struct {
+	ThoughtID string `json:"thought_id"`
+}
+
+type ValidateResponse struct {
+	IsValid bool   `json:"is_valid"`
+	Reason  string `json:"reason"`
+}
+
+func (s *UnifiedServer) handleValidate(ctx context.Context, req ValidateRequest) (*ValidateResponse, error) {
+	thought, err := s.storage.GetThought(req.ThoughtID)
+	if err != nil {
+		return nil, err
+	}
+
+	validation, err := s.validator.ValidateThought(thought)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ValidateResponse{
+		IsValid: validation.IsValid,
+		Reason:  validation.Reason,
+	}, nil
+}
+
+type ProveRequest struct {
+	Premises   []string `json:"premises"`
+	Conclusion string   `json:"conclusion"`
+}
+
+type ProveResponse struct {
+	IsProvable bool     `json:"is_provable"`
+	Premises   []string `json:"premises"`
+	Conclusion string   `json:"conclusion"`
+	Steps      []string `json:"steps"`
+}
+
+func (s *UnifiedServer) handleProve(ctx context.Context, req ProveRequest) (*ProveResponse, error) {
+	result := s.validator.Prove(req.Premises, req.Conclusion)
+
+	return &ProveResponse{
+		IsProvable: result.IsProvable,
+		Premises:   result.Premises,
+		Conclusion: result.Conclusion,
+		Steps:      result.Steps,
+	}, nil
+}
+
+type CheckSyntaxRequest struct {
+	Statements []string `json:"statements"`
+}
+
+type CheckSyntaxResponse struct {
+	Checks []validation.StatementCheck `json:"checks"`
+}
+
+func (s *UnifiedServer) handleCheckSyntax(ctx context.Context, req CheckSyntaxRequest) (*CheckSyntaxResponse, error) {
+	checks := s.validator.CheckWellFormed(req.Statements)
+
+	return &CheckSyntaxResponse{
+		Checks: checks,
+	}, nil
+}
+
+type SearchRequest struct {
+	Query string `json:"query"`
+	Mode  string `json:"mode,omitempty"`
+}
+
+type SearchResponse struct {
+	Thoughts []*types.Thought `json:"thoughts"`
+}
+
+func (s *UnifiedServer) handleSearch(ctx context.Context, req SearchRequest) (*SearchResponse, error) {
+	mode := types.ThinkingMode(req.Mode)
+	thoughts := s.storage.SearchThoughts(req.Query, mode)
+
+	return &SearchResponse{Thoughts: thoughts}, nil
+}
+
+func convertCrossRefs(input []CrossRefInput) []modes.CrossRefInput {
+	result := make([]modes.CrossRefInput, len(input))
+	for i, xref := range input {
+		result[i] = modes.CrossRefInput{
+			ToBranch: xref.ToBranch,
+			Type:     xref.Type,
+			Reason:   xref.Reason,
+			Strength: xref.Strength,
+		}
+	}
+	return result
+}
