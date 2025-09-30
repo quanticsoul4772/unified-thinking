@@ -8,7 +8,13 @@
       "Bash(go test:*)",
       "Bash(go tool cover:*)",
       "Bash(findstr:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

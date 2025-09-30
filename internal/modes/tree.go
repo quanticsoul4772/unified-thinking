@@ -100,6 +100,11 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 	m.updateBranchMetrics(branch)
 	branch.UpdatedAt = time.Now()
 
+	// Store updated branch back to storage
+	if err := m.storage.StoreBranch(branch); err != nil {
+		return nil, err
+	}
+
 	result := &ThoughtResult{
 		ThoughtID:     thought.ID,
 		BranchID:      branchID,
