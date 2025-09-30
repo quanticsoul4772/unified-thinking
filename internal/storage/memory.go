@@ -1,3 +1,16 @@
+// Package storage provides in-memory storage implementation for the unified thinking system.
+//
+// This package implements thread-safe storage using a read-write mutex and deep copying
+// strategy to prevent data races. All retrieval methods return deep copies of stored data
+// to ensure external modifications do not affect the internal storage state.
+//
+// Thread Safety:
+// All methods are thread-safe through RWMutex protection. Read operations use RLock
+// for concurrent access, while write operations use exclusive Lock.
+//
+// Memory Management:
+// The storage is unbounded and will grow with usage. For production deployments,
+// consider implementing LRU eviction or periodic cleanup strategies.
 package storage
 
 import (
@@ -9,7 +22,8 @@ import (
 	"unified-thinking/internal/types"
 )
 
-// MemoryStorage implements in-memory storage
+// MemoryStorage implements in-memory storage with thread-safe operations.
+// All Get methods return deep copies to prevent external mutation of internal state.
 type MemoryStorage struct {
 	mu            sync.RWMutex
 	thoughts      map[string]*types.Thought
@@ -39,7 +53,9 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 }
 
-// StoreThought stores a thought
+// StoreThought stores a thought in memory. If the thought ID is empty, a unique ID
+// is generated automatically. The thought is stored by reference internally but all
+// retrieval operations return deep copies for thread safety.
 func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -53,7 +69,7 @@ func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 	return nil
 }
 
-// GetThought retrieves a thought by ID
+// GetThought retrieves a thought by ID (returns a copy to prevent data races)
 func (s *MemoryStorage) GetThought(id string) (*types.Thought, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -62,7 +78,8 @@ func (s *MemoryStorage) GetThought(id string) (*types.Thought, error) {
 	if !exists {
 		return nil, fmt.Errorf("thought not found: %s", id)
 	}
-	return thought, nil
+	// Return a deep copy to prevent external modification
+	return copyThought(thought), nil
 }
 
 // StoreBranch stores a branch
@@ -85,7 +102,7 @@ func (s *MemoryStorage) StoreBranch(branch *types.Branch) error {
 	return nil
 }
 
-// GetBranch retrieves a branch by ID
+// GetBranch retrieves a branch by ID (returns a copy to prevent data races)
 func (s *MemoryStorage) GetBranch(id string) (*types.Branch, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -94,22 +111,24 @@ func (s *MemoryStorage) GetBranch(id string) (*types.Branch, error) {
 	if !exists {
 		return nil, fmt.Errorf("branch not found: %s", id)
 	}
-	return branch, nil
+	// Return a deep copy to prevent external modification
+	return copyBranch(branch), nil
 }
 
-// ListBranches returns all branches
+// ListBranches returns all branches (returns copies to prevent data races)
 func (s *MemoryStorage) ListBranches() []*types.Branch {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	branches := make([]*types.Branch, 0, len(s.branches))
 	for _, branch := range s.branches {
-		branches = append(branches, branch)
+		// Return deep copies to prevent external modification
+		branches = append(branches, copyBranch(branch))
 	}
 	return branches
 }
 
-// GetActiveBranch returns the currently active branch
+// GetActiveBranch returns the currently active branch (returns a copy to prevent data races)
 func (s *MemoryStorage) GetActiveBranch() (*types.Branch, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -118,7 +137,14 @@ func (s *MemoryStorage) GetActiveBranch() (*types.Branch, error) {
 		return nil, fmt.Errorf("no active branch")
 	}
 
-	return s.branches[s.activeBranchID], nil
+	branch, exists := s.branches[s.activeBranchID]
+	if !exists {
+		// Active branch was deleted - this is a data inconsistency
+		return nil, fmt.Errorf("active branch %s no longer exists", s.activeBranchID)
+	}
+
+	// Return a deep copy to prevent external modification
+	return copyBranch(branch), nil
 }
 
 // SetActiveBranch sets the active branch
@@ -176,21 +202,22 @@ func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 	return nil
 }
 
-// SearchThoughts searches thoughts by content or type
+// SearchThoughts searches thoughts by content or type (returns copies to prevent data races)
 func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode) []*types.Thought {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var results []*types.Thought
 	queryLower := strings.ToLower(query)
-	
+
 	for _, thought := range s.thoughts {
 		// Search by content and mode
 		matchesQuery := query == "" || strings.Contains(strings.ToLower(thought.Content), queryLower)
 		matchesMode := mode == "" || thought.Mode == mode
 
 		if matchesQuery && matchesMode {
-			results = append(results, thought)
+			// Return deep copies to prevent external modification
+			results = append(results, copyThought(thought))
 		}
 	}
 	return results

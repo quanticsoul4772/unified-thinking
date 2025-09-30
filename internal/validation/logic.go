@@ -1,3 +1,13 @@
+// Package validation provides logical validation capabilities for thoughts.
+//
+// This package implements simplified logical validation including:
+//   - Basic consistency checking
+//   - Contradiction detection
+//   - Syntax validation for logical statements
+//   - Simplified proof attempts
+//
+// Note: This is a simplified implementation. For production use with formal
+// logical reasoning, consider integrating a proper theorem prover or logic engine.
 package validation
 
 import (
@@ -7,15 +17,20 @@ import (
 	"unified-thinking/internal/types"
 )
 
-// LogicValidator implements logical validation
+// LogicValidator implements logical validation for thoughts.
+// This is a simplified implementation using pattern matching and heuristics.
 type LogicValidator struct{}
 
-// NewLogicValidator creates a new logic validator
+// NewLogicValidator creates a new logic validator instance.
 func NewLogicValidator() *LogicValidator {
 	return &LogicValidator{}
 }
 
-// ValidateThought validates a thought for logical consistency
+// ValidateThought validates a thought for logical consistency using basic
+// pattern matching to detect contradictions and logical errors.
+//
+// Note: This is a simplified validator. Production systems should use
+// formal logic engines for rigorous validation.
 func (v *LogicValidator) ValidateThought(thought *types.Thought) (*types.Validation, error) {
 	// Simplified validation - in production, use proper logic engine
 	isValid := v.checkBasicLogic(thought.Content)

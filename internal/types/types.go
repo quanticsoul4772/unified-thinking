@@ -1,3 +1,16 @@
+// Package types defines the core data structures for the unified thinking system.
+//
+// This package contains all type definitions for thoughts, branches, insights,
+// cross-references, validations, and relationships. These types are used across
+// all thinking modes (linear, tree, divergent, auto) and are designed to support
+// concurrent access through deep copying in the storage layer.
+//
+// Key types:
+//   - Thought: Represents a single unit of thinking with metadata
+//   - Branch: Represents a parallel exploration path in tree mode
+//   - Insight: Represents a discovered pattern or observation
+//   - CrossRef: Represents connections between branches
+//   - Validation: Represents logical consistency checks
 package types
 
 import "time"
@@ -12,14 +25,18 @@ const (
 	ModeAuto      ThinkingMode = "auto"
 )
 
-// ThoughtState represents the state of a thought or branch
+// ThoughtState represents the state of a thought or branch.
 type ThoughtState string
 
 const (
-	StateActive    ThoughtState = "active"
+	// StateActive indicates a thought or branch is currently being worked on
+	StateActive ThoughtState = "active"
+	// StateSuspended indicates a thought or branch is temporarily paused
 	StateSuspended ThoughtState = "suspended"
+	// StateCompleted indicates a thought or branch has been finished
 	StateCompleted ThoughtState = "completed"
-	StateDeadEnd   ThoughtState = "dead_end"
+	// StateDeadEnd indicates a thought or branch has been abandoned
+	StateDeadEnd ThoughtState = "dead_end"
 )
 
 // InsightType categorizes insights

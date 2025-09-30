@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(go doc:*)",
+      "Bash(go list:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go tool cover:*)",
+      "Bash(findstr:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

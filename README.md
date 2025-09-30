@@ -13,15 +13,15 @@ A comprehensive MCP server that consolidates multiple cognitive thinking pattern
 
 ### Capabilities
 
-- ✅ Multi-mode thinking (linear, tree, divergent, auto)
-- ✅ Branch management and exploration
-- ✅ Insight generation and tracking
-- ✅ Cross-reference support between branches
-- ✅ Logical validation and consistency checking
-- ✅ Formal proof attempts
-- ✅ Syntax validation for logical statements
-- ✅ Search across all thoughts
-- ✅ Full history tracking
+- Multi-mode thinking (linear, tree, divergent, auto)
+- Branch management and exploration
+- Insight generation and tracking
+- Cross-reference support between branches
+- Logical validation and consistency checking
+- Formal proof attempts
+- Syntax validation for logical statements
+- Search across all thoughts
+- Full history tracking
 
 ## Installation
 
@@ -44,6 +44,15 @@ Or using make:
 make build
 ```
 
+## How It Works
+
+**Important**: This is an MCP (Model Context Protocol) server. It is:
+- **NOT** a standalone application you run manually
+- Automatically started by Claude Desktop when the app launches
+- Runs as a child process communicating via stdio
+- Managed entirely by Claude Desktop's lifecycle
+- Terminated when Claude Desktop closes
+
 ## Configuration
 
 Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on Windows):
@@ -62,7 +71,15 @@ Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`
 }
 ```
 
+After saving the config:
+1. Restart Claude Desktop
+2. The server will start automatically
+3. All tools will be available to Claude AI
+4. No manual server management required
+
 ## Usage
+
+All tools are accessed by Claude AI automatically through the MCP protocol. Responses are structured JSON data consumed directly by Claude.
 
 ### Available Tools
 
@@ -174,20 +191,26 @@ unified-thinking/
 
 ## Development
 
-### Build and Run
+### Build
 
 ```bash
-# Build
+# Build the server binary
 make build
-
-# Run directly
-make run
-
-# Run with debug output
-DEBUG=true go run ./cmd/server/main.go
 
 # Clean build artifacts
 make clean
+```
+
+### Testing (Development Only)
+
+**Warning**: Do not run the server manually in production. It's managed by Claude Desktop.
+
+```bash
+# For protocol debugging only (waits for MCP messages on stdin)
+go run ./cmd/server/main.go
+
+# With debug logging
+DEBUG=true go run ./cmd/server/main.go
 ```
 
 ### Testing
@@ -203,11 +226,11 @@ go test -v ./...
 ## Migration from Old Servers
 
 This server replaces:
-- ✅ sequential-thinking
-- ✅ branch-thinking
-- ✅ unreasonable-thinking-server
-- ✅ mcp-logic (partial)
-- ✅ state-coordinator (partial)
+- sequential-thinking
+- branch-thinking
+- unreasonable-thinking-server
+- mcp-logic (partial)
+- state-coordinator (partial)
 
 ### Tool Mapping
 

@@ -1,3 +1,19 @@
+// Package server implements the MCP (Model Context Protocol) server for unified thinking.
+//
+// This package provides the MCP server implementation that exposes 9 tools for
+// thought processing, validation, and search. All responses are JSON formatted
+// for consumption by Claude AI via stdio transport.
+//
+// Available tools:
+//   - think: Main thinking tool with multiple cognitive modes
+//   - history: View thinking history
+//   - list-branches: List all thinking branches
+//   - focus-branch: Switch active branch
+//   - branch-history: Get detailed branch history
+//   - validate: Validate thought logical consistency
+//   - prove: Attempt logical proof
+//   - check-syntax: Validate logical statement syntax
+//   - search: Search through all thoughts
 package server
 
 import (
@@ -11,6 +27,7 @@ import (
 	"unified-thinking/internal/validation"
 )
 
+// UnifiedServer coordinates all thinking modes and provides MCP tool handlers.
 type UnifiedServer struct {
 	storage   *storage.MemoryStorage
 	linear    *modes.LinearMode
@@ -118,6 +135,11 @@ type ThinkResponse struct {
 }
 
 func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolRequest, input ThinkRequest) (*mcp.CallToolResult, *ThinkResponse, error) {
+	// Validate input
+	if err := ValidateThinkRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	thoughtInput := modes.ThoughtInput{
 		Content:        input.Content,
 		Type:           input.Type,
@@ -178,7 +200,9 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 		IsValid:      isValid,
 	}
 
-	return nil, response, nil
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type HistoryRequest struct {
@@ -191,6 +215,11 @@ type HistoryResponse struct {
 }
 
 func (s *UnifiedServer) handleHistory(ctx context.Context, req *mcp.CallToolRequest, input HistoryRequest) (*mcp.CallToolResult, *HistoryResponse, error) {
+	// Validate input
+	if err := ValidateHistoryRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	var thoughts []*types.Thought
 
 	if input.BranchID != "" {
@@ -204,7 +233,10 @@ func (s *UnifiedServer) handleHistory(ctx context.Context, req *mcp.CallToolRequ
 		thoughts = s.storage.SearchThoughts("", mode)
 	}
 
-	return nil, &HistoryResponse{Thoughts: thoughts}, nil
+	response := &HistoryResponse{Thoughts: thoughts}
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type EmptyRequest struct{}
@@ -223,10 +255,14 @@ func (s *UnifiedServer) handleListBranches(ctx context.Context, req *mcp.CallToo
 		activeID = activeBranch.ID
 	}
 
-	return nil, &ListBranchesResponse{
+	response := &ListBranchesResponse{
 		Branches:       branches,
 		ActiveBranchID: activeID,
-	}, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type FocusBranchRequest struct {
@@ -239,14 +275,23 @@ type FocusBranchResponse struct {
 }
 
 func (s *UnifiedServer) handleFocusBranch(ctx context.Context, req *mcp.CallToolRequest, input FocusBranchRequest) (*mcp.CallToolResult, *FocusBranchResponse, error) {
+	// Validate input
+	if err := ValidateFocusBranchRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	if err := s.storage.SetActiveBranch(input.BranchID); err != nil {
 		return nil, nil, err
 	}
 
-	return nil, &FocusBranchResponse{
+	response := &FocusBranchResponse{
 		Status:         "success",
 		ActiveBranchID: input.BranchID,
-	}, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type BranchHistoryRequest struct {
@@ -254,8 +299,19 @@ type BranchHistoryRequest struct {
 }
 
 func (s *UnifiedServer) handleBranchHistory(ctx context.Context, req *mcp.CallToolRequest, input BranchHistoryRequest) (*mcp.CallToolResult, *modes.BranchHistory, error) {
+	// Validate input
+	if err := ValidateBranchHistoryRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	history, err := s.tree.GetBranchHistory(ctx, input.BranchID)
-	return nil, history, err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(history),
+	}, history, nil
 }
 
 type ValidateRequest struct {
@@ -268,6 +324,11 @@ type ValidateResponse struct {
 }
 
 func (s *UnifiedServer) handleValidate(ctx context.Context, req *mcp.CallToolRequest, input ValidateRequest) (*mcp.CallToolResult, *ValidateResponse, error) {
+	// Validate input
+	if err := ValidateValidateRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	thought, err := s.storage.GetThought(input.ThoughtID)
 	if err != nil {
 		return nil, nil, err
@@ -278,10 +339,14 @@ func (s *UnifiedServer) handleValidate(ctx context.Context, req *mcp.CallToolReq
 		return nil, nil, err
 	}
 
-	return nil, &ValidateResponse{
+	response := &ValidateResponse{
 		IsValid: validationResult.IsValid,
 		Reason:  validationResult.Reason,
-	}, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type ProveRequest struct {
@@ -297,14 +362,23 @@ type ProveResponse struct {
 }
 
 func (s *UnifiedServer) handleProve(ctx context.Context, req *mcp.CallToolRequest, input ProveRequest) (*mcp.CallToolResult, *ProveResponse, error) {
+	// Validate input
+	if err := ValidateProveRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	result := s.validator.Prove(input.Premises, input.Conclusion)
 
-	return nil, &ProveResponse{
+	response := &ProveResponse{
 		IsProvable: result.IsProvable,
 		Premises:   result.Premises,
 		Conclusion: result.Conclusion,
 		Steps:      result.Steps,
-	}, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type CheckSyntaxRequest struct {
@@ -316,11 +390,20 @@ type CheckSyntaxResponse struct {
 }
 
 func (s *UnifiedServer) handleCheckSyntax(ctx context.Context, req *mcp.CallToolRequest, input CheckSyntaxRequest) (*mcp.CallToolResult, *CheckSyntaxResponse, error) {
+	// Validate input
+	if err := ValidateCheckSyntaxRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	checks := s.validator.CheckWellFormed(input.Statements)
 
-	return nil, &CheckSyntaxResponse{
+	response := &CheckSyntaxResponse{
 		Checks: checks,
-	}, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 type SearchRequest struct {
@@ -333,10 +416,19 @@ type SearchResponse struct {
 }
 
 func (s *UnifiedServer) handleSearch(ctx context.Context, req *mcp.CallToolRequest, input SearchRequest) (*mcp.CallToolResult, *SearchResponse, error) {
+	// Validate input
+	if err := ValidateSearchRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
 	mode := types.ThinkingMode(input.Mode)
 	thoughts := s.storage.SearchThoughts(input.Query, mode)
 
-	return nil, &SearchResponse{Thoughts: thoughts}, nil
+	response := &SearchResponse{Thoughts: thoughts}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }
 
 func convertCrossRefs(input []CrossRefInput) []modes.CrossRefInput {

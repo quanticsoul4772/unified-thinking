@@ -1,3 +1,15 @@
+// Package main provides the entry point for the Unified Thinking MCP server.
+//
+// This server is designed to be spawned as a child process by Claude Desktop
+// and communicates via stdio using the Model Context Protocol. It should not
+// be run manually by users.
+//
+// The server consolidates multiple cognitive thinking patterns (linear, tree,
+// divergent, and auto modes) into a single Go-based MCP server, providing
+// 9 tools for thought processing, validation, and search.
+//
+// Environment variables:
+//   - DEBUG: Set to "true" to enable debug logging
 package main
 
 import (
