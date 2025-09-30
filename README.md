@@ -33,7 +33,6 @@ A comprehensive MCP server that consolidates multiple cognitive thinking pattern
 ### Build
 
 ```bash
-cd C:\Development\Projects\MCP\project-root\mcp-servers\unified-thinking
 go mod download
 go build -o bin/unified-thinking.exe ./cmd/server
 ```
@@ -61,7 +60,7 @@ Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`
 {
   "mcpServers": {
     "unified-thinking": {
-      "command": "C:\\Development\\Projects\\MCP\\project-root\\mcp-servers\\unified-thinking\\bin\\unified-thinking.exe",
+      "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
       "transport": "stdio",
       "env": {
         "DEBUG": "true"
