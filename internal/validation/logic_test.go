@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 	"time"
 	"unified-thinking/internal/types"
@@ -143,10 +144,12 @@ func TestLogicValidator_CheckBasicLogic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			valid := validator.checkBasicLogic(tt.content)
+			// Use detectContradiction instead of checkBasicLogic
+			contradiction := validator.detectContradiction(strings.ToLower(tt.content))
+			valid := contradiction == ""
 
 			if valid != tt.wantValid {
-				t.Errorf("checkBasicLogic(%s) = %v, want %v", tt.content, valid, tt.wantValid)
+				t.Errorf("detectContradiction(%s) = %v, want %v (contradiction: %s)", tt.content, valid, tt.wantValid, contradiction)
 			}
 		})
 	}
@@ -449,85 +452,6 @@ func TestLogicValidator_GetValidationReason(t *testing.T) {
 	}
 }
 
-func TestLogicValidator_SimpleProof(t *testing.T) {
-	validator := NewLogicValidator()
-
-	tests := []struct {
-		name       string
-		premises   []string
-		conclusion string
-		wantProof  bool
-	}{
-		{
-			name:       "empty premises",
-			premises:   []string{},
-			conclusion: "conclusion",
-			wantProof:  false,
-		},
-		{
-			name:       "empty conclusion",
-			premises:   []string{"premise"},
-			conclusion: "",
-			wantProof:  true, // simpleProof returns true if both exist (even if empty string exists)
-		},
-		{
-			name:       "both non-empty",
-			premises:   []string{"premise"},
-			conclusion: "conclusion",
-			wantProof:  true,
-		},
-		{
-			name:       "conclusion in premise",
-			premises:   []string{"the conclusion is true"},
-			conclusion: "conclusion",
-			wantProof:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			provable := validator.simpleProof(tt.premises, tt.conclusion)
-
-			if provable != tt.wantProof {
-				t.Errorf("simpleProof() = %v, want %v", provable, tt.wantProof)
-			}
-		})
-	}
-}
-
-func TestLogicValidator_GenerateProofSteps(t *testing.T) {
-	validator := NewLogicValidator()
-
-	premises := []string{"Premise 1", "Premise 2"}
-	conclusion := "Conclusion"
-
-	steps := validator.generateProofSteps(premises, conclusion)
-
-	if len(steps) == 0 {
-		t.Fatal("generateProofSteps() returned empty steps")
-	}
-
-	// Should include premises and conclusion
-	foundPremise := false
-	foundConclusion := false
-
-	for _, step := range steps {
-		if len(step) > 0 {
-			foundPremise = true
-		}
-		if len(step) > 0 {
-			foundConclusion = true
-		}
-	}
-
-	if !foundPremise {
-		t.Error("Proof steps should reference premises")
-	}
-
-	if !foundConclusion {
-		t.Error("Proof steps should reference conclusion")
-	}
-}
 
 func TestLogicValidator_ValidateThoughtWithTimestamp(t *testing.T) {
 	validator := NewLogicValidator()

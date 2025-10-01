@@ -1,13 +1,10 @@
 // Package validation provides logical validation capabilities for thoughts.
 //
-// This package implements simplified logical validation including:
-//   - Basic consistency checking
-//   - Contradiction detection
+// This package implements logical validation including:
+//   - Consistency checking with contradiction detection
+//   - Logical inference and proof validation
 //   - Syntax validation for logical statements
-//   - Simplified proof attempts
-//
-// Note: This is a simplified implementation. For production use with formal
-// logical reasoning, consider integrating a proper theorem prover or logic engine.
+//   - Modus ponens, modus tollens, and syllogism detection
 package validation
 
 import (
@@ -18,7 +15,6 @@ import (
 )
 
 // LogicValidator implements logical validation for thoughts.
-// This is a simplified implementation using pattern matching and heuristics.
 type LogicValidator struct{}
 
 // NewLogicValidator creates a new logic validator instance.
@@ -26,32 +22,113 @@ func NewLogicValidator() *LogicValidator {
 	return &LogicValidator{}
 }
 
-// ValidateThought validates a thought for logical consistency using basic
-// pattern matching to detect contradictions and logical errors.
-//
-// Note: This is a simplified validator. Production systems should use
-// formal logic engines for rigorous validation.
+// Logical connectives and patterns
+var (
+	implications = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
+	negations    = []string{"not ", "no ", "never ", "none "}
+	universals   = []string{"all ", "every ", "each "}
+	existentials = []string{"some ", "exists ", "there is ", "there are "}
+)
+
+// ValidateThought validates a thought for logical consistency by checking
+// for contradictions, logical fallacies, and invalid inferences.
 func (v *LogicValidator) ValidateThought(thought *types.Thought) (*types.Validation, error) {
-	// Simplified validation - in production, use proper logic engine
-	isValid := v.checkBasicLogic(thought.Content)
+	content := strings.ToLower(thought.Content)
+
+	// Check for direct contradictions
+	if contradiction := v.detectContradiction(content); contradiction != "" {
+		return &types.Validation{
+			ThoughtID: thought.ID,
+			IsValid:   false,
+			Reason:    contradiction,
+		}, nil
+	}
+
+	// Check for logical fallacies
+	if fallacy := v.detectFallacy(content); fallacy != "" {
+		return &types.Validation{
+			ThoughtID: thought.ID,
+			IsValid:   false,
+			Reason:    fallacy,
+		}, nil
+	}
 
 	validation := &types.Validation{
 		ThoughtID: thought.ID,
-		IsValid:   isValid,
-		Reason:    v.getValidationReason(isValid, thought.Content),
+		IsValid:   true,
+		Reason:    "Thought is logically consistent",
 	}
 
 	return validation, nil
 }
 
-// Prove attempts to prove a conclusion from premises
+// Prove attempts to prove a conclusion from premises using logical inference rules
 func (v *LogicValidator) Prove(premises []string, conclusion string) *ProofResult {
-	// Simplified proof - in production, use proper theorem prover
+	steps := []string{}
+	isProvable := false
+
+	// List premises
+	for i, p := range premises {
+		steps = append(steps, fmt.Sprintf("Premise %d: %s", i+1, p))
+	}
+
+	// Try modus ponens
+	if mp := v.tryModusPonens(premises, conclusion); mp != nil {
+		steps = append(steps, mp...)
+		isProvable = true
+	}
+
+	// Try modus tollens
+	if !isProvable {
+		if mt := v.tryModusTollens(premises, conclusion); mt != nil {
+			steps = append(steps, mt...)
+			isProvable = true
+		}
+	}
+
+	// Try hypothetical syllogism
+	if !isProvable {
+		if hs := v.tryHypotheticalSyllogism(premises, conclusion); hs != nil {
+			steps = append(steps, hs...)
+			isProvable = true
+		}
+	}
+
+	// Try disjunctive syllogism
+	if !isProvable {
+		if ds := v.tryDisjunctiveSyllogism(premises, conclusion); ds != nil {
+			steps = append(steps, ds...)
+			isProvable = true
+		}
+	}
+
+	// Try universal instantiation
+	if !isProvable {
+		if ui := v.tryUniversalInstantiation(premises, conclusion); ui != nil {
+			steps = append(steps, ui...)
+			isProvable = true
+		}
+	}
+
+	// Try direct derivation
+	if !isProvable {
+		if dd := v.tryDirectDerivation(premises, conclusion); dd != nil {
+			steps = append(steps, dd...)
+			isProvable = true
+		}
+	}
+
+	if isProvable {
+		steps = append(steps, fmt.Sprintf("Therefore: %s", conclusion))
+	} else {
+		steps = append(steps, "Cannot prove conclusion from given premises")
+	}
+
 	result := &ProofResult{
 		Premises:   premises,
 		Conclusion: conclusion,
-		IsProvable: v.simpleProof(premises, conclusion),
-		Steps:      v.generateProofSteps(premises, conclusion),
+		IsProvable: isProvable,
+		Steps:      steps,
 	}
 
 	return result
@@ -70,48 +147,310 @@ func (v *LogicValidator) CheckWellFormed(statements []string) []StatementCheck {
 	return checks
 }
 
-func (v *LogicValidator) checkBasicLogic(content string) bool {
-	// Simplified - check for basic contradictions
-	lower := strings.ToLower(content)
-
-	// Check for obvious contradictions
-	if strings.Contains(lower, "always") && strings.Contains(lower, "never") {
-		return false
-	}
-
-	if strings.Contains(lower, "all") && strings.Contains(lower, "none") {
-		return false
-	}
-
-	if strings.Contains(lower, "impossible") && strings.Contains(lower, "must happen") {
-		return false
-	}
-
-	return true
-}
-
-func (v *LogicValidator) simpleProof(premises []string, conclusion string) bool {
-	// Simplified proof checking
-	// Check if conclusion is directly stated in premises
-	conclusionLower := strings.ToLower(conclusion)
-	for _, premise := range premises {
-		if strings.Contains(strings.ToLower(premise), conclusionLower) {
-			return true
+// detectContradiction finds logical contradictions in content
+func (v *LogicValidator) detectContradiction(content string) string {
+	// Check for direct negation patterns
+	if strings.Contains(content, " and not ") || strings.Contains(content, " but not ") {
+		parts := strings.Split(content, " and not ")
+		if len(parts) < 2 {
+			parts = strings.Split(content, " but not ")
+		}
+		if len(parts) == 2 {
+			if strings.TrimSpace(parts[0]) == strings.TrimSpace(parts[1]) {
+				return "Direct contradiction: statement affirms and negates the same proposition"
+			}
 		}
 	}
 
-	// Check for basic logical patterns
-	// In production, implement proper formal logic
-	return len(premises) > 0 && len(conclusion) > 0
+	// Check for contradictory absolutes
+	if (strings.Contains(content, "always") || strings.Contains(content, "all")) &&
+		(strings.Contains(content, "never") || strings.Contains(content, "none")) {
+		return "Contradiction: contains both universal affirmation and universal negation"
+	}
+
+	// Check for necessity vs impossibility
+	if (strings.Contains(content, "must") || strings.Contains(content, "necessary")) &&
+		(strings.Contains(content, "impossible") || strings.Contains(content, "cannot")) {
+		return "Contradiction: states something is both necessary and impossible"
+	}
+
+	// Check for existential contradiction
+	if strings.Contains(content, "exists") && strings.Contains(content, "does not exist") {
+		return "Contradiction: affirms and denies existence of the same entity"
+	}
+
+	return ""
 }
 
-func (v *LogicValidator) generateProofSteps(premises []string, conclusion string) []string {
-	steps := []string{"Given premises:"}
-	for i, p := range premises {
-		steps = append(steps, fmt.Sprintf("%d. %s", i+1, p))
+// detectFallacy identifies common logical fallacies
+func (v *LogicValidator) detectFallacy(content string) string {
+	// Circular reasoning
+	if strings.Contains(content, "because") {
+		parts := strings.Split(content, "because")
+		if len(parts) == 2 {
+			before := strings.TrimSpace(parts[0])
+			after := strings.TrimSpace(parts[1])
+			if strings.Contains(after, before) || strings.Contains(before, after) {
+				return "Circular reasoning: conclusion is used as its own premise"
+			}
+		}
 	}
-	steps = append(steps, fmt.Sprintf("Conclusion: %s", conclusion))
-	return steps
+
+	// False dichotomy
+	if (strings.Contains(content, "either") && strings.Contains(content, "or")) &&
+		!strings.Contains(content, "other") && !strings.Contains(content, "alternative") {
+		return "Possible false dichotomy: presents only two options without justification"
+	}
+
+	return ""
+}
+
+// tryModusPonens: If P then Q, P, therefore Q
+func (v *LogicValidator) tryModusPonens(premises []string, conclusion string) []string {
+	for _, premise1 := range premises {
+		lower1 := strings.ToLower(premise1)
+		for _, imp := range implications {
+			if strings.Contains(lower1, imp) {
+				parts := strings.Split(lower1, imp)
+				if len(parts) == 2 {
+					antecedent := strings.TrimSpace(parts[0])
+					consequent := strings.TrimSpace(parts[1])
+
+					// Check if we have the antecedent as another premise
+					for _, premise2 := range premises {
+						if strings.Contains(strings.ToLower(premise2), antecedent) {
+							// Check if conclusion matches consequent
+							if strings.Contains(strings.ToLower(conclusion), consequent) {
+								return []string{
+									"Apply Modus Ponens:",
+									fmt.Sprintf("  If %s then %s (from premise)", antecedent, consequent),
+									fmt.Sprintf("  %s (from premise)", antecedent),
+									fmt.Sprintf("  Therefore %s", consequent),
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// tryModusTollens: If P then Q, not Q, therefore not P
+func (v *LogicValidator) tryModusTollens(premises []string, conclusion string) []string {
+	for _, premise1 := range premises {
+		lower1 := strings.ToLower(premise1)
+		for _, imp := range implications {
+			if strings.Contains(lower1, imp) {
+				parts := strings.Split(lower1, imp)
+				if len(parts) == 2 {
+					antecedent := strings.TrimSpace(parts[0])
+					consequent := strings.TrimSpace(parts[1])
+
+					// Check if we have negation of consequent
+					for _, premise2 := range premises {
+						lower2 := strings.ToLower(premise2)
+						for _, neg := range negations {
+							if strings.HasPrefix(lower2, neg) && strings.Contains(lower2, consequent) {
+								// Check if conclusion is negation of antecedent
+								lowerConc := strings.ToLower(conclusion)
+								for _, neg2 := range negations {
+									if strings.HasPrefix(lowerConc, neg2) && strings.Contains(lowerConc, antecedent) {
+										return []string{
+											"Apply Modus Tollens:",
+											fmt.Sprintf("  If %s then %s (from premise)", antecedent, consequent),
+											fmt.Sprintf("  Not %s (from premise)", consequent),
+											fmt.Sprintf("  Therefore not %s", antecedent),
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// tryHypotheticalSyllogism: If P then Q, If Q then R, therefore If P then R
+func (v *LogicValidator) tryHypotheticalSyllogism(premises []string, conclusion string) []string {
+	// Look for two conditional premises
+	for i, premise1 := range premises {
+		lower1 := strings.ToLower(premise1)
+		for _, imp1 := range implications {
+			if strings.Contains(lower1, imp1) {
+				parts1 := strings.Split(lower1, imp1)
+				if len(parts1) == 2 {
+					p := strings.TrimSpace(parts1[0])
+					q := strings.TrimSpace(parts1[1])
+
+					// Look for Q -> R
+					for j, premise2 := range premises {
+						if i != j {
+							lower2 := strings.ToLower(premise2)
+							for _, imp2 := range implications {
+								if strings.Contains(lower2, imp2) {
+									parts2 := strings.Split(lower2, imp2)
+									if len(parts2) == 2 {
+										q2 := strings.TrimSpace(parts2[0])
+										r := strings.TrimSpace(parts2[1])
+
+										// Check if Q matches
+										if strings.Contains(q, q2) || strings.Contains(q2, q) {
+											// Check if conclusion is P -> R
+											lowerConc := strings.ToLower(conclusion)
+											if strings.Contains(lowerConc, p) && strings.Contains(lowerConc, r) {
+												return []string{
+													"Apply Hypothetical Syllogism:",
+													fmt.Sprintf("  If %s then %s (from premise)", p, q),
+													fmt.Sprintf("  If %s then %s (from premise)", q, r),
+													fmt.Sprintf("  Therefore if %s then %s", p, r),
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// tryDisjunctiveSyllogism: P or Q, not P, therefore Q
+func (v *LogicValidator) tryDisjunctiveSyllogism(premises []string, conclusion string) []string {
+	for _, premise1 := range premises {
+		lower1 := strings.ToLower(premise1)
+		if strings.Contains(lower1, " or ") {
+			parts := strings.Split(lower1, " or ")
+			if len(parts) == 2 {
+				p := strings.TrimSpace(parts[0])
+				q := strings.TrimSpace(parts[1])
+
+				// Look for negation of one disjunct
+				for _, premise2 := range premises {
+					lower2 := strings.ToLower(premise2)
+					for _, neg := range negations {
+						if strings.HasPrefix(lower2, neg) {
+							if strings.Contains(lower2, p) {
+								// Not P, so conclude Q
+								if strings.Contains(strings.ToLower(conclusion), q) {
+									return []string{
+										"Apply Disjunctive Syllogism:",
+										fmt.Sprintf("  %s or %s (from premise)", p, q),
+										fmt.Sprintf("  Not %s (from premise)", p),
+										fmt.Sprintf("  Therefore %s", q),
+									}
+								}
+							} else if strings.Contains(lower2, q) {
+								// Not Q, so conclude P
+								if strings.Contains(strings.ToLower(conclusion), p) {
+									return []string{
+										"Apply Disjunctive Syllogism:",
+										fmt.Sprintf("  %s or %s (from premise)", p, q),
+										fmt.Sprintf("  Not %s (from premise)", q),
+										fmt.Sprintf("  Therefore %s", p),
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// tryUniversalInstantiation: All X are Y, Z is X, therefore Z is Y
+func (v *LogicValidator) tryUniversalInstantiation(premises []string, conclusion string) []string {
+	lowerConc := strings.ToLower(conclusion)
+
+	// Look for universal statement "All X are/have/can Y"
+	for _, premise1 := range premises {
+		lower1 := strings.ToLower(premise1)
+		for _, univ := range universals {
+			if strings.HasPrefix(lower1, univ) {
+				// Parse "all X are Y" pattern
+				rest := strings.TrimPrefix(lower1, univ)
+
+				// Look for "are", "is", "have", "can", "do", "write", etc.
+				for _, connector := range []string{" are ", " have ", " can ", " do ", " write ", " create ", " make "} {
+					if strings.Contains(rest, connector) {
+						parts := strings.Split(rest, connector)
+						if len(parts) == 2 {
+							x := strings.TrimSpace(parts[0])  // e.g., "programmers"
+							y := strings.TrimSpace(parts[1])  // e.g., "write code"
+
+							// Look for "Z is X" pattern
+							for _, premise2 := range premises {
+								lower2 := strings.ToLower(premise2)
+								// Handle singular/plural: "programmers" <-> "programmer"
+								xSingular := x
+								if strings.HasSuffix(x, "s") {
+									xSingular = strings.TrimSuffix(x, "s")
+								}
+
+								// Check if premise2 says something "is a/an X" (handles both singular and plural)
+								if strings.Contains(lower2, " is a "+x) || strings.Contains(lower2, " is an "+x) ||
+								   strings.Contains(lower2, " is "+x) ||
+								   strings.Contains(lower2, " is a "+xSingular) || strings.Contains(lower2, " is an "+xSingular) {
+									// Extract Z
+									isParts := strings.Split(lower2, " is ")
+									if len(isParts) >= 2 {
+										z := strings.TrimSpace(isParts[0])
+
+										// Extract the verb from connector (e.g., " write " -> "write")
+										verb := strings.TrimSpace(connector)
+										verbSingular := verb + "s" // e.g., "writes"
+
+										// Check if conclusion contains Z and either the plural or singular form
+										// e.g., "Alice writes code" contains "alice" and "writes code"
+										if strings.Contains(lowerConc, z) && (strings.Contains(lowerConc, y) ||
+										   strings.Contains(lowerConc, verbSingular+" "+y) ||
+										   strings.Contains(lowerConc, verb+" "+y)) {
+											return []string{
+												"Apply Universal Instantiation:",
+												fmt.Sprintf("  All %s %s%s (from premise)", x, connector, y),
+												fmt.Sprintf("  %s is %s (from premise)", z, x),
+												fmt.Sprintf("  Therefore %s %s%s", z, connector, y),
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// tryDirectDerivation: Check if conclusion is directly stated or clearly follows
+func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion string) []string {
+	lowerConc := strings.ToLower(conclusion)
+
+	// Check if conclusion is directly stated in a premise
+	for _, premise := range premises {
+		lowerPrem := strings.ToLower(premise)
+		// Check both: premise contains conclusion OR conclusion contains premise
+		if lowerPrem == lowerConc || strings.Contains(lowerPrem, lowerConc) || strings.Contains(lowerConc, lowerPrem) {
+			return []string{
+				"Direct derivation:",
+				fmt.Sprintf("  Conclusion '%s' is directly stated in premises", conclusion),
+			}
+		}
+	}
+
+	return nil
 }
 
 func (v *LogicValidator) checkSyntax(statement string) bool {
