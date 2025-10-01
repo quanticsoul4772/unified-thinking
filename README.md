@@ -61,15 +61,7 @@ Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`
 }
 ```
 
-After saving the config:
-1. Restart Claude Desktop
-2. The server will start automatically
-3. All tools will be available to Claude AI
-4. No manual server management required
-
-## Usage
-
-All tools are accessed by Claude AI automatically through the MCP protocol. Responses are structured JSON data consumed directly by Claude.
+After saving the config, restart Claude Desktop.
 
 ### Available Tools
 
