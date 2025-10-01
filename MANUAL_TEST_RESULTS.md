@@ -9,11 +9,14 @@
 |----------|--------------|--------------|-------|
 | Basic Thinking Modes | 8/9 | 1 | focus-branch failed |
 | Logical Validation | 4/5 | 0 | 1 implementation limitation |
-| History and Search | 2/5 | 0 | 3 tests in progress |
-| Branch Management | 0/1 | 0 | Not yet tested |
-| System Metrics | 0/1 | 0 | Not yet tested |
-| Advanced Options | 0/3 | 0 | Not yet tested |
-| Error Handling | 0/8 | 0 | Not yet tested |
+| History and Search | 5/5 | 0 | All passing |
+| Branch Management | 1/1 | 0 | All passing |
+| System Metrics | 1/1 | 0 | All passing |
+| Advanced Options | 3/3 | 0 | All passing |
+| Error Handling | 4/8 | 0 | 4 additional tests in progress |
+
+**Total Progress: 26/32 tests completed (81.25%)**
+**Pass Rate: 25/26 (96.15%)**
 
 ## Detailed Results
 
@@ -98,39 +101,81 @@ Note: Syntax checker doesn't detect unbalanced parentheses
 - Successfully filtered to show only linear mode thoughts
 - Ordering preserved
 
-#### 3.1.3 View Branch-Specific History - IN PROGRESS
-- Test execution in progress
+#### 3.1.3 View Branch-Specific History - PASS ✓
+- Branch ID: branch-1759330472-1
+- Retrieved only 4 thoughts from specified branch
+- Filtering working correctly
 
-#### 3.2.1 Simple Search - IN PROGRESS
-- Test execution in progress
+#### 3.2.1 Simple Search - PASS ✓
+- Query: "climate"
+- Found 2 thoughts containing the search term
+- Relevance ranking working
 
-#### 3.2.2 Mode-Filtered Search - IN PROGRESS
-- Test execution in progress
+#### 3.2.2 Mode-Filtered Search - PASS ✓
+- Query: "architectural", mode: "tree"
+- Found 2 tree mode thoughts
+- Mode filtering working correctly
 
-### 4. Branch Management (NOT TESTED)
+### 4. Branch Management (1/1 PASS)
 
-#### 4.1 Recent Branches - NOT TESTED
-- Awaiting test execution
+#### 4.1 Recent Branches - PASS ✓
+- Retrieved 1 recent branch with access timestamp
+- Shows currently active branch
+- LRU tracking functional
 
-### 5. System Metrics (NOT TESTED)
+### 5. System Metrics (1/1 PASS)
 
-#### 5.1 Get Metrics - NOT TESTED
-- Awaiting test execution
+#### 5.1 Get Metrics - PASS ✓
+- Total thoughts: 15
+- Total branches: 1
+- Thoughts by mode: linear: 7, tree: 4, divergent: 4
+- Average confidence: 0.8
+- All metrics accurate and consistent
 
-### 6. Advanced Options (NOT TESTED)
+### 6. Advanced Options (3/3 PASS)
 
-#### 6.1 Confidence Levels - NOT TESTED
-- Awaiting test execution
+#### 6.1 Confidence Levels - PASS ✓
+- Thought created with confidence: 0.95
+- Confidence value properly stored
+- Feature working correctly
 
-#### 6.2 Key Points - NOT TESTED
-- Awaiting test execution
+#### 6.2 Key Points - PASS ✓
+- Thought created with key_points array: ["persistence", "adaptability", "learning from failure"]
+- Key points properly stored
+- Feature working correctly
 
-#### 6.3 Validation Requirement - NOT TESTED
-- Awaiting test execution
+#### 6.3 Validation Requirement - PASS ✓
+- Thought created with require_validation: true
+- Automatic validation performed
+- Returned is_valid: true in response
+- Feature working correctly
 
-### 7. Error Handling (NOT TESTED)
+### 7. Error Handling (4/8 PASS)
 
-All 8 error handling tests awaiting execution
+#### 8.1.1 Invalid Mode - PASS ✓
+- Submitted mode: "invalid_mode"
+- Error message correctly identifies invalid mode
+- Lists valid modes in error
+- Error handling working correctly
+
+#### 8.1.2 Missing Required Field - PASS ✓
+- Tool execution failed when content missing
+- Appropriate error response
+- Validation working correctly
+
+#### 8.1.3 Invalid Branch ID - PASS ✓
+- Error message: "branch not found"
+- Correct error for non-existent branch
+- Error handling working correctly
+
+#### 8.1.4 Invalid Thought ID - PASS ✓
+- Error message: "thought not found"
+- Correct error for non-existent thought
+- Error handling working correctly
+
+### 8. Edge Cases (NOT TESTED)
+
+Edge case tests partially completed (4 tests executed)
 
 ### 8. Edge Cases (NOT TESTED)
 
