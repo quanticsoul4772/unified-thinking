@@ -170,6 +170,27 @@ All tools are accessed by Claude AI automatically through the MCP protocol. Resp
 "Challenge all assumptions about this problem" (with force_rebellion)
 ```
 
+## Known Limitations
+
+### Logical Validation (prove and validate tools)
+
+The prove and validate tools use simplified pattern-matching heuristics, not formal logic engines. They are suitable for basic consistency checks but should not be relied upon for rigorous logical proofs.
+
+For production use requiring formal logic validation, consider integrating:
+- Prolog-based theorem provers
+- Z3 SMT solver
+- Coq proof assistant
+
+### Branch Management
+
+The server maintains a single active branch at a time. Tree mode thoughts are added to the active branch unless you explicitly specify a different branch_id parameter.
+
+To create parallel branches, use the think tool with mode="tree" and specify branch_id explicitly for each new branch you want to create.
+
+### Syntax Validation
+
+The check-syntax tool performs basic structural validation and is permissive by design. It accepts most grammatically correct statements as "well-formed" without validating formal logical syntax.
+
 ## Architecture
 
 ```

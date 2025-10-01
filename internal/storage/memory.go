@@ -203,12 +203,15 @@ func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 }
 
 // SearchThoughts searches thoughts by content or type (returns copies to prevent data races)
-func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode) []*types.Thought {
+// limit and offset support pagination - limit of 0 returns all results
+func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, limit, offset int) []*types.Thought {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var results []*types.Thought
+	results := make([]*types.Thought, 0)
 	queryLower := strings.ToLower(query)
+	matched := 0
+	skipped := 0
 
 	for _, thought := range s.thoughts {
 		// Search by content and mode
@@ -216,9 +219,61 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode) []
 		matchesMode := mode == "" || thought.Mode == mode
 
 		if matchesQuery && matchesMode {
+			// Skip results for offset
+			if skipped < offset {
+				skipped++
+				continue
+			}
+
 			// Return deep copies to prevent external modification
 			results = append(results, copyThought(thought))
+			matched++
+
+			// Early termination when limit reached
+			if limit > 0 && matched >= limit {
+				break
+			}
 		}
 	}
 	return results
+}
+
+// Metrics represents system performance and usage statistics
+type Metrics struct {
+	TotalThoughts     int            `json:"total_thoughts"`
+	TotalBranches     int            `json:"total_branches"`
+	TotalInsights     int            `json:"total_insights"`
+	TotalValidations  int            `json:"total_validations"`
+	ThoughtsByMode    map[string]int `json:"thoughts_by_mode"`
+	AverageConfidence float64        `json:"average_confidence"`
+}
+
+// GetMetrics returns current system metrics
+func (s *MemoryStorage) GetMetrics() *Metrics {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	thoughtsByMode := make(map[string]int)
+	totalConfidence := 0.0
+	thoughtCount := 0
+
+	for _, thought := range s.thoughts {
+		thoughtsByMode[string(thought.Mode)]++
+		totalConfidence += thought.Confidence
+		thoughtCount++
+	}
+
+	avgConfidence := 0.0
+	if thoughtCount > 0 {
+		avgConfidence = totalConfidence / float64(thoughtCount)
+	}
+
+	return &Metrics{
+		TotalThoughts:     len(s.thoughts),
+		TotalBranches:     len(s.branches),
+		TotalInsights:     len(s.insights),
+		TotalValidations:  len(s.validations),
+		ThoughtsByMode:    thoughtsByMode,
+		AverageConfidence: avgConfidence,
+	}
 }

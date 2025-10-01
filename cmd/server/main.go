@@ -6,7 +6,7 @@
 //
 // The server consolidates multiple cognitive thinking patterns (linear, tree,
 // divergent, and auto modes) into a single Go-based MCP server, providing
-// 9 tools for thought processing, validation, and search.
+// 10 tools for thought processing, validation, search, and metrics.
 //
 // Environment variables:
 //   - DEBUG: Set to "true" to enable debug logging
@@ -59,7 +59,7 @@ func main() {
 
 	// Register tools
 	srv.RegisterTools(mcpServer)
-	log.Println("Registered tools: think, history, list-branches, focus-branch, branch-history, validate, prove, check-syntax, search")
+	log.Println("Registered tools: think, history, list-branches, focus-branch, branch-history, validate, prove, check-syntax, search, get-metrics")
 
 	// Create stdio transport
 	transport := &mcp.StdioTransport{}

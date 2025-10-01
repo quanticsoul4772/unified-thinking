@@ -1,6 +1,6 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 9 tools for
+// This package provides the MCP server implementation that exposes 10 tools for
 // thought processing, validation, and search. All responses are JSON formatted
 // for consumption by Claude AI via stdio transport.
 //
@@ -14,6 +14,7 @@
 //   - prove: Attempt logical proof
 //   - check-syntax: Validate logical statement syntax
 //   - search: Search through all thoughts
+//   - get-metrics: Get system performance and usage metrics
 package server
 
 import (
@@ -100,6 +101,11 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		Name:        "search",
 		Description: "Search through all thoughts",
 	}, s.handleSearch)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "get-metrics",
+		Description: "Get system performance and usage metrics",
+	}, s.handleGetMetrics)
 }
 
 type ThinkRequest struct {
@@ -208,6 +214,8 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 type HistoryRequest struct {
 	Mode     string `json:"mode,omitempty"`
 	BranchID string `json:"branch_id,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
+	Offset   int    `json:"offset,omitempty"`
 }
 
 type HistoryResponse struct {
@@ -220,6 +228,12 @@ func (s *UnifiedServer) handleHistory(ctx context.Context, req *mcp.CallToolRequ
 		return nil, nil, err
 	}
 
+	// Set default limit if not specified
+	limit := input.Limit
+	if limit == 0 {
+		limit = 100 // Default to 100 results
+	}
+
 	var thoughts []*types.Thought
 
 	if input.BranchID != "" {
@@ -227,16 +241,33 @@ func (s *UnifiedServer) handleHistory(ctx context.Context, req *mcp.CallToolRequ
 		if err != nil {
 			return nil, nil, err
 		}
-		thoughts = branch.Thoughts
+		// Apply pagination to branch thoughts
+		thoughts = paginateThoughts(branch.Thoughts, limit, input.Offset)
 	} else {
 		mode := types.ThinkingMode(input.Mode)
-		thoughts = s.storage.SearchThoughts("", mode)
+		thoughts = s.storage.SearchThoughts("", mode, limit, input.Offset)
 	}
 
 	response := &HistoryResponse{Thoughts: thoughts}
 	return &mcp.CallToolResult{
 		Content: toJSONContent(response),
 	}, response, nil
+}
+
+// paginateThoughts applies limit and offset to a slice of thoughts
+func paginateThoughts(thoughts []*types.Thought, limit, offset int) []*types.Thought {
+	// Handle offset beyond slice length
+	if offset >= len(thoughts) {
+		return []*types.Thought{}
+	}
+
+	start := offset
+	end := offset + limit
+	if end > len(thoughts) {
+		end = len(thoughts)
+	}
+
+	return thoughts[start:end]
 }
 
 type EmptyRequest struct{}
@@ -278,6 +309,18 @@ func (s *UnifiedServer) handleFocusBranch(ctx context.Context, req *mcp.CallTool
 	// Validate input
 	if err := ValidateFocusBranchRequest(&input); err != nil {
 		return nil, nil, err
+	}
+
+	// Check if branch is already active
+	activeBranch, _ := s.storage.GetActiveBranch()
+	if activeBranch != nil && activeBranch.ID == input.BranchID {
+		response := &FocusBranchResponse{
+			Status:         "already_active",
+			ActiveBranchID: input.BranchID,
+		}
+		return &mcp.CallToolResult{
+			Content: toJSONContent(response),
+		}, response, nil
 	}
 
 	if err := s.storage.SetActiveBranch(input.BranchID); err != nil {
@@ -407,8 +450,10 @@ func (s *UnifiedServer) handleCheckSyntax(ctx context.Context, req *mcp.CallTool
 }
 
 type SearchRequest struct {
-	Query string `json:"query"`
-	Mode  string `json:"mode,omitempty"`
+	Query  string `json:"query"`
+	Mode   string `json:"mode,omitempty"`
+	Limit  int    `json:"limit,omitempty"`
+	Offset int    `json:"offset,omitempty"`
 }
 
 type SearchResponse struct {
@@ -421,8 +466,14 @@ func (s *UnifiedServer) handleSearch(ctx context.Context, req *mcp.CallToolReque
 		return nil, nil, err
 	}
 
+	// Set default limit if not specified
+	limit := input.Limit
+	if limit == 0 {
+		limit = 100 // Default to 100 results
+	}
+
 	mode := types.ThinkingMode(input.Mode)
-	thoughts := s.storage.SearchThoughts(input.Query, mode)
+	thoughts := s.storage.SearchThoughts(input.Query, mode, limit, input.Offset)
 
 	response := &SearchResponse{Thoughts: thoughts}
 
@@ -442,4 +493,30 @@ func convertCrossRefs(input []CrossRefInput) []modes.CrossRefInput {
 		}
 	}
 	return result
+}
+
+type MetricsResponse struct {
+	TotalThoughts     int            `json:"total_thoughts"`
+	TotalBranches     int            `json:"total_branches"`
+	TotalInsights     int            `json:"total_insights"`
+	TotalValidations  int            `json:"total_validations"`
+	ThoughtsByMode    map[string]int `json:"thoughts_by_mode"`
+	AverageConfidence float64        `json:"average_confidence"`
+}
+
+func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolRequest, input EmptyRequest) (*mcp.CallToolResult, *MetricsResponse, error) {
+	metrics := s.storage.GetMetrics()
+
+	response := &MetricsResponse{
+		TotalThoughts:     metrics.TotalThoughts,
+		TotalBranches:     metrics.TotalBranches,
+		TotalInsights:     metrics.TotalInsights,
+		TotalValidations:  metrics.TotalValidations,
+		ThoughtsByMode:    metrics.ThoughtsByMode,
+		AverageConfidence: metrics.AverageConfidence,
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
 }

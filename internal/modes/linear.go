@@ -50,6 +50,6 @@ func (m *LinearMode) ProcessThought(ctx context.Context, input ThoughtInput) (*T
 
 // GetHistory returns the linear history of thoughts
 func (m *LinearMode) GetHistory(ctx context.Context) ([]*types.Thought, error) {
-	thoughts := m.storage.SearchThoughts("", types.ModeLinear)
+	thoughts := m.storage.SearchThoughts("", types.ModeLinear, 0, 0)
 	return thoughts, nil
 }

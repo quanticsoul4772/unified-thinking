@@ -509,7 +509,7 @@ func TestSearchThoughts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results := storage.SearchThoughts(tt.query, tt.mode)
+			results := storage.SearchThoughts(tt.query, tt.mode, 0, 0)
 
 			if len(results) != tt.wantCount {
 				t.Errorf("SearchThoughts() returned %d results, want %d", len(results), tt.wantCount)
@@ -542,7 +542,7 @@ func TestConcurrency(t *testing.T) {
 		wg.Wait()
 
 		// Verify all thoughts were stored
-		results := storage.SearchThoughts("", types.ModeLinear)
+		results := storage.SearchThoughts("", types.ModeLinear, 0, 0)
 		if len(results) != numGoroutines {
 			t.Errorf("Expected %d thoughts, got %d", numGoroutines, len(results))
 		}

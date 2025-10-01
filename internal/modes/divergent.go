@@ -133,6 +133,6 @@ func (m *DivergentMode) generateBranchedThought(source *types.Thought, direction
 
 // ListThoughts returns all divergent thoughts
 func (m *DivergentMode) ListThoughts(ctx context.Context) ([]*types.Thought, error) {
-	thoughts := m.storage.SearchThoughts("", types.ModeDivergent)
+	thoughts := m.storage.SearchThoughts("", types.ModeDivergent, 0, 0)
 	return thoughts, nil
 }
