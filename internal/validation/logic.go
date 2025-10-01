@@ -454,34 +454,198 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 }
 
 func (v *LogicValidator) checkSyntax(statement string) bool {
-	// Simplified syntax check
-	trimmed := strings.TrimSpace(statement)
-	
-	if len(trimmed) == 0 {
-		return false
-	}
-
-	// Check for basic statement structure
-	if !strings.Contains(trimmed, " ") {
-		return false
-	}
-
-	return true
+	issues := v.getSyntaxIssues(statement)
+	return len(issues) == 0
 }
 
 func (v *LogicValidator) getSyntaxIssues(statement string) []string {
 	issues := []string{}
 	trimmed := strings.TrimSpace(statement)
 
+	// Check 1: Empty statement
 	if len(trimmed) == 0 {
 		issues = append(issues, "Statement is empty")
+		return issues // No point checking further
 	}
 
+	// Check 2: Minimum length for meaningful statement
+	if len(trimmed) < 3 {
+		issues = append(issues, "Statement is too short to be meaningful")
+	}
+
+	// Check 3: Must contain at least one space (multi-word requirement)
 	if !strings.Contains(trimmed, " ") {
 		issues = append(issues, "Statement appears to be a single word")
 	}
 
+	// Check 4: Balanced parentheses
+	if !v.hasBalancedParentheses(trimmed) {
+		issues = append(issues, "Unbalanced parentheses")
+	}
+
+	// Check 5: Check for common malformed patterns
+	if v.hasMalformedLogicalOperators(trimmed) {
+		issues = append(issues, "Malformed logical operators (e.g., consecutive 'and and', 'or or')")
+	}
+
+	// Check 6: Check for incomplete conditionals
+	if v.hasIncompleteConditional(trimmed) {
+		issues = append(issues, "Incomplete conditional statement (e.g., 'if...then' without conclusion)")
+	}
+
+	// Check 7: Check for mismatched quotes
+	if v.hasMismatchedQuotes(trimmed) {
+		issues = append(issues, "Mismatched quotation marks")
+	}
+
+	// Check 8: Check for empty quantifiers
+	if v.hasEmptyQuantifier(trimmed) {
+		issues = append(issues, "Empty or incomplete quantifier (e.g., 'all' without subject)")
+	}
+
+	// Check 9: Proper sentence structure (starts with capital or logical symbol)
+	if !v.hasProperStart(trimmed) {
+		issues = append(issues, "Statement should start with a capital letter, quantifier, or logical symbol")
+	}
+
 	return issues
+}
+
+// hasBalancedParentheses checks if all parentheses are properly balanced
+func (v *LogicValidator) hasBalancedParentheses(statement string) bool {
+	stack := 0
+	for _, ch := range statement {
+		if ch == '(' || ch == '[' || ch == '{' {
+			stack++
+		} else if ch == ')' || ch == ']' || ch == '}' {
+			stack--
+			if stack < 0 {
+				return false
+			}
+		}
+	}
+	return stack == 0
+}
+
+// hasMalformedLogicalOperators checks for consecutive duplicate operators
+func (v *LogicValidator) hasMalformedLogicalOperators(statement string) bool {
+	lower := strings.ToLower(statement)
+
+	malformedPatterns := []string{
+		" and and ", " or or ", " not not ", " if if ", " then then ",
+		" all all ", " some some ", " every every ", " no no ",
+	}
+
+	for _, pattern := range malformedPatterns {
+		if strings.Contains(lower, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasIncompleteConditional checks for incomplete if-then statements
+func (v *LogicValidator) hasIncompleteConditional(statement string) bool {
+	lower := strings.ToLower(statement)
+
+	// If statement has "if" but no "then" or vice versa (for formal conditionals)
+	hasIf := strings.Contains(lower, " if ")
+	hasThen := strings.Contains(lower, " then ")
+
+	// Allow "if" at the start
+	if strings.HasPrefix(lower, "if ") {
+		hasIf = true
+	}
+
+	// If we have "if" but no "then", that's incomplete (unless it's a simple conditional)
+	if hasIf && !hasThen {
+		// Check if it's a simple "X if Y" pattern (which is valid)
+		ifIndex := strings.Index(lower, " if ")
+		if ifIndex == -1 {
+			ifIndex = strings.Index(lower, "if ")
+		}
+		// If "if" is near the end, it might be "X if Y" which is valid
+		if ifIndex < len(lower)-10 { // Arbitrary threshold
+			return true
+		}
+	}
+
+	// Having "then" without "if" is also suspicious
+	if hasThen && !hasIf && !strings.Contains(lower, " implies ") {
+		return true
+	}
+
+	return false
+}
+
+// hasMismatchedQuotes checks for unmatched quotation marks
+func (v *LogicValidator) hasMismatchedQuotes(statement string) bool {
+	singleQuotes := strings.Count(statement, "'")
+	doubleQuotes := strings.Count(statement, "\"")
+
+	return singleQuotes%2 != 0 || doubleQuotes%2 != 0
+}
+
+// hasEmptyQuantifier checks for quantifiers without proper subjects
+func (v *LogicValidator) hasEmptyQuantifier(statement string) bool {
+	lower := strings.ToLower(statement)
+
+	// Patterns like "all " at end, or "some " at end
+	if strings.HasSuffix(lower, " all") || strings.HasSuffix(lower, " some") ||
+	   strings.HasSuffix(lower, " every") || strings.HasSuffix(lower, " no") {
+		return true
+	}
+
+	// Patterns like "all and", "some or" (quantifier immediately followed by operator)
+	emptyPatterns := []string{
+		"all and ", "all or ", "some and ", "some or ",
+		"every and ", "every or ", "no and ", "no or ",
+	}
+
+	for _, pattern := range emptyPatterns {
+		if strings.Contains(lower, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// hasProperStart checks if statement starts appropriately
+func (v *LogicValidator) hasProperStart(statement string) bool {
+	trimmed := strings.TrimSpace(statement)
+	if len(trimmed) == 0 {
+		return false
+	}
+
+	firstChar := rune(trimmed[0])
+
+	// Allow capital letters
+	if firstChar >= 'A' && firstChar <= 'Z' {
+		return true
+	}
+
+	// Allow logical symbols
+	if firstChar == '∀' || firstChar == '∃' || firstChar == '¬' ||
+	   firstChar == '(' || firstChar == '[' {
+		return true
+	}
+
+	// Allow numbers (for formal logic formulas)
+	if firstChar >= '0' && firstChar <= '9' {
+		return true
+	}
+
+	// Check if starts with quantifier keywords
+	lower := strings.ToLower(trimmed)
+	quantifierStarts := []string{"all ", "some ", "every ", "no ", "if ", "not ", "there "}
+	for _, q := range quantifierStarts {
+		if strings.HasPrefix(lower, q) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (v *LogicValidator) getValidationReason(isValid bool, content string) string {

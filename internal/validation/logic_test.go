@@ -368,10 +368,10 @@ func TestLogicValidator_GetSyntaxIssues(t *testing.T) {
 		wantIssues int
 	}{
 		{"valid statement", "Valid statement here", 0},
-		{"empty statement", "", 2}, // Empty and no spaces
-		{"whitespace only", "   ", 2}, // Empty after trim and no spaces
-		{"single word", "Word", 1},
-		{"single word with spaces", "  Word  ", 1},
+		{"empty statement", "", 1}, // Just reports empty (early return)
+		{"whitespace only", "   ", 1}, // Just reports empty after trim (early return)
+		{"single word", "Word", 1}, // Single word issue only
+		{"single word with spaces", "  Word  ", 1}, // Single word issue only
 	}
 
 	for _, tt := range tests {
