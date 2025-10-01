@@ -14,7 +14,8 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npx:*)"
     ],
     "deny": [],
     "ask": []
