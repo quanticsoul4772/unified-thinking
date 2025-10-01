@@ -363,21 +363,22 @@ func TestTreeMode_MultipleThoughtsInBranch(t *testing.T) {
 }
 
 func TestTreeMode_CrossRefTypes(t *testing.T) {
-	store := storage.NewMemoryStorage()
-	mode := NewTreeMode(store)
-	ctx := context.Background()
-
-	// Create a target branch
-	targetBranch := &types.Branch{
-		ID:    "target-branch",
-		State: types.StateActive,
-	}
-	store.StoreBranch(targetBranch)
-
 	crossRefTypes := []string{"complementary", "contradictory", "builds_upon", "alternative"}
 
 	for _, refType := range crossRefTypes {
 		t.Run(refType, func(t *testing.T) {
+			// Create fresh storage and mode for each subtest
+			store := storage.NewMemoryStorage()
+			mode := NewTreeMode(store)
+			ctx := context.Background()
+
+			// Create a target branch
+			targetBranch := &types.Branch{
+				ID:    "target-branch",
+				State: types.StateActive,
+			}
+			store.StoreBranch(targetBranch)
+
 			input := ThoughtInput{
 				Content:    "Thought with cross ref",
 				Type:       "connection",

@@ -277,3 +277,83 @@ func (s *MemoryStorage) GetMetrics() *Metrics {
 		AverageConfidence: avgConfidence,
 	}
 }
+
+// AppendThoughtToBranch directly appends a thought to a branch without requiring
+// a full Get-Modify-Store cycle. This eliminates two deep copy operations.
+func (s *MemoryStorage) AppendThoughtToBranch(branchID string, thought *types.Thought) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.Thoughts = append(branch.Thoughts, thought)
+	branch.UpdatedAt = time.Now()
+	return nil
+}
+
+// AppendInsightToBranch directly appends an insight to a branch without requiring
+// a full Get-Modify-Store cycle. This eliminates two deep copy operations.
+func (s *MemoryStorage) AppendInsightToBranch(branchID string, insight *types.Insight) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.Insights = append(branch.Insights, insight)
+	branch.UpdatedAt = time.Now()
+	return nil
+}
+
+// AppendCrossRefToBranch directly appends a cross-reference to a branch without requiring
+// a full Get-Modify-Store cycle. This eliminates two deep copy operations.
+func (s *MemoryStorage) AppendCrossRefToBranch(branchID string, crossRef *types.CrossRef) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.CrossRefs = append(branch.CrossRefs, crossRef)
+	branch.UpdatedAt = time.Now()
+	return nil
+}
+
+// UpdateBranchPriority directly updates the priority of a branch without requiring
+// a full Get-Modify-Store cycle. This eliminates two deep copy operations.
+func (s *MemoryStorage) UpdateBranchPriority(branchID string, priority float64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.Priority = priority
+	branch.UpdatedAt = time.Now()
+	return nil
+}
+
+// UpdateBranchConfidence directly updates the confidence of a branch without requiring
+// a full Get-Modify-Store cycle. This eliminates two deep copy operations.
+func (s *MemoryStorage) UpdateBranchConfidence(branchID string, confidence float64) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.Confidence = confidence
+	branch.UpdatedAt = time.Now()
+	return nil
+}
