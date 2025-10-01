@@ -144,3 +144,204 @@ type Relationship struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	CreatedAt   time.Time              `json:"created_at"`
 }
+
+// EvidenceQuality represents the quality assessment of evidence
+type EvidenceQuality string
+
+const (
+	EvidenceStrong    EvidenceQuality = "strong"
+	EvidenceModerate  EvidenceQuality = "moderate"
+	EvidenceWeak      EvidenceQuality = "weak"
+	EvidenceAnecdotal EvidenceQuality = "anecdotal"
+)
+
+// Evidence represents a piece of evidence supporting or refuting a claim
+type Evidence struct {
+	ID             string                 `json:"id"`
+	Content        string                 `json:"content"`
+	Source         string                 `json:"source,omitempty"`
+	Quality        EvidenceQuality        `json:"quality"`
+	Reliability    float64                `json:"reliability"`     // 0.0-1.0
+	Relevance      float64                `json:"relevance"`       // 0.0-1.0
+	OverallScore   float64                `json:"overall_score"`   // Computed from quality, reliability, relevance
+	SupportsClaim  bool                   `json:"supports_claim"`  // true = supports, false = refutes
+	ClaimID        string                 `json:"claim_id"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+}
+
+// ProbabilisticBelief represents a belief with associated probability
+type ProbabilisticBelief struct {
+	ID           string                 `json:"id"`
+	Statement    string                 `json:"statement"`
+	Probability  float64                `json:"probability"`      // 0.0-1.0 (Bayesian probability)
+	PriorProb    float64                `json:"prior_prob"`       // Prior probability before evidence
+	Evidence     []string               `json:"evidence"`         // Evidence IDs supporting this belief
+	UpdatedAt    time.Time              `json:"updated_at"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// Contradiction represents detected contradictions between thoughts
+type Contradiction struct {
+	ID              string    `json:"id"`
+	ThoughtID1      string    `json:"thought_id_1"`
+	ThoughtID2      string    `json:"thought_id_2"`
+	ContradictoryAt string    `json:"contradictory_at"` // Description of the contradiction
+	Severity        string    `json:"severity"`         // "high", "medium", "low"
+	DetectedAt      time.Time `json:"detected_at"`
+}
+
+// Perspective represents a stakeholder viewpoint
+type Perspective struct {
+	ID             string                 `json:"id"`
+	Stakeholder    string                 `json:"stakeholder"`     // Name or role of stakeholder
+	Viewpoint      string                 `json:"viewpoint"`       // Their perspective on the issue
+	Concerns       []string               `json:"concerns"`        // Key concerns
+	Priorities     []string               `json:"priorities"`      // What they prioritize
+	Constraints    []string               `json:"constraints"`     // Constraints they face
+	Confidence     float64                `json:"confidence"`      // Confidence in this perspective modeling
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+}
+
+// TemporalAnalysis represents short-term vs long-term reasoning
+type TemporalAnalysis struct {
+	ID              string                 `json:"id"`
+	ShortTermView   string                 `json:"short_term_view"`    // Immediate implications
+	LongTermView    string                 `json:"long_term_view"`     // Long-term implications
+	TimeHorizon     string                 `json:"time_horizon"`       // "days", "months", "years"
+	Tradeoffs       []string               `json:"tradeoffs"`          // Short vs long term tradeoffs
+	Recommendation  string                 `json:"recommendation"`     // Which to prioritize and why
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt       time.Time              `json:"created_at"`
+}
+
+// Decision represents a structured decision with options and criteria
+type Decision struct {
+	ID             string                 `json:"id"`
+	Question       string                 `json:"question"`
+	Options        []*DecisionOption      `json:"options"`
+	Criteria       []*DecisionCriterion   `json:"criteria"`
+	Recommendation string                 `json:"recommendation"`
+	Confidence     float64                `json:"confidence"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+}
+
+// DecisionOption represents an option in a decision
+type DecisionOption struct {
+	ID          string               `json:"id"`
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Scores      map[string]float64   `json:"scores"`      // criterion_id -> score
+	Pros        []string             `json:"pros"`
+	Cons        []string             `json:"cons"`
+	TotalScore  float64              `json:"total_score"` // Weighted sum
+}
+
+// DecisionCriterion represents a criterion for evaluating options
+type DecisionCriterion struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Weight      float64 `json:"weight"`      // Importance weight (0.0-1.0)
+	Maximize    bool    `json:"maximize"`    // true = higher is better, false = lower is better
+}
+
+// ProblemDecomposition represents breaking down a complex problem
+type ProblemDecomposition struct {
+	ID             string                 `json:"id"`
+	Problem        string                 `json:"problem"`
+	Subproblems    []*Subproblem          `json:"subproblems"`
+	Dependencies   []*Dependency          `json:"dependencies"`
+	SolutionPath   []string               `json:"solution_path"`   // Order to solve subproblems
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+}
+
+// Subproblem represents a component of a larger problem
+type Subproblem struct {
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	Complexity  string   `json:"complexity"`  // "low", "medium", "high"
+	Priority    string   `json:"priority"`    // "low", "medium", "high"
+	Status      string   `json:"status"`      // "pending", "in_progress", "solved"
+	Solution    string   `json:"solution,omitempty"`
+}
+
+// Dependency represents a dependency between subproblems
+type Dependency struct {
+	FromSubproblem string `json:"from_subproblem"` // Must be solved first
+	ToSubproblem   string `json:"to_subproblem"`   // Depends on from_subproblem
+	Type           string `json:"type"`            // "required", "optional", "informative"
+}
+
+// Synthesis represents cross-mode insight integration
+type Synthesis struct {
+	ID              string                 `json:"id"`
+	Sources         []string               `json:"sources"`         // Thought/Insight IDs from different modes
+	IntegratedView  string                 `json:"integrated_view"` // Synthesized conclusion
+	Synergies       []string               `json:"synergies"`       // How sources complement each other
+	Conflicts       []string               `json:"conflicts"`       // Conflicting aspects
+	Confidence      float64                `json:"confidence"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt       time.Time              `json:"created_at"`
+}
+
+// SensitivityAnalysis represents robustness testing of conclusions
+type SensitivityAnalysis struct {
+	ID             string                 `json:"id"`
+	TargetClaim    string                 `json:"target_claim"`
+	Variations     []*Variation           `json:"variations"`
+	Robustness     float64                `json:"robustness"`      // 0.0-1.0, how stable is the conclusion
+	KeyAssumptions []string               `json:"key_assumptions"` // Critical assumptions
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
+}
+
+// Variation represents a change in assumptions for sensitivity testing
+type Variation struct {
+	ID              string  `json:"id"`
+	AssumptionChange string  `json:"assumption_change"`
+	Impact          string  `json:"impact"`           // Description of how conclusion changes
+	ImpactMagnitude float64 `json:"impact_magnitude"` // 0.0-1.0
+}
+
+// Analogy represents cross-domain reasoning
+type Analogy struct {
+	ID              string                 `json:"id"`
+	SourceDomain    string                 `json:"source_domain"`
+	TargetDomain    string                 `json:"target_domain"`
+	Mapping         map[string]string      `json:"mapping"`         // source concept -> target concept
+	Insight         string                 `json:"insight"`
+	Strength        float64                `json:"strength"`        // 0.0-1.0
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt       time.Time              `json:"created_at"`
+}
+
+// SelfEvaluation represents metacognitive self-assessment
+type SelfEvaluation struct {
+	ID                  string                 `json:"id"`
+	ThoughtID           string                 `json:"thought_id,omitempty"`
+	BranchID            string                 `json:"branch_id,omitempty"`
+	QualityScore        float64                `json:"quality_score"`        // 0.0-1.0
+	CompletenessScore   float64                `json:"completeness_score"`   // 0.0-1.0
+	CoherenceScore      float64                `json:"coherence_score"`      // 0.0-1.0
+	Strengths           []string               `json:"strengths"`
+	Weaknesses          []string               `json:"weaknesses"`
+	ImprovementSuggestions []string            `json:"improvement_suggestions"`
+	Metadata            map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt           time.Time              `json:"created_at"`
+}
+
+// CognitiveBias represents detected cognitive biases
+type CognitiveBias struct {
+	ID          string                 `json:"id"`
+	BiasType    string                 `json:"bias_type"`    // e.g., "confirmation", "anchoring", "availability"
+	Description string                 `json:"description"`
+	DetectedIn  string                 `json:"detected_in"`  // Thought ID or Branch ID
+	Severity    string                 `json:"severity"`     // "low", "medium", "high"
+	Mitigation  string                 `json:"mitigation"`   // How to address this bias
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+}
