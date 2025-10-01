@@ -15,6 +15,7 @@ package storage
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -36,6 +37,10 @@ type MemoryStorage struct {
 	contentIndex map[string][]string              // word -> []thoughtIDs
 	modeIndex    map[types.ThinkingMode][]string // mode -> []thoughtIDs
 
+	// Ordered slices for deterministic pagination (sorted by timestamp, newest first)
+	thoughtsOrdered []*types.Thought
+	branchesOrdered []*types.Branch
+
 	activeBranchID string
 
 	// Counters for ID generation
@@ -49,13 +54,15 @@ type MemoryStorage struct {
 // NewMemoryStorage creates a new in-memory storage
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
-		thoughts:      make(map[string]*types.Thought),
-		branches:      make(map[string]*types.Branch),
-		insights:      make(map[string]*types.Insight),
-		validations:   make(map[string]*types.Validation),
-		relationships: make(map[string]*types.Relationship),
-		contentIndex:  make(map[string][]string),
-		modeIndex:     make(map[types.ThinkingMode][]string),
+		thoughts:        make(map[string]*types.Thought),
+		branches:        make(map[string]*types.Branch),
+		insights:        make(map[string]*types.Insight),
+		validations:     make(map[string]*types.Validation),
+		relationships:   make(map[string]*types.Relationship),
+		contentIndex:    make(map[string][]string),
+		modeIndex:       make(map[types.ThinkingMode][]string),
+		thoughtsOrdered: make([]*types.Thought, 0),
+		branchesOrdered: make([]*types.Branch, 0),
 	}
 }
 
@@ -79,6 +86,13 @@ func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 
 	// Build mode index
 	s.modeIndex[thought.Mode] = append(s.modeIndex[thought.Mode], thought.ID)
+
+	// Add to ordered slice and maintain sort order (newest first)
+	s.thoughtsOrdered = append(s.thoughtsOrdered, thought)
+	// Sort by timestamp descending (newest first)
+	sort.Slice(s.thoughtsOrdered, func(i, j int) bool {
+		return s.thoughtsOrdered[i].Timestamp.After(s.thoughtsOrdered[j].Timestamp)
+	})
 
 	return nil
 }
@@ -128,11 +142,30 @@ func (s *MemoryStorage) StoreBranch(branch *types.Branch) error {
 		branch.ID = fmt.Sprintf("branch-%d-%d", time.Now().Unix(), s.branchCounter)
 	}
 
+	// Check if this is an update or new branch
+	_, exists := s.branches[branch.ID]
 	s.branches[branch.ID] = branch
 
 	// Set as active if it's the first branch
 	if s.activeBranchID == "" {
 		s.activeBranchID = branch.ID
+	}
+
+	// Add to ordered slice if new, or update existing entry
+	if !exists {
+		// New branch - add and sort
+		s.branchesOrdered = append(s.branchesOrdered, branch)
+		sort.Slice(s.branchesOrdered, func(i, j int) bool {
+			return s.branchesOrdered[i].CreatedAt.After(s.branchesOrdered[j].CreatedAt)
+		})
+	} else {
+		// Existing branch - find and update pointer (maintains order)
+		for i, b := range s.branchesOrdered {
+			if b.ID == branch.ID {
+				s.branchesOrdered[i] = branch
+				break
+			}
+		}
 	}
 
 	return nil
@@ -241,39 +274,56 @@ func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 // SearchThoughts searches thoughts by content or type (returns copies to prevent data races)
 // limit and offset support pagination - limit of 0 returns all results
 // Uses inverted index for O(1) word lookup when query is provided
+// Returns results in deterministic order (newest first by timestamp)
 func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, limit, offset int) []*types.Thought {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var candidateIDs []string
+	// Build candidate set using index for fast filtering
+	var candidateSet map[string]bool
 
-	// Fast path: Use index for query lookup if available
 	if query != "" {
-		candidateIDs = s.searchByIndex(query, mode)
+		// Use index to find matching thoughts
+		matchedIDs := s.searchByIndex(query, mode)
+		candidateSet = make(map[string]bool, len(matchedIDs))
+		for _, id := range matchedIDs {
+			candidateSet[id] = true
+		}
 	} else if mode != "" {
 		// Mode-only filter: use mode index
-		candidateIDs = s.modeIndex[mode]
-	} else {
-		// No filters: return all thoughts (fallback to map iteration)
-		candidateIDs = make([]string, 0, len(s.thoughts))
-		for id := range s.thoughts {
-			candidateIDs = append(candidateIDs, id)
+		modeIDs := s.modeIndex[mode]
+		candidateSet = make(map[string]bool, len(modeIDs))
+		for _, id := range modeIDs {
+			candidateSet[id] = true
 		}
+	} else {
+		// No filters: all thoughts are candidates
+		candidateSet = nil // nil means "all thoughts match"
 	}
 
-	// Apply pagination and return results
+	// Iterate through ordered slice for deterministic pagination
 	results := make([]*types.Thought, 0, limit)
-	for i := offset; i < len(candidateIDs); i++ {
+	skipped := 0
+
+	for _, thought := range s.thoughtsOrdered {
+		// Check if thought matches filter criteria
+		if candidateSet != nil && !candidateSet[thought.ID] {
+			continue // Not in candidate set, skip
+		}
+
+		// Skip offset
+		if skipped < offset {
+			skipped++
+			continue
+		}
+
+		// Add to results
+		results = append(results, copyThought(thought))
+
+		// Check limit
 		if limit > 0 && len(results) >= limit {
 			break
 		}
-
-		thought, exists := s.thoughts[candidateIDs[i]]
-		if !exists {
-			continue // Thought may have been deleted (not implemented yet)
-		}
-
-		results = append(results, copyThought(thought))
 	}
 
 	return results
