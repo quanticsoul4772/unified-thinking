@@ -176,6 +176,78 @@ After saving the config, restart Claude Desktop.
     - Shows active branch for context
     - Enables fast branch switching without remembering IDs
 
+12. **probabilistic-reasoning** - Bayesian inference and belief updates
+    ```json
+    {
+      "operation": "create|update|get|combine",
+      "statement": "It will rain tomorrow",
+      "prior_prob": 0.3,
+      "belief_id": "belief-xxx",
+      "likelihood": 0.8,
+      "evidence_prob": 0.4
+    }
+    ```
+
+13. **assess-evidence** - Evidence quality assessment
+    ```json
+    {
+      "content": "Evidence content",
+      "source": "Source reference",
+      "claim_id": "claim-xxx",
+      "supports_claim": true
+    }
+    ```
+
+14. **detect-contradictions** - Find contradictions among thoughts
+    ```json
+    {
+      "thought_ids": ["thought-1", "thought-2"],
+      "branch_id": "branch-xxx",
+      "mode": "linear|tree|divergent"
+    }
+    ```
+
+15. **make-decision** - Multi-criteria decision analysis
+    ```json
+    {
+      "question": "Which option should we choose?",
+      "options": [{"name": "Option A", "scores": {"cost": 0.8}}],
+      "criteria": [{"name": "Cost", "weight": 0.6, "maximize": false}]
+    }
+    ```
+
+16. **decompose-problem** - Break down complex problems
+    ```json
+    {
+      "problem": "Complex problem description"
+    }
+    ```
+
+17. **sensitivity-analysis** - Test robustness of conclusions
+    ```json
+    {
+      "target_claim": "Main conclusion",
+      "assumptions": ["assumption1", "assumption2"],
+      "base_confidence": 0.8
+    }
+    ```
+
+18. **self-evaluate** - Metacognitive self-assessment
+    ```json
+    {
+      "thought_id": "thought-xxx",
+      "branch_id": "branch-xxx"
+    }
+    ```
+
+19. **detect-biases** - Identify cognitive biases
+    ```json
+    {
+      "thought_id": "thought-xxx",
+      "branch_id": "branch-xxx"
+    }
+    ```
+
 ### Example Prompts
 
 **Auto Mode (Recommended)**:
