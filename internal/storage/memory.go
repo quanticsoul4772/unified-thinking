@@ -120,15 +120,16 @@ func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
 }
 
 // GetThought retrieves a thought by ID (returns a copy to prevent data races)
+// Optimization: Releases lock before deep copy to reduce lock hold time
 func (s *MemoryStorage) GetThought(id string) (*types.Thought, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	thought, exists := s.thoughts[id]
+	s.mu.RUnlock() // Release lock before deep copy
+
 	if !exists {
 		return nil, fmt.Errorf("thought not found: %s", id)
 	}
-	// Return a deep copy to prevent external modification
+	// Deep copy without holding lock (safe: thoughts are immutable after store)
 	return copyThought(thought), nil
 }
 
@@ -172,47 +173,57 @@ func (s *MemoryStorage) StoreBranch(branch *types.Branch) error {
 }
 
 // GetBranch retrieves a branch by ID (returns a copy to prevent data races)
+// Optimization: Releases lock before deep copy to reduce lock hold time
 func (s *MemoryStorage) GetBranch(id string) (*types.Branch, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	branch, exists := s.branches[id]
+	s.mu.RUnlock() // Release lock before deep copy
+
 	if !exists {
 		return nil, fmt.Errorf("branch not found: %s", id)
 	}
-	// Return a deep copy to prevent external modification
+	// Deep copy without holding lock (safe: branches only updated via StoreBranch)
 	return copyBranch(branch), nil
 }
 
 // ListBranches returns all branches (returns copies to prevent data races)
+// Optimization: Uses ordered slice and releases lock before deep copy
 func (s *MemoryStorage) ListBranches() []*types.Branch {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	// Capture pointers to branches while holding lock
+	branchPointers := make([]*types.Branch, len(s.branchesOrdered))
+	copy(branchPointers, s.branchesOrdered)
+	s.mu.RUnlock() // Release lock before deep copy
 
-	branches := make([]*types.Branch, 0, len(s.branches))
-	for _, branch := range s.branches {
-		// Return deep copies to prevent external modification
-		branches = append(branches, copyBranch(branch))
+	// Deep copy all branches without holding lock
+	branches := make([]*types.Branch, len(branchPointers))
+	for i, branch := range branchPointers {
+		branches[i] = copyBranch(branch)
 	}
 	return branches
 }
 
 // GetActiveBranch returns the currently active branch (returns a copy to prevent data races)
+// Optimization: Releases lock before deep copy to reduce lock hold time
 func (s *MemoryStorage) GetActiveBranch() (*types.Branch, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	activeBranchID := s.activeBranchID
+	var branch *types.Branch
+	if activeBranchID != "" {
+		branch = s.branches[activeBranchID]
+	}
+	s.mu.RUnlock() // Release lock before deep copy
 
-	if s.activeBranchID == "" {
+	if activeBranchID == "" {
 		return nil, fmt.Errorf("no active branch")
 	}
 
-	branch, exists := s.branches[s.activeBranchID]
-	if !exists {
+	if branch == nil {
 		// Active branch was deleted - this is a data inconsistency
-		return nil, fmt.Errorf("active branch %s no longer exists", s.activeBranchID)
+		return nil, fmt.Errorf("active branch %s no longer exists", activeBranchID)
 	}
 
-	// Return a deep copy to prevent external modification
+	// Deep copy without holding lock (safe: branches only updated via StoreBranch)
 	return copyBranch(branch), nil
 }
 
