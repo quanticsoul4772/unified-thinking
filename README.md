@@ -130,6 +130,13 @@ After saving the config, restart Claude Desktop.
    }
    ```
 
+10. **get-metrics** - Get system performance and usage metrics
+
+11. **recent-branches** - Get recently accessed branches for quick context switching
+    - Returns the last 10 accessed branches with timestamps
+    - Shows active branch for context
+    - Enables fast branch switching without remembering IDs
+
 ### Example Prompts
 
 **Auto Mode (Recommended)**:

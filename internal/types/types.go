@@ -89,6 +89,7 @@ type Branch struct {
 	CrossRefs      []*CrossRef    `json:"cross_refs"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	LastAccessedAt time.Time      `json:"last_accessed_at"`
 }
 
 // Insight represents a derived insight

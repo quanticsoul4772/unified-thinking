@@ -45,6 +45,11 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 		}
 	}
 
+	// Update branch access tracking
+	if err := m.storage.UpdateBranchAccess(branchID); err != nil {
+		return nil, err
+	}
+
 	// Create thought
 	thought := &types.Thought{
 		Content:    input.Content,

@@ -41,7 +41,8 @@ type MemoryStorage struct {
 	thoughtsOrdered []*types.Thought
 	branchesOrdered []*types.Branch
 
-	activeBranchID string
+	activeBranchID   string
+	recentBranchIDs  []string // Stack of recently accessed branch IDs (max 10)
 
 	// Counters for ID generation
 	thoughtCounter      int
@@ -63,6 +64,7 @@ func NewMemoryStorage() *MemoryStorage {
 		modeIndex:       make(map[types.ThinkingMode][]string),
 		thoughtsOrdered: make([]*types.Thought, 0),
 		branchesOrdered: make([]*types.Branch, 0),
+		recentBranchIDs: make([]string, 0, 10),
 	}
 }
 
@@ -143,6 +145,11 @@ func (s *MemoryStorage) StoreBranch(branch *types.Branch) error {
 		branch.ID = fmt.Sprintf("branch-%d-%d", time.Now().Unix(), s.branchCounter)
 	}
 
+	// Initialize LastAccessedAt if not set
+	if branch.LastAccessedAt.IsZero() {
+		branch.LastAccessedAt = time.Now()
+	}
+
 	// Check if this is an update or new branch
 	_, exists := s.branches[branch.ID]
 	s.branches[branch.ID] = branch
@@ -150,6 +157,7 @@ func (s *MemoryStorage) StoreBranch(branch *types.Branch) error {
 	// Set as active if it's the first branch
 	if s.activeBranchID == "" {
 		s.activeBranchID = branch.ID
+		s.trackRecentBranch(branch.ID)
 	}
 
 	// Add to ordered slice if new, or update existing entry
@@ -227,16 +235,19 @@ func (s *MemoryStorage) GetActiveBranch() (*types.Branch, error) {
 	return copyBranch(branch), nil
 }
 
-// SetActiveBranch sets the active branch
+// SetActiveBranch sets the active branch and updates access tracking
 func (s *MemoryStorage) SetActiveBranch(branchID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.branches[branchID]; !exists {
+	branch, exists := s.branches[branchID]
+	if !exists {
 		return fmt.Errorf("branch not found: %s", branchID)
 	}
 
 	s.activeBranchID = branchID
+	branch.LastAccessedAt = time.Now()
+	s.trackRecentBranch(branchID)
 	return nil
 }
 
@@ -504,4 +515,55 @@ func (s *MemoryStorage) UpdateBranchConfidence(branchID string, confidence float
 	branch.Confidence = confidence
 	branch.UpdatedAt = time.Now()
 	return nil
+}
+
+// UpdateBranchAccess updates the LastAccessedAt timestamp for a branch and tracks it in recent list
+func (s *MemoryStorage) UpdateBranchAccess(branchID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	branch, exists := s.branches[branchID]
+	if !exists {
+		return fmt.Errorf("branch not found: %s", branchID)
+	}
+
+	branch.LastAccessedAt = time.Now()
+	s.trackRecentBranch(branchID)
+	return nil
+}
+
+// GetRecentBranches returns the most recently accessed branches (up to 10)
+func (s *MemoryStorage) GetRecentBranches() ([]*types.Branch, error) {
+	s.mu.RLock()
+	recentIDs := make([]string, len(s.recentBranchIDs))
+	copy(recentIDs, s.recentBranchIDs)
+	s.mu.RUnlock()
+
+	branches := make([]*types.Branch, 0, len(recentIDs))
+	for _, id := range recentIDs {
+		branch, err := s.GetBranch(id)
+		if err == nil {
+			branches = append(branches, branch)
+		}
+	}
+	return branches, nil
+}
+
+// trackRecentBranch adds a branch to the recent list (must be called with lock held)
+func (s *MemoryStorage) trackRecentBranch(branchID string) {
+	// Remove if already in list
+	for i, id := range s.recentBranchIDs {
+		if id == branchID {
+			s.recentBranchIDs = append(s.recentBranchIDs[:i], s.recentBranchIDs[i+1:]...)
+			break
+		}
+	}
+
+	// Add to front
+	s.recentBranchIDs = append([]string{branchID}, s.recentBranchIDs...)
+
+	// Keep max 10
+	if len(s.recentBranchIDs) > 10 {
+		s.recentBranchIDs = s.recentBranchIDs[:10]
+	}
 }

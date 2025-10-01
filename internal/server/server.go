@@ -1,6 +1,6 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 10 tools for
+// This package provides the MCP server implementation that exposes 11 tools for
 // thought processing, validation, and search. All responses are JSON formatted
 // for consumption by Claude AI via stdio transport.
 //
@@ -15,6 +15,7 @@
 //   - check-syntax: Validate logical statement syntax
 //   - search: Search through all thoughts
 //   - get-metrics: Get system performance and usage metrics
+//   - recent-branches: Get recently accessed branches for quick context switching
 package server
 
 import (
@@ -106,6 +107,11 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		Name:        "get-metrics",
 		Description: "Get system performance and usage metrics",
 	}, s.handleGetMetrics)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "recent-branches",
+		Description: "Get recently accessed branches for quick context switching",
+	}, s.handleRecentBranches)
 }
 
 type ThinkRequest struct {
@@ -504,6 +510,12 @@ type MetricsResponse struct {
 	AverageConfidence float64        `json:"average_confidence"`
 }
 
+type RecentBranchesResponse struct {
+	ActiveBranchID string          `json:"active_branch_id"`
+	RecentBranches []*types.Branch `json:"recent_branches"`
+	Count          int             `json:"count"`
+}
+
 func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolRequest, input EmptyRequest) (*mcp.CallToolResult, *MetricsResponse, error) {
 	metrics := s.storage.GetMetrics()
 
@@ -514,6 +526,30 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 		TotalValidations:  metrics.TotalValidations,
 		ThoughtsByMode:    metrics.ThoughtsByMode,
 		AverageConfidence: metrics.AverageConfidence,
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+func (s *UnifiedServer) handleRecentBranches(ctx context.Context, req *mcp.CallToolRequest, input EmptyRequest) (*mcp.CallToolResult, *RecentBranchesResponse, error) {
+	branches, err := s.storage.GetRecentBranches()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get recent branches: %w", err)
+	}
+
+	// Get active branch for context
+	activeBranch, _ := s.storage.GetActiveBranch()
+	activeBranchID := ""
+	if activeBranch != nil {
+		activeBranchID = activeBranch.ID
+	}
+
+	response := &RecentBranchesResponse{
+		ActiveBranchID: activeBranchID,
+		RecentBranches: branches,
+		Count:          len(branches),
 	}
 
 	return &mcp.CallToolResult{
