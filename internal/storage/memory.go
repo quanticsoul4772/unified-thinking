@@ -242,7 +242,15 @@ func (s *MemoryStorage) SetActiveBranch(branchID string) error {
 
 	branch, exists := s.branches[branchID]
 	if !exists {
-		return fmt.Errorf("branch not found: %s", branchID)
+		// Build list of available branches for helpful error message
+		availableBranches := make([]string, 0, len(s.branches))
+		for id := range s.branches {
+			availableBranches = append(availableBranches, id)
+		}
+		if len(availableBranches) == 0 {
+			return fmt.Errorf("branch not found: %s (no branches exist yet, create thoughts in tree mode first)", branchID)
+		}
+		return fmt.Errorf("branch not found: %s (available branches: %v)", branchID, availableBranches)
 	}
 
 	s.activeBranchID = branchID
