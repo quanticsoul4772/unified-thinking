@@ -11,7 +11,7 @@ A comprehensive MCP server that consolidates multiple cognitive thinking pattern
 - **Divergent Mode**: Creative/unconventional ideation with "rebellion" capability
 - **Auto Mode**: Automatic mode selection based on input content
 
-### Capabilities
+### Core Capabilities
 
 - Multi-mode thinking (linear, tree, divergent, auto)
 - Branch management and exploration
@@ -22,6 +22,45 @@ A comprehensive MCP server that consolidates multiple cognitive thinking pattern
 - Syntax validation for logical statements
 - Search across all thoughts
 - Full history tracking
+
+### Cognitive Reasoning Capabilities
+
+The server includes advanced cognitive reasoning features that transform it from a thought recorder into a comprehensive reasoning assistant:
+
+#### Probabilistic Reasoning
+- Bayesian inference with prior and posterior belief updates
+- Evidence-based probability updates
+- Belief combination operations (AND/OR)
+- Confidence estimation from evidence aggregation
+
+#### Evidence Assessment
+- Automatic quality classification (Strong/Moderate/Weak/Anecdotal)
+- Reliability scoring based on source credibility and content
+- Relevance calculation and weighted scoring
+- Multi-source evidence aggregation
+
+#### Analysis Tools
+- Contradiction detection across thoughts (negations, absolutes, modals)
+- Sensitivity analysis for testing assumption robustness
+- Multi-perspective stakeholder analysis
+- Temporal reasoning (short-term vs long-term implications)
+
+#### Decision Support
+- Multi-criteria decision analysis (MCDA) with weighted scoring
+- Problem decomposition into manageable subproblems
+- Dependency mapping and solution path determination
+- Cross-mode insight synthesis and branch merging
+
+#### Metacognition
+- Self-evaluation of thought quality, completeness, and coherence
+- Cognitive bias detection (confirmation, anchoring, availability, sunk cost, overconfidence, recency, groupthink)
+- Bias severity classification and mitigation strategies
+- Strength/weakness identification with improvement suggestions
+
+#### Advanced Reasoning
+- Analogical reasoning with cross-domain mapping
+- Enhanced creative ideation techniques
+- Pattern-based reasoning and inference
 
 ## Installation
 
@@ -166,17 +205,30 @@ After saving the config, restart Claude Desktop.
 unified-thinking/
 ├── cmd/server/          # Main entry point
 ├── internal/
-│   ├── types/          # Core data structures
+│   ├── types/          # Core data structures (extended with cognitive types)
 │   ├── storage/        # In-memory storage
 │   ├── modes/          # Thinking mode implementations
 │   │   ├── linear.go
 │   │   ├── tree.go
 │   │   ├── divergent.go
 │   │   └── auto.go
+│   ├── reasoning/      # Probabilistic reasoning and decision making
+│   ├── analysis/       # Evidence assessment, contradiction detection, sensitivity analysis
+│   ├── metacognition/  # Self-evaluation and bias detection
 │   ├── validation/     # Logic validation
 │   └── server/         # MCP server implementation
 └── TECHNICAL_PLAN.md   # Detailed technical documentation
 ```
+
+### Cognitive Architecture
+
+The server implements a modular cognitive architecture with three specialized packages:
+
+- **reasoning**: Implements Bayesian probabilistic inference, multi-criteria decision analysis, and problem decomposition
+- **analysis**: Provides evidence quality assessment, contradiction detection, and sensitivity analysis for robustness testing
+- **metacognition**: Enables self-evaluation and cognitive bias detection with mitigation strategies
+
+All components are thread-safe, composable, and maintain backward compatibility with existing functionality.
 
 ## Development
 
@@ -236,6 +288,33 @@ See [TECHNICAL_PLAN.md](TECHNICAL_PLAN.md) for detailed architecture and impleme
 
 MIT License
 
+## Technical Details
+
+### Data Structures
+
+The system includes 15 specialized cognitive data structures:
+
+- **Evidence**: Quality assessment with reliability and relevance scoring
+- **ProbabilisticBelief**: Bayesian beliefs with prior/posterior tracking
+- **Contradiction**: Cross-thought contradiction detection results
+- **Perspective**: Stakeholder viewpoint analysis
+- **TemporalAnalysis**: Short-term vs long-term reasoning
+- **Decision**: Structured decision framework with criteria and options
+- **ProblemDecomposition**: Complex problem breakdown into subproblems
+- **Synthesis**: Cross-mode insight integration
+- **SensitivityAnalysis**: Robustness testing of conclusions
+- **Analogy**: Cross-domain analogical reasoning
+- **SelfEvaluation**: Metacognitive self-assessment
+- **CognitiveBias**: Detected biases with mitigation strategies
+
+### Implementation Features
+
+- Modular package design for composability
+- Thread-safe operations with proper locking patterns
+- Comprehensive test coverage for all cognitive capabilities
+- Backward compatible with existing functionality
+- In-memory storage optimized for performance
+
 ## Version
 
-v1.0.0 - Initial unified release
+v1.0.0 - Initial unified release with cognitive reasoning capabilities
