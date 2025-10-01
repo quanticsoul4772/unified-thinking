@@ -32,6 +32,10 @@ type MemoryStorage struct {
 	validations   map[string]*types.Validation
 	relationships map[string]*types.Relationship
 
+	// Search indices for O(1) word lookup (optimization for SearchThoughts)
+	contentIndex map[string][]string              // word -> []thoughtIDs
+	modeIndex    map[types.ThinkingMode][]string // mode -> []thoughtIDs
+
 	activeBranchID string
 
 	// Counters for ID generation
@@ -50,12 +54,15 @@ func NewMemoryStorage() *MemoryStorage {
 		insights:      make(map[string]*types.Insight),
 		validations:   make(map[string]*types.Validation),
 		relationships: make(map[string]*types.Relationship),
+		contentIndex:  make(map[string][]string),
+		modeIndex:     make(map[types.ThinkingMode][]string),
 	}
 }
 
 // StoreThought stores a thought in memory. If the thought ID is empty, a unique ID
 // is generated automatically. The thought is stored by reference internally but all
 // retrieval operations return deep copies for thread safety.
+// Additionally builds search indices for efficient content and mode lookups.
 func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -66,7 +73,36 @@ func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 	}
 
 	s.thoughts[thought.ID] = thought
+
+	// Build content index - tokenize content and index each word
+	s.indexThoughtContent(thought)
+
+	// Build mode index
+	s.modeIndex[thought.Mode] = append(s.modeIndex[thought.Mode], thought.ID)
+
 	return nil
+}
+
+// indexThoughtContent tokenizes thought content and adds to inverted index
+func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
+	// Tokenize content by splitting on whitespace and punctuation
+	content := strings.ToLower(thought.Content)
+	words := strings.FieldsFunc(content, func(r rune) bool {
+		return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'))
+	})
+
+	// Add thought ID to index for each unique word
+	seen := make(map[string]bool)
+	for _, word := range words {
+		if word == "" || len(word) < 2 { // Skip empty and single-char tokens
+			continue
+		}
+		if seen[word] {
+			continue // Skip duplicates within same thought
+		}
+		seen[word] = true
+		s.contentIndex[word] = append(s.contentIndex[word], thought.ID)
+	}
 }
 
 // GetThought retrieves a thought by ID (returns a copy to prevent data races)
@@ -204,38 +240,89 @@ func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 
 // SearchThoughts searches thoughts by content or type (returns copies to prevent data races)
 // limit and offset support pagination - limit of 0 returns all results
+// Uses inverted index for O(1) word lookup when query is provided
 func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, limit, offset int) []*types.Thought {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	results := make([]*types.Thought, 0)
-	queryLower := strings.ToLower(query)
-	matched := 0
-	skipped := 0
+	var candidateIDs []string
 
-	for _, thought := range s.thoughts {
-		// Search by content and mode
-		matchesQuery := query == "" || strings.Contains(strings.ToLower(thought.Content), queryLower)
-		matchesMode := mode == "" || thought.Mode == mode
-
-		if matchesQuery && matchesMode {
-			// Skip results for offset
-			if skipped < offset {
-				skipped++
-				continue
-			}
-
-			// Return deep copies to prevent external modification
-			results = append(results, copyThought(thought))
-			matched++
-
-			// Early termination when limit reached
-			if limit > 0 && matched >= limit {
-				break
-			}
+	// Fast path: Use index for query lookup if available
+	if query != "" {
+		candidateIDs = s.searchByIndex(query, mode)
+	} else if mode != "" {
+		// Mode-only filter: use mode index
+		candidateIDs = s.modeIndex[mode]
+	} else {
+		// No filters: return all thoughts (fallback to map iteration)
+		candidateIDs = make([]string, 0, len(s.thoughts))
+		for id := range s.thoughts {
+			candidateIDs = append(candidateIDs, id)
 		}
 	}
+
+	// Apply pagination and return results
+	results := make([]*types.Thought, 0, limit)
+	for i := offset; i < len(candidateIDs); i++ {
+		if limit > 0 && len(results) >= limit {
+			break
+		}
+
+		thought, exists := s.thoughts[candidateIDs[i]]
+		if !exists {
+			continue // Thought may have been deleted (not implemented yet)
+		}
+
+		results = append(results, copyThought(thought))
+	}
+
 	return results
+}
+
+// searchByIndex uses inverted index to find thoughts matching query words
+func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []string {
+	queryLower := strings.ToLower(query)
+	queryWords := strings.FieldsFunc(queryLower, func(r rune) bool {
+		return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'))
+	})
+
+	if len(queryWords) == 0 {
+		// Empty query after tokenization, return all
+		if mode != "" {
+			return s.modeIndex[mode]
+		}
+		ids := make([]string, 0, len(s.thoughts))
+		for id := range s.thoughts {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+
+	// Find thoughts containing any query word (OR semantics)
+	matchedThoughts := make(map[string]bool)
+	for _, word := range queryWords {
+		if len(word) < 2 {
+			continue
+		}
+		for _, thoughtID := range s.contentIndex[word] {
+			// Filter by mode if specified
+			if mode != "" {
+				thought, exists := s.thoughts[thoughtID]
+				if !exists || thought.Mode != mode {
+					continue
+				}
+			}
+			matchedThoughts[thoughtID] = true
+		}
+	}
+
+	// Convert set to slice
+	result := make([]string, 0, len(matchedThoughts))
+	for id := range matchedThoughts {
+		result = append(result, id)
+	}
+
+	return result
 }
 
 // Metrics represents system performance and usage statistics
