@@ -43,15 +43,6 @@ Or using make:
 make build
 ```
 
-## How It Works
-
-**Important**: This is an MCP (Model Context Protocol) server. It is:
-- **NOT** a standalone application you run manually
-- Automatically started by Claude Desktop when the app launches
-- Runs as a child process communicating via stdio
-- Managed entirely by Claude Desktop's lifecycle
-- Terminated when Claude Desktop closes
-
 ## Configuration
 
 Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on Windows):
@@ -221,10 +212,6 @@ make build
 make clean
 ```
 
-### Testing (Development Only)
-
-**Warning**: Do not run the server manually in production. It's managed by Claude Desktop.
-
 ```bash
 # For protocol debugging only (waits for MCP messages on stdin)
 go run ./cmd/server/main.go
@@ -242,25 +229,6 @@ make test
 # Run with verbose output
 go test -v ./...
 ```
-
-## Migration from Old Servers
-
-This server replaces:
-- sequential-thinking
-- branch-thinking
-- unreasonable-thinking-server
-- mcp-logic (partial)
-- state-coordinator (partial)
-
-### Tool Mapping
-
-| Old Server | Old Tool | New Tool | Notes |
-|------------|----------|----------|-------|
-| sequential-thinking | solve-problem | think (mode: linear) | Use mode="linear" |
-| branch-thinking | branch-thinking | think (mode: tree) | Use mode="tree" |
-| unreasonable-thinking | generate_unreasonable_thought | think (mode: divergent, force_rebellion: true) | Use mode="divergent" |
-| mcp-logic | prove | prove | Same tool |
-| mcp-logic | check-well-formed | check-syntax | Similar functionality |
 
 ## Troubleshooting
 
