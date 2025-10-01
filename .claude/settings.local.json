@@ -16,7 +16,10 @@
       "Bash(git stash:*)",
       "Bash(test:*)",
       "Bash(npx:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git rm:*)",
+      "Bash(binunified-thinking.exe:*)",
+      "Bash(dir bin)"
     ],
     "deny": [],
     "ask": []

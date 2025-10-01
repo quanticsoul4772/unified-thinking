@@ -1,8 +1,8 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 11 tools for
-// thought processing, validation, and search. All responses are JSON formatted
-// for consumption by Claude AI via stdio transport.
+// This package provides the MCP server implementation that exposes 19 tools for
+// thought processing, validation, search, and advanced cognitive reasoning. All
+// responses are JSON formatted for consumption by Claude AI via stdio transport.
 //
 // Available tools:
 //   - think: Main thinking tool with multiple cognitive modes
@@ -16,6 +16,14 @@
 //   - search: Search through all thoughts
 //   - get-metrics: Get system performance and usage metrics
 //   - recent-branches: Get recently accessed branches for quick context switching
+//   - probabilistic-reasoning: Bayesian inference and probabilistic belief updates
+//   - assess-evidence: Evidence quality and strength assessment
+//   - detect-contradictions: Find contradictions among thoughts
+//   - make-decision: Structured multi-criteria decision making
+//   - decompose-problem: Break complex problems into subproblems
+//   - sensitivity-analysis: Test robustness of conclusions to assumption changes
+//   - self-evaluate: Metacognitive self-assessment of reasoning quality
+//   - detect-biases: Identify cognitive biases in reasoning
 package server
 
 import (
@@ -23,7 +31,10 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"unified-thinking/internal/analysis"
+	"unified-thinking/internal/metacognition"
 	"unified-thinking/internal/modes"
+	"unified-thinking/internal/reasoning"
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
@@ -31,12 +42,20 @@ import (
 
 // UnifiedServer coordinates all thinking modes and provides MCP tool handlers.
 type UnifiedServer struct {
-	storage   *storage.MemoryStorage
-	linear    *modes.LinearMode
-	tree      *modes.TreeMode
-	divergent *modes.DivergentMode
-	auto      *modes.AutoMode
-	validator *validation.LogicValidator
+	storage                *storage.MemoryStorage
+	linear                 *modes.LinearMode
+	tree                   *modes.TreeMode
+	divergent              *modes.DivergentMode
+	auto                   *modes.AutoMode
+	validator              *validation.LogicValidator
+	probabilisticReasoner  *reasoning.ProbabilisticReasoner
+	evidenceAnalyzer       *analysis.EvidenceAnalyzer
+	contradictionDetector  *analysis.ContradictionDetector
+	decisionMaker          *reasoning.DecisionMaker
+	problemDecomposer      *reasoning.ProblemDecomposer
+	sensitivityAnalyzer    *analysis.SensitivityAnalyzer
+	selfEvaluator          *metacognition.SelfEvaluator
+	biasDetector           *metacognition.BiasDetector
 }
 
 func NewUnifiedServer(
@@ -48,12 +67,20 @@ func NewUnifiedServer(
 	validator *validation.LogicValidator,
 ) *UnifiedServer {
 	return &UnifiedServer{
-		storage:   store,
-		linear:    linear,
-		tree:      tree,
-		divergent: divergent,
-		auto:      auto,
-		validator: validator,
+		storage:                store,
+		linear:                 linear,
+		tree:                   tree,
+		divergent:              divergent,
+		auto:                   auto,
+		validator:              validator,
+		probabilisticReasoner:  reasoning.NewProbabilisticReasoner(),
+		evidenceAnalyzer:       analysis.NewEvidenceAnalyzer(),
+		contradictionDetector:  analysis.NewContradictionDetector(),
+		decisionMaker:          reasoning.NewDecisionMaker(),
+		problemDecomposer:      reasoning.NewProblemDecomposer(),
+		sensitivityAnalyzer:    analysis.NewSensitivityAnalyzer(),
+		selfEvaluator:          metacognition.NewSelfEvaluator(),
+		biasDetector:           metacognition.NewBiasDetector(),
 	}
 }
 
@@ -112,6 +139,46 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		Name:        "recent-branches",
 		Description: "Get recently accessed branches for quick context switching",
 	}, s.handleRecentBranches)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "probabilistic-reasoning",
+		Description: "Perform Bayesian inference and update probabilistic beliefs based on evidence",
+	}, s.handleProbabilisticReasoning)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "assess-evidence",
+		Description: "Assess the quality, reliability, and relevance of evidence for claims",
+	}, s.handleAssessEvidence)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "detect-contradictions",
+		Description: "Detect contradictions among a set of thoughts or statements",
+	}, s.handleDetectContradictions)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "make-decision",
+		Description: "Create structured multi-criteria decision framework and recommendations",
+	}, s.handleMakeDecision)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "decompose-problem",
+		Description: "Break down complex problems into manageable subproblems with dependencies",
+	}, s.handleDecomposeProblem)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "sensitivity-analysis",
+		Description: "Test robustness of conclusions to changes in underlying assumptions",
+	}, s.handleSensitivityAnalysis)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "self-evaluate",
+		Description: "Perform metacognitive self-assessment of reasoning quality and completeness",
+	}, s.handleSelfEvaluate)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "detect-biases",
+		Description: "Identify cognitive biases in reasoning and suggest mitigation strategies",
+	}, s.handleDetectBiases)
 }
 
 type ThinkRequest struct {
@@ -550,6 +617,384 @@ func (s *UnifiedServer) handleRecentBranches(ctx context.Context, req *mcp.CallT
 		ActiveBranchID: activeBranchID,
 		RecentBranches: branches,
 		Count:          len(branches),
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Probabilistic Reasoning Tool
+// ============================================================================
+
+type ProbabilisticReasoningRequest struct {
+	Operation    string   `json:"operation"`              // "create", "update", or "combine"
+	Statement    string   `json:"statement,omitempty"`    // For create operation
+	PriorProb    float64  `json:"prior_prob,omitempty"`   // For create operation
+	BeliefID     string   `json:"belief_id,omitempty"`    // For update/get operations
+	EvidenceID   string   `json:"evidence_id,omitempty"`  // For update operation
+	Likelihood   float64  `json:"likelihood,omitempty"`   // For update operation
+	EvidenceProb float64  `json:"evidence_prob,omitempty"` // For update operation
+	BeliefIDs    []string `json:"belief_ids,omitempty"`   // For combine operation
+	CombineOp    string   `json:"combine_op,omitempty"`   // "and" or "or" for combine
+}
+
+type ProbabilisticReasoningResponse struct {
+	Belief           *types.ProbabilisticBelief `json:"belief,omitempty"`
+	CombinedProb     float64                    `json:"combined_prob,omitempty"`
+	Operation        string                     `json:"operation"`
+	Status           string                     `json:"status"`
+}
+
+func (s *UnifiedServer) handleProbabilisticReasoning(ctx context.Context, req *mcp.CallToolRequest, input ProbabilisticReasoningRequest) (*mcp.CallToolResult, *ProbabilisticReasoningResponse, error) {
+	if err := ValidateProbabilisticReasoningRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	response := &ProbabilisticReasoningResponse{
+		Operation: input.Operation,
+		Status:    "success",
+	}
+
+	switch input.Operation {
+	case "create":
+		belief, err := s.probabilisticReasoner.CreateBelief(input.Statement, input.PriorProb)
+		if err != nil {
+			return nil, nil, err
+		}
+		response.Belief = belief
+
+	case "update":
+		belief, err := s.probabilisticReasoner.UpdateBelief(input.BeliefID, input.EvidenceID, input.Likelihood, input.EvidenceProb)
+		if err != nil {
+			return nil, nil, err
+		}
+		response.Belief = belief
+
+	case "get":
+		belief, err := s.probabilisticReasoner.GetBelief(input.BeliefID)
+		if err != nil {
+			return nil, nil, err
+		}
+		response.Belief = belief
+
+	case "combine":
+		combinedProb, err := s.probabilisticReasoner.CombineBeliefs(input.BeliefIDs, input.CombineOp)
+		if err != nil {
+			return nil, nil, err
+		}
+		response.CombinedProb = combinedProb
+
+	default:
+		return nil, nil, fmt.Errorf("unknown operation: %s", input.Operation)
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Assess Evidence Tool
+// ============================================================================
+
+type AssessEvidenceRequest struct {
+	Content       string `json:"content"`
+	Source        string `json:"source"`
+	ClaimID       string `json:"claim_id,omitempty"`
+	SupportsClaim bool   `json:"supports_claim"`
+}
+
+type AssessEvidenceResponse struct {
+	Evidence *types.Evidence `json:"evidence"`
+	Status   string          `json:"status"`
+}
+
+func (s *UnifiedServer) handleAssessEvidence(ctx context.Context, req *mcp.CallToolRequest, input AssessEvidenceRequest) (*mcp.CallToolResult, *AssessEvidenceResponse, error) {
+	if err := ValidateAssessEvidenceRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	evidence, err := s.evidenceAnalyzer.AssessEvidence(input.Content, input.Source, input.ClaimID, input.SupportsClaim)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &AssessEvidenceResponse{
+		Evidence: evidence,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Detect Contradictions Tool
+// ============================================================================
+
+type DetectContradictionsRequest struct {
+	ThoughtIDs []string `json:"thought_ids,omitempty"` // Specific thought IDs to check
+	BranchID   string   `json:"branch_id,omitempty"`   // Or check all thoughts in a branch
+	Mode       string   `json:"mode,omitempty"`        // Or check all thoughts in a mode
+}
+
+type DetectContradictionsResponse struct {
+	Contradictions []*types.Contradiction `json:"contradictions"`
+	Count          int                    `json:"count"`
+	Status         string                 `json:"status"`
+}
+
+func (s *UnifiedServer) handleDetectContradictions(ctx context.Context, req *mcp.CallToolRequest, input DetectContradictionsRequest) (*mcp.CallToolResult, *DetectContradictionsResponse, error) {
+	if err := ValidateDetectContradictionsRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	var thoughts []*types.Thought
+
+	// Gather thoughts based on input
+	if len(input.ThoughtIDs) > 0 {
+		for _, id := range input.ThoughtIDs {
+			thought, err := s.storage.GetThought(id)
+			if err != nil {
+				return nil, nil, fmt.Errorf("thought not found: %s", id)
+			}
+			thoughts = append(thoughts, thought)
+		}
+	} else if input.BranchID != "" {
+		branch, err := s.storage.GetBranch(input.BranchID)
+		if err != nil {
+			return nil, nil, err
+		}
+		thoughts = branch.Thoughts
+	} else if input.Mode != "" {
+		mode := types.ThinkingMode(input.Mode)
+		thoughts = s.storage.SearchThoughts("", mode, 1000, 0)
+	} else {
+		// Check all thoughts
+		thoughts = s.storage.SearchThoughts("", "", 1000, 0)
+	}
+
+	contradictions, err := s.contradictionDetector.DetectContradictions(thoughts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &DetectContradictionsResponse{
+		Contradictions: contradictions,
+		Count:          len(contradictions),
+		Status:         "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Make Decision Tool
+// ============================================================================
+
+type MakeDecisionRequest struct {
+	Question string                       `json:"question"`
+	Options  []*types.DecisionOption      `json:"options"`
+	Criteria []*types.DecisionCriterion   `json:"criteria"`
+}
+
+type MakeDecisionResponse struct {
+	Decision *types.Decision `json:"decision"`
+	Status   string          `json:"status"`
+}
+
+func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToolRequest, input MakeDecisionRequest) (*mcp.CallToolResult, *MakeDecisionResponse, error) {
+	if err := ValidateMakeDecisionRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	decision, err := s.decisionMaker.CreateDecision(input.Question, input.Options, input.Criteria)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &MakeDecisionResponse{
+		Decision: decision,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Decompose Problem Tool
+// ============================================================================
+
+type DecomposeProblemRequest struct {
+	Problem string `json:"problem"`
+}
+
+type DecomposeProblemResponse struct {
+	Decomposition *types.ProblemDecomposition `json:"decomposition"`
+	Status        string                      `json:"status"`
+}
+
+func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.CallToolRequest, input DecomposeProblemRequest) (*mcp.CallToolResult, *DecomposeProblemResponse, error) {
+	if err := ValidateDecomposeProblemRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	decomposition, err := s.problemDecomposer.DecomposeProblem(input.Problem)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &DecomposeProblemResponse{
+		Decomposition: decomposition,
+		Status:        "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Sensitivity Analysis Tool
+// ============================================================================
+
+type SensitivityAnalysisRequest struct {
+	TargetClaim    string   `json:"target_claim"`
+	Assumptions    []string `json:"assumptions"`
+	BaseConfidence float64  `json:"base_confidence"`
+}
+
+type SensitivityAnalysisResponse struct {
+	Analysis *types.SensitivityAnalysis `json:"analysis"`
+	Status   string                     `json:"status"`
+}
+
+func (s *UnifiedServer) handleSensitivityAnalysis(ctx context.Context, req *mcp.CallToolRequest, input SensitivityAnalysisRequest) (*mcp.CallToolResult, *SensitivityAnalysisResponse, error) {
+	if err := ValidateSensitivityAnalysisRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	analysis, err := s.sensitivityAnalyzer.AnalyzeSensitivity(input.TargetClaim, input.Assumptions, input.BaseConfidence)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &SensitivityAnalysisResponse{
+		Analysis: analysis,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Self-Evaluate Tool
+// ============================================================================
+
+type SelfEvaluateRequest struct {
+	ThoughtID string `json:"thought_id,omitempty"`
+	BranchID  string `json:"branch_id,omitempty"`
+}
+
+type SelfEvaluateResponse struct {
+	Evaluation *types.SelfEvaluation `json:"evaluation"`
+	Status     string                `json:"status"`
+}
+
+func (s *UnifiedServer) handleSelfEvaluate(ctx context.Context, req *mcp.CallToolRequest, input SelfEvaluateRequest) (*mcp.CallToolResult, *SelfEvaluateResponse, error) {
+	if err := ValidateSelfEvaluateRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	var evaluation *types.SelfEvaluation
+	var err error
+
+	if input.ThoughtID != "" {
+		thought, getErr := s.storage.GetThought(input.ThoughtID)
+		if getErr != nil {
+			return nil, nil, getErr
+		}
+		evaluation, err = s.selfEvaluator.EvaluateThought(thought)
+	} else if input.BranchID != "" {
+		branch, getErr := s.storage.GetBranch(input.BranchID)
+		if getErr != nil {
+			return nil, nil, getErr
+		}
+		evaluation, err = s.selfEvaluator.EvaluateBranch(branch)
+	} else {
+		return nil, nil, fmt.Errorf("either thought_id or branch_id must be provided")
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &SelfEvaluateResponse{
+		Evaluation: evaluation,
+		Status:     "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ============================================================================
+// Detect Biases Tool
+// ============================================================================
+
+type DetectBiasesRequest struct {
+	ThoughtID string `json:"thought_id,omitempty"`
+	BranchID  string `json:"branch_id,omitempty"`
+}
+
+type DetectBiasesResponse struct {
+	Biases []*types.CognitiveBias `json:"biases"`
+	Count  int                    `json:"count"`
+	Status string                 `json:"status"`
+}
+
+func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToolRequest, input DetectBiasesRequest) (*mcp.CallToolResult, *DetectBiasesResponse, error) {
+	if err := ValidateDetectBiasesRequest(&input); err != nil {
+		return nil, nil, err
+	}
+
+	var biases []*types.CognitiveBias
+	var err error
+
+	if input.ThoughtID != "" {
+		thought, getErr := s.storage.GetThought(input.ThoughtID)
+		if getErr != nil {
+			return nil, nil, getErr
+		}
+		biases, err = s.biasDetector.DetectBiases(thought)
+	} else if input.BranchID != "" {
+		branch, getErr := s.storage.GetBranch(input.BranchID)
+		if getErr != nil {
+			return nil, nil, getErr
+		}
+		biases, err = s.biasDetector.DetectBiasesInBranch(branch)
+	} else {
+		return nil, nil, fmt.Errorf("either thought_id or branch_id must be provided")
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &DetectBiasesResponse{
+		Biases: biases,
+		Count:  len(biases),
+		Status: "success",
 	}
 
 	return &mcp.CallToolResult{
