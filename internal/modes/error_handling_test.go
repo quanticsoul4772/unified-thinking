@@ -133,7 +133,7 @@ func TestAutoMode_FallbackToLinear(t *testing.T) {
 		t.Fatalf("ProcessThought() error = %v", err)
 	}
 
-	if result.Mode != types.ModeLinear {
+	if string(result.Mode) != string(types.ModeLinear) {
 		t.Errorf("Auto mode should default to linear, got %v", result.Mode)
 	}
 }
@@ -306,9 +306,8 @@ func TestDivergentMode_ChallengeAssumptions(t *testing.T) {
 	iterations := 50
 
 	input := ThoughtInput{
-		Content:        "Test thought",
-		ChallengeAssumptions: false, // Not forced
-		Confidence:     0.8,
+		Content:    "Test thought",
+		Confidence: 0.8,
 	}
 
 	for i := 0; i < iterations; i++ {
@@ -399,7 +398,7 @@ func TestAutoMode_ModeSelection(t *testing.T) {
 				t.Fatalf("ProcessThought() error = %v", err)
 			}
 
-			if result.Mode != tt.expectedMode {
+			if string(result.Mode) != string(tt.expectedMode) {
 				t.Errorf("Mode = %v, want %v", result.Mode, tt.expectedMode)
 			}
 		})

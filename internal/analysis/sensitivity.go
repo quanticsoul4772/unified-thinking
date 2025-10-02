@@ -60,7 +60,7 @@ func (sa *SensitivityAnalyzer) AnalyzeSensitivity(targetClaim string, assumption
 		Variations:     variations,
 		Robustness:     robustness,
 		KeyAssumptions: keyAssumptions,
-		Metadata:       make(map[string]interface{}),
+		Metadata:       map[string]interface{}{},
 		CreatedAt:      time.Now(),
 	}
 

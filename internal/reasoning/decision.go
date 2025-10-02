@@ -80,7 +80,7 @@ func (dm *DecisionMaker) CreateDecision(question string, options []*types.Decisi
 		Criteria:       criteria,
 		Recommendation: fmt.Sprintf("Recommended option: %s (score: %.2f)", bestOption.Name, bestOption.TotalScore),
 		Confidence:     confidence,
-		Metadata:       make(map[string]interface{}),
+		Metadata:       map[string]interface{}{},
 		CreatedAt:      time.Now(),
 	}
 
@@ -192,7 +192,7 @@ func (pd *ProblemDecomposer) DecomposeProblem(problem string) (*types.ProblemDec
 		Subproblems:  subproblems,
 		Dependencies: dependencies,
 		SolutionPath: solutionPath,
-		Metadata:     make(map[string]interface{}),
+		Metadata:     map[string]interface{}{},
 		CreatedAt:    time.Now(),
 	}
 

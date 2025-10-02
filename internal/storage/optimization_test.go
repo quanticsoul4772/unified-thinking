@@ -94,7 +94,7 @@ func TestAppendThoughtToBranch_Concurrency(t *testing.T) {
 	wg.Wait()
 
 	// Verify all thoughts were appended
-	branch, _ := store.GetBranch("concurrent-branch")
+	branch, _ = store.GetBranch("concurrent-branch")
 	if len(branch.Thoughts) != numGoroutines {
 		t.Errorf("Branch should have %d thoughts, got %d", numGoroutines, len(branch.Thoughts))
 	}
@@ -378,7 +378,7 @@ func TestUpdateBranchAccess_LRU(t *testing.T) {
 	}
 
 	// Get recent branches (default limit is 10)
-	recent, _ := store.GetRecentBranches(100) // Request more than limit
+	recent, _ := store.GetRecentBranches()
 
 	// Should respect MaxRecentBranches limit
 	if len(recent) > MaxRecentBranches {
@@ -408,11 +408,13 @@ func TestAppendToBranchNotFound(t *testing.T) {
 	}
 
 	insight := &types.Insight{
-		ID:          "orphan-insight",
-		Description: "Test",
-		Type:        "pattern",
-		Confidence:  0.9,
-		GeneratedAt: time.Now(),
+		ID:                 "orphan-insight",
+		Content:            "Test",
+		Type:               types.InsightObservation,
+		ApplicabilityScore: 0.9,
+		CreatedAt:          time.Now(),
+		Context:            []string{},
+		SupportingEvidence: make(map[string]interface{}),
 	}
 
 	err = store.AppendInsightToBranch("non-existent-branch", insight)

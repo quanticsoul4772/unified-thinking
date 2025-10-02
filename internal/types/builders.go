@@ -16,7 +16,7 @@ func NewThought() *ThoughtBuilder {
 		thought: &Thought{
 			Timestamp:  time.Now(),
 			Confidence: 0.8, // Sensible default
-			Metadata:   make(map[string]interface{}),
+			Metadata:   map[string]interface{}{},
 		},
 	}
 }
@@ -113,9 +113,9 @@ func NewBranch() *BranchBuilder {
 		branch: &Branch{
 			State:      StateActive,
 			Priority:   1.0,
-			Thoughts:   make([]*Thought, 0),
-			Insights:   make([]*Insight, 0),
-			CrossRefs:  make([]*CrossRef, 0),
+			Thoughts:   []*Thought{},
+			Insights:   []*Insight{},
+			CrossRefs:  []*CrossRef{},
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		},
@@ -168,10 +168,10 @@ func NewInsight() *InsightBuilder {
 		insight: &Insight{
 			Type:               InsightObservation,
 			ApplicabilityScore: 0.8,
-			Context:            make([]string, 0),
-			ParentInsights:     make([]string, 0),
-			SupportingEvidence: make(map[string]interface{}),
-			Validations:        make([]*Validation, 0),
+			Context:            []string{},
+			ParentInsights:     []string{},
+			SupportingEvidence: map[string]interface{}{},
+			Validations:        []*Validation{},
 			CreatedAt:          time.Now(),
 		},
 	}
@@ -226,7 +226,7 @@ type CrossRefBuilder struct {
 func NewCrossRef() *CrossRefBuilder {
 	return &CrossRefBuilder{
 		crossRef: &CrossRef{
-			TouchPoints: make([]TouchPoint, 0),
+			TouchPoints: []TouchPoint{},
 		},
 	}
 }

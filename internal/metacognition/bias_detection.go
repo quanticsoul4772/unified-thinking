@@ -357,7 +357,7 @@ func (bd *BiasDetector) createBias(biasType, description, detectedIn, severity, 
 		DetectedIn:  detectedIn,
 		Severity:    severity,
 		Mitigation:  mitigation,
-		Metadata:    make(map[string]interface{}),
+		Metadata:    map[string]interface{}{},
 		CreatedAt:   time.Now(),
 	}
 }

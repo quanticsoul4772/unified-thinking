@@ -7,6 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
 
@@ -161,7 +162,6 @@ func (h *ThinkingHandler) HandleHistory(ctx context.Context, req *mcp.CallToolRe
 	}
 
 	var thoughts interface{}
-	var err error
 
 	if input.BranchID != "" {
 		// Branch-specific history
@@ -172,7 +172,7 @@ func (h *ThinkingHandler) HandleHistory(ctx context.Context, req *mcp.CallToolRe
 		thoughts = branch.Thoughts
 	} else if input.Mode != "" {
 		// Mode-filtered history
-		thoughts = h.storage.SearchThoughts("", input.Mode, limit, input.Offset)
+		thoughts = h.storage.SearchThoughts("", types.ThinkingMode(input.Mode), limit, input.Offset)
 	} else {
 		// General history
 		thoughts = h.storage.SearchThoughts("", "", limit, input.Offset)

@@ -51,7 +51,7 @@ func (ea *EvidenceAnalyzer) AssessEvidence(content, source string, claimID strin
 		OverallScore:  overallScore,
 		SupportsClaim: supportsClaim,
 		ClaimID:       claimID,
-		Metadata:      make(map[string]interface{}),
+		Metadata:      map[string]interface{}{},
 		CreatedAt:     time.Now(),
 	}
 

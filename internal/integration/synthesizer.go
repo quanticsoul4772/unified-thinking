@@ -69,7 +69,7 @@ func (s *Synthesizer) SynthesizeInsights(inputs []*Input, context string) (*type
 		Synergies:      synergies,
 		Conflicts:      conflicts,
 		Confidence:     confidence,
-		Metadata:       make(map[string]interface{}),
+		Metadata:       map[string]interface{}{},
 		CreatedAt:      time.Now(),
 	}
 

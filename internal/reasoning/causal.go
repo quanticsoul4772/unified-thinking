@@ -49,7 +49,7 @@ func (cr *CausalReasoner) BuildCausalGraph(description string, observations []st
 		Description: description,
 		Variables:   variables,
 		Links:       links,
-		Metadata:    make(map[string]interface{}),
+		Metadata:    map[string]interface{}{},
 		CreatedAt:   time.Now(),
 	}
 
@@ -96,7 +96,7 @@ func (cr *CausalReasoner) extractVariables(observations []string) []*types.Causa
 							Name:       causeVar,
 							Type:       cr.inferVariableType(causeVar, obs),
 							Observable: true,
-							Metadata:   make(map[string]interface{}),
+							Metadata:   map[string]interface{}{},
 						}
 					}
 
@@ -109,7 +109,7 @@ func (cr *CausalReasoner) extractVariables(observations []string) []*types.Causa
 							Name:       effectVar,
 							Type:       cr.inferVariableType(effectVar, obs),
 							Observable: true,
-							Metadata:   make(map[string]interface{}),
+							Metadata:   map[string]interface{}{},
 						}
 					}
 				}
@@ -257,7 +257,7 @@ func (cr *CausalReasoner) extractCausalLink(obs string, nameToVar map[string]*ty
 						Type:       pattern.linkType,
 						Confidence: confidence,
 						Evidence:   []string{obs},
-						Metadata:   make(map[string]interface{}),
+						Metadata:   map[string]interface{}{},
 					}
 				}
 			}
@@ -360,7 +360,7 @@ func (cr *CausalReasoner) SimulateIntervention(graphID, variableID, intervention
 		InterventionType: interventionType,
 		PredictedEffects: effects,
 		Confidence:       overallConfidence,
-		Metadata:         make(map[string]interface{}),
+		Metadata:         map[string]interface{}{},
 		CreatedAt:        time.Now(),
 	}
 
@@ -521,7 +521,7 @@ func (cr *CausalReasoner) GenerateCounterfactual(graphID, scenario string, chang
 		Changes:      changes,
 		Outcomes:     outcomes,
 		Plausibility: plausibility,
-		Metadata:     make(map[string]interface{}),
+		Metadata:     map[string]interface{}{},
 		CreatedAt:    time.Now(),
 	}
 

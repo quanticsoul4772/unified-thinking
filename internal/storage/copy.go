@@ -127,9 +127,10 @@ func copyValidation(v *types.Validation) *types.Validation {
 
 // deepCopyMap creates a true deep copy of a map[string]interface{} using JSON marshaling
 // This ensures no shared references between the original and copy
+// Returns empty map (not nil) to ensure JSON serialization as {} instead of null
 func deepCopyMap(m map[string]interface{}) map[string]interface{} {
 	if m == nil {
-		return nil
+		return map[string]interface{}{}
 	}
 
 	// Use JSON marshal/unmarshal for true deep copy

@@ -78,6 +78,7 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 			Content:            fmt.Sprintf("Key points identified: %v", input.KeyPoints),
 			Context:            []string{input.Type},
 			ApplicabilityScore: input.Confidence,
+			SupportingEvidence: map[string]interface{}{},
 			CreatedAt:          time.Now(),
 		}
 		if err := m.storage.StoreInsight(insight); err != nil {

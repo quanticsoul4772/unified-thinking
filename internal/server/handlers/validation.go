@@ -102,7 +102,17 @@ func (h *ValidationHandler) HandleProve(ctx context.Context, req *mcp.CallToolRe
 
 // HandleCheckSyntax checks logical syntax
 func (h *ValidationHandler) HandleCheckSyntax(ctx context.Context, req *mcp.CallToolRequest, input CheckSyntaxRequest) (*mcp.CallToolResult, *CheckSyntaxResponse, error) {
-	isValid, errors := h.validator.CheckSyntax(input.Statements)
+	checks := h.validator.CheckWellFormed(input.Statements)
+
+	// Extract validity and errors from checks
+	isValid := true
+	errors := []string{}
+	for _, check := range checks {
+		if !check.IsWellFormed {
+			isValid = false
+			errors = append(errors, check.Issues...)
+		}
+	}
 
 	response := &CheckSyntaxResponse{
 		IsValid: isValid,

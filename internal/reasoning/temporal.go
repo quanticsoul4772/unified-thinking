@@ -54,7 +54,7 @@ func (tr *TemporalReasoner) AnalyzeTemporal(situation string, timeHorizon string
 		TimeHorizon:    normalizedHorizon,
 		Tradeoffs:      tradeoffs,
 		Recommendation: recommendation,
-		Metadata:       make(map[string]interface{}),
+		Metadata:       map[string]interface{}{},
 		CreatedAt:      time.Now(),
 	}
 

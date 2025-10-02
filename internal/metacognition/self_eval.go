@@ -46,7 +46,7 @@ func (se *SelfEvaluator) EvaluateThought(thought *types.Thought) (*types.SelfEva
 		Strengths:              strengths,
 		Weaknesses:             weaknesses,
 		ImprovementSuggestions: improvements,
-		Metadata:               make(map[string]interface{}),
+		Metadata:               map[string]interface{}{},
 		CreatedAt:              time.Now(),
 	}
 
@@ -78,7 +78,7 @@ func (se *SelfEvaluator) EvaluateBranch(branch *types.Branch) (*types.SelfEvalua
 		Strengths:              strengths,
 		Weaknesses:             weaknesses,
 		ImprovementSuggestions: improvements,
-		Metadata:               make(map[string]interface{}),
+		Metadata:               map[string]interface{}{},
 		CreatedAt:              time.Now(),
 	}
 

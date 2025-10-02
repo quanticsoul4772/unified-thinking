@@ -42,7 +42,7 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 		PriorProb:   priorProb,
 		Evidence:    []string{},
 		UpdatedAt:   time.Now(),
-		Metadata:    make(map[string]interface{}),
+		Metadata:    map[string]interface{}{},
 	}
 
 	pr.beliefs[belief.ID] = belief
