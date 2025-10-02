@@ -11,11 +11,11 @@ import (
 
 // TreeMode implements multi-branch exploration
 type TreeMode struct {
-	storage *storage.MemoryStorage
+	storage storage.Storage
 }
 
 // NewTreeMode creates a new tree mode handler
-func NewTreeMode(storage *storage.MemoryStorage) *TreeMode {
+func NewTreeMode(storage storage.Storage) *TreeMode {
 	return &TreeMode{storage: storage}
 }
 

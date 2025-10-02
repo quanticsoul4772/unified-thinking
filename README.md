@@ -22,6 +22,7 @@ A MCP server that consolidates multiple cognitive thinking patterns into a singl
 - Syntax validation for logical statements
 - Search across all thoughts
 - Full history tracking
+- **Optional persistence** with SQLite (in-memory by default)
 
 ### Cognitive Reasoning Capabilities
 
@@ -84,6 +85,8 @@ make build
 
 ## Configuration
 
+### Basic Configuration (In-Memory)
+
 Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on Windows):
 
 ```json
@@ -99,6 +102,34 @@ Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`
   }
 }
 ```
+
+### Configuration with SQLite Persistence
+
+For persistent storage across sessions:
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
+      "transport": "stdio",
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
+        "STORAGE_FALLBACK": "memory"
+      }
+    }
+  }
+}
+```
+
+**Environment Variables**:
+- `STORAGE_TYPE`: `memory` (default) or `sqlite`
+- `SQLITE_PATH`: Path to SQLite database file (created automatically)
+- `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
+- `STORAGE_FALLBACK`: Storage to use if primary fails (e.g., `memory`)
+- `DEBUG`: Enable debug logging (`true` or `false`)
 
 After saving the config, restart Claude Desktop.
 
@@ -278,7 +309,11 @@ unified-thinking/
 ├── cmd/server/          # Main entry point
 ├── internal/
 │   ├── types/          # Core data structures (extended with cognitive types)
-│   ├── storage/        # In-memory storage
+│   ├── storage/        # Pluggable storage (in-memory default, SQLite optional)
+│   │   ├── memory.go   # In-memory implementation
+│   │   ├── sqlite.go   # SQLite with write-through cache
+│   │   ├── factory.go  # Storage factory pattern
+│   │   └── config.go   # Configuration management
 │   ├── modes/          # Thinking mode implementations
 │   │   ├── linear.go
 │   │   ├── tree.go
@@ -348,9 +383,16 @@ go test -v ./...
 
 ### Performance issues
 
-- The server uses in-memory storage
-- For long sessions, consider periodic restarts
-- Monitor memory usage if processing many thoughts
+**In-Memory Mode** (default):
+- Data is lost on server restart
+- For long sessions with many thoughts, consider periodic restarts
+- Monitor memory usage if processing thousands of thoughts
+
+**SQLite Mode** (persistent):
+- Data persists across restarts
+- Uses write-through caching for fast access
+- Automatic memory management via cache eviction
+- Enable with `STORAGE_TYPE=sqlite` environment variable
 
 ## Contributing
 
@@ -385,8 +427,29 @@ The system includes 15 specialized cognitive data structures:
 - Thread-safe operations with proper locking patterns
 - Comprehensive test coverage for all cognitive capabilities
 - Backward compatible with existing functionality
-- In-memory storage optimized for performance
+- Pluggable storage architecture:
+  - In-memory storage optimized for speed (default)
+  - SQLite storage with write-through caching for persistence
+  - Graceful fallback handling
+  - Factory pattern for extensibility
+
+## Implementation Status
+
+✅ **Production Ready** - All features fully implemented and tested
+
+- **Core Thinking Modes**: Linear, Tree, Divergent, Auto - 100% Complete
+- **Cognitive Reasoning**: Probabilistic, Evidence, Decision Analysis - 100% Complete
+- **Persistence Layer**: SQLite with write-through caching - 100% Complete
+- **Metacognition**: Self-evaluation, Bias detection - 100% Complete
+- **Data Safety**: Full persistence across server restarts
+
+**Latest Update** (October 2025):
+- ✅ Complete SQLite persistence implementation
+- ✅ All thoughts, branches, insights, validations, and relationships persist
+- ✅ Write-through caching for optimal performance
+- ✅ FTS5 full-text search
+- ✅ Production-ready with comprehensive error handling
 
 ## Version
 
-Version 1.0.0 - Initial unified release with cognitive reasoning capabilities
+Version 1.1.0 - Complete persistence layer with SQLite support

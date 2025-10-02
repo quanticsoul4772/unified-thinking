@@ -12,11 +12,11 @@ import (
 
 // DivergentMode implements creative/rebellious ideation
 type DivergentMode struct {
-	storage *storage.MemoryStorage
+	storage storage.Storage
 }
 
 // NewDivergentMode creates a new divergent mode handler
-func NewDivergentMode(storage *storage.MemoryStorage) *DivergentMode {
+func NewDivergentMode(storage storage.Storage) *DivergentMode {
 	return &DivergentMode{storage: storage}
 }
 

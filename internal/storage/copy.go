@@ -125,6 +125,20 @@ func copyValidation(v *types.Validation) *types.Validation {
 	return &validationCopy
 }
 
+// copyRelationship creates a deep copy of a relationship
+func copyRelationship(r *types.Relationship) *types.Relationship {
+	if r == nil {
+		return nil
+	}
+
+	relationshipCopy := *r
+
+	// Deep copy map - use JSON marshal/unmarshal for true deep copy
+	relationshipCopy.Metadata = deepCopyMap(r.Metadata)
+
+	return &relationshipCopy
+}
+
 // deepCopyMap creates a true deep copy of a map[string]interface{} using JSON marshaling
 // This ensures no shared references between the original and copy
 // Returns empty map (not nil) to ensure JSON serialization as {} instead of null

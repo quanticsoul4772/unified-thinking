@@ -43,7 +43,7 @@ import (
 
 // UnifiedServer coordinates all thinking modes and provides MCP tool handlers.
 type UnifiedServer struct {
-	storage                *storage.MemoryStorage
+	storage                storage.Storage
 	linear                 *modes.LinearMode
 	tree                   *modes.TreeMode
 	divergent              *modes.DivergentMode
@@ -65,7 +65,7 @@ type UnifiedServer struct {
 }
 
 func NewUnifiedServer(
-	store *storage.MemoryStorage,
+	store storage.Storage,
 	linear *modes.LinearMode,
 	tree *modes.TreeMode,
 	divergent *modes.DivergentMode,

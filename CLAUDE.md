@@ -14,7 +14,7 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 
 **Key Components**:
 - `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns
-- `internal/storage/` - In-memory storage with thread-safe operations (Storage interface for testability)
+- `internal/storage/` - Pluggable storage layer with in-memory (default) and SQLite backends (Storage interface for testability)
 - `internal/modes/` - Thinking mode implementations (linear, tree, divergent, auto) + Mode registry
 - `internal/validation/` - Logical validation and proof checking
 - `internal/server/` - MCP server implementation
@@ -115,13 +115,43 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 
 ## Storage Architecture
 
-Uses in-memory storage (`storage/memory.go`) with sync.RWMutex for thread safety. Storage is NOT persisted to disk - all data is lost on server restart.
+The server supports **pluggable storage backends** via the `storage.Storage` interface with two implementations:
+
+### In-Memory Storage (Default)
+- Backend: `storage/memory.go`
+- Thread-safe with sync.RWMutex
+- No persistence - data lost on restart
+- Fast, zero configuration
+- Ideal for development and testing
+
+### SQLite Storage (Optional)
+- Backend: `storage/sqlite.go`
+- Persistent across server restarts
+- Write-through caching for performance
+- Full-text search via FTS5
+- WAL mode for concurrent reads
+- Graceful fallback to memory on errors
+
+**Configuration** via environment variables:
+```bash
+STORAGE_TYPE=memory     # Default - in-memory only
+STORAGE_TYPE=sqlite     # Persistent SQLite storage
+
+SQLITE_PATH=./data/thoughts.db  # Database file path
+SQLITE_TIMEOUT=5000             # Connection timeout (ms)
+STORAGE_FALLBACK=memory         # Fallback if SQLite fails
+```
+
+**Storage Factory** (`storage/factory.go`):
+- `NewStorageFromEnv()` - Creates storage from environment variables
+- `NewStorage(cfg Config)` - Creates storage from explicit configuration
+- Automatic fallback handling
 
 **Storage Operations**:
 - Thread-safe with RWMutex locking
 - Auto-generates IDs using counters + timestamps
 - Maintains active branch state
-- Simple substring-based search (production should use proper text search)
+- Full-text search (FTS5 in SQLite, substring in memory)
 
 **Key Methods**:
 - `StoreThought()`, `GetThought()`, `SearchThoughts()`
@@ -133,7 +163,7 @@ Uses in-memory storage (`storage/memory.go`) with sync.RWMutex for thread safety
 1. **Tool Call** → `server/server.go` handler receives request
 2. **Mode Selection** → Auto mode detects or explicit mode used
 3. **Processing** → Selected mode's `ProcessThought()` executes
-4. **Storage** → Thought/Branch/Insight stored in memory
+4. **Storage** → Thought/Branch/Insight persisted via storage backend (memory or SQLite)
 5. **Validation** (optional) → Logic validator checks consistency
 6. **Response** → Result returned to MCP client
 
@@ -144,6 +174,33 @@ Uses in-memory storage (`storage/memory.go`) with sync.RWMutex for thread safety
 - **Thread-safe**: RWMutex protection with deep copy strategy
 - **Resource limits**: MaxSearchResults=1000, MaxIndexSize=100000 to prevent DoS
 - **Optimized appends**: Direct append methods avoid full get-modify-store cycles
+
+### SQLite Persistence Implementation
+When using SQLite storage (`STORAGE_TYPE=sqlite`):
+
+**Architecture**:
+- **Write-through cache**: All writes go to DB first, then update in-memory cache
+- **Cache-first reads**: Reads hit cache first (fast path), DB on miss (warm cache)
+- **Deep copying**: All returns are deep copies to prevent data races
+- **Prepared statements**: Pre-compiled SQL statements for performance
+
+**Schema Design** (`sqlite_schema.go`):
+- Core tables: `thoughts`, `branches`, `insights`, `cross_refs`, `validations`, `relationships`
+- FTS5 virtual table: `thoughts_fts` for full-text search on thought content
+- Indexes: Optimized for common query patterns (mode filtering, branch lookups, timestamps)
+- JSON columns: `key_points`, `metadata` stored as JSON for complex types
+
+**Performance Optimizations**:
+- WAL mode: Concurrent reads while writing
+- 64MB cache size: Reduces disk I/O
+- Batch inserts: Transaction batching for multi-record writes
+- Connection pooling: Reuses DB connections
+- FTS5 tokenization: Fast full-text search with relevance ranking
+
+**Data Migration**:
+- Schema versioning: `schema_version` table tracks migrations
+- Automatic upgrades: Applies migrations on startup if needed
+- Backward compatible: Old data remains accessible after upgrades
 
 ### Builder Patterns
 Use builders from `internal/types/builders.go` for object construction:
@@ -200,6 +257,8 @@ The server binary (`bin/unified-thinking.exe`) should **NEVER** be run manually 
 ## Configuration
 
 Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+### Default Configuration (In-Memory)
 ```json
 {
   "mcpServers": {
@@ -214,12 +273,38 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 }
 ```
 
+### With SQLite Persistence
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\Development\\Projects\\MCP\\project-root\\mcp-servers\\unified-thinking\\bin\\unified-thinking.exe",
+      "transport": "stdio",
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
+        "STORAGE_FALLBACK": "memory"
+      }
+    }
+  }
+}
+```
+
+**Environment Variables**:
+- `STORAGE_TYPE`: `memory` (default) or `sqlite`
+- `SQLITE_PATH`: Path to SQLite database file (created if not exists)
+- `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
+- `STORAGE_FALLBACK`: Fallback storage type if primary fails (default: none)
+- `DEBUG`: Enable debug logging (`true` or `false`)
+
 When Claude Desktop starts, it will:
 1. Read this configuration
 2. Spawn the server process using the specified command
 3. Establish stdio communication channel
-4. Keep the server running for the entire session
-5. Terminate the server when Claude Desktop closes
+4. Initialize storage backend based on environment variables
+5. Keep the server running for the entire session
+6. Terminate the server when Claude Desktop closes
 
 ## Code Style & Conventions
 
@@ -232,16 +317,20 @@ When Claude Desktop starts, it will:
 
 ## Key Files to Understand
 
-1. `cmd/server/main.go` - Entry point, initializes all components
+1. `cmd/server/main.go` - Entry point, initializes storage and server components
 2. `internal/types/types.go` - All core data structures and constants
 3. `internal/server/server.go` - Tool registration and request handlers
 4. `internal/modes/shared.go` - Shared types for mode implementations
-5. `internal/storage/memory.go` - Storage layer with thread-safe operations
+5. `internal/storage/factory.go` - Storage factory and configuration
+6. `internal/storage/memory.go` - In-memory storage implementation
+7. `internal/storage/sqlite.go` - SQLite storage with write-through cache
+8. `internal/storage/sqlite_schema.go` - Database schema and migrations
 
 ## Technical Constraints
 
 - Go 1.23+ required
 - Windows primary target (Makefile uses Windows commands by default)
 - MCP SDK v0.8.0 - uses `mcp.AddTool()` and `transport.Run()` patterns
-- No external databases - pure in-memory storage
+- Storage: In-memory (default) or SQLite (optional)
+- SQLite backend uses modernc.org/sqlite (pure Go, no CGO)
 - stdio transport only (no HTTP/SSE)

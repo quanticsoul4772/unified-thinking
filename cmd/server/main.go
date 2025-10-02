@@ -31,9 +31,12 @@ func main() {
 		log.Println("Starting Unified Thinking Server in debug mode...")
 	}
 
-	// Initialize storage
-	store := storage.NewMemoryStorage()
-	log.Println("Initialized memory storage")
+	// Initialize storage (configurable via environment variables)
+	store, err := storage.NewStorageFromEnv()
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
+	defer storage.CloseStorage(store)
 
 	// Initialize modes
 	linearMode := modes.NewLinearMode(store)

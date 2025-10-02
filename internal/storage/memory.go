@@ -304,6 +304,19 @@ func (s *MemoryStorage) StoreInsight(insight *types.Insight) error {
 	return nil
 }
 
+// GetInsight retrieves an insight by ID
+func (s *MemoryStorage) GetInsight(id string) (*types.Insight, error) {
+	s.mu.RLock()
+	insight, exists := s.insights[id]
+	s.mu.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("insight not found: %s", id)
+	}
+
+	return copyInsight(insight), nil
+}
+
 // StoreValidation stores a validation result
 func (s *MemoryStorage) StoreValidation(validation *types.Validation) error {
 	s.mu.Lock()
@@ -318,6 +331,19 @@ func (s *MemoryStorage) StoreValidation(validation *types.Validation) error {
 	return nil
 }
 
+// GetValidation retrieves a validation by ID
+func (s *MemoryStorage) GetValidation(id string) (*types.Validation, error) {
+	s.mu.RLock()
+	validation, exists := s.validations[id]
+	s.mu.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("validation not found: %s", id)
+	}
+
+	return copyValidation(validation), nil
+}
+
 // StoreRelationship stores a relationship
 func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 	s.mu.Lock()
@@ -330,6 +356,24 @@ func (s *MemoryStorage) StoreRelationship(rel *types.Relationship) error {
 
 	s.relationships[rel.ID] = rel
 	return nil
+}
+
+// GetRelationship retrieves a relationship by ID
+func (s *MemoryStorage) GetRelationship(id string) (*types.Relationship, error) {
+	s.mu.RLock()
+	rel, exists := s.relationships[id]
+	s.mu.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("relationship not found: %s", id)
+	}
+
+	// Deep copy
+	relCopy := *rel
+	if rel.Metadata != nil {
+		relCopy.Metadata = deepCopyMap(rel.Metadata)
+	}
+	return &relCopy, nil
 }
 
 // SearchThoughts searches thoughts by content or type (returns copies to prevent data races)

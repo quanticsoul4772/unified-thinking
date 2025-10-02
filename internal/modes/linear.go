@@ -10,11 +10,11 @@ import (
 
 // LinearMode implements sequential step-by-step reasoning
 type LinearMode struct {
-	storage *storage.MemoryStorage
+	storage storage.Storage
 }
 
 // NewLinearMode creates a new linear mode handler
-func NewLinearMode(storage *storage.MemoryStorage) *LinearMode {
+func NewLinearMode(storage storage.Storage) *LinearMode {
 	return &LinearMode{storage: storage}
 }
 
