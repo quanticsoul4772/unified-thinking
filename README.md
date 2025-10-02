@@ -1,6 +1,6 @@
 # Unified Thinking Server
 
-A comprehensive MCP server that consolidates multiple cognitive thinking patterns into a single, efficient Go-based implementation.
+A MCP server that consolidates multiple cognitive thinking patterns into a single, efficient Go-based implementation.
 
 ## Features
 
