@@ -1,6 +1,10 @@
 package storage
 
-import "unified-thinking/internal/types"
+import (
+	"encoding/json"
+	"log"
+	"unified-thinking/internal/types"
+)
 
 // copyThought creates a deep copy of a thought to prevent external modification
 func copyThought(t *types.Thought) *types.Thought {
@@ -16,13 +20,8 @@ func copyThought(t *types.Thought) *types.Thought {
 		copy(thoughtCopy.KeyPoints, t.KeyPoints)
 	}
 
-	// Deep copy map
-	if len(t.Metadata) > 0 {
-		thoughtCopy.Metadata = make(map[string]interface{}, len(t.Metadata))
-		for k, v := range t.Metadata {
-			thoughtCopy.Metadata[k] = v
-		}
-	}
+	// Deep copy map - use JSON marshal/unmarshal for true deep copy
+	thoughtCopy.Metadata = deepCopyMap(t.Metadata)
 
 	return &thoughtCopy
 }
@@ -81,13 +80,8 @@ func copyInsight(ins *types.Insight) *types.Insight {
 		copy(insightCopy.ParentInsights, ins.ParentInsights)
 	}
 
-	// Deep copy map
-	if len(ins.SupportingEvidence) > 0 {
-		insightCopy.SupportingEvidence = make(map[string]interface{}, len(ins.SupportingEvidence))
-		for k, v := range ins.SupportingEvidence {
-			insightCopy.SupportingEvidence[k] = v
-		}
-	}
+	// Deep copy map - use JSON marshal/unmarshal for true deep copy
+	insightCopy.SupportingEvidence = deepCopyMap(ins.SupportingEvidence)
 
 	// Deep copy Validations slice
 	if len(ins.Validations) > 0 {
@@ -125,13 +119,31 @@ func copyValidation(v *types.Validation) *types.Validation {
 
 	validationCopy := *v
 
-	// Deep copy map
-	if len(v.ValidationData) > 0 {
-		validationCopy.ValidationData = make(map[string]interface{}, len(v.ValidationData))
-		for k, val := range v.ValidationData {
-			validationCopy.ValidationData[k] = val
-		}
-	}
+	// Deep copy map - use JSON marshal/unmarshal for true deep copy
+	validationCopy.ValidationData = deepCopyMap(v.ValidationData)
 
 	return &validationCopy
+}
+
+// deepCopyMap creates a true deep copy of a map[string]interface{} using JSON marshaling
+// This ensures no shared references between the original and copy
+func deepCopyMap(m map[string]interface{}) map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+
+	// Use JSON marshal/unmarshal for true deep copy
+	data, err := json.Marshal(m)
+	if err != nil {
+		log.Printf("Warning: Failed to deep copy map: %v", err)
+		return make(map[string]interface{})
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		log.Printf("Warning: Failed to unmarshal map copy: %v", err)
+		return make(map[string]interface{})
+	}
+
+	return result
 }

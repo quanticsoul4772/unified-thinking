@@ -24,7 +24,7 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 	// Determine branch (use provided or active)
 	branchID := input.BranchID
 	if branchID == "" {
-		if activeBranch, err := m.storage.GetActiveBranch(); err == nil {
+		if activeBranch, err := m.storage.GetActiveBranch(); err == nil && activeBranch != nil {
 			branchID = activeBranch.ID
 		} else {
 			// Create new branch

@@ -13,11 +13,12 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 **Entry Point**: `cmd/server/main.go`
 
 **Key Components**:
-- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation)
-- `internal/storage/` - In-memory storage with thread-safe operations
-- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, auto)
+- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns
+- `internal/storage/` - In-memory storage with thread-safe operations (Storage interface for testability)
+- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, auto) + Mode registry
 - `internal/validation/` - Logical validation and proof checking
-- `internal/server/` - MCP server implementation and tool handlers
+- `internal/server/` - MCP server implementation
+- `internal/server/handlers/` - Focused handler modules (thinking, branches, validation, search)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -138,6 +139,28 @@ Uses in-memory storage (`storage/memory.go`) with sync.RWMutex for thread safety
 
 ## Important Implementation Details
 
+### Storage Architecture
+- **Interface-based**: All code depends on `storage.Storage` interface for testability
+- **Thread-safe**: RWMutex protection with deep copy strategy
+- **Resource limits**: MaxSearchResults=1000, MaxIndexSize=100000 to prevent DoS
+- **Optimized appends**: Direct append methods avoid full get-modify-store cycles
+
+### Builder Patterns
+Use builders from `internal/types/builders.go` for object construction:
+```go
+thought := types.NewThought().
+    Content("Example").
+    Mode(types.ModeLinear).
+    Confidence(0.9).
+    Build()
+```
+
+### Mode Registry
+Modes implement `ThinkingMode` interface and can be registered dynamically:
+- `Name()` - Returns mode identifier
+- `CanHandle()` - Determines if mode can process input
+- `ProcessThought()` - Executes mode logic
+
 ### Branch Metrics Calculation
 When processing thoughts in tree mode (`modes/tree.go`):
 - Branch confidence = average of all thought confidences in branch
@@ -151,13 +174,6 @@ Cross-references link branches together with typed relationships:
 - `alternative` - Different approach to same problem
 
 TouchPoints within cross-refs specify exact thought-to-thought connections.
-
-### Validation
-Basic logical validation checks for:
-- Obvious contradictions (e.g., "always" and "never" in same statement)
-- Statement completeness and syntax
-
-Production implementations should integrate proper theorem provers or logic engines.
 
 ## Migration from Old Servers
 

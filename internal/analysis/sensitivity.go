@@ -3,6 +3,7 @@ package analysis
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -10,6 +11,7 @@ import (
 
 // SensitivityAnalyzer performs robustness testing of conclusions
 type SensitivityAnalyzer struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -20,6 +22,9 @@ func NewSensitivityAnalyzer() *SensitivityAnalyzer {
 
 // AnalyzeSensitivity tests how robust a claim is to changes in assumptions
 func (sa *SensitivityAnalyzer) AnalyzeSensitivity(targetClaim string, assumptions []string, baseConfidence float64) (*types.SensitivityAnalysis, error) {
+	sa.mu.Lock()
+	defer sa.mu.Unlock()
+
 	sa.counter++
 
 	variations := make([]*types.Variation, 0)

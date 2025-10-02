@@ -1,0 +1,505 @@
+package server
+
+import (
+	"context"
+	"testing"
+
+	"unified-thinking/internal/analysis"
+	"unified-thinking/internal/integration"
+	"unified-thinking/internal/metacognition"
+	"unified-thinking/internal/modes"
+	"unified-thinking/internal/reasoning"
+	"unified-thinking/internal/storage"
+	"unified-thinking/internal/types"
+	"unified-thinking/internal/validation"
+)
+
+// setupTestServer creates a fully initialized server for testing
+func setupTestServer() *UnifiedServer {
+	store := storage.NewMemoryStorage()
+	linear := modes.NewLinearMode(store)
+	tree := modes.NewTreeMode(store)
+	divergent := modes.NewDivergentMode(store)
+	auto := modes.NewAutoMode(linear, tree, divergent)
+	validator := validation.NewLogicValidator()
+
+	probReasoner := reasoning.NewProbabilisticReasoner(store)
+	decisionMaker := reasoning.NewDecisionMaker(store)
+	causalAnalyzer := reasoning.NewCausalAnalyzer(store)
+	temporalAnalyzer := reasoning.NewTemporalAnalyzer(store)
+	decomposer := reasoning.NewProblemDecomposer(store)
+
+	evidenceAnalyzer := analysis.NewEvidenceAnalyzer(store)
+	contradictionDetector := analysis.NewContradictionDetector(store)
+	perspectiveAnalyzer := analysis.NewPerspectiveAnalyzer(store)
+	sensitivityAnalyzer := analysis.NewSensitivityAnalyzer(store)
+
+	selfEvaluator := metacognition.NewSelfEvaluator(store)
+	biasDetector := metacognition.NewBiasDetector(store)
+
+	synthesizer := integration.NewInsightSynthesizer(store)
+	patternDetector := integration.NewPatternDetector(store)
+
+	return NewUnifiedServer(
+		store, linear, tree, divergent, auto, validator,
+		probReasoner, decisionMaker, causalAnalyzer, temporalAnalyzer, decomposer,
+		evidenceAnalyzer, contradictionDetector, perspectiveAnalyzer, sensitivityAnalyzer,
+		selfEvaluator, biasDetector,
+		synthesizer, patternDetector,
+	)
+}
+
+func TestHandleThink_LinearMode(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	input := ThinkRequest{
+		Content:    "Test linear reasoning thought",
+		Mode:       "linear",
+		Confidence: 0.8,
+	}
+
+	result, resp, err := server.handleThink(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleThink() error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("result should not be nil")
+	}
+
+	if resp.ThoughtID == "" {
+		t.Error("ThoughtID should not be empty")
+	}
+
+	if resp.Mode != "linear" {
+		t.Errorf("Mode = %v, want linear", resp.Mode)
+	}
+
+	if resp.Confidence != 0.8 {
+		t.Errorf("Confidence = %v, want 0.8", resp.Confidence)
+	}
+}
+
+func TestHandleThink_TreeMode(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	input := ThinkRequest{
+		Content:    "Branch thought for exploration",
+		Mode:       "tree",
+		KeyPoints:  []string{"key1", "key2"},
+		Confidence: 0.85,
+	}
+
+	_, resp, err := server.handleThink(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleThink() error = %v", err)
+	}
+
+	if resp.BranchID == "" {
+		t.Error("BranchID should be created for tree mode")
+	}
+
+	if resp.InsightCount == 0 {
+		t.Error("Insights should be generated from key points")
+	}
+}
+
+func TestHandleThink_DivergentMode(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	input := ThinkRequest{
+		Content:       "Creative problem solving",
+		Mode:          "divergent",
+		ForceRebellion: true,
+		Confidence:    0.7,
+	}
+
+	_, resp, err := server.handleThink(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleThink() error = %v", err)
+	}
+
+	if !resp.IsRebellion {
+		t.Error("ForceRebellion should set IsRebellion to true")
+	}
+}
+
+func TestHandleThink_AutoMode(t *testing.T) {
+	tests := []struct {
+		name         string
+		content      string
+		expectedMode string
+	}{
+		{
+			name:         "creative keywords trigger divergent",
+			content:      "Let's think creatively about this problem",
+			expectedMode: "divergent",
+		},
+		{
+			name:         "explore keywords trigger tree",
+			content:      "Let's explore alternative approaches",
+			expectedMode: "tree",
+		},
+		{
+			name:         "simple content defaults to linear",
+			content:      "Calculate the result",
+			expectedMode: "linear",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := setupTestServer()
+			ctx := context.Background()
+
+			input := ThinkRequest{
+				Content:    tt.content,
+				Mode:       "auto",
+				Confidence: 0.8,
+			}
+
+			_, resp, err := server.handleThink(ctx, nil, input)
+			if err != nil {
+				t.Fatalf("handleThink() error = %v", err)
+			}
+
+			if resp.Mode != tt.expectedMode {
+				t.Errorf("Auto mode selected %v, want %v", resp.Mode, tt.expectedMode)
+			}
+		})
+	}
+}
+
+func TestHandleThink_ValidationErrors(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		input   ThinkRequest
+		wantErr bool
+	}{
+		{
+			name: "empty content",
+			input: ThinkRequest{
+				Content: "",
+				Mode:    "linear",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid mode",
+			input: ThinkRequest{
+				Content: "Test",
+				Mode:    "invalid_mode",
+			},
+			wantErr: true,
+		},
+		{
+			name: "confidence out of range",
+			input: ThinkRequest{
+				Content:    "Test",
+				Mode:       "linear",
+				Confidence: 1.5,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := server.handleThink(ctx, nil, tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("handleThink() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestHandleHistory(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create some thoughts first
+	for i := 0; i < 5; i++ {
+		input := ThinkRequest{
+			Content:    "Test thought",
+			Mode:       "linear",
+			Confidence: 0.8,
+		}
+		server.handleThink(ctx, nil, input)
+	}
+
+	// Test history retrieval
+	histReq := HistoryRequest{
+		Limit:  3,
+		Offset: 0,
+	}
+
+	_, resp, err := server.handleHistory(ctx, nil, histReq)
+	if err != nil {
+		t.Fatalf("handleHistory() error = %v", err)
+	}
+
+	if len(resp.Thoughts) != 3 {
+		t.Errorf("Expected 3 thoughts, got %d", len(resp.Thoughts))
+	}
+}
+
+func TestHandleListBranches(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create some branches
+	for i := 0; i < 3; i++ {
+		input := ThinkRequest{
+			Content:    "Branch thought",
+			Mode:       "tree",
+			Confidence: 0.8,
+		}
+		server.handleThink(ctx, nil, input)
+	}
+
+	_, resp, err := server.handleListBranches(ctx, nil)
+	if err != nil {
+		t.Fatalf("handleListBranches() error = %v", err)
+	}
+
+	if len(resp.Branches) != 3 {
+		t.Errorf("Expected 3 branches, got %d", len(resp.Branches))
+	}
+}
+
+func TestHandleFocusBranch(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create a branch
+	input := ThinkRequest{
+		Content:    "Branch thought",
+		Mode:       "tree",
+		Confidence: 0.8,
+	}
+	_, thinkResp, _ := server.handleThink(ctx, nil, input)
+
+	// Focus on the branch
+	focusReq := FocusBranchRequest{
+		BranchID: thinkResp.BranchID,
+	}
+
+	_, resp, err := server.handleFocusBranch(ctx, nil, focusReq)
+	if err != nil {
+		t.Fatalf("handleFocusBranch() error = %v", err)
+	}
+
+	if resp.ActiveBranchID != thinkResp.BranchID {
+		t.Errorf("ActiveBranchID = %v, want %v", resp.ActiveBranchID, thinkResp.BranchID)
+	}
+}
+
+func TestHandleValidate(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create a thought
+	input := ThinkRequest{
+		Content:    "If it rains then the ground is wet",
+		Mode:       "linear",
+		Confidence: 0.8,
+	}
+	_, thinkResp, _ := server.handleThink(ctx, nil, input)
+
+	// Validate the thought
+	valReq := ValidateRequest{
+		ThoughtID: thinkResp.ThoughtID,
+	}
+
+	_, resp, err := server.handleValidate(ctx, nil, valReq)
+	if err != nil {
+		t.Fatalf("handleValidate() error = %v", err)
+	}
+
+	if resp.ValidationID == "" {
+		t.Error("ValidationID should not be empty")
+	}
+}
+
+func TestHandleProve(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	proveReq := ProveRequest{
+		Premises:   []string{"If P then Q", "P"},
+		Conclusion: "Q",
+	}
+
+	_, resp, err := server.handleProve(ctx, nil, proveReq)
+	if err != nil {
+		t.Fatalf("handleProve() error = %v", err)
+	}
+
+	if !resp.IsProvable {
+		t.Error("Modus Ponens should be provable")
+	}
+
+	if len(resp.Steps) == 0 {
+		t.Error("Proof steps should not be empty")
+	}
+}
+
+func TestHandleSearch(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create thoughts with specific content
+	contents := []string{
+		"machine learning algorithm",
+		"deep learning neural network",
+		"random forest classifier",
+	}
+
+	for _, content := range contents {
+		input := ThinkRequest{
+			Content:    content,
+			Mode:       "linear",
+			Confidence: 0.8,
+		}
+		server.handleThink(ctx, nil, input)
+	}
+
+	// Search for "learning"
+	searchReq := SearchRequest{
+		Query: "learning",
+		Limit: 10,
+	}
+
+	_, resp, err := server.handleSearch(ctx, nil, searchReq)
+	if err != nil {
+		t.Fatalf("handleSearch() error = %v", err)
+	}
+
+	if len(resp.Thoughts) != 2 {
+		t.Errorf("Expected 2 thoughts with 'learning', got %d", len(resp.Thoughts))
+	}
+}
+
+func TestHandleGetMetrics(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create some data
+	for i := 0; i < 5; i++ {
+		input := ThinkRequest{
+			Content:    "Test thought",
+			Mode:       "linear",
+			Confidence: 0.8,
+		}
+		server.handleThink(ctx, nil, input)
+	}
+
+	_, resp, err := server.handleGetMetrics(ctx, nil)
+	if err != nil {
+		t.Fatalf("handleGetMetrics() error = %v", err)
+	}
+
+	if resp.TotalThoughts != 5 {
+		t.Errorf("TotalThoughts = %d, want 5", resp.TotalThoughts)
+	}
+}
+
+func TestHandleRecentBranches(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create and access multiple branches
+	var branchIDs []string
+	for i := 0; i < 5; i++ {
+		input := ThinkRequest{
+			Content:    "Branch thought",
+			Mode:       "tree",
+			Confidence: 0.8,
+		}
+		_, resp, _ := server.handleThink(ctx, nil, input)
+		branchIDs = append(branchIDs, resp.BranchID)
+	}
+
+	// Get recent branches
+	recReq := RecentBranchesRequest{
+		Limit: 3,
+	}
+
+	_, resp, err := server.handleRecentBranches(ctx, nil, recReq)
+	if err != nil {
+		t.Fatalf("handleRecentBranches() error = %v", err)
+	}
+
+	if len(resp.Branches) > 3 {
+		t.Errorf("Expected at most 3 recent branches, got %d", len(resp.Branches))
+	}
+
+	// Most recent should be first
+	if resp.Branches[0].ID != branchIDs[len(branchIDs)-1] {
+		t.Error("Most recent branch should be first")
+	}
+}
+
+func TestHandleThink_WithValidation(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	input := ThinkRequest{
+		Content:           "If it rains then the ground is wet",
+		Mode:              "linear",
+		Confidence:        0.8,
+		RequireValidation: true,
+	}
+
+	_, resp, err := server.handleThink(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleThink() error = %v", err)
+	}
+
+	// Validation should have been performed
+	// Note: IsValid will depend on validator's assessment
+	if resp.ThoughtID == "" {
+		t.Error("ThoughtID should not be empty even with validation")
+	}
+}
+
+func TestConcurrentThinkOperations(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Test concurrent think operations
+	done := make(chan bool, 10)
+	for i := 0; i < 10; i++ {
+		go func(id int) {
+			input := ThinkRequest{
+				Content:    "Concurrent thought",
+				Mode:       "linear",
+				Confidence: 0.8,
+			}
+			_, _, err := server.handleThink(ctx, nil, input)
+			if err != nil {
+				t.Errorf("Concurrent handleThink() error = %v", err)
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+
+	// Verify all thoughts were stored
+	histReq := HistoryRequest{Limit: 100}
+	_, resp, _ := server.handleHistory(ctx, nil, histReq)
+
+	if len(resp.Thoughts) != 10 {
+		t.Errorf("Expected 10 thoughts after concurrent operations, got %d", len(resp.Thoughts))
+	}
+}

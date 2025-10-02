@@ -19,7 +19,13 @@
       "Bash(powershell:*)",
       "Bash(git rm:*)",
       "Bash(binunified-thinking.exe:*)",
-      "Bash(dir bin)"
+      "Bash(dir bin)",
+      "Bash(tree:*)",
+      "Read(//c/Development/Projects/MCP/project-root/mcp-servers/**)",
+      "Bash(cat:*)",
+      "Bash(echo $APPDATA)",
+      "Read(//c/Users/rbsmi/AppData/Roaming/Claude/**)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

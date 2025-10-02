@@ -3,6 +3,7 @@ package metacognition
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -10,6 +11,7 @@ import (
 
 // BiasDetector identifies cognitive biases in reasoning
 type BiasDetector struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -20,6 +22,14 @@ func NewBiasDetector() *BiasDetector {
 
 // DetectBiases analyzes thought for cognitive biases
 func (bd *BiasDetector) DetectBiases(thought *types.Thought) ([]*types.CognitiveBias, error) {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
+	return bd.detectBiasesInternal(thought), nil
+}
+
+// detectBiasesInternal is an internal helper that assumes the lock is already held
+func (bd *BiasDetector) detectBiasesInternal(thought *types.Thought) []*types.CognitiveBias {
 	biases := make([]*types.CognitiveBias, 0)
 
 	content := strings.ToLower(thought.Content)
@@ -54,19 +64,19 @@ func (bd *BiasDetector) DetectBiases(thought *types.Thought) ([]*types.Cognitive
 		biases = append(biases, bias)
 	}
 
-	return biases, nil
+	return biases
 }
 
 // DetectBiasesInBranch analyzes branch for cognitive biases
 func (bd *BiasDetector) DetectBiasesInBranch(branch *types.Branch) ([]*types.CognitiveBias, error) {
+	bd.mu.Lock()
+	defer bd.mu.Unlock()
+
 	biases := make([]*types.CognitiveBias, 0)
 
 	// Check each thought in branch
 	for _, thought := range branch.Thoughts {
-		thoughtBiases, err := bd.DetectBiases(thought)
-		if err != nil {
-			continue
-		}
+		thoughtBiases := bd.detectBiasesInternal(thought)
 		biases = append(biases, thoughtBiases...)
 	}
 

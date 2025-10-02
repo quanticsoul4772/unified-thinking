@@ -32,6 +32,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
+	"unified-thinking/internal/integration"
 	"unified-thinking/internal/metacognition"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/reasoning"
@@ -56,6 +57,11 @@ type UnifiedServer struct {
 	sensitivityAnalyzer    *analysis.SensitivityAnalyzer
 	selfEvaluator          *metacognition.SelfEvaluator
 	biasDetector           *metacognition.BiasDetector
+	// Phase 2-3: Advanced reasoning modules
+	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
+	temporalReasoner       *reasoning.TemporalReasoner
+	causalReasoner         *reasoning.CausalReasoner
+	synthesizer            *integration.Synthesizer
 }
 
 func NewUnifiedServer(
@@ -81,6 +87,11 @@ func NewUnifiedServer(
 		sensitivityAnalyzer:    analysis.NewSensitivityAnalyzer(),
 		selfEvaluator:          metacognition.NewSelfEvaluator(),
 		biasDetector:           metacognition.NewBiasDetector(),
+		// Phase 2-3: Initialize advanced reasoning modules
+		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
+		temporalReasoner:       reasoning.NewTemporalReasoner(),
+		causalReasoner:         reasoning.NewCausalReasoner(),
+		synthesizer:            integration.NewSynthesizer(),
 	}
 }
 
@@ -179,6 +190,65 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		Name:        "detect-biases",
 		Description: "Identify cognitive biases in reasoning and suggest mitigation strategies",
 	}, s.handleDetectBiases)
+
+	// Phase 2: Multi-Perspective Analysis Tools
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "analyze-perspectives",
+		Description: "Analyze a situation from multiple stakeholder perspectives, identifying concerns, priorities, and conflicts",
+	}, s.handleAnalyzePerspectives)
+
+	// Phase 2: Temporal Reasoning Tools
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "analyze-temporal",
+		Description: "Analyze short-term vs long-term implications of a decision, identifying tradeoffs and providing recommendations",
+	}, s.handleAnalyzeTemporal)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "compare-time-horizons",
+		Description: "Compare how a decision looks across different time horizons (days-weeks, months, years)",
+	}, s.handleCompareTimeHorizons)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "identify-optimal-timing",
+		Description: "Determine optimal timing for a decision based on situation and constraints",
+	}, s.handleIdentifyOptimalTiming)
+
+	// Phase 3: Causal Reasoning Tools
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "build-causal-graph",
+		Description: "Construct a causal graph from observations, identifying variables and causal relationships",
+	}, s.handleBuildCausalGraph)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "simulate-intervention",
+		Description: "Simulate the effects of intervening on a variable in a causal graph",
+	}, s.handleSimulateIntervention)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "generate-counterfactual",
+		Description: "Generate a counterfactual scenario ('what if') by changing variables in a causal model",
+	}, s.handleGenerateCounterfactual)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "analyze-correlation-vs-causation",
+		Description: "Analyze whether an observed relationship is likely correlation or causation",
+	}, s.handleAnalyzeCorrelationVsCausation)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "get-causal-graph",
+		Description: "Retrieve a previously built causal graph by ID",
+	}, s.handleGetCausalGraph)
+
+	// Phase 3: Cross-Mode Synthesis Tools
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "synthesize-insights",
+		Description: "Synthesize insights from multiple reasoning modes, identifying synergies and conflicts",
+	}, s.handleSynthesizeInsights)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name:        "detect-emergent-patterns",
+		Description: "Detect emergent patterns that become visible when combining multiple reasoning modes",
+	}, s.handleDetectEmergentPatterns)
 }
 
 type ThinkRequest struct {
@@ -995,6 +1065,360 @@ func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToo
 		Biases: biases,
 		Count:  len(biases),
 		Status: "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// ========================================
+// Phase 2-3: Advanced Reasoning Tool Handlers
+// ========================================
+
+// Phase 2: Perspective Analysis
+
+type AnalyzePerspectivesRequest struct {
+	Situation        string   `json:"situation"`
+	StakeholderHints []string `json:"stakeholder_hints,omitempty"`
+}
+
+type AnalyzePerspectivesResponse struct {
+	Perspectives []*types.Perspective `json:"perspectives"`
+	Count        int                  `json:"count"`
+	Conflicts    []string             `json:"conflicts,omitempty"`
+	Status       string               `json:"status"`
+}
+
+func (s *UnifiedServer) handleAnalyzePerspectives(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input AnalyzePerspectivesRequest,
+) (*mcp.CallToolResult, *AnalyzePerspectivesResponse, error) {
+	perspectives, err := s.perspectiveAnalyzer.AnalyzePerspectives(input.Situation, input.StakeholderHints)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Note: conflict detection is done internally, made available through ComparePerspectives if needed
+	response := &AnalyzePerspectivesResponse{
+		Perspectives: perspectives,
+		Count:        len(perspectives),
+		Status:       "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// Phase 2: Temporal Reasoning
+
+type AnalyzeTemporalRequest struct {
+	Situation   string `json:"situation"`
+	TimeHorizon string `json:"time_horizon,omitempty"`
+}
+
+type AnalyzeTemporalResponse struct {
+	Analysis *types.TemporalAnalysis `json:"analysis"`
+	Status   string                  `json:"status"`
+}
+
+func (s *UnifiedServer) handleAnalyzeTemporal(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input AnalyzeTemporalRequest,
+) (*mcp.CallToolResult, *AnalyzeTemporalResponse, error) {
+	analysis, err := s.temporalReasoner.AnalyzeTemporal(input.Situation, input.TimeHorizon)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &AnalyzeTemporalResponse{
+		Analysis: analysis,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type CompareTimeHorizonsRequest struct {
+	Situation string `json:"situation"`
+}
+
+type CompareTimeHorizonsResponse struct {
+	Analyses map[string]*types.TemporalAnalysis `json:"analyses"`
+	Status   string                             `json:"status"`
+}
+
+func (s *UnifiedServer) handleCompareTimeHorizons(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input CompareTimeHorizonsRequest,
+) (*mcp.CallToolResult, *CompareTimeHorizonsResponse, error) {
+	analyses, err := s.temporalReasoner.CompareTimeHorizons(input.Situation)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &CompareTimeHorizonsResponse{
+		Analyses: analyses,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type IdentifyOptimalTimingRequest struct {
+	Situation   string   `json:"situation"`
+	Constraints []string `json:"constraints,omitempty"`
+}
+
+type IdentifyOptimalTimingResponse struct {
+	Recommendation string `json:"recommendation"`
+	Status         string `json:"status"`
+}
+
+func (s *UnifiedServer) handleIdentifyOptimalTiming(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input IdentifyOptimalTimingRequest,
+) (*mcp.CallToolResult, *IdentifyOptimalTimingResponse, error) {
+	recommendation, err := s.temporalReasoner.IdentifyOptimalTiming(input.Situation, input.Constraints)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &IdentifyOptimalTimingResponse{
+		Recommendation: recommendation,
+		Status:         "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// Phase 3: Causal Reasoning
+
+type BuildCausalGraphRequest struct {
+	Description  string   `json:"description"`
+	Observations []string `json:"observations"`
+}
+
+type BuildCausalGraphResponse struct {
+	Graph  *types.CausalGraph `json:"graph"`
+	Status string             `json:"status"`
+}
+
+func (s *UnifiedServer) handleBuildCausalGraph(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input BuildCausalGraphRequest,
+) (*mcp.CallToolResult, *BuildCausalGraphResponse, error) {
+	graph, err := s.causalReasoner.BuildCausalGraph(input.Description, input.Observations)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &BuildCausalGraphResponse{
+		Graph:  graph,
+		Status: "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type SimulateInterventionRequest struct {
+	GraphID          string `json:"graph_id"`
+	VariableID       string `json:"variable_id"`
+	InterventionType string `json:"intervention_type"`
+}
+
+type SimulateInterventionResponse struct {
+	Intervention *types.CausalIntervention `json:"intervention"`
+	Status       string                    `json:"status"`
+}
+
+func (s *UnifiedServer) handleSimulateIntervention(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input SimulateInterventionRequest,
+) (*mcp.CallToolResult, *SimulateInterventionResponse, error) {
+	intervention, err := s.causalReasoner.SimulateIntervention(
+		input.GraphID,
+		input.VariableID,
+		input.InterventionType,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &SimulateInterventionResponse{
+		Intervention: intervention,
+		Status:       "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type GenerateCounterfactualRequest struct {
+	GraphID  string            `json:"graph_id"`
+	Scenario string            `json:"scenario"`
+	Changes  map[string]string `json:"changes"`
+}
+
+type GenerateCounterfactualResponse struct {
+	Counterfactual *types.Counterfactual `json:"counterfactual"`
+	Status         string                `json:"status"`
+}
+
+func (s *UnifiedServer) handleGenerateCounterfactual(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input GenerateCounterfactualRequest,
+) (*mcp.CallToolResult, *GenerateCounterfactualResponse, error) {
+	counterfactual, err := s.causalReasoner.GenerateCounterfactual(
+		input.GraphID,
+		input.Scenario,
+		input.Changes,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &GenerateCounterfactualResponse{
+		Counterfactual: counterfactual,
+		Status:         "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type AnalyzeCorrelationVsCausationRequest struct {
+	Observation string `json:"observation"`
+}
+
+type AnalyzeCorrelationVsCausationResponse struct {
+	Analysis string `json:"analysis"`
+	Status   string `json:"status"`
+}
+
+func (s *UnifiedServer) handleAnalyzeCorrelationVsCausation(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input AnalyzeCorrelationVsCausationRequest,
+) (*mcp.CallToolResult, *AnalyzeCorrelationVsCausationResponse, error) {
+	analysis, err := s.causalReasoner.AnalyzeCorrelationVsCausation(input.Observation)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &AnalyzeCorrelationVsCausationResponse{
+		Analysis: analysis,
+		Status:   "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type GetCausalGraphRequest struct {
+	GraphID string `json:"graph_id"`
+}
+
+type GetCausalGraphResponse struct {
+	Graph  *types.CausalGraph `json:"graph"`
+	Status string             `json:"status"`
+}
+
+func (s *UnifiedServer) handleGetCausalGraph(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input GetCausalGraphRequest,
+) (*mcp.CallToolResult, *GetCausalGraphResponse, error) {
+	graph, err := s.causalReasoner.GetGraph(input.GraphID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &GetCausalGraphResponse{
+		Graph:  graph,
+		Status: "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+// Phase 3: Cross-Mode Synthesis
+
+type SynthesizeInsightsRequest struct {
+	Context string                   `json:"context"`
+	Inputs  []*integration.Input `json:"inputs"`
+}
+
+type SynthesizeInsightsResponse struct {
+	Synthesis *types.Synthesis `json:"synthesis"`
+	Status    string           `json:"status"`
+}
+
+func (s *UnifiedServer) handleSynthesizeInsights(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input SynthesizeInsightsRequest,
+) (*mcp.CallToolResult, *SynthesizeInsightsResponse, error) {
+	synthesis, err := s.synthesizer.SynthesizeInsights(input.Inputs, input.Context)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &SynthesizeInsightsResponse{
+		Synthesis: synthesis,
+		Status:    "success",
+	}
+
+	return &mcp.CallToolResult{
+		Content: toJSONContent(response),
+	}, response, nil
+}
+
+type DetectEmergentPatternsRequest struct {
+	Inputs []*integration.Input `json:"inputs"`
+}
+
+type DetectEmergentPatternsResponse struct {
+	Patterns []string `json:"patterns"`
+	Count    int      `json:"count"`
+	Status   string   `json:"status"`
+}
+
+func (s *UnifiedServer) handleDetectEmergentPatterns(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input DetectEmergentPatternsRequest,
+) (*mcp.CallToolResult, *DetectEmergentPatternsResponse, error) {
+	patterns, err := s.synthesizer.DetectEmergentPatterns(input.Inputs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	response := &DetectEmergentPatternsResponse{
+		Patterns: patterns,
+		Count:    len(patterns),
+		Status:   "success",
 	}
 
 	return &mcp.CallToolResult{

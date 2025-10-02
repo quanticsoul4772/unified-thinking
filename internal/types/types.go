@@ -319,6 +319,73 @@ type Analogy struct {
 	CreatedAt       time.Time              `json:"created_at"`
 }
 
+// CausalGraph represents a causal model with variables and relationships
+type CausalGraph struct {
+	ID          string                 `json:"id"`
+	Description string                 `json:"description"`
+	Variables   []*CausalVariable      `json:"variables"`
+	Links       []*CausalLink          `json:"links"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+}
+
+// CausalVariable represents a variable in a causal model
+type CausalVariable struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Type        string                 `json:"type"` // "binary", "continuous", "categorical"
+	Observable  bool                   `json:"observable"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// CausalLink represents a causal relationship between variables
+type CausalLink struct {
+	ID          string                 `json:"id"`
+	From        string                 `json:"from"`        // Source variable ID
+	To          string                 `json:"to"`          // Target variable ID
+	Strength    float64                `json:"strength"`    // 0.0-1.0, strength of causal influence
+	Type        string                 `json:"type"`        // "positive", "negative", "nonlinear"
+	Confidence  float64                `json:"confidence"`  // 0.0-1.0, confidence in this link
+	Evidence    []string               `json:"evidence,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// CausalIntervention represents a hypothetical intervention and its effects
+type CausalIntervention struct {
+	ID                string                 `json:"id"`
+	GraphID           string                 `json:"graph_id"`
+	Variable          string                 `json:"variable"`        // Variable to intervene on
+	InterventionType  string                 `json:"intervention_type"` // "set", "increase", "decrease"
+	InterventionValue string                 `json:"intervention_value,omitempty"`
+	PredictedEffects  []*PredictedEffect     `json:"predicted_effects"`
+	Confidence        float64                `json:"confidence"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt         time.Time              `json:"created_at"`
+}
+
+// PredictedEffect represents the predicted effect on a variable
+type PredictedEffect struct {
+	Variable     string  `json:"variable"`
+	Effect       string  `json:"effect"` // "increase", "decrease", "no change"
+	Magnitude    float64 `json:"magnitude,omitempty"` // Estimated magnitude (if quantifiable)
+	Probability  float64 `json:"probability"` // 0.0-1.0
+	Explanation  string  `json:"explanation"`
+	PathLength   int     `json:"path_length"` // Number of causal steps
+}
+
+// Counterfactual represents a "what if" scenario
+type Counterfactual struct {
+	ID          string                 `json:"id"`
+	GraphID     string                 `json:"graph_id"`
+	Scenario    string                 `json:"scenario"` // Description of counterfactual
+	Changes     map[string]string      `json:"changes"` // Variable -> counterfactual value
+	Outcomes    map[string]string      `json:"outcomes"` // Variable -> predicted outcome
+	Plausibility float64               `json:"plausibility"` // 0.0-1.0
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+}
+
 // SelfEvaluation represents metacognitive self-assessment
 type SelfEvaluation struct {
 	ID                  string                 `json:"id"`

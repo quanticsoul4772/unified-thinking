@@ -5,6 +5,7 @@ package analysis
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -12,6 +13,7 @@ import (
 
 // EvidenceAnalyzer assesses the quality and strength of evidence
 type EvidenceAnalyzer struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -22,6 +24,9 @@ func NewEvidenceAnalyzer() *EvidenceAnalyzer {
 
 // AssessEvidence evaluates evidence and assigns quality scores
 func (ea *EvidenceAnalyzer) AssessEvidence(content, source string, claimID string, supportsClaim bool) (*types.Evidence, error) {
+	ea.mu.Lock()
+	defer ea.mu.Unlock()
+
 	ea.counter++
 
 	// Assess quality based on content characteristics
@@ -188,6 +193,9 @@ func (ea *EvidenceAnalyzer) calculateOverallScore(quality types.EvidenceQuality,
 
 // AggregateEvidence combines multiple pieces of evidence
 func (ea *EvidenceAnalyzer) AggregateEvidence(evidences []*types.Evidence) *EvidenceAggregation {
+	ea.mu.RLock()
+	defer ea.mu.RUnlock()
+
 	if len(evidences) == 0 {
 		return &EvidenceAggregation{
 			TotalCount:       0,

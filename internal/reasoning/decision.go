@@ -2,6 +2,7 @@ package reasoning
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -9,6 +10,7 @@ import (
 
 // DecisionMaker provides structured decision-making frameworks
 type DecisionMaker struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -19,6 +21,9 @@ func NewDecisionMaker() *DecisionMaker {
 
 // CreateDecision creates a structured decision framework
 func (dm *DecisionMaker) CreateDecision(question string, options []*types.DecisionOption, criteria []*types.DecisionCriterion) (*types.Decision, error) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
 	dm.counter++
 
 	if len(options) == 0 {
@@ -121,6 +126,9 @@ func (dm *DecisionMaker) calculateDecisionConfidence(options []*types.DecisionOp
 
 // AddOption adds a new option to a decision
 func (dm *DecisionMaker) AddOption(decision *types.Decision, name, description string, scores map[string]float64, pros, cons []string) error {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
 	optionID := fmt.Sprintf("option-%d-%d", dm.counter, len(decision.Options)+1)
 
 	option := &types.DecisionOption{
@@ -138,6 +146,9 @@ func (dm *DecisionMaker) AddOption(decision *types.Decision, name, description s
 
 // AddCriterion adds a new criterion to a decision
 func (dm *DecisionMaker) AddCriterion(decision *types.Decision, name, description string, weight float64, maximize bool) error {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
 	criterionID := fmt.Sprintf("criterion-%d-%d", dm.counter, len(decision.Criteria)+1)
 
 	criterion := &types.DecisionCriterion{
@@ -154,6 +165,7 @@ func (dm *DecisionMaker) AddCriterion(decision *types.Decision, name, descriptio
 
 // ProblemDecomposer breaks down complex problems into subproblems
 type ProblemDecomposer struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -164,6 +176,9 @@ func NewProblemDecomposer() *ProblemDecomposer {
 
 // DecomposeProblem breaks down a problem into manageable subproblems
 func (pd *ProblemDecomposer) DecomposeProblem(problem string) (*types.ProblemDecomposition, error) {
+	pd.mu.Lock()
+	defer pd.mu.Unlock()
+
 	pd.counter++
 
 	// Simple heuristic decomposition based on problem structure
@@ -260,6 +275,9 @@ func (pd *ProblemDecomposer) determineSolutionPath(subproblems []*types.Subprobl
 
 // UpdateSubproblemStatus updates the status of a subproblem
 func (pd *ProblemDecomposer) UpdateSubproblemStatus(decomposition *types.ProblemDecomposition, subproblemID, status, solution string) error {
+	pd.mu.Lock()
+	defer pd.mu.Unlock()
+
 	for _, sp := range decomposition.Subproblems {
 		if sp.ID == subproblemID {
 			sp.Status = status

@@ -5,6 +5,7 @@ package metacognition
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -12,6 +13,7 @@ import (
 
 // SelfEvaluator performs metacognitive self-assessment
 type SelfEvaluator struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -22,6 +24,9 @@ func NewSelfEvaluator() *SelfEvaluator {
 
 // EvaluateThought performs self-evaluation on a thought
 func (se *SelfEvaluator) EvaluateThought(thought *types.Thought) (*types.SelfEvaluation, error) {
+	se.mu.Lock()
+	defer se.mu.Unlock()
+
 	se.counter++
 
 	qualityScore := se.assessQuality(thought)
@@ -50,6 +55,9 @@ func (se *SelfEvaluator) EvaluateThought(thought *types.Thought) (*types.SelfEva
 
 // EvaluateBranch performs self-evaluation on a branch
 func (se *SelfEvaluator) EvaluateBranch(branch *types.Branch) (*types.SelfEvaluation, error) {
+	se.mu.Lock()
+	defer se.mu.Unlock()
+
 	se.counter++
 
 	// Aggregate assessment from all thoughts in branch

@@ -15,12 +15,26 @@ package storage
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
+)
+
+const (
+	// MaxSearchResults is the hard limit for search results to prevent resource exhaustion
+	MaxSearchResults = 1000
+	// MaxIndexWordLength prevents extremely long words from being indexed
+	MaxIndexWordLength = 50
+	// MaxUniqueWordsPerThought limits unique words indexed per thought
+	MaxUniqueWordsPerThought = 1000
+	// MaxIndexSize is the global index size limit
+	MaxIndexSize = 100000
+	// MaxRecentBranches is the maximum number of recent branches to track
+	MaxRecentBranches = 10
 )
 
 // MemoryStorage implements in-memory storage with thread-safe operations.
@@ -64,7 +78,7 @@ func NewMemoryStorage() *MemoryStorage {
 		modeIndex:       make(map[types.ThinkingMode][]string),
 		thoughtsOrdered: make([]*types.Thought, 0),
 		branchesOrdered: make([]*types.Branch, 0),
-		recentBranchIDs: make([]string, 0, 10),
+		recentBranchIDs: make([]string, 0, MaxRecentBranches),
 	}
 }
 
@@ -101,6 +115,12 @@ func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 
 // indexThoughtContent tokenizes thought content and adds to inverted index
 func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
+	// Check global index size to prevent unbounded growth
+	if len(s.contentIndex) >= MaxIndexSize {
+		log.Printf("Warning: Content index at capacity (%d), skipping indexing for thought %s", MaxIndexSize, thought.ID)
+		return
+	}
+
 	// Tokenize content by splitting on whitespace and punctuation
 	content := strings.ToLower(thought.Content)
 	words := strings.FieldsFunc(content, func(r rune) bool {
@@ -109,14 +129,25 @@ func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
 
 	// Add thought ID to index for each unique word
 	seen := make(map[string]bool)
+	uniqueWordCount := 0
+
 	for _, word := range words {
-		if word == "" || len(word) < 2 { // Skip empty and single-char tokens
+		// Enforce word length limit to prevent extremely long words
+		if word == "" || len(word) < 2 || len(word) > MaxIndexWordLength { // Skip empty and single-char tokens
 			continue
 		}
 		if seen[word] {
 			continue // Skip duplicates within same thought
 		}
+
+		// Limit unique words per thought to prevent index pollution
+		if uniqueWordCount >= MaxUniqueWordsPerThought {
+			log.Printf("Warning: Thought %s exceeded max unique words (%d), truncating index", thought.ID, MaxUniqueWordsPerThought)
+			break
+		}
+
 		seen[word] = true
+		uniqueWordCount++
 		s.contentIndex[word] = append(s.contentIndex[word], thought.ID)
 	}
 }
@@ -309,6 +340,11 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
+	// Enforce maximum search results to prevent resource exhaustion
+	if limit <= 0 || limit > MaxSearchResults {
+		limit = MaxSearchResults
+	}
+
 	// Build candidate set using index for fast filtering
 	var candidateSet map[string]bool
 
@@ -331,11 +367,16 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 		candidateSet = nil // nil means "all thoughts match"
 	}
 
-	// Iterate through ordered slice for deterministic pagination
+	// Pre-allocate results with capacity
 	results := make([]*types.Thought, 0, limit)
 	skipped := 0
 
 	for _, thought := range s.thoughtsOrdered {
+		// Check limit BEFORE expensive copy operation
+		if len(results) >= limit {
+			break
+		}
+
 		// Check if thought matches filter criteria
 		if candidateSet != nil && !candidateSet[thought.ID] {
 			continue // Not in candidate set, skip
@@ -349,11 +390,6 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 
 		// Add to results
 		results = append(results, copyThought(thought))
-
-		// Check limit
-		if limit > 0 && len(results) >= limit {
-			break
-		}
 	}
 
 	return results
@@ -456,7 +492,8 @@ func (s *MemoryStorage) AppendThoughtToBranch(branchID string, thought *types.Th
 		return fmt.Errorf("branch not found: %s", branchID)
 	}
 
-	branch.Thoughts = append(branch.Thoughts, thought)
+	// Store a copy to prevent external modifications from affecting internal state
+	branch.Thoughts = append(branch.Thoughts, copyThought(thought))
 	branch.UpdatedAt = time.Now()
 	return nil
 }
@@ -472,7 +509,8 @@ func (s *MemoryStorage) AppendInsightToBranch(branchID string, insight *types.In
 		return fmt.Errorf("branch not found: %s", branchID)
 	}
 
-	branch.Insights = append(branch.Insights, insight)
+	// Store a copy to prevent external modifications from affecting internal state
+	branch.Insights = append(branch.Insights, copyInsight(insight))
 	branch.UpdatedAt = time.Now()
 	return nil
 }
@@ -488,7 +526,8 @@ func (s *MemoryStorage) AppendCrossRefToBranch(branchID string, crossRef *types.
 		return fmt.Errorf("branch not found: %s", branchID)
 	}
 
-	branch.CrossRefs = append(branch.CrossRefs, crossRef)
+	// Store a copy to prevent external modifications from affecting internal state
+	branch.CrossRefs = append(branch.CrossRefs, copyCrossRef(crossRef))
 	branch.UpdatedAt = time.Now()
 	return nil
 }

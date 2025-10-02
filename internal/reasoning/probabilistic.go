@@ -5,6 +5,7 @@ package reasoning
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -12,6 +13,7 @@ import (
 
 // ProbabilisticReasoner performs Bayesian inference and probabilistic reasoning
 type ProbabilisticReasoner struct {
+	mu      sync.RWMutex
 	beliefs map[string]*types.ProbabilisticBelief
 	counter int
 }
@@ -28,6 +30,9 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 	if priorProb < 0 || priorProb > 1 {
 		return nil, fmt.Errorf("probability must be between 0 and 1, got: %f", priorProb)
 	}
+
+	pr.mu.Lock()
+	defer pr.mu.Unlock()
 
 	pr.counter++
 	belief := &types.ProbabilisticBelief{
@@ -49,6 +54,9 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 // likelihood: P(E|H) - probability of evidence given hypothesis is true
 // evidenceProb: P(E) - base rate probability of seeing this evidence
 func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string, likelihood, evidenceProb float64) (*types.ProbabilisticBelief, error) {
+	pr.mu.Lock()
+	defer pr.mu.Unlock()
+
 	belief, exists := pr.beliefs[beliefID]
 	if !exists {
 		return nil, fmt.Errorf("belief not found: %s", beliefID)
@@ -102,6 +110,9 @@ func (pr *ProbabilisticReasoner) UpdateBeliefWithEvidence(beliefID string, evide
 
 // GetBelief retrieves a belief by ID
 func (pr *ProbabilisticReasoner) GetBelief(beliefID string) (*types.ProbabilisticBelief, error) {
+	pr.mu.RLock()
+	defer pr.mu.RUnlock()
+
 	belief, exists := pr.beliefs[beliefID]
 	if !exists {
 		return nil, fmt.Errorf("belief not found: %s", beliefID)
@@ -116,15 +127,18 @@ func (pr *ProbabilisticReasoner) CombineBeliefs(beliefIDs []string, operation st
 		return 0, fmt.Errorf("no beliefs provided")
 	}
 
+	pr.mu.RLock()
+	defer pr.mu.RUnlock()
+
 	var result float64
 
 	switch operation {
 	case "and": // P(A and B) = P(A) * P(B) for independent events
 		result = 1.0
 		for _, id := range beliefIDs {
-			belief, err := pr.GetBelief(id)
-			if err != nil {
-				return 0, err
+			belief, exists := pr.beliefs[id]
+			if !exists {
+				return 0, fmt.Errorf("belief not found: %s", id)
 			}
 			result *= belief.Probability
 		}
@@ -132,9 +146,9 @@ func (pr *ProbabilisticReasoner) CombineBeliefs(beliefIDs []string, operation st
 	case "or": // P(A or B) = P(A) + P(B) - P(A)*P(B) for independent events
 		result = 0.0
 		for _, id := range beliefIDs {
-			belief, err := pr.GetBelief(id)
-			if err != nil {
-				return 0, err
+			belief, exists := pr.beliefs[id]
+			if !exists {
+				return 0, fmt.Errorf("belief not found: %s", id)
 			}
 			// P(A or B) = 1 - P(not A and not B) = 1 - (1-P(A))*(1-P(B))
 			result = 1 - (1-result)*(1-belief.Probability)

@@ -3,6 +3,7 @@ package analysis
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"unified-thinking/internal/types"
@@ -10,6 +11,7 @@ import (
 
 // ContradictionDetector finds contradictions between thoughts
 type ContradictionDetector struct {
+	mu      sync.RWMutex
 	counter int
 }
 
@@ -20,6 +22,9 @@ func NewContradictionDetector() *ContradictionDetector {
 
 // DetectContradictions finds contradictions among a set of thoughts
 func (cd *ContradictionDetector) DetectContradictions(thoughts []*types.Thought) ([]*types.Contradiction, error) {
+	cd.mu.Lock()
+	defer cd.mu.Unlock()
+
 	contradictions := make([]*types.Contradiction, 0)
 
 	// Compare all pairs of thoughts
