@@ -43,9 +43,29 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 			}
 			branchID = branch.ID
 		}
+	} else {
+		// BranchID was provided - check if it exists, create if it doesn't
+		_, err := m.storage.GetBranch(branchID)
+		if err != nil {
+			// Branch doesn't exist, create it
+			branch := &types.Branch{
+				ID:         branchID,
+				State:      types.StateActive,
+				Priority:   1.0,
+				Confidence: input.Confidence,
+				Thoughts:   make([]*types.Thought, 0),
+				Insights:   make([]*types.Insight, 0),
+				CrossRefs:  make([]*types.CrossRef, 0),
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+			}
+			if err := m.storage.StoreBranch(branch); err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	// Update branch access tracking
+	// Update branch access tracking (branch is guaranteed to exist now)
 	if err := m.storage.UpdateBranchAccess(branchID); err != nil {
 		return nil, err
 	}

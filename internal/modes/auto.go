@@ -42,10 +42,21 @@ func (m *AutoMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 func (m *AutoMode) detectMode(input ThoughtInput) types.ThinkingMode {
 	content := strings.ToLower(input.Content)
 
-	// Divergent indicators
+	// Check ForceRebellion flag first - explicit request for divergent mode
+	if input.ForceRebellion {
+		return types.ModeDivergent
+	}
+
+	// Tree structural indicators (checked before keywords to prioritize explicit structure)
+	if input.BranchID != "" || len(input.CrossRefs) > 0 || len(input.KeyPoints) > 0 {
+		return types.ModeTree
+	}
+
+	// Divergent indicators (checked before tree keywords to prioritize creative thinking)
+	// Note: "different" removed to avoid false positives with phrases like "explore different options"
 	divergentKeywords := []string{
-		"creative", "unconventional", "what if", "imagine", "challenge", 
-		"rebel", "outside the box", "innovative", "radical", "different",
+		"creative", "unconventional", "what if", "imagine", "challenge",
+		"rebel", "outside the box", "innovative", "radical",
 	}
 	for _, kw := range divergentKeywords {
 		if strings.Contains(content, kw) {
@@ -53,11 +64,7 @@ func (m *AutoMode) detectMode(input ThoughtInput) types.ThinkingMode {
 		}
 	}
 
-	// Tree indicators
-	if input.BranchID != "" || len(input.CrossRefs) > 0 || len(input.KeyPoints) > 0 {
-		return types.ModeTree
-	}
-
+	// Tree keywords (for exploration and branching)
 	treeKeywords := []string{
 		"branch", "explore", "alternative", "parallel", "compare",
 		"multiple", "options", "possibilities",

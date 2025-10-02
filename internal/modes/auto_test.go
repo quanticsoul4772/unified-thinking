@@ -405,9 +405,11 @@ func TestAutoMode_AllDivergentKeywords(t *testing.T) {
 	divergent := NewDivergentMode(store)
 	auto := NewAutoMode(linear, tree, divergent)
 
+	// Note: "different" removed to avoid false positives with tree-mode phrases
+	// like "explore different options" or "compare different alternatives"
 	keywords := []string{
 		"creative", "unconventional", "what if", "imagine", "challenge",
-		"rebel", "outside the box", "innovative", "radical", "different",
+		"rebel", "outside the box", "innovative", "radical",
 	}
 
 	for _, keyword := range keywords {
