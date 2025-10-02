@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"unified-thinking/internal/modes"
@@ -226,11 +227,12 @@ func TestHandleListBranches(t *testing.T) {
 	server := setupTestServer()
 	ctx := context.Background()
 
-	// Create some branches
+	// Create some branches with explicit branch IDs to ensure separate branches
 	for i := 0; i < 3; i++ {
 		input := ThinkRequest{
 			Content:    "Branch thought",
 			Mode:       "tree",
+			BranchID:   fmt.Sprintf("test-branch-%d", i),
 			Confidence: 0.8,
 		}
 		server.handleThink(ctx, nil, input)

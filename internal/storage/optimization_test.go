@@ -236,12 +236,13 @@ func TestGetRecentBranches(t *testing.T) {
 		t.Fatalf("GetRecentBranches() error = %v", err)
 	}
 
-	if len(recent) != 3 {
-		t.Fatalf("Expected 3 recent branches, got %d", len(recent))
+	// Should return all 5 branches since we created 5 and the limit is 10
+	if len(recent) != 5 {
+		t.Fatalf("Expected 5 recent branches, got %d", len(recent))
 	}
 
-	// Verify most recent first (b5, b4, b3)
-	expected := []string{"b5", "b4", "b3"}
+	// Verify most recent first (b5, b4, b3, b2, b1)
+	expected := []string{"b5", "b4", "b3", "b2", "b1"}
 	for i, branch := range recent {
 		if branch.ID != expected[i] {
 			t.Errorf("Recent[%d] = %v, want %v", i, branch.ID, expected[i])
