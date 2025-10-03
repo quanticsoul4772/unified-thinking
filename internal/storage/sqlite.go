@@ -239,9 +239,18 @@ func (s *SQLiteStorage) StoreThought(thought *types.Thought) error {
 	keyPointsJSON, _ := json.Marshal(thought.KeyPoints)
 	metadataJSON, _ := json.Marshal(thought.Metadata)
 
+	// Handle optional foreign keys - convert empty strings to NULL
+	var branchID, parentID interface{}
+	if thought.BranchID != "" {
+		branchID = thought.BranchID
+	}
+	if thought.ParentID != "" {
+		parentID = thought.ParentID
+	}
+
 	// Write to database
 	_, err := s.stmtInsertThought.Exec(
-		thought.ID, thought.Content, thought.Mode, thought.BranchID, thought.ParentID,
+		thought.ID, thought.Content, thought.Mode, branchID, parentID,
 		thought.Type, thought.Confidence, thought.Timestamp.Unix(),
 		keyPointsJSON, metadataJSON,
 		boolToInt(thought.IsRebellion), boolToInt(thought.ChallengesAssumption),
@@ -276,12 +285,13 @@ func (s *SQLiteStorage) GetThought(id string) (*types.Thought, error) {
 func (s *SQLiteStorage) fetchThought(id string) (*types.Thought, error) {
 	thought := &types.Thought{}
 	var keyPointsJSON, metadataJSON []byte
+	var branchID, parentID sql.NullString
 	var isRebellion, challengesAssumption int
 	var timestamp int64
 
 	err := s.stmtGetThought.QueryRow(id).Scan(
-		&thought.ID, &thought.Content, &thought.Mode, &thought.BranchID,
-		&thought.ParentID, &thought.Type, &thought.Confidence, &timestamp,
+		&thought.ID, &thought.Content, &thought.Mode, &branchID,
+		&parentID, &thought.Type, &thought.Confidence, &timestamp,
 		&keyPointsJSON, &metadataJSON, &isRebellion, &challengesAssumption,
 	)
 	if err == sql.ErrNoRows {
@@ -291,6 +301,12 @@ func (s *SQLiteStorage) fetchThought(id string) (*types.Thought, error) {
 		return nil, fmt.Errorf("failed to fetch thought: %w", err)
 	}
 
+	if branchID.Valid {
+		thought.BranchID = branchID.String
+	}
+	if parentID.Valid {
+		thought.ParentID = parentID.String
+	}
 	thought.Timestamp = time.Unix(timestamp, 0)
 	thought.IsRebellion = isRebellion == 1
 	thought.ChallengesAssumption = challengesAssumption == 1
@@ -312,18 +328,25 @@ func (s *SQLiteStorage) fetchThought(id string) (*types.Thought, error) {
 func (s *SQLiteStorage) scanThought(row interface{ Scan(...interface{}) error }) (*types.Thought, error) {
 	thought := &types.Thought{}
 	var keyPointsJSON, metadataJSON []byte
+	var branchID, parentID sql.NullString
 	var isRebellion, challengesAssumption int
 	var timestamp int64
 
 	err := row.Scan(
-		&thought.ID, &thought.Content, &thought.Mode, &thought.BranchID,
-		&thought.ParentID, &thought.Type, &thought.Confidence, &timestamp,
+		&thought.ID, &thought.Content, &thought.Mode, &branchID,
+		&parentID, &thought.Type, &thought.Confidence, &timestamp,
 		&keyPointsJSON, &metadataJSON, &isRebellion, &challengesAssumption,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	if branchID.Valid {
+		thought.BranchID = branchID.String
+	}
+	if parentID.Valid {
+		thought.ParentID = parentID.String
+	}
 	thought.Timestamp = time.Unix(timestamp, 0)
 	thought.IsRebellion = isRebellion == 1
 	thought.ChallengesAssumption = challengesAssumption == 1
@@ -433,9 +456,15 @@ func (s *SQLiteStorage) StoreBranch(branch *types.Branch) error {
 		branch.ID = fmt.Sprintf("branch-%d-%d", time.Now().Unix(), counter)
 	}
 
+	// Handle optional foreign key - convert empty string to NULL
+	var parentBranchID interface{}
+	if branch.ParentBranchID != "" {
+		parentBranchID = branch.ParentBranchID
+	}
+
 	// Write to database
 	_, err := s.stmtInsertBranch.Exec(
-		branch.ID, branch.ParentBranchID, branch.State, branch.Priority, branch.Confidence,
+		branch.ID, parentBranchID, branch.State, branch.Priority, branch.Confidence,
 		branch.CreatedAt.Unix(), branch.UpdatedAt.Unix(), branch.LastAccessedAt.Unix(),
 	)
 	if err != nil {
