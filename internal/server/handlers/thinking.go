@@ -13,12 +13,13 @@ import (
 
 // ThinkingHandler handles think and history operations
 type ThinkingHandler struct {
-	storage   storage.Storage
-	linear    *modes.LinearMode
-	tree      *modes.TreeMode
-	divergent *modes.DivergentMode
-	auto      *modes.AutoMode
-	validator *validation.LogicValidator
+	storage          storage.Storage
+	linear           *modes.LinearMode
+	tree             *modes.TreeMode
+	divergent        *modes.DivergentMode
+	auto             *modes.AutoMode
+	validator        *validation.LogicValidator
+	metadataGen      *MetadataGenerator
 }
 
 // NewThinkingHandler creates a new thinking handler
@@ -31,12 +32,13 @@ func NewThinkingHandler(
 	validator *validation.LogicValidator,
 ) *ThinkingHandler {
 	return &ThinkingHandler{
-		storage:   store,
-		linear:    linear,
-		tree:      tree,
-		divergent: divergent,
-		auto:      auto,
-		validator: validator,
+		storage:     store,
+		linear:      linear,
+		tree:        tree,
+		divergent:   divergent,
+		auto:        auto,
+		validator:   validator,
+		metadataGen: NewMetadataGenerator(),
 	}
 }
 
@@ -57,16 +59,17 @@ type ThinkRequest struct {
 
 // ThinkResponse represents a thinking response
 type ThinkResponse struct {
-	ThoughtID            string  `json:"thought_id"`
-	Mode                 string  `json:"mode"`
-	Status               string  `json:"status"`
-	BranchID             string  `json:"branch_id,omitempty"`
-	Confidence           float64 `json:"confidence"`
-	IsRebellion          bool    `json:"is_rebellion,omitempty"`
-	ChallengesAssumption bool    `json:"challenges_assumption,omitempty"`
-	InsightCount         int     `json:"insight_count,omitempty"`
-	CrossRefCount        int     `json:"cross_ref_count,omitempty"`
-	IsValid              bool    `json:"is_valid,omitempty"`
+	ThoughtID            string                `json:"thought_id"`
+	Mode                 string                `json:"mode"`
+	Status               string                `json:"status"`
+	BranchID             string                `json:"branch_id,omitempty"`
+	Confidence           float64               `json:"confidence"`
+	IsRebellion          bool                  `json:"is_rebellion,omitempty"`
+	ChallengesAssumption bool                  `json:"challenges_assumption,omitempty"`
+	InsightCount         int                   `json:"insight_count,omitempty"`
+	CrossRefCount        int                   `json:"cross_ref_count,omitempty"`
+	IsValid              bool                  `json:"is_valid,omitempty"`
+	Metadata             *types.ResponseMetadata `json:"metadata,omitempty"`
 }
 
 // HistoryRequest represents a history request
@@ -138,6 +141,21 @@ func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequ
 		}
 	}
 
+	// Retrieve the thought for metadata generation
+	thought, _ := h.storage.GetThought(result.ThoughtID)
+
+	// Generate metadata to guide Claude's next actions
+	var metadata *types.ResponseMetadata
+	if thought != nil {
+		metadata = h.metadataGen.GenerateThinkMetadata(
+			thought,
+			types.ThinkingMode(result.Mode),
+			result.Confidence,
+			result.InsightCount > 0,
+			result.CrossRefCount > 0,
+		)
+	}
+
 	response := &ThinkResponse{
 		ThoughtID:            result.ThoughtID,
 		Mode:                 string(result.Mode),
@@ -149,6 +167,7 @@ func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequ
 		InsightCount:         result.InsightCount,
 		CrossRefCount:        result.CrossRefCount,
 		IsValid:              isValid,
+		Metadata:             metadata,
 	}
 
 	return &mcp.CallToolResult{}, response, nil

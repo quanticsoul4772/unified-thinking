@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
 
@@ -473,5 +475,169 @@ func TestConcurrentThinkOperations(t *testing.T) {
 
 	if len(resp.Thoughts) != 10 {
 		t.Errorf("Expected 10 thoughts after concurrent operations, got %d", len(resp.Thoughts))
+	}
+}
+
+// TestHandleDetectBiases_WithFallacies tests the integrated bias and fallacy detection
+func TestHandleDetectBiases_WithFallacies(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create a thought with content that should trigger both biases and fallacies
+	thoughtContent := `This clearly shows and confirms our hypothesis was right.
+	Everyone knows this is true, it's obviously the case.
+	I recently heard about this, so it must be common.
+	You can't trust critics because they're just negative people.
+	If we don't buy this now, we'll miss out forever.`
+
+	// Store the thought first
+	thought := &types.Thought{
+		ID:         "test-thought-1",
+		Content:    thoughtContent,
+		Mode:       types.ModeLinear,
+		Confidence: 0.7,
+		Timestamp:  time.Now(),
+	}
+	err := server.storage.StoreThought(thought)
+	if err != nil {
+		t.Fatalf("Failed to store thought: %v", err)
+	}
+
+	// Test detect-biases with thought ID
+	input := DetectBiasesRequest{
+		ThoughtID: "test-thought-1",
+	}
+
+	result, response, err := server.handleDetectBiases(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleDetectBiases() error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("result should not be nil")
+	}
+
+	if response.Status != "success" {
+		t.Errorf("Status = %v, want success", response.Status)
+	}
+
+	// Check that we have both biases and fallacies
+	if len(response.Biases) == 0 {
+		t.Error("Expected at least one bias to be detected")
+	}
+
+	if len(response.Fallacies) == 0 {
+		t.Error("Expected at least one fallacy to be detected")
+	}
+
+	// Check that combined list contains both types
+	if len(response.Combined) == 0 {
+		t.Error("Combined list should not be empty")
+	}
+
+	// Count should match the total
+	expectedCount := len(response.Biases) + len(response.Fallacies)
+	if response.Count != expectedCount {
+		t.Errorf("Count = %d, want %d", response.Count, expectedCount)
+	}
+
+	// Verify combined list structure
+	hasBias := false
+	hasFallacy := false
+	for _, issue := range response.Combined {
+		if issue.Type == "bias" {
+			hasBias = true
+		}
+		if issue.Type == "fallacy" {
+			hasFallacy = true
+		}
+		// Verify required fields are populated
+		if issue.Name == "" {
+			t.Error("Issue name should not be empty")
+		}
+		if issue.Category == "" {
+			t.Error("Issue category should not be empty")
+		}
+		if issue.Description == "" {
+			t.Error("Issue description should not be empty")
+		}
+		if issue.Mitigation == "" {
+			t.Error("Issue mitigation should not be empty")
+		}
+	}
+
+	if !hasBias {
+		t.Error("Combined list should contain at least one bias")
+	}
+
+	if !hasFallacy {
+		t.Error("Combined list should contain at least one fallacy")
+	}
+}
+
+// TestHandleDetectBiases_BranchAnalysis tests bias/fallacy detection on a branch
+func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
+	server := setupTestServer()
+	ctx := context.Background()
+
+	// Create a branch with multiple thoughts
+	branch := &types.Branch{
+		ID:        "test-branch-1",
+		Thoughts:  []*types.Thought{},
+		CreatedAt: time.Now(),
+	}
+
+	// Add thoughts with various biases and fallacies
+	thoughtContents := []string{
+		"The first person I asked agreed, so everyone must agree.", // Hasty generalization
+		"You're wrong because you're not an expert.",               // Ad hominem
+		"We've always done it this way, so it must be right.",       // Appeal to tradition
+	}
+
+	for i, content := range thoughtContents {
+		thought := &types.Thought{
+			ID:         fmt.Sprintf("thought-%d", i),
+			Content:    content,
+			Mode:       types.ModeTree,
+			BranchID:   branch.ID,
+			Confidence: 0.7,
+			Timestamp:  time.Now().Add(time.Duration(i) * time.Second),
+		}
+		branch.Thoughts = append(branch.Thoughts, thought)
+		server.storage.StoreThought(thought)
+	}
+
+	// Store the branch
+	err := server.storage.StoreBranch(branch)
+	if err != nil {
+		t.Fatalf("Failed to store branch: %v", err)
+	}
+
+	// Test detect-biases with branch ID
+	input := DetectBiasesRequest{
+		BranchID: "test-branch-1",
+	}
+
+	result, response, err := server.handleDetectBiases(ctx, nil, input)
+	if err != nil {
+		t.Fatalf("handleDetectBiases() error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("result should not be nil")
+	}
+
+	if response.Status != "success" {
+		t.Errorf("Status = %v, want success", response.Status)
+	}
+
+	// Should detect multiple issues from the branch
+	if len(response.Combined) == 0 {
+		t.Error("Should detect issues in branch thoughts")
+	}
+
+	// Verify we're analyzing the whole branch
+	if response.Count == 0 {
+		t.Error("Count should be greater than 0 for branch with problematic content")
 	}
 }

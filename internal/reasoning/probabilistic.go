@@ -50,10 +50,57 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 }
 
 // UpdateBelief applies Bayesian update based on new evidence
-// Uses simplified Bayes' theorem: P(H|E) = P(E|H) * P(H) / P(E)
-// likelihood: P(E|H) - probability of evidence given hypothesis is true
-// evidenceProb: P(E) - base rate probability of seeing this evidence
+//
+// DEPRECATED: This method is mathematically incorrect when evidenceProb is provided directly.
+// Use UpdateBeliefFull instead, which properly requires both P(E|H) and P(E|¬H).
+//
+// This method is retained for backward compatibility but now delegates to UpdateBeliefFull
+// with a default P(E|¬H) = 0.5 when evidenceProb is not provided.
+//
+// Parameters:
+//   - beliefID: ID of the belief to update
+//   - evidenceID: ID of the evidence being applied
+//   - likelihood: P(E|H) - probability of evidence given hypothesis is true
+//   - evidenceProb: P(E) - DEPRECATED, this parameter is ignored. Method now always
+//     calculates P(E) properly using Bayes' theorem with P(E|¬H) = 0.5
+//
+// Returns the updated belief or an error
 func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string, likelihood, evidenceProb float64) (*types.ProbabilisticBelief, error) {
+	// For backward compatibility, we use a default P(E|¬H) = 0.5
+	// This is not ideal but maintains the existing API behavior
+	// Users should migrate to UpdateBeliefFull for proper Bayesian inference
+
+	// Calculate what P(E|¬H) would need to be if evidenceProb was correct
+	// However, we'll just use the default for consistency
+	likelihoodIfFalse := 0.5
+
+	// Note: evidenceProb parameter is now ignored to avoid mathematical errors
+	// Always use the full Bayesian update with the default P(E|¬H)
+	return pr.UpdateBeliefFull(beliefID, evidenceID, likelihood, likelihoodIfFalse)
+}
+
+// UpdateBeliefFull applies Bayesian update with full parameters
+// This is the mathematically correct implementation of Bayes' theorem:
+// P(H|E) = P(E|H)P(H) / [P(E|H)P(H) + P(E|¬H)P(¬H)]
+//
+// Why both likelihoods are needed:
+// - P(E|H): How likely we'd see this evidence if the hypothesis is true
+// - P(E|¬H): How likely we'd see this evidence if the hypothesis is false
+// Without both, we cannot properly normalize the posterior probability.
+//
+// Example: Medical test with 99% sensitivity (P(positive|disease) = 0.99)
+// and 95% specificity (P(negative|healthy) = 0.95, so P(positive|healthy) = 0.05).
+// For a disease with 1% prevalence, a positive test only gives ~17% probability
+// of having the disease, NOT 99%! This is why we need both likelihoods.
+//
+// Parameters:
+//   - beliefID: ID of the belief to update
+//   - evidenceID: ID of the evidence being applied
+//   - likelihoodIfTrue: P(E|H) - probability of seeing evidence if hypothesis is true
+//   - likelihoodIfFalse: P(E|¬H) - probability of seeing evidence if hypothesis is false
+//
+// Returns the updated belief with the posterior probability
+func (pr *ProbabilisticReasoner) UpdateBeliefFull(beliefID string, evidenceID string, likelihoodIfTrue, likelihoodIfFalse float64) (*types.ProbabilisticBelief, error) {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
 
@@ -62,18 +109,43 @@ func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string
 		return nil, fmt.Errorf("belief not found: %s", beliefID)
 	}
 
-	if likelihood < 0 || likelihood > 1 {
-		return nil, fmt.Errorf("likelihood must be between 0 and 1")
+	// Validate likelihood parameters
+	if likelihoodIfTrue < 0 || likelihoodIfTrue > 1 {
+		return nil, fmt.Errorf("P(E|H) must be between 0 and 1, got: %f", likelihoodIfTrue)
 	}
-	if evidenceProb <= 0 || evidenceProb > 1 {
-		return nil, fmt.Errorf("evidence probability must be between 0 and 1 (exclusive 0)")
+	if likelihoodIfFalse < 0 || likelihoodIfFalse > 1 {
+		return nil, fmt.Errorf("P(E|¬H) must be between 0 and 1, got: %f", likelihoodIfFalse)
 	}
 
-	// Bayes' theorem: P(H|E) = P(E|H) * P(H) / P(E)
+	// Check for degenerate cases where both likelihoods are identical
+	// This means the evidence provides no information
+	if math.Abs(likelihoodIfTrue-likelihoodIfFalse) < 1e-10 {
+		// Evidence is equally likely regardless of hypothesis truth
+		// No update needed - posterior equals prior
+		belief.Evidence = append(belief.Evidence, evidenceID)
+		belief.UpdatedAt = time.Now()
+		if belief.Metadata == nil {
+			belief.Metadata = make(map[string]interface{})
+		}
+		belief.Metadata["last_update_uninformative"] = true
+		return belief, nil
+	}
+
+	// Full Bayes' theorem
 	prior := belief.Probability
-	posterior := (likelihood * prior) / evidenceProb
+	priorNot := 1.0 - prior
 
-	// Clamp to valid probability range
+	numerator := likelihoodIfTrue * prior
+	denominator := (likelihoodIfTrue * prior) + (likelihoodIfFalse * priorNot)
+
+	var posterior float64
+	if denominator > 0 {
+		posterior = numerator / denominator
+	} else {
+		posterior = prior // No update if denominator is zero
+	}
+
+	// Clamp to valid probability range (should already be in range, but safety)
 	posterior = math.Max(0, math.Min(1, posterior))
 
 	belief.Probability = posterior
@@ -84,28 +156,31 @@ func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string
 }
 
 // UpdateBeliefWithEvidence uses evidence strength to update belief
-// This is a simplified approach where we estimate likelihood from evidence quality
+// This method now properly estimates both P(E|H) and P(E|¬H) from evidence quality
 func (pr *ProbabilisticReasoner) UpdateBeliefWithEvidence(beliefID string, evidence *types.Evidence) (*types.ProbabilisticBelief, error) {
 	_, exists := pr.beliefs[beliefID]
 	if !exists {
 		return nil, fmt.Errorf("belief not found: %s", beliefID)
 	}
 
-	// Estimate likelihood from evidence quality and reliability
-	// Strong supporting evidence increases likelihood
-	var likelihood float64
+	// Estimate likelihoods from evidence quality and reliability
+	// We need both P(E|H) and P(E|¬H) for proper Bayesian update
+	var likelihoodIfTrue, likelihoodIfFalse float64
+
 	if evidence.SupportsClaim {
 		// Evidence supports the belief
-		likelihood = 0.5 + (evidence.OverallScore * 0.4) // Range: 0.5-0.9
+		// Strong evidence means high P(E|H) and low P(E|¬H)
+		likelihoodIfTrue = 0.5 + (evidence.OverallScore * 0.4)  // Range: 0.5-0.9
+		likelihoodIfFalse = 0.5 - (evidence.OverallScore * 0.3) // Range: 0.2-0.5
 	} else {
 		// Evidence refutes the belief
-		likelihood = 0.5 - (evidence.OverallScore * 0.4) // Range: 0.1-0.5
+		// Strong refuting evidence means low P(E|H) and high P(E|¬H)
+		likelihoodIfTrue = 0.5 - (evidence.OverallScore * 0.4)  // Range: 0.1-0.5
+		likelihoodIfFalse = 0.5 + (evidence.OverallScore * 0.3) // Range: 0.5-0.8
 	}
 
-	// Use evidence relevance as base rate estimate
-	evidenceProb := 0.5 // Neutral base rate
-
-	return pr.UpdateBelief(beliefID, evidence.ID, likelihood, evidenceProb)
+	// Use the mathematically correct UpdateBeliefFull method
+	return pr.UpdateBeliefFull(beliefID, evidence.ID, likelihoodIfTrue, likelihoodIfFalse)
 }
 
 // GetBelief retrieves a belief by ID

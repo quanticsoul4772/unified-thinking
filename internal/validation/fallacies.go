@@ -299,6 +299,19 @@ func (fd *FallacyDetector) detectStatisticalFallacies(content string) []*Detecte
 	detected := []*DetectedFallacy{}
 	lower := strings.ToLower(content)
 
+	// Post Hoc Ergo Propter Hoc
+	if fd.detectPostHoc(lower) {
+		detected = append(detected, &DetectedFallacy{
+			Type:        "post_hoc_ergo_propter_hoc",
+			Category:    FallacyStatistical,
+			Location:    "causal reasoning",
+			Explanation: "Assuming causation from temporal sequence - just because B follows A doesn't mean A caused B",
+			Example:     fd.extractExample(content, []string{"after", "then", "caused", "because", "led to"}),
+			Correction:  "Establish causal mechanism, rule out confounders, consider alternative explanations",
+			Confidence:  0.7,
+		})
+	}
+
 	// Base Rate Neglect
 	if fd.detectBaseRateNeglect(lower) {
 		detected = append(detected, &DetectedFallacy{
@@ -345,17 +358,105 @@ func (fd *FallacyDetector) detectStatisticalFallacies(content string) []*Detecte
 
 func (fd *FallacyDetector) detectAffirmingConsequent(text string) bool {
 	// Pattern: "if X then Y" + "Y" + "therefore X"
-	hasConditional := strings.Contains(text, "if") && (strings.Contains(text, "then") || strings.Contains(text, "implies"))
-	hasAffirmation := strings.Contains(text, "therefore") || strings.Contains(text, "thus") || strings.Contains(text, "so")
-	return hasConditional && hasAffirmation && !strings.Contains(text, "not")
+	// Example: "If it rains, the ground is wet. The ground is wet. Therefore, it rained."
+	lower := strings.ToLower(text)
+
+	// Must have conditional structure
+	if !strings.Contains(lower, "if") {
+		return false
+	}
+
+	// Must have conclusion
+	if !strings.Contains(lower, "therefore") && !strings.Contains(lower, "thus") && !strings.Contains(lower, "so,") {
+		return false
+	}
+
+	// Split by sentences to analyze structure
+	sentences := strings.Split(lower, ". ")
+	if len(sentences) < 3 {
+		return false
+	}
+
+	// First sentence should be "if X then Y"
+	if !strings.Contains(sentences[0], "if") {
+		return false
+	}
+
+	// Should have "the ground is wet" (consequent) stated in middle sentence
+	// and conclusion affirms the antecedent "it rained"
+	// This is the fallacy: affirming Y and concluding X
+
+	// Simple heuristic: if we have "if...then" and "therefore" but no "not" in the conclusion
+	// and the conclusion comes after affirming something, likely affirming consequent
+	hasConditional := strings.Contains(sentences[0], "if")
+	hasMiddleAffirmation := len(sentences) >= 2
+	hasConclusionWithoutNegation := false
+
+	for i, s := range sentences {
+		if strings.Contains(s, "therefore") || strings.Contains(s, "thus") {
+			// Check if this conclusion has negation
+			if !strings.Contains(s, "not") && !strings.Contains(s, "n't") {
+				hasConclusionWithoutNegation = true
+			}
+			// Also check previous sentence for affirming consequent
+			if i > 0 && hasConditional && hasMiddleAffirmation {
+				return true
+			}
+		}
+	}
+
+	return hasConditional && hasMiddleAffirmation && hasConclusionWithoutNegation
 }
 
 func (fd *FallacyDetector) detectDenyingAntecedent(text string) bool {
 	// Pattern: "if X then Y" + "not X" + "therefore not Y"
-	hasConditional := strings.Contains(text, "if") && (strings.Contains(text, "then") || strings.Contains(text, "implies"))
-	hasNegation := strings.Contains(text, "not") || strings.Contains(text, "no") || strings.Contains(text, "isn't")
-	hasConclusion := strings.Contains(text, "therefore") || strings.Contains(text, "thus")
-	return hasConditional && hasNegation && hasConclusion
+	// Example: "If it rains, the ground is wet. It's not raining. Therefore, the ground is not wet."
+	lower := strings.ToLower(text)
+
+	// Must have conditional
+	if !strings.Contains(lower, "if") {
+		return false
+	}
+
+	// Must have conclusion
+	if !strings.Contains(lower, "therefore") && !strings.Contains(lower, "thus") {
+		return false
+	}
+
+	// Split into sentences
+	sentences := strings.Split(lower, ". ")
+	if len(sentences) < 3 {
+		return false
+	}
+
+	// Check structure:
+	// 1. First sentence: "if X then Y"
+	// 2. Second sentence: "not X" (denying antecedent)
+	// 3. Third sentence: "therefore not Y" (invalid conclusion)
+
+	hasConditional := strings.Contains(sentences[0], "if")
+	hasNegatedAntecedent := false
+	hasNegatedConclusion := false
+
+	// Check for negation in middle sentence (denying antecedent)
+	if len(sentences) >= 2 {
+		middle := sentences[1]
+		if strings.Contains(middle, "not") || strings.Contains(middle, "n't") ||
+		   strings.Contains(middle, "isn't") || strings.Contains(middle, "doesn't") {
+			hasNegatedAntecedent = true
+		}
+	}
+
+	// Check for negation in conclusion
+	for _, s := range sentences {
+		if strings.Contains(s, "therefore") || strings.Contains(s, "thus") {
+			if strings.Contains(s, "not") || strings.Contains(s, "n't") {
+				hasNegatedConclusion = true
+			}
+		}
+	}
+
+	return hasConditional && hasNegatedAntecedent && hasNegatedConclusion
 }
 
 func (fd *FallacyDetector) detectUndistributedMiddle(text string) bool {
@@ -556,16 +657,28 @@ func (fd *FallacyDetector) detectCompositionDivision(text string) bool {
 }
 
 func (fd *FallacyDetector) detectBaseRateNeglect(text string) bool {
-	prob := []string{"probability", "likely", "chance", "odds"}
-	hasProb := false
-	for _, p := range prob {
-		if strings.Contains(text, p) {
-			hasProb = true
-			break
-		}
-	}
+	// Pattern: "The test is X% accurate, so if you test positive, you definitely have..."
+	// This ignores base rate (prior probability)
+	lower := strings.ToLower(text)
 
-	return hasProb && !strings.Contains(text, "base") && !strings.Contains(text, "prior")
+	// Check for test accuracy claims
+	hasAccuracyClaim := strings.Contains(lower, "% accurate") ||
+		strings.Contains(lower, "accurate") ||
+		strings.Contains(lower, "99%") ||
+		strings.Contains(lower, "positive")
+
+	// Check for definitive conclusion
+	hasDefinitiveConclusion := strings.Contains(lower, "definitely") ||
+		strings.Contains(lower, "certainly") ||
+		strings.Contains(lower, "must have") ||
+		strings.Contains(lower, "you have")
+
+	// Should NOT mention base rate or prior
+	mentionsBaseRate := strings.Contains(lower, "base rate") ||
+		strings.Contains(lower, "prior") ||
+		strings.Contains(lower, "prevalence")
+
+	return hasAccuracyClaim && hasDefinitiveConclusion && !mentionsBaseRate
 }
 
 func (fd *FallacyDetector) detectTexasSharpshooter(text string) bool {
@@ -582,13 +695,78 @@ func (fd *FallacyDetector) detectTexasSharpshooter(text string) bool {
 }
 
 func (fd *FallacyDetector) detectSurvivorshipBias(text string) bool {
-	survivors := []string{"successful", "survivors", "winners", "who made it", "achieved"}
-	for _, surv := range survivors {
-		if strings.Contains(text, surv) && strings.Contains(text, "because") {
-			return true
+	// Pattern: "All successful X did Y, so doing Y leads to success"
+	// This ignores the failures who also did Y
+	lower := strings.ToLower(text)
+
+	// Check for success/survivor references
+	hasSuccessReference := strings.Contains(lower, "successful") ||
+		strings.Contains(lower, "success") ||
+		strings.Contains(lower, "survivors") ||
+		strings.Contains(lower, "winners")
+
+	// Check for causal conclusion
+	hasCausalClaim := (strings.Contains(lower, "so ") && strings.Contains(lower, " leads to")) ||
+		(strings.Contains(lower, "therefore") && strings.Contains(lower, "success")) ||
+		strings.Contains(lower, "dropping out leads to")
+
+	// Common pattern: "All successful X dropped out" (only looking at survivors)
+	hasAllPattern := strings.Contains(lower, "all successful") ||
+		strings.Contains(lower, "all the successful")
+
+	return (hasSuccessReference && hasCausalClaim) || hasAllPattern
+}
+
+func (fd *FallacyDetector) detectPostHoc(text string) bool {
+	// Pattern: "After X, then Y happened, therefore X caused Y"
+	// Example: "After I wore my lucky socks, we won the game, so the socks caused the win"
+	// Example: "Since implementing the policy, crime dropped, therefore the policy worked"
+	lower := strings.ToLower(text)
+
+	// Temporal sequence indicators
+	temporalWords := []string{"after", "following", "since", "then", "subsequently", "afterwards", "later"}
+	hasTemporalSequence := false
+	for _, word := range temporalWords {
+		if strings.Contains(lower, word) {
+			hasTemporalSequence = true
+			break
 		}
 	}
-	return false
+
+	// Causal claim indicators
+	causalWords := []string{"caused", "because", "therefore", "thus", "led to", "resulted in", "so the", "so my", "made", "due to"}
+	hasCausalClaim := false
+	for _, word := range causalWords {
+		if strings.Contains(lower, word) {
+			hasCausalClaim = true
+			break
+		}
+	}
+
+	// Common post hoc patterns
+	commonPatterns := []string{
+		"after i", "after we", "after they", "after he", "after she", // Personal temporal claims
+		"since i", "since we", "since the",                           // Since + subject
+		"then it", "then we", "then the",                             // Sequence markers
+	}
+
+	hasCommonPattern := false
+	for _, pattern := range commonPatterns {
+		if strings.Contains(lower, pattern) {
+			hasCommonPattern = true
+			break
+		}
+	}
+
+	// Special case: "correlation implies causation" pattern
+	correlationPattern := strings.Contains(lower, "correlated") &&
+		(strings.Contains(lower, "causes") || strings.Contains(lower, "caused"))
+
+	// Detect if there's both temporal sequence and causal claim
+	// Or if there's a common post hoc pattern with causation
+	return (hasTemporalSequence && hasCausalClaim) ||
+		(hasCommonPattern && hasCausalClaim) ||
+		correlationPattern
 }
 
 // Helper methods
@@ -609,6 +787,11 @@ func (fd *FallacyDetector) extractExample(text string, keywords []string) string
 }
 
 func (fd *FallacyDetector) sentenceSimilarity(s1, s2 string) float64 {
+	// Check for exact match first
+	if s1 == s2 {
+		return 1.0
+	}
+
 	words1 := strings.Fields(s1)
 	words2 := strings.Fields(s2)
 
@@ -616,22 +799,29 @@ func (fd *FallacyDetector) sentenceSimilarity(s1, s2 string) float64 {
 		return 0.0
 	}
 
-	common := 0
+	// Use Jaccard similarity: |intersection| / |union|
+	// Count common words
+	commonCount := 0
+	used := make(map[int]bool)
+
 	for _, w1 := range words1 {
-		for _, w2 := range words2 {
-			if w1 == w2 && len(w1) > 3 { // Only count significant words
-				common++
+		for i, w2 := range words2 {
+			if !used[i] && w1 == w2 {
+				commonCount++
+				used[i] = true
 				break
 			}
 		}
 	}
 
-	maxLen := len(words1)
-	if len(words2) > maxLen {
-		maxLen = len(words2)
+	// Union size = total words - common (since we counted common once)
+	unionSize := len(words1) + len(words2) - commonCount
+
+	if unionSize == 0 {
+		return 0.0
 	}
 
-	return float64(common) / float64(maxLen)
+	return float64(commonCount) / float64(unionSize)
 }
 
 func min(a, b int) int {

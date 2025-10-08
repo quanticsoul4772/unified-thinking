@@ -1,4 +1,8 @@
 // Package reasoning provides advanced reasoning capabilities.
+//
+// The causal reasoning module implements Pearl's causal inference framework,
+// including proper graph surgery for interventions (do-calculus) to correctly
+// distinguish correlation from causation.
 package reasoning
 
 import (
@@ -319,7 +323,71 @@ func (cr *CausalReasoner) estimateLinkConfidence(obs string) float64 {
 	return 0.7
 }
 
-// SimulateIntervention simulates the effects of an intervention
+// performGraphSurgery applies Pearl's graph surgery for interventions
+// When we intervene on a variable (do(X=x)), we break all incoming causal links to X
+// This represents setting X to a fixed value regardless of its natural causes
+func (cr *CausalReasoner) performGraphSurgery(graph *types.CausalGraph, interventionVarID string) *types.CausalGraph {
+	// Create a deep copy of the graph to avoid modifying the original
+	surgicalGraph := &types.CausalGraph{
+		ID:          graph.ID + "-surgical",
+		Description: graph.Description + " (with graph surgery)",
+		Variables:   make([]*types.CausalVariable, len(graph.Variables)),
+		Links:       make([]*types.CausalLink, 0),
+		Metadata:    make(map[string]interface{}),
+		CreatedAt:   graph.CreatedAt,
+	}
+
+	// Deep copy variables
+	for i, v := range graph.Variables {
+		surgicalGraph.Variables[i] = &types.CausalVariable{
+			ID:         v.ID,
+			Name:       v.Name,
+			Type:       v.Type,
+			Observable: v.Observable,
+			Metadata:   v.Metadata,
+		}
+	}
+
+	// Deep copy metadata
+	for k, v := range graph.Metadata {
+		surgicalGraph.Metadata[k] = v
+	}
+
+	// CRITICAL: Copy all links EXCEPT those pointing TO the intervention variable
+	// This is the core of Pearl's do-calculus - we break the causal mechanisms
+	// that normally determine the intervention variable's value
+	removedCount := 0
+	for _, link := range graph.Links {
+		if link.To != interventionVarID {
+			// Keep this link - it's not pointing to the intervention variable
+			surgicalGraph.Links = append(surgicalGraph.Links, &types.CausalLink{
+				ID:         link.ID,
+				From:       link.From,
+				To:         link.To,
+				Strength:   link.Strength,
+				Type:       link.Type,
+				Confidence: link.Confidence,
+				Evidence:   link.Evidence,
+				Metadata:   link.Metadata,
+			})
+		} else {
+			// Remove this link - it points to the intervention variable
+			removedCount++
+		}
+	}
+
+	// Record the surgery in metadata
+	surgicalGraph.Metadata["graph_surgery"] = map[string]interface{}{
+		"intervention_variable": interventionVarID,
+		"removed_edge_count":    removedCount,
+		"surgery_type":          "do-calculus",
+		"description":           fmt.Sprintf("Removed %d incoming edges to variable %s", removedCount, interventionVarID),
+	}
+
+	return surgicalGraph
+}
+
+// SimulateIntervention simulates the effects of an intervention using Pearl's do-calculus
 func (cr *CausalReasoner) SimulateIntervention(graphID, variableID, interventionType string) (*types.CausalIntervention, error) {
 	cr.mu.RLock()
 	graph, exists := cr.graphs[graphID]
@@ -347,8 +415,13 @@ func (cr *CausalReasoner) SimulateIntervention(graphID, variableID, intervention
 
 	cr.counter++
 
-	// Trace downstream effects
-	effects := cr.traceDownstreamEffects(graph, targetVar.ID, interventionType, 1)
+	// CRITICAL: Apply graph surgery for intervention (Pearl's do-calculus)
+	// When we do(X=x), we remove all incoming edges to X, breaking its natural causes
+	// This isolates X from its parents while preserving its effects on descendants
+	surgicalGraph := cr.performGraphSurgery(graph, targetVar.ID)
+
+	// Trace downstream effects using the surgically modified graph
+	effects := cr.traceDownstreamEffects(surgicalGraph, targetVar.ID, interventionType, 1)
 
 	// Calculate overall confidence
 	overallConfidence := cr.calculateInterventionConfidence(effects)
@@ -360,8 +433,11 @@ func (cr *CausalReasoner) SimulateIntervention(graphID, variableID, intervention
 		InterventionType: interventionType,
 		PredictedEffects: effects,
 		Confidence:       overallConfidence,
-		Metadata:         map[string]interface{}{},
-		CreatedAt:        time.Now(),
+		Metadata: map[string]interface{}{
+			"graph_surgery_applied": true,
+			"intervention_note":     "Applied Pearl's do-calculus: removed incoming edges to intervention variable",
+		},
+		CreatedAt: time.Now(),
 	}
 
 	return intervention, nil
@@ -503,8 +579,12 @@ func (cr *CausalReasoner) GenerateCounterfactual(graphID, scenario string, chang
 			continue
 		}
 
-		// Trace effects
-		effects := cr.traceDownstreamEffects(graph, sourceVar.ID, changeValue, 1)
+		// Apply graph surgery for this counterfactual intervention
+		// This correctly models what would happen if we forcibly set the variable
+		surgicalGraph := cr.performGraphSurgery(graph, sourceVar.ID)
+
+		// Trace effects using the surgically modified graph
+		effects := cr.traceDownstreamEffects(surgicalGraph, sourceVar.ID, changeValue, 1)
 
 		for _, effect := range effects {
 			outcomes[effect.Variable] = effect.Effect

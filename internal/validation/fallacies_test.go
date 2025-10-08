@@ -137,6 +137,36 @@ func TestFallacyDetector_DetectStatisticalFallacies(t *testing.T) {
 		shouldDetect  bool
 	}{
 		{
+			name:         "post hoc - lucky socks",
+			content:      "After I wore my lucky socks, we won the game, so the socks caused the win.",
+			expectedType: "post_hoc_ergo_propter_hoc",
+			shouldDetect: true,
+		},
+		{
+			name:         "post hoc - policy",
+			content:      "Since implementing the new policy, crime rates dropped, therefore the policy worked.",
+			expectedType: "post_hoc_ergo_propter_hoc",
+			shouldDetect: true,
+		},
+		{
+			name:         "post hoc - correlation causation",
+			content:      "Ice cream sales and crime rates are correlated, so ice cream causes crime.",
+			expectedType: "post_hoc_ergo_propter_hoc",
+			shouldDetect: true,
+		},
+		{
+			name:         "post hoc - temporal sequence",
+			content:      "Following the CEO's arrival, profits increased, thus the CEO led to success.",
+			expectedType: "post_hoc_ergo_propter_hoc",
+			shouldDetect: true,
+		},
+		{
+			name:         "valid causal claim with mechanism",
+			content:      "The medication blocks the enzyme responsible for inflammation, which reduces pain.",
+			expectedType: "post_hoc_ergo_propter_hoc",
+			shouldDetect: false,  // This is valid - has causal mechanism
+		},
+		{
 			name:         "base rate neglect",
 			content:      "The test is 99% accurate, so if you test positive, you definitely have the disease.",
 			expectedType: "base_rate_neglect",

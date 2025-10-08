@@ -71,6 +71,99 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error on field '%s': %s", e.Field, e.Message)
 }
 
+// ToolSuggestion provides helpful tool recommendations when users may be using the wrong tool
+type ToolSuggestion struct {
+	CurrentTool   string
+	SuggestedTool string
+	Reason        string
+	Example       string
+}
+
+// SuggestAlternativeTool analyzes the request and suggests a more appropriate tool if applicable
+func SuggestAlternativeTool(toolName string, requestContent string) *ToolSuggestion {
+	// Normalize content to lowercase for pattern matching
+	contentLower := ""
+	if requestContent != "" {
+		contentLower = requestContent
+		// Simple lowercase conversion
+		contentLower = toLowerSimple(contentLower)
+	}
+
+	// detect-fallacies vs detect-biases confusion
+	if toolName == "detect-fallacies" {
+		if contains(contentLower, "confirmation bias") || contains(contentLower, "anchoring") ||
+		   contains(contentLower, "availability heuristic") || contains(contentLower, "cognitive bias") {
+			return &ToolSuggestion{
+				CurrentTool:   "detect-fallacies",
+				SuggestedTool: "detect-biases",
+				Reason:        "You're looking for cognitive biases, not logical fallacies",
+				Example:       `Use: {"thought_id": "...", "branch_id": "..."}. detect-biases now detects BOTH biases AND fallacies!`,
+			}
+		}
+	}
+
+	// Workflow confusion - user provides raw problem instead of workflow structure
+	if toolName == "execute-workflow" {
+		if !contains(contentLower, "workflow_id") && !contains(contentLower, "problem") {
+			return &ToolSuggestion{
+				CurrentTool:   "execute-workflow",
+				SuggestedTool: "execute-workflow (correct format)",
+				Reason:        "Workflow execution requires workflow_id and input.problem fields",
+				Example:       `Use: {"workflow_id": "comprehensive-analysis", "input": {"problem": "Your problem here"}}. List available workflows with list-workflows tool.`,
+			}
+		}
+	}
+
+	// make-decision - missing required structure
+	if toolName == "make-decision" {
+		if contains(contentLower, "decision") && (!contains(contentLower, "options") || !contains(contentLower, "criteria")) {
+			return &ToolSuggestion{
+				CurrentTool:   "make-decision",
+				SuggestedTool: "make-decision (correct format)",
+				Reason:        "Decision-making requires structured options and criteria",
+				Example:       `Required fields: question, options (array with id/name/scores), criteria (array with id/name/weight/maximize). Scores must map to criterion IDs.`,
+			}
+		}
+	}
+
+	return nil
+}
+
+// Helper functions for string operations
+func toLowerSimple(s string) string {
+	result := ""
+	for _, r := range s {
+		if r >= 'A' && r <= 'Z' {
+			result += string(r + 32)
+		} else {
+			result += string(r)
+		}
+	}
+	return result
+}
+
+func contains(s, substr string) bool {
+	if len(substr) == 0 {
+		return true
+	}
+	if len(s) < len(substr) {
+		return false
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		match := true
+		for j := 0; j < len(substr); j++ {
+			if s[i+j] != substr[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
 // ValidateThinkRequest validates a ThinkRequest
 func ValidateThinkRequest(req *ThinkRequest) error {
 	// Validate content
@@ -282,14 +375,14 @@ func ValidateProbabilisticReasoningRequest(req *ProbabilisticReasoningRequest) e
 	// Validate operation
 	validOps := map[string]bool{"create": true, "update": true, "get": true, "combine": true}
 	if !validOps[req.Operation] {
-		return &ValidationError{"operation", "operation must be 'create', 'update', 'get', or 'combine'"}
+		return &ValidationError{"operation", fmt.Sprintf("operation must be 'create', 'update', 'get', or 'combine'. You provided: '%s'", req.Operation)}
 	}
 
 	// Validate based on operation
 	switch req.Operation {
 	case "create":
 		if len(req.Statement) == 0 {
-			return &ValidationError{"statement", "statement is required for create operation"}
+			return &ValidationError{"statement", "statement is required for create operation. Example: {\"operation\": \"create\", \"statement\": \"It will rain tomorrow\", \"prior_prob\": 0.3}"}
 		}
 		if len(req.Statement) > MaxContentLength {
 			return &ValidationError{"statement", fmt.Sprintf("statement exceeds max length of %d", MaxContentLength)}
@@ -298,38 +391,38 @@ func ValidateProbabilisticReasoningRequest(req *ProbabilisticReasoningRequest) e
 			return &ValidationError{"statement", "statement must be valid UTF-8"}
 		}
 		if req.PriorProb < 0 || req.PriorProb > 1 {
-			return &ValidationError{"prior_prob", "prior_prob must be between 0 and 1"}
+			return &ValidationError{"prior_prob", fmt.Sprintf("prior_prob must be between 0 and 1 (you provided: %.2f)", req.PriorProb)}
 		}
 
 	case "update":
 		if len(req.BeliefID) == 0 {
-			return &ValidationError{"belief_id", "belief_id is required for update operation"}
+			return &ValidationError{"belief_id", "belief_id is required for update operation. First create a belief, then update it with evidence. Example: {\"operation\": \"update\", \"belief_id\": \"belief_123\", \"evidence_id\": \"ev_456\", \"likelihood\": 0.8, \"evidence_prob\": 0.6}"}
 		}
 		if len(req.EvidenceID) == 0 {
 			return &ValidationError{"evidence_id", "evidence_id is required for update operation"}
 		}
 		if req.Likelihood < 0 || req.Likelihood > 1 {
-			return &ValidationError{"likelihood", "likelihood must be between 0 and 1"}
+			return &ValidationError{"likelihood", fmt.Sprintf("likelihood must be between 0 and 1 (you provided: %.2f)", req.Likelihood)}
 		}
 		if req.EvidenceProb <= 0 || req.EvidenceProb > 1 {
-			return &ValidationError{"evidence_prob", "evidence_prob must be between 0 and 1 (exclusive 0)"}
+			return &ValidationError{"evidence_prob", fmt.Sprintf("evidence_prob must be between 0 and 1 exclusive of 0 (you provided: %.2f)", req.EvidenceProb)}
 		}
 
 	case "get":
 		if len(req.BeliefID) == 0 {
-			return &ValidationError{"belief_id", "belief_id is required for get operation"}
+			return &ValidationError{"belief_id", "belief_id is required for get operation. Example: {\"operation\": \"get\", \"belief_id\": \"belief_123\"}"}
 		}
 
 	case "combine":
 		if len(req.BeliefIDs) == 0 {
-			return &ValidationError{"belief_ids", "at least one belief_id is required for combine operation"}
+			return &ValidationError{"belief_ids", "at least one belief_id is required for combine operation. Example: {\"operation\": \"combine\", \"belief_ids\": [\"belief_1\", \"belief_2\"], \"combine_op\": \"and\"}"}
 		}
 		if len(req.BeliefIDs) > 50 {
 			return &ValidationError{"belief_ids", "too many belief_ids (max 50)"}
 		}
 		validCombineOps := map[string]bool{"and": true, "or": true}
 		if !validCombineOps[req.CombineOp] {
-			return &ValidationError{"combine_op", "combine_op must be 'and' or 'or'"}
+			return &ValidationError{"combine_op", fmt.Sprintf("combine_op must be 'and' or 'or' (you provided: '%s')", req.CombineOp)}
 		}
 	}
 
@@ -388,7 +481,7 @@ func ValidateDetectContradictionsRequest(req *DetectContradictionsRequest) error
 // ValidateMakeDecisionRequest validates a MakeDecisionRequest
 func ValidateMakeDecisionRequest(req *MakeDecisionRequest) error {
 	if len(req.Question) == 0 {
-		return &ValidationError{"question", "question is required"}
+		return &ValidationError{"question", "question is required. Example: 'Which cloud provider should we use?'"}
 	}
 	if len(req.Question) > MaxContentLength {
 		return &ValidationError{"question", fmt.Sprintf("question exceeds max length of %d", MaxContentLength)}
@@ -398,7 +491,7 @@ func ValidateMakeDecisionRequest(req *MakeDecisionRequest) error {
 	}
 
 	if len(req.Options) == 0 {
-		return &ValidationError{"options", "at least one option is required"}
+		return &ValidationError{"options", "at least one option is required. Each option needs: id, name, description, scores (object mapping to criteria IDs), pros (array), cons (array). Example: {\"id\": \"opt1\", \"name\": \"AWS\", \"scores\": {\"cost\": 0.7, \"performance\": 0.9}}"}
 	}
 	if len(req.Options) > 50 {
 		return &ValidationError{"options", "too many options (max 50)"}
@@ -414,10 +507,14 @@ func ValidateMakeDecisionRequest(req *MakeDecisionRequest) error {
 		if !utf8.ValidString(opt.Name) {
 			return &ValidationError{"options", fmt.Sprintf("option[%d].name must be valid UTF-8", i)}
 		}
+		// Validate that scores exist
+		if len(opt.Scores) == 0 {
+			return &ValidationError{"options", fmt.Sprintf("option[%d].scores is required and must map to criterion IDs. Example: {\"cost\": 0.8, \"performance\": 0.6}", i)}
+		}
 	}
 
 	if len(req.Criteria) == 0 {
-		return &ValidationError{"criteria", "at least one criterion is required"}
+		return &ValidationError{"criteria", "at least one criterion is required. Each criterion needs: id, name, description, weight (number), maximize (bool). Example: {\"id\": \"cost\", \"name\": \"Cost\", \"weight\": 0.4, \"maximize\": false}"}
 	}
 	if len(req.Criteria) > 50 {
 		return &ValidationError{"criteria", "too many criteria (max 50)"}
@@ -434,7 +531,10 @@ func ValidateMakeDecisionRequest(req *MakeDecisionRequest) error {
 			return &ValidationError{"criteria", fmt.Sprintf("criterion[%d].name must be valid UTF-8", i)}
 		}
 		if crit.Weight < 0 {
-			return &ValidationError{"criteria", fmt.Sprintf("criterion[%d].weight must be non-negative", i)}
+			return &ValidationError{"criteria", fmt.Sprintf("criterion[%d].weight must be non-negative (you provided: %.2f)", i, crit.Weight)}
+		}
+		if crit.ID == "" {
+			return &ValidationError{"criteria", fmt.Sprintf("criterion[%d].id is required - this ID must match keys in option.scores", i)}
 		}
 	}
 
@@ -518,11 +618,11 @@ func ValidateSelfEvaluateRequest(req *SelfEvaluateRequest) error {
 // ValidateDetectBiasesRequest validates a DetectBiasesRequest
 func ValidateDetectBiasesRequest(req *DetectBiasesRequest) error {
 	if req.ThoughtID == "" && req.BranchID == "" {
-		return &ValidationError{"request", "either thought_id or branch_id must be provided"}
+		return &ValidationError{"request", "either thought_id or branch_id must be provided. Example: {\"thought_id\": \"thought_123\"} or {\"branch_id\": \"branch_456\"}"}
 	}
 
 	if req.ThoughtID != "" && req.BranchID != "" {
-		return &ValidationError{"request", "only one of thought_id or branch_id should be provided"}
+		return &ValidationError{"request", "only one of thought_id or branch_id should be provided, not both"}
 	}
 
 	if len(req.ThoughtID) > MaxBranchIDLength {
@@ -531,6 +631,71 @@ func ValidateDetectBiasesRequest(req *DetectBiasesRequest) error {
 
 	if len(req.BranchID) > MaxBranchIDLength {
 		return &ValidationError{"branch_id", "branch_id too long"}
+	}
+
+	return nil
+}
+
+// ValidateExecuteWorkflowRequest validates an ExecuteWorkflowRequest
+func ValidateExecuteWorkflowRequest(req *ExecuteWorkflowRequest) error {
+	if req.WorkflowID == "" {
+		return &ValidationError{"workflow_id", "workflow_id is required. Use list-workflows to see available workflows. Example: {\"workflow_id\": \"comprehensive-analysis\", \"input\": {\"problem\": \"...\"}}"}
+	}
+
+	if len(req.WorkflowID) > MaxBranchIDLength {
+		return &ValidationError{"workflow_id", "workflow_id too long"}
+	}
+
+	if req.Input == nil {
+		return &ValidationError{"input", "input object is required. Most workflows require a 'problem' field. Example: {\"problem\": \"How to optimize performance?\"}"}
+	}
+
+	// Check if common workflows have required fields
+	switch req.WorkflowID {
+	case "comprehensive-analysis", "validation-pipeline":
+		if problem, ok := req.Input["problem"].(string); !ok || problem == "" {
+			return &ValidationError{"input.problem", fmt.Sprintf("workflow '%s' requires 'problem' field in input. Example: {\"workflow_id\": \"%s\", \"input\": {\"problem\": \"Your problem statement\"}}", req.WorkflowID, req.WorkflowID)}
+		}
+	}
+
+	return nil
+}
+
+// ValidateRegisterWorkflowRequest validates a RegisterWorkflowRequest
+func ValidateRegisterWorkflowRequest(req *RegisterWorkflowRequest) error {
+	if req.Workflow == nil {
+		return &ValidationError{"workflow", "workflow is required"}
+	}
+
+	if req.Workflow.ID == "" {
+		return &ValidationError{"workflow.id", "workflow ID is required"}
+	}
+
+	if req.Workflow.Name == "" {
+		return &ValidationError{"workflow.name", "workflow name is required"}
+	}
+
+	if len(req.Workflow.Steps) == 0 {
+		return &ValidationError{"workflow.steps", "workflow must have at least one step"}
+	}
+
+	// Validate workflow type
+	validTypes := map[string]bool{"sequential": true, "parallel": true, "conditional": true}
+	if !validTypes[string(req.Workflow.Type)] {
+		return &ValidationError{"workflow.type", "workflow type must be 'sequential', 'parallel', or 'conditional'"}
+	}
+
+	// Validate each step
+	for i, step := range req.Workflow.Steps {
+		if step.ID == "" {
+			return &ValidationError{"workflow.steps", fmt.Sprintf("step[%d].id is required", i)}
+		}
+		if step.Tool == "" {
+			return &ValidationError{"workflow.steps", fmt.Sprintf("step[%d].tool is required", i)}
+		}
+		if step.Input == nil {
+			return &ValidationError{"workflow.steps", fmt.Sprintf("step[%d].input is required (can be empty object)", i)}
+		}
 	}
 
 	return nil

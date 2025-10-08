@@ -89,17 +89,50 @@ Then:
 | Divergent | Creative solutions | "creative", "unconventional", "what if" |
 | Auto | Let Claude decide | (default) |
 
-### Available Tools
+### Available Tools (33 Total)
 
-1. **think** - Main thinking (auto-selects mode)
-2. **history** - View past thoughts
-3. **list-branches** - See all branches
-4. **focus-branch** - Switch active branch
-5. **branch-history** - Detailed branch info
-6. **validate** - Logical consistency check
-7. **prove** - Logical proof attempts
-8. **check-syntax** - Statement validation
-9. **search** - Find past thoughts
+**Core Thinking** (8 tools):
+- **think** - Main thinking (auto-selects mode)
+- **history** - View past thoughts
+- **list-branches** - See all branches
+- **focus-branch** - Switch active branch
+- **branch-history** - Detailed branch info
+- **recent-branches** - Recently accessed branches
+- **search** - Find past thoughts
+- **get-metrics** - System performance metrics
+
+**Validation & Logic** (3 tools):
+- **validate** - Logical consistency check
+- **prove** - Logical proof attempts
+- **check-syntax** - Statement validation
+
+**Advanced Reasoning** (14 tools):
+- **probabilistic-reasoning** - Bayesian inference
+- **assess-evidence** - Evidence quality assessment
+- **build-causal-graph** - Causal modeling
+- **simulate-intervention** - Test interventions
+- **generate-counterfactual** - "What if" scenarios
+- **analyze-correlation-vs-causation** - Distinguish causation
+- **make-decision** - Multi-criteria decisions
+- **decompose-problem** - Break down problems
+- **analyze-perspectives** - Stakeholder analysis
+- **analyze-temporal** - Time-based reasoning
+- **compare-time-horizons** - Compare timeframes
+- **identify-optimal-timing** - Timing optimization
+- **get-causal-graph** - Retrieve causal models
+- **sensitivity-analysis** - Test robustness
+
+**Metacognition** (2 tools):
+- **self-evaluate** - Self-assessment
+- **detect-biases** - Identify cognitive biases and fallacies
+
+**Integration** (6 tools):
+- **synthesize-insights** - Combine insights across modes
+- **detect-emergent-patterns** - Find emergent patterns
+- **execute-workflow** - Run automated workflows
+- **list-workflows** - View available workflows
+- **register-workflow** - Create custom workflows
+- **detect-contradictions** - Find contradictions
 
 ## Testing the Installation
 
@@ -175,12 +208,42 @@ This server consolidates and replaces:
 
 You can safely remove these from your config once unified-thinking is working.
 
+## Storage Options
+
+### In-Memory (Default)
+- Fast performance
+- No persistence (data resets on restart)
+- Zero configuration
+
+### SQLite (Optional)
+- Persistent across restarts
+- Full-text search (FTS5)
+- Write-through caching
+
+To enable SQLite, update your config:
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\path\\to\\bin\\unified-thinking.exe",
+      "transport": "stdio",
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db"
+      }
+    }
+  }
+}
+```
+
 ## Performance Notes
 
-- Uses in-memory storage (fast, but resets on restart)
 - Written in Go (faster than Node.js equivalents)
 - Single binary (no dependencies to install)
 - Auto mode detection (intelligent mode selection)
+- 33 advanced reasoning tools
+- Workflow orchestration for complex analysis
 
 ## Success Indicators
 
@@ -203,6 +266,6 @@ After successful installation:
 
 ---
 
-Version: 1.0.0
-Created: 2025-09-29
+Version: 1.1.0
+Last Updated: 2025-10-07
 Status: Production Ready

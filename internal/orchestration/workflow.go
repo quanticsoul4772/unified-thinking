@@ -91,6 +91,7 @@ type WorkflowResult struct {
 type Orchestrator struct {
 	workflows map[string]*Workflow
 	contexts  map[string]*ReasoningContext
+	executor  ToolExecutor // Add executor for tool execution
 	mu        sync.RWMutex
 }
 
@@ -99,7 +100,24 @@ func NewOrchestrator() *Orchestrator {
 	return &Orchestrator{
 		workflows: make(map[string]*Workflow),
 		contexts:  make(map[string]*ReasoningContext),
+		executor:  nil, // Executor must be set via SetExecutor
 	}
+}
+
+// NewOrchestratorWithExecutor creates a new workflow orchestrator with a tool executor
+func NewOrchestratorWithExecutor(executor ToolExecutor) *Orchestrator {
+	return &Orchestrator{
+		workflows: make(map[string]*Workflow),
+		contexts:  make(map[string]*ReasoningContext),
+		executor:  executor,
+	}
+}
+
+// SetExecutor sets the tool executor for the orchestrator
+func (o *Orchestrator) SetExecutor(executor ToolExecutor) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.executor = executor
 }
 
 // RegisterWorkflow adds a new workflow to the orchestrator
@@ -385,15 +403,263 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 	return nil
 }
 
-// executeStep executes a single workflow step (stub - to be implemented with actual tool calls)
+// executeStep executes a single workflow step using the tool executor
 func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, input map[string]interface{}, reasoningCtx *ReasoningContext) (interface{}, error) {
-	// This is a stub - actual implementation will call the appropriate tool handler
-	// For now, we just return a placeholder
-	return map[string]interface{}{
-		"step_id": step.ID,
-		"tool":    step.Tool,
-		"status":  "executed",
-	}, nil
+	// Check if executor is available
+	if o.executor == nil {
+		return nil, fmt.Errorf("no tool executor configured for orchestrator")
+	}
+
+	// Prepare step input by merging workflow input with step-specific input
+	toolInput := make(map[string]interface{})
+
+	// Start with workflow input
+	for k, v := range input {
+		toolInput[k] = v
+	}
+
+	// Override with step-specific input
+	for k, v := range step.Input {
+		// Resolve template references (supports both {{variable}} and $variable syntax)
+		resolvedValue := o.resolveTemplateValue(v, input, reasoningCtx)
+		toolInput[k] = resolvedValue
+	}
+
+	// Execute the tool
+	result, err := o.executor.ExecuteTool(ctx, step.Tool, toolInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute tool %s: %w", step.Tool, err)
+	}
+
+	// Apply output transformation if specified
+	if step.Transform != nil {
+		result = applyTransform(result, step.Transform)
+	}
+
+	// Update context with tool-specific results
+	switch step.Tool {
+	case "think":
+		if thoughtResult, ok := result.(map[string]interface{}); ok {
+			if thoughtID, ok := thoughtResult["thought_id"].(string); ok {
+				reasoningCtx.Thoughts = append(reasoningCtx.Thoughts, thoughtID)
+			}
+		}
+	case "build-causal-graph":
+		if graphResult, ok := result.(map[string]interface{}); ok {
+			if graphID, ok := graphResult["id"].(string); ok {
+				reasoningCtx.CausalGraphs = append(reasoningCtx.CausalGraphs, graphID)
+			}
+		}
+	case "probabilistic-reasoning":
+		if beliefResult, ok := result.(map[string]interface{}); ok {
+			if beliefID, ok := beliefResult["id"].(string); ok {
+				reasoningCtx.Beliefs = append(reasoningCtx.Beliefs, beliefID)
+			}
+		}
+	case "assess-evidence":
+		if evidenceResult, ok := result.(map[string]interface{}); ok {
+			if evidenceID, ok := evidenceResult["id"].(string); ok {
+				reasoningCtx.Evidence = append(reasoningCtx.Evidence, evidenceID)
+			}
+		}
+	case "make-decision":
+		if decisionResult, ok := result.(map[string]interface{}); ok {
+			if decisionID, ok := decisionResult["id"].(string); ok {
+				reasoningCtx.Decisions = append(reasoningCtx.Decisions, decisionID)
+			}
+		}
+	}
+
+	// Update overall confidence based on tool results
+	if confidenceVal := extractConfidence(result); confidenceVal > 0 {
+		// Weighted average of confidence
+		if reasoningCtx.Confidence == 0 {
+			reasoningCtx.Confidence = confidenceVal
+		} else {
+			reasoningCtx.Confidence = (reasoningCtx.Confidence + confidenceVal) / 2
+		}
+	}
+
+	return result, nil
+}
+
+// resolveTemplateValue resolves template references in workflow step input values.
+// Supports both {{variable}} and $variable syntax for backward compatibility.
+// Also handles nested references like {{causal_graph.id}} or $causal_graph.id.
+func (o *Orchestrator) resolveTemplateValue(value interface{}, workflowInput map[string]interface{}, reasoningCtx *ReasoningContext) interface{} {
+	// Handle string values that might contain template references
+	strVal, ok := value.(string)
+	if !ok {
+		// Not a string, check if it's a slice that might contain template strings
+		if slice, ok := value.([]interface{}); ok {
+			resolved := make([]interface{}, len(slice))
+			for i, item := range slice {
+				resolved[i] = o.resolveTemplateValue(item, workflowInput, reasoningCtx)
+			}
+			return resolved
+		}
+		// Return value as-is if not a string or slice
+		return value
+	}
+
+	// Convert {{variable}} syntax to $variable for unified processing
+	templateValue := convertTemplateToReference(strVal)
+
+	// Handle $variable references
+	if len(templateValue) > 0 && templateValue[0] == '$' {
+		refKey := templateValue[1:] // Remove the $ prefix
+
+		// First, check reasoning context results
+		if val, exists := reasoningCtx.Results[refKey]; exists {
+			return val
+		}
+
+		// Try to extract nested field (e.g., "causal_graph.id")
+		parts := splitReference(refKey)
+		if len(parts) > 1 {
+			// Check reasoning context for nested values
+			if rootVal, exists := reasoningCtx.Results[parts[0]]; exists {
+				nestedVal := extractNestedValue(rootVal, parts[1:])
+				if nestedVal != nil {
+					return nestedVal
+				}
+			}
+
+			// Check workflow input for nested values
+			if rootVal, exists := workflowInput[parts[0]]; exists {
+				nestedVal := extractNestedValue(rootVal, parts[1:])
+				if nestedVal != nil {
+					return nestedVal
+				}
+			}
+		}
+
+		// Check workflow input as fallback
+		if val, exists := workflowInput[refKey]; exists {
+			return val
+		}
+
+		// Reference not found - return original string to avoid silent failures
+		// This helps with debugging workflow parameter issues
+		return strVal
+	}
+
+	// No template reference found, return value as-is
+	return strVal
+}
+
+// convertTemplateToReference converts {{variable}} syntax to $variable syntax.
+// This normalizes template references for consistent processing.
+// Examples:
+//   - "{{problem}}" -> "$problem"
+//   - "{{causal_graph.id}}" -> "$causal_graph.id"
+//   - "regular string" -> "regular string"
+//   - "$variable" -> "$variable" (already in correct format)
+func convertTemplateToReference(template string) string {
+	// Check if string uses {{variable}} syntax
+	if len(template) > 4 && template[0:2] == "{{" && template[len(template)-2:] == "}}" {
+		// Extract variable name and convert to $variable syntax
+		variableName := template[2 : len(template)-2]
+		return "$" + variableName
+	}
+	// Return as-is if not a template or already using $ syntax
+	return template
+}
+
+// splitReference splits a reference string by dots
+func splitReference(ref string) []string {
+	parts := []string{}
+	current := ""
+	for _, ch := range ref {
+		if ch == '.' {
+			if current != "" {
+				parts = append(parts, current)
+				current = ""
+			}
+		} else {
+			current += string(ch)
+		}
+	}
+	if current != "" {
+		parts = append(parts, current)
+	}
+	return parts
+}
+
+// extractNestedValue extracts a nested value from an interface using a path
+func extractNestedValue(val interface{}, path []string) interface{} {
+	if len(path) == 0 {
+		return val
+	}
+
+	switch v := val.(type) {
+	case map[string]interface{}:
+		if nextVal, exists := v[path[0]]; exists {
+			return extractNestedValue(nextVal, path[1:])
+		}
+	}
+
+	return nil
+}
+
+// applyTransform applies an output transformation to a result
+func applyTransform(result interface{}, transform *OutputTransform) interface{} {
+	switch transform.Type {
+	case "extract_field":
+		if field, ok := transform.Config["field"].(string); ok {
+			if m, ok := result.(map[string]interface{}); ok {
+				if val, exists := m[field]; exists {
+					return val
+				}
+			}
+		}
+	case "map":
+		// Apply a mapping function (simplified for now)
+		if m, ok := result.(map[string]interface{}); ok {
+			mapped := make(map[string]interface{})
+			for k, v := range m {
+				if mapConfig, ok := transform.Config[k]; ok {
+					mapped[mapConfig.(string)] = v
+				} else {
+					mapped[k] = v
+				}
+			}
+			return mapped
+		}
+	case "filter":
+		// Filter results based on criteria
+		if fields, ok := transform.Config["fields"].([]string); ok {
+			if m, ok := result.(map[string]interface{}); ok {
+				filtered := make(map[string]interface{})
+				for _, field := range fields {
+					if val, exists := m[field]; exists {
+						filtered[field] = val
+					}
+				}
+				return filtered
+			}
+		}
+	}
+
+	return result
+}
+
+// extractConfidence extracts confidence value from a result
+func extractConfidence(result interface{}) float64 {
+	switch v := result.(type) {
+	case map[string]interface{}:
+		if conf, ok := v["confidence"].(float64); ok {
+			return conf
+		}
+		// Try other common confidence field names
+		if conf, ok := v["probability"].(float64); ok {
+			return conf
+		}
+		if conf, ok := v["score"].(float64); ok {
+			return conf
+		}
+	}
+	return 0
 }
 
 // evaluateCondition checks if a step condition is met

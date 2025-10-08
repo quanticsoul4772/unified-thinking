@@ -24,7 +24,7 @@ func TestBayesianAccuracy(t *testing.T) {
 			priorProb:    0.01,  // 1% have disease
 			likelihood:   0.99,  // 99% true positive rate
 			likelihoodNot: 0.05, // 5% false positive rate
-			evidenceProb: 0.05,  // Will be calculated: 0.99*0.01 + 0.05*0.99 = 0.0594
+			evidenceProb: 0.0594,  // Calculated: 0.99*0.01 + 0.05*0.99 = 0.0594
 			expectedPost: 0.166, // Correct: (0.99*0.01) / 0.0594 ≈ 0.166
 			description:  "Rare disease with accurate test - posterior should be ~16.6%",
 		},
@@ -76,9 +76,9 @@ func TestBayesianAccuracy(t *testing.T) {
 			denominator := tt.likelihood*tt.priorProb + tt.likelihoodNot*priorNot
 			correctPosterior := numerator / denominator
 
-			// Update belief using current implementation
+			// Update belief using the mathematically correct method
 			evidenceID := "test_evidence"
-			updated, err := reasoner.UpdateBelief(belief.ID, evidenceID, tt.likelihood, tt.evidenceProb)
+			updated, err := reasoner.UpdateBeliefFull(belief.ID, evidenceID, tt.likelihood, tt.likelihoodNot)
 			if err != nil {
 				t.Fatalf("Failed to update belief: %v", err)
 			}

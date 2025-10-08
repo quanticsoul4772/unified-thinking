@@ -13,12 +13,17 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 **Entry Point**: `cmd/server/main.go`
 
 **Key Components**:
-- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns
+- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns + cognitive reasoning types
 - `internal/storage/` - Pluggable storage layer with in-memory (default) and SQLite backends (Storage interface for testability)
 - `internal/modes/` - Thinking mode implementations (linear, tree, divergent, auto) + Mode registry
-- `internal/validation/` - Logical validation and proof checking
+- `internal/validation/` - Logical validation, proof checking, and fallacy detection
+- `internal/reasoning/` - Probabilistic inference, decision analysis, causal reasoning, temporal reasoning
+- `internal/analysis/` - Evidence assessment, contradiction detection, perspective analysis, sensitivity testing
+- `internal/metacognition/` - Self-evaluation and cognitive bias detection
+- `internal/integration/` - Cross-mode synthesis and integration patterns
+- `internal/orchestration/` - Workflow orchestration for automated tool chaining
 - `internal/server/` - MCP server implementation
-- `internal/server/handlers/` - Focused handler modules (thinking, branches, validation, search)
+- `internal/server/handlers/` - Focused handler modules (thinking, branches, validation, search, enhanced cognitive tools)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -73,9 +78,29 @@ make test
 # Run with verbose output
 go test -v ./...
 
+# Run with coverage report
+make test-coverage
+
+# Run with race detector
+make test-race
+
+# Run short tests (skip long-running)
+make test-short
+
 # Test specific package
 go test -v ./internal/modes/
+
+# Test storage layer only
+make test-storage
+
+# Run benchmarks
+make benchmark
+
+# Comprehensive test suite
+make test-all
 ```
+
+**Test Coverage**: The project maintains high test coverage (>70% overall, >94% for validation package) across all major components including storage, modes, reasoning, analysis, and metacognition modules.
 
 ### Cleanup
 ```bash
@@ -102,16 +127,56 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools**:
+**Available Tools** (28 total):
+
+**Core Thinking Tools**:
 1. `think` - Main thinking tool (supports all modes)
 2. `history` - View thinking history (filtered by mode/branch)
 3. `list-branches` - List all branches (tree mode)
 4. `focus-branch` - Switch active branch
 5. `branch-history` - Get detailed branch history with insights/cross-refs
-6. `validate` - Validate thought for logical consistency
-7. `prove` - Attempt formal proof from premises to conclusion
-8. `check-syntax` - Validate logical statement syntax
-9. `search` - Search thoughts by query and optional mode filter
+6. `recent-branches` - Get recently accessed branches for quick context switching
+7. `search` - Search thoughts by query and optional mode filter
+8. `get-metrics` - Get system performance and usage metrics
+
+**Validation & Logic Tools**:
+9. `validate` - Validate thought for logical consistency
+10. `prove` - Attempt formal proof from premises to conclusion
+11. `check-syntax` - Validate logical statement syntax
+
+**Probabilistic Reasoning Tools**:
+12. `probabilistic-reasoning` - Bayesian inference and belief updates (create/update/get/combine)
+13. `assess-evidence` - Evidence quality and reliability assessment
+14. `sensitivity-analysis` - Test robustness of conclusions to assumption changes
+
+**Analysis Tools**:
+15. `detect-contradictions` - Find contradictions among thoughts or within branches
+16. `analyze-perspectives` - Multi-stakeholder perspective analysis
+17. `analyze-temporal` - Short-term vs long-term temporal reasoning
+18. `identify-optimal-timing` - Determine optimal timing for decisions
+19. `compare-time-horizons` - Compare implications across time horizons
+20. `analyze-correlation-vs-causation` - Distinguish correlation from causation
+
+**Decision & Problem-Solving Tools**:
+21. `make-decision` - Multi-criteria decision analysis with weighted scoring
+22. `decompose-problem` - Break complex problems into manageable subproblems
+
+**Causal Reasoning Tools**:
+23. `build-causal-graph` - Construct causal graphs from observations
+24. `get-causal-graph` - Retrieve previously built causal graph
+25. `simulate-intervention` - Simulate interventions using do-calculus
+26. `generate-counterfactual` - Generate "what if" scenarios
+
+**Metacognition Tools**:
+27. `self-evaluate` - Metacognitive self-assessment of reasoning quality
+28. `detect-biases` - Identify cognitive biases and logical fallacies
+
+**Integration & Orchestration Tools**:
+29. `synthesize-insights` - Synthesize insights from multiple reasoning modes
+30. `detect-emergent-patterns` - Detect emergent patterns across modes
+31. `execute-workflow` - Execute predefined multi-tool workflows
+32. `list-workflows` - List available automated workflows
+33. `register-workflow` - Register custom workflows for automation
 
 ## Storage Architecture
 
@@ -160,12 +225,24 @@ STORAGE_FALLBACK=memory         # Fallback if SQLite fails
 
 ## Data Flow
 
+### Basic Thinking Flow
 1. **Tool Call** → `server/server.go` handler receives request
 2. **Mode Selection** → Auto mode detects or explicit mode used
 3. **Processing** → Selected mode's `ProcessThought()` executes
 4. **Storage** → Thought/Branch/Insight persisted via storage backend (memory or SQLite)
 5. **Validation** (optional) → Logic validator checks consistency
 6. **Response** → Result returned to MCP client
+
+### Workflow Orchestration Flow
+1. **Workflow Call** → `execute-workflow` with workflow_id and input
+2. **Context Creation** → ReasoningContext tracks shared state across steps
+3. **Step Execution** → Sequential or parallel execution of workflow steps
+4. **Tool Invocation** → Each step calls appropriate cognitive tool
+5. **Result Transformation** → Output transformations and conditional logic
+6. **Context Updates** → Results stored in context for dependent steps
+7. **Final Synthesis** → Aggregated results returned with execution metadata
+
+Workflow orchestration enables automated multi-tool reasoning pipelines without manual coordination.
 
 ## Important Implementation Details
 
@@ -232,6 +309,43 @@ Cross-references link branches together with typed relationships:
 
 TouchPoints within cross-refs specify exact thought-to-thought connections.
 
+### Workflow Orchestration
+The orchestration system (`internal/orchestration/`) enables automated multi-tool reasoning:
+- **Sequential workflows**: Execute steps in order with dependency tracking
+- **Parallel workflows**: Concurrent execution of independent steps
+- **Conditional workflows**: Execute steps based on intermediate results
+- **ReasoningContext**: Shared state tracking across workflow execution
+- **Built-in workflows**: Pre-configured workflows like "comprehensive-analysis"
+- **Custom workflows**: Register custom workflows via `register-workflow` tool
+
+Example workflow structure:
+```go
+workflow := &Workflow{
+    Type: WorkflowSequential,
+    Steps: []*WorkflowStep{
+        {Tool: "think", Input: {...}},
+        {Tool: "assess-evidence", DependsOn: ["step1"]},
+        {Tool: "make-decision", DependsOn: ["step1", "step2"]},
+    },
+}
+```
+
+### Causal Reasoning
+Implements Pearl's causal inference framework (`internal/reasoning/causal.go`):
+- **Causal graphs**: Build directed acyclic graphs (DAGs) from observations
+- **Graph surgery**: Proper do-calculus for interventions (removing incoming edges)
+- **Counterfactuals**: Generate "what if" scenarios by changing variables
+- **Intervention simulation**: Test effects of interventions on outcomes
+- Correctly distinguishes correlation from causation using structural causal models
+
+### Fallacy Detection
+Enhanced validation (`internal/validation/fallacies.go`) detects 20+ logical fallacies:
+- **Formal fallacies**: Affirming consequent, denying antecedent, circular reasoning
+- **Informal fallacies**: Ad hominem, straw man, false dilemma, slippery slope
+- **Evidence fallacies**: Hasty generalization, cherry picking, anecdotal evidence
+- **Appeal fallacies**: Appeal to authority, emotion, tradition, nature
+- Integrated with cognitive bias detection for comprehensive reasoning quality assessment
+
 ## Migration from Old Servers
 
 This server replaces multiple TypeScript servers. Tool mapping:
@@ -297,6 +411,14 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
 - `STORAGE_FALLBACK`: Fallback storage type if primary fails (default: none)
 - `DEBUG`: Enable debug logging (`true` or `false`)
+- `AUTO_VALIDATION_THRESHOLD`: Confidence threshold below which auto-validation triggers (default: 0.5, range: 0.0-1.0)
+
+### Auto-Validation Feature
+When a thought is processed with confidence below the threshold (default 0.5):
+1. The system automatically runs self-evaluation to assess quality
+2. If significant issues are found (quality/completeness/coherence < 0.5)
+3. The thought is automatically retried with `ChallengeAssumptions=true`
+4. Metadata tracks auto-validation and scores for transparency
 
 When Claude Desktop starts, it will:
 1. Read this configuration
@@ -317,14 +439,44 @@ When Claude Desktop starts, it will:
 
 ## Key Files to Understand
 
+### Core Infrastructure
 1. `cmd/server/main.go` - Entry point, initializes storage and server components
-2. `internal/types/types.go` - All core data structures and constants
-3. `internal/server/server.go` - Tool registration and request handlers
-4. `internal/modes/shared.go` - Shared types for mode implementations
+2. `internal/types/types.go` - All core data structures and constants (50+ types)
+3. `internal/server/server.go` - Tool registration and request handlers (33 tools)
+4. `internal/server/handlers/` - Modular handlers for thinking, branches, validation, search, enhanced cognitive tools
+
+### Storage Layer
 5. `internal/storage/factory.go` - Storage factory and configuration
 6. `internal/storage/memory.go` - In-memory storage implementation
 7. `internal/storage/sqlite.go` - SQLite storage with write-through cache
 8. `internal/storage/sqlite_schema.go` - Database schema and migrations
+
+### Thinking Modes
+9. `internal/modes/shared.go` - Shared types for mode implementations
+10. `internal/modes/auto.go` - Automatic mode selection logic
+11. `internal/modes/registry.go` - Dynamic mode registration system
+
+### Cognitive Reasoning
+12. `internal/reasoning/probabilistic.go` - Bayesian inference implementation
+13. `internal/reasoning/causal.go` - Pearl's causal inference framework with do-calculus
+14. `internal/reasoning/decision.go` - Multi-criteria decision analysis
+15. `internal/reasoning/temporal.go` - Temporal reasoning (short/long-term analysis)
+
+### Analysis & Validation
+16. `internal/validation/logic.go` - Logical validation and proof checking
+17. `internal/validation/fallacies.go` - Fallacy detection (20+ types)
+18. `internal/analysis/evidence.go` - Evidence quality assessment
+19. `internal/analysis/contradiction.go` - Contradiction detection across thoughts
+20. `internal/analysis/perspective.go` - Multi-stakeholder perspective analysis
+
+### Metacognition
+21. `internal/metacognition/self_eval.go` - Self-evaluation implementation
+22. `internal/metacognition/bias_detection.go` - Cognitive bias detection (15+ biases)
+
+### Integration & Orchestration
+23. `internal/integration/synthesizer.go` - Cross-mode insight synthesis
+24. `internal/orchestration/workflow.go` - Workflow orchestration system
+25. `internal/orchestration/interface.go` - ToolExecutor abstraction for workflow steps
 
 ## Technical Constraints
 

@@ -412,3 +412,55 @@ type CognitiveBias struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	CreatedAt   time.Time              `json:"created_at"`
 }
+
+// ResponseMetadata contains guidance for Claude's multi-server orchestration
+type ResponseMetadata struct {
+	// Suggested tools that Claude should consider calling next
+	SuggestedNextTools []ToolSuggestion `json:"suggested_next_tools,omitempty"`
+
+	// Opportunities for external validation from other servers
+	ValidationOpportunities []string `json:"validation_opportunities,omitempty"`
+
+	// Recommended actions to take based on this result
+	ActionRecommendations []ActionRecommendation `json:"action_recommendations,omitempty"`
+
+	// Export-ready formats for other MCP servers
+	ExportFormats map[string]interface{} `json:"export_formats,omitempty"`
+}
+
+// ToolSuggestion recommends a tool from another MCP server
+type ToolSuggestion struct {
+	ServerTool string `json:"server_tool"` // Format: "server:tool" (e.g., "memory:create_entities")
+	Reason     string `json:"reason"`      // Why Claude should consider this tool
+	InputHint  string `json:"input_hint"`  // How to format the input for this tool
+	Priority   string `json:"priority"`    // "recommended", "optional", "low"
+}
+
+// ActionRecommendation suggests a multi-tool workflow
+type ActionRecommendation struct {
+	Type        string   `json:"type"`        // "persist", "validate", "execute", "research"
+	Description string   `json:"description"` // Human-readable description
+	ToolChain   []string `json:"tool_chain"`  // Ordered list of tools to call
+}
+
+// MemoryEntityExport provides ready-to-use format for Memory KG server
+type MemoryEntityExport struct {
+	Name         string   `json:"name"`
+	EntityType   string   `json:"entity_type"`
+	Observations []string `json:"observations"`
+}
+
+// MemoryRelationExport provides ready-to-use format for Memory KG relations
+type MemoryRelationExport struct {
+	From         string `json:"from"`          // Entity name
+	To           string `json:"to"`            // Entity name
+	RelationType string `json:"relation_type"` // "causes", "related_to", "part_of"
+}
+
+// ObsidianNoteExport provides ready-to-use format for Obsidian notes
+type ObsidianNoteExport struct {
+	Title      string            `json:"title"`
+	Content    string            `json:"content"`    // Markdown formatted
+	Tags       []string          `json:"tags"`
+	Properties map[string]string `json:"properties"` // Frontmatter properties
+}

@@ -86,9 +86,15 @@ export UT_SERVER_ENVIRONMENT="production"
 
 **Default**: `"memory"`
 
-**Valid Values**: `memory` (only supported type currently)
+**Valid Values**: `memory`, `sqlite`
 
-**Environment Variable**: `UT_STORAGE_TYPE`
+**Environment Variable**: `STORAGE_TYPE` (Claude Desktop) or `UT_STORAGE_TYPE` (standalone)
+
+**Example**:
+```bash
+export STORAGE_TYPE=sqlite
+export SQLITE_PATH=./data/thoughts.db
+```
 
 ### storage.max_thoughts
 
@@ -122,6 +128,50 @@ export UT_STORAGE_MAX_THOUGHTS=10000
 **Example**:
 ```bash
 export UT_STORAGE_ENABLE_INDEXING=false
+```
+
+### SQLite-Specific Settings
+
+#### SQLITE_PATH
+
+**Description**: Path to SQLite database file (created if not exists)
+
+**Default**: `"./data/thoughts.db"`
+
+**Environment Variable**: `SQLITE_PATH`
+
+**Example**:
+```bash
+export SQLITE_PATH="C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db"
+```
+
+#### SQLITE_TIMEOUT
+
+**Description**: Connection timeout in milliseconds
+
+**Default**: `5000`
+
+**Environment Variable**: `SQLITE_TIMEOUT`
+
+**Example**:
+```bash
+export SQLITE_TIMEOUT=10000
+```
+
+#### STORAGE_FALLBACK
+
+**Description**: Fallback storage type if primary storage fails
+
+**Default**: `""` (no fallback)
+
+**Valid Values**: `memory`, `""` (empty for no fallback)
+
+**Environment Variable**: `STORAGE_FALLBACK`
+
+**Example**:
+```bash
+export STORAGE_TYPE=sqlite
+export STORAGE_FALLBACK=memory
 ```
 
 ## Feature Flags
@@ -398,7 +448,27 @@ export UT_LOGGING_FORMAT=text
 ./unified-thinking
 ```
 
-### Production Environment
+### Production Environment with SQLite
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\path\\to\\bin\\unified-thinking.exe",
+      "transport": "stdio",
+      "env": {
+        "DEBUG": "false",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\ProgramData\\unified-thinking\\thoughts.db",
+        "STORAGE_FALLBACK": "memory",
+        "AUTO_VALIDATION_THRESHOLD": "0.5"
+      }
+    }
+  }
+}
+```
+
+### Production Environment (In-Memory)
 
 ```json
 {
@@ -407,6 +477,7 @@ export UT_LOGGING_FORMAT=text
     "environment": "production"
   },
   "storage": {
+    "type": "memory",
     "max_thoughts": 100000,
     "max_branches": 5000
   },
@@ -562,5 +633,13 @@ Check validation errors in the startup logs. Common issues:
 
 ---
 
-**Last Updated**: 2025-10-01
-**Version**: 1.0.0
+**Last Updated**: 2025-10-07
+**Version**: 1.1.0
+
+## Changes in Version 1.1.0
+
+- Added SQLite storage backend support
+- Added `STORAGE_TYPE`, `SQLITE_PATH`, `SQLITE_TIMEOUT`, `STORAGE_FALLBACK` environment variables
+- Added `AUTO_VALIDATION_THRESHOLD` for confidence-based auto-validation
+- Updated examples to show SQLite configuration
+- All storage backends now support FTS5 full-text search

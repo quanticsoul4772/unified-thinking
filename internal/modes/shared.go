@@ -23,17 +23,19 @@ import "unified-thinking/internal/types"
 //   - Confidence: Confidence level (0.0-1.0, defaults to 0.8)
 //   - KeyPoints: Important points extracted from the thought
 //   - ForceRebellion: For divergent mode, forces unconventional thinking
+//   - ChallengeAssumptions: Forces modes to question underlying assumptions
 //   - CrossRefs: For tree mode, cross-references to other branches
 type ThoughtInput struct {
-	Content           string
-	Type              string
-	BranchID          string
-	ParentID          string
-	PreviousThoughtID string
-	Confidence        float64
-	KeyPoints         []string
-	ForceRebellion    bool
-	CrossRefs         []CrossRefInput
+	Content              string
+	Type                 string
+	BranchID             string
+	ParentID             string
+	PreviousThoughtID    string
+	Confidence           float64
+	KeyPoints            []string
+	ForceRebellion       bool
+	ChallengeAssumptions bool
+	CrossRefs            []CrossRefInput
 }
 
 // CrossRefInput represents a cross-reference input

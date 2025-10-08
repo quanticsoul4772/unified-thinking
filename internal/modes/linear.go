@@ -20,8 +20,24 @@ func NewLinearMode(storage storage.Storage) *LinearMode {
 
 // ProcessThought processes a thought in linear mode
 func (m *LinearMode) ProcessThought(ctx context.Context, input ThoughtInput) (*ThoughtResult, error) {
+	// If ChallengeAssumptions is true, modify content to question assumptions
+	content := input.Content
+	challengesAssumption := false
+
+	if input.ChallengeAssumptions {
+		// Prepend questioning language to encourage assumption challenging
+		content = "Questioning assumptions: " + content +
+			" (What assumptions are being made here? Are there alternative viewpoints? What evidence supports or contradicts this?)"
+		challengesAssumption = true
+
+		// Slightly reduce confidence when challenging assumptions
+		if input.Confidence > 0.3 {
+			input.Confidence -= 0.1
+		}
+	}
+
 	thought := &types.Thought{
-		Content:    input.Content,
+		Content:    content,
 		Mode:       types.ModeLinear,
 		Type:       input.Type,
 		Confidence: input.Confidence,
@@ -32,6 +48,14 @@ func (m *LinearMode) ProcessThought(ctx context.Context, input ThoughtInput) (*T
 		thought.ParentID = input.ParentID
 	}
 
+	// Add metadata about assumption challenging
+	if challengesAssumption {
+		if thought.Metadata == nil {
+			thought.Metadata = make(map[string]interface{})
+		}
+		thought.Metadata["challenged_assumptions"] = true
+	}
+
 	// Store the thought
 	if err := m.storage.StoreThought(thought); err != nil {
 		return nil, err
@@ -39,10 +63,11 @@ func (m *LinearMode) ProcessThought(ctx context.Context, input ThoughtInput) (*T
 
 	// Create simple state tracking
 	result := &ThoughtResult{
-		ThoughtID:  thought.ID,
-		Mode:       string(types.ModeLinear),
-		Status:     "processed",
-		Confidence: thought.Confidence,
+		ThoughtID:            thought.ID,
+		Mode:                 string(types.ModeLinear),
+		Status:               "processed",
+		Confidence:           thought.Confidence,
+		ChallengesAssumption: challengesAssumption,
 	}
 
 	return result, nil
