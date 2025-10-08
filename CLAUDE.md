@@ -13,17 +13,18 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 **Entry Point**: `cmd/server/main.go`
 
 **Key Components**:
-- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns + cognitive reasoning types
+- `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns + 50+ cognitive reasoning types
 - `internal/storage/` - Pluggable storage layer with in-memory (default) and SQLite backends (Storage interface for testability)
-- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, auto) + Mode registry
-- `internal/validation/` - Logical validation, proof checking, and fallacy detection
-- `internal/reasoning/` - Probabilistic inference, decision analysis, causal reasoning, temporal reasoning
+- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, reflection, backtracking, auto) + Mode registry
+- `internal/processing/` - Dual-process reasoning (System 1 fast vs System 2 deliberate)
+- `internal/validation/` - Logical validation, proof checking, fallacy detection, symbolic constraint solving
+- `internal/reasoning/` - Probabilistic inference, decision analysis, causal reasoning, temporal reasoning, abductive reasoning, case-based reasoning
 - `internal/analysis/` - Evidence assessment, contradiction detection, perspective analysis, sensitivity testing
-- `internal/metacognition/` - Self-evaluation and cognitive bias detection
-- `internal/integration/` - Cross-mode synthesis and integration patterns
-- `internal/orchestration/` - Workflow orchestration for automated tool chaining
-- `internal/server/` - MCP server implementation
-- `internal/server/handlers/` - Focused handler modules (thinking, branches, validation, search, enhanced cognitive tools)
+- `internal/metacognition/` - Self-evaluation, cognitive bias detection, unknown unknowns identification
+- `internal/integration/` - Cross-mode synthesis, emergent pattern detection, probabilistic-causal integration
+- `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
+- `internal/server/` - MCP server implementation with 50 registered tools
+- `internal/server/handlers/` - 19 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -32,11 +33,15 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 1. **Linear Mode** (`modes/linear.go`) - Sequential step-by-step reasoning for systematic problem solving
 2. **Tree Mode** (`modes/tree.go`) - Multi-branch parallel exploration with insights and cross-references
 3. **Divergent Mode** (`modes/divergent.go`) - Creative/unconventional ideation with "rebellion" capability
-4. **Auto Mode** (`modes/auto.go`) - Automatic mode selection based on input content analysis
+4. **Reflection Mode** (`modes/reflection.go`) - Metacognitive reflection on previous reasoning with insight extraction
+5. **Backtracking Mode** (`modes/backtracking.go`) - Checkpoint-based reasoning with restore capabilities
+6. **Auto Mode** (`modes/auto.go`) - Automatic mode selection based on input content analysis
 
 The Auto Mode uses keyword detection to intelligently select the best thinking mode:
 - Divergent triggers: "creative", "unconventional", "what if", "imagine", "challenge", "rebel"
 - Tree triggers: branch_id provided, cross_refs present, key_points present, or keywords "branch", "explore", "alternative", "parallel"
+- Reflection triggers: "reflect", "review", "retrospective", "what did we learn"
+- Backtracking triggers: "checkpoint", "restore", "go back", "revert"
 - Linear: Default fallback for systematic reasoning
 
 ## Development Commands
@@ -127,56 +132,83 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (28 total):
+**Available Tools** (50 total):
 
-**Core Thinking Tools**:
-1. `think` - Main thinking tool (supports all modes)
+**Core Thinking Tools** (11 tools):
+1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
 2. `history` - View thinking history (filtered by mode/branch)
 3. `list-branches` - List all branches (tree mode)
 4. `focus-branch` - Switch active branch
 5. `branch-history` - Get detailed branch history with insights/cross-refs
 6. `recent-branches` - Get recently accessed branches for quick context switching
-7. `search` - Search thoughts by query and optional mode filter
-8. `get-metrics` - Get system performance and usage metrics
+7. `validate` - Validate thought for logical consistency
+8. `prove` - Attempt formal proof from premises to conclusion
+9. `check-syntax` - Validate logical statement syntax
+10. `search` - Search thoughts by query and optional mode filter
+11. `get-metrics` - Get system performance and usage metrics
 
-**Validation & Logic Tools**:
-9. `validate` - Validate thought for logical consistency
-10. `prove` - Attempt formal proof from premises to conclusion
-11. `check-syntax` - Validate logical statement syntax
-
-**Probabilistic Reasoning Tools**:
+**Probabilistic Reasoning Tools** (4 tools):
 12. `probabilistic-reasoning` - Bayesian inference and belief updates (create/update/get/combine)
 13. `assess-evidence` - Evidence quality and reliability assessment
-14. `sensitivity-analysis` - Test robustness of conclusions to assumption changes
+14. `detect-contradictions` - Find contradictions among thoughts or within branches
+15. `sensitivity-analysis` - Test robustness of conclusions to assumption changes
 
-**Analysis Tools**:
-15. `detect-contradictions` - Find contradictions among thoughts or within branches
-16. `analyze-perspectives` - Multi-stakeholder perspective analysis
-17. `analyze-temporal` - Short-term vs long-term temporal reasoning
-18. `identify-optimal-timing` - Determine optimal timing for decisions
-19. `compare-time-horizons` - Compare implications across time horizons
-20. `analyze-correlation-vs-causation` - Distinguish correlation from causation
+**Decision & Problem-Solving Tools** (3 tools):
+16. `make-decision` - Multi-criteria decision analysis with weighted scoring
+17. `decompose-problem` - Break complex problems into manageable subproblems
+18. `verify-thought` - Verify thought validity and structure
 
-**Decision & Problem-Solving Tools**:
-21. `make-decision` - Multi-criteria decision analysis with weighted scoring
-22. `decompose-problem` - Break complex problems into manageable subproblems
+**Metacognition Tools** (3 tools):
+19. `self-evaluate` - Metacognitive self-assessment of reasoning quality
+20. `detect-biases` - Identify cognitive biases and logical fallacies
+21. `detect-blind-spots` - Identify unknown unknowns and knowledge gaps
 
-**Causal Reasoning Tools**:
-23. `build-causal-graph` - Construct causal graphs from observations
-24. `get-causal-graph` - Retrieve previously built causal graph
-25. `simulate-intervention` - Simulate interventions using do-calculus
-26. `generate-counterfactual` - Generate "what if" scenarios
+**Hallucination & Calibration Tools** (4 tools):
+22. `get-hallucination-report` - Retrieve hallucination detection reports
+23. `record-prediction` - Record a prediction for calibration tracking
+24. `record-outcome` - Record prediction outcomes
+25. `get-calibration-report` - Retrieve confidence calibration analysis
 
-**Metacognition Tools**:
-27. `self-evaluate` - Metacognitive self-assessment of reasoning quality
-28. `detect-biases` - Identify cognitive biases and logical fallacies
+**Perspective & Temporal Analysis Tools** (4 tools):
+26. `analyze-perspectives` - Multi-stakeholder perspective analysis
+27. `analyze-temporal` - Short-term vs long-term temporal reasoning
+28. `compare-time-horizons` - Compare implications across time horizons
+29. `identify-optimal-timing` - Determine optimal timing for decisions
 
-**Integration & Orchestration Tools**:
-29. `synthesize-insights` - Synthesize insights from multiple reasoning modes
-30. `detect-emergent-patterns` - Detect emergent patterns across modes
-31. `execute-workflow` - Execute predefined multi-tool workflows
-32. `list-workflows` - List available automated workflows
-33. `register-workflow` - Register custom workflows for automation
+**Causal Reasoning Tools** (5 tools):
+30. `build-causal-graph` - Construct causal graphs from observations
+31. `simulate-intervention` - Simulate interventions using do-calculus
+32. `generate-counterfactual` - Generate "what if" scenarios
+33. `analyze-correlation-vs-causation` - Distinguish correlation from causation
+34. `get-causal-graph` - Retrieve previously built causal graph
+
+**Integration & Orchestration Tools** (6 tools):
+35. `synthesize-insights` - Synthesize insights from multiple reasoning modes
+36. `detect-emergent-patterns` - Detect emergent patterns across modes
+37. `execute-workflow` - Execute predefined multi-tool workflows
+38. `list-workflows` - List available automated workflows
+39. `register-workflow` - Register custom workflows for automation
+40. `list-integration-patterns` - Discover integration patterns
+
+**Dual-Process Reasoning Tools** (1 tool):
+41. `dual-process-think` - System 1 (fast) vs System 2 (deliberate) reasoning
+
+**Backtracking Tools** (3 tools):
+42. `create-checkpoint` - Create reasoning checkpoint
+43. `restore-checkpoint` - Restore from checkpoint
+44. `list-checkpoints` - List available checkpoints
+
+**Abductive Reasoning Tools** (2 tools):
+45. `generate-hypotheses` - Generate explanatory hypotheses
+46. `evaluate-hypotheses` - Evaluate hypothesis plausibility
+
+**Case-Based Reasoning Tools** (2 tools):
+47. `retrieve-similar-cases` - Retrieve similar cases from memory
+48. `perform-cbr-cycle` - Execute full CBR cycle (retrieve, reuse, revise, retain)
+
+**Symbolic Reasoning Tools** (2 tools):
+49. `prove-theorem` - Formal theorem proving
+50. `check-constraints` - Check symbolic constraint satisfaction
 
 ## Storage Architecture
 

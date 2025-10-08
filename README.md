@@ -1,434 +1,421 @@
-# Unified Thinking Server
+# unified thinking server
 
-A MCP server that consolidates multiple cognitive thinking patterns into a single, efficient Go-based implementation.
+a model context protocol (mcp) server that consolidates multiple cognitive thinking patterns into a single, efficient go-based implementation.
 
-## Features
+## features
 
-### Thinking Modes
+### thinking modes
 
-- **Linear Mode**: Sequential step-by-step reasoning for systematic problem solving
-- **Tree Mode**: Multi-branch parallel exploration with insights and cross-references
-- **Divergent Mode**: Creative/unconventional ideation with "rebellion" capability
-- **Auto Mode**: Automatic mode selection based on input content
+- **linear mode**: sequential step-by-step reasoning for systematic problem solving
+- **tree mode**: multi-branch parallel exploration with insights and cross-references
+- **divergent mode**: creative/unconventional ideation with "rebellion" capability
+- **reflection mode**: metacognitive reflection on previous reasoning with insight extraction
+- **backtracking mode**: checkpoint-based reasoning with ability to restore previous states
+- **auto mode**: automatic mode selection based on input content
 
-### Core Capabilities
+### core capabilities
 
-- Multi-mode thinking (linear, tree, divergent, auto)
-- Branch management and exploration
-- Insight generation and tracking
-- Cross-reference support between branches
-- Logical validation and consistency checking
-- Formal proof attempts
-- Syntax validation for logical statements
-- Search across all thoughts
-- Full history tracking
-- **Optional persistence** with SQLite (in-memory by default)
+- multi-mode thinking (linear, tree, divergent, reflection, backtracking, auto)
+- branch management and exploration
+- insight generation and tracking
+- cross-reference support between branches
+- logical validation and consistency checking
+- formal proof attempts with universal instantiation
+- syntax validation for logical statements
+- search across all thoughts with full-text indexing
+- full history tracking with branch ancestry
+- checkpoint creation and restoration
+- optional persistence with sqlite (in-memory by default)
 
-### Cognitive Reasoning Capabilities
+### advanced cognitive reasoning
 
-The server includes advanced cognitive reasoning features that transform it from a thought recorder into a comprehensive reasoning assistant:
+the server includes 50+ specialized tools across 8 major categories:
 
-#### Probabilistic Reasoning
-- Bayesian inference with prior and posterior belief updates
-- Evidence-based probability updates
-- Belief combination operations (AND/OR)
-- Confidence estimation from evidence aggregation
+#### probabilistic reasoning (4 tools)
+- bayesian inference with prior and posterior belief updates
+- evidence-based probability updates with quality assessment
+- belief combination operations (and/or logic)
+- confidence estimation from evidence aggregation
 
-#### Evidence Assessment
-- Automatic quality classification (Strong/Moderate/Weak/Anecdotal)
-- Reliability scoring based on source credibility and content
-- Relevance calculation and weighted scoring
-- Multi-source evidence aggregation
+#### causal reasoning (5 tools)
+- causal graph construction from observations
+- intervention simulation using do-calculus
+- counterfactual scenario generation
+- correlation vs causation analysis
+- graph retrieval and inspection
 
-#### Analysis Tools
-- Contradiction detection across thoughts (negations, absolutes, modals)
-- Sensitivity analysis for testing assumption robustness
-- Multi-perspective stakeholder analysis
-- Temporal reasoning (short-term vs long-term implications)
+#### decision support (3 tools)
+- multi-criteria decision analysis with weighted scoring
+- problem decomposition into manageable subproblems
+- sensitivity analysis for robustness testing
 
-#### Decision Support
-- Multi-criteria decision analysis (MCDA) with weighted scoring
-- Problem decomposition into manageable subproblems
-- Dependency mapping and solution path determination
-- Cross-mode insight synthesis and branch merging
+#### advanced reasoning modes (9 tools)
+- dual-process reasoning (system 1 fast intuition vs system 2 deliberate analysis)
+- abductive reasoning (hypothesis generation and evaluation)
+- case-based reasoning (similarity retrieval and adaptation)
+- symbolic constraint solving with inequality detection
 
-#### Metacognition
-- Self-evaluation of thought quality, completeness, and coherence
-- Cognitive bias detection (confirmation, anchoring, availability, sunk cost, overconfidence, recency, groupthink)
-- Bias severity classification and mitigation strategies
-- Strength/weakness identification with improvement suggestions
+#### metacognition (3 tools)
+- self-evaluation of thought quality, completeness, and coherence
+- cognitive bias detection (confirmation, anchoring, availability, sunk cost, overconfidence, recency, groupthink)
+- unknown unknowns detection (identifying knowledge gaps and blind spots)
 
-#### Advanced Reasoning
-- Analogical reasoning with cross-domain mapping
-- Enhanced creative ideation techniques
-- Pattern-based reasoning and inference
+#### analysis tools (8 tools)
+- contradiction detection across thoughts
+- multi-perspective stakeholder analysis
+- temporal reasoning (short-term vs long-term implications)
+- evidence quality assessment with reliability scoring
+- hallucination detection and reporting
+- confidence calibration tracking
 
-## Installation
+#### integration & orchestration (6 tools)
+- cross-mode insight synthesis
+- emergent pattern detection across reasoning modes
+- workflow execution for automated multi-tool pipelines
+- custom workflow registration
+- integration pattern discovery
 
-### Prerequisites
+#### validation & logic (4 tools)
+- logical consistency validation
+- formal proof attempts (modus ponens, modus tollens, universal instantiation, etc.)
+- logical statement syntax checking
+- theorem proving with constraint checking
 
-- Go 1.23 or higher
-- Git
+## installation
 
-### Build
+### prerequisites
+
+- go 1.23 or higher
+- git
+
+### build
 
 ```bash
 go mod download
 go build -o bin/unified-thinking.exe ./cmd/server
 ```
 
-Or using make:
+or using make:
 
 ```bash
 make build
 ```
 
-## Configuration
+## configuration
 
-### Basic Configuration (In-Memory)
+### basic configuration (in-memory)
 
-Add to your Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+add to your claude desktop config (`%appdata%\claude\claude_desktop_config.json` on windows):
 
 ```json
 {
-  "mcpServers": {
+  "mcpservers": {
     "unified-thinking": {
       "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
       "transport": "stdio",
       "env": {
-        "DEBUG": "true"
+        "debug": "true"
       }
     }
   }
 }
 ```
 
-### Configuration with SQLite Persistence
+### configuration with sqlite persistence
 
-For persistent storage across sessions:
+for persistent storage across sessions:
 
 ```json
 {
-  "mcpServers": {
+  "mcpservers": {
     "unified-thinking": {
       "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
       "transport": "stdio",
       "env": {
-        "DEBUG": "true",
-        "STORAGE_TYPE": "sqlite",
-        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
-        "STORAGE_FALLBACK": "memory"
+        "debug": "true",
+        "storage_type": "sqlite",
+        "sqlite_path": "c:\\users\\yourname\\appdata\\roaming\\claude\\unified-thinking.db",
+        "storage_fallback": "memory"
       }
     }
   }
 }
 ```
 
-**Environment Variables**:
-- `STORAGE_TYPE`: `memory` (default) or `sqlite`
-- `SQLITE_PATH`: Path to SQLite database file (created automatically)
-- `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
-- `STORAGE_FALLBACK`: Storage to use if primary fails (e.g., `memory`)
-- `DEBUG`: Enable debug logging (`true` or `false`)
+**environment variables**:
+- `storage_type`: `memory` (default) or `sqlite`
+- `sqlite_path`: path to sqlite database file (created automatically)
+- `sqlite_timeout`: connection timeout in milliseconds (default: 5000)
+- `storage_fallback`: storage to use if primary fails (e.g., `memory`)
+- `debug`: enable debug logging (`true` or `false`)
+- `auto_validation_threshold`: confidence threshold for auto-validation (default: 0.5)
 
-After saving the config, restart Claude Desktop.
+after saving the config, restart claude desktop.
 
-### Available Tools
+## available tools (50 total)
 
-1. **think** - Main thinking tool
+### core thinking tools (11 tools)
+
+1. **think** - main thinking tool
    ```json
    {
-     "content": "Your thinking prompt",
-     "mode": "auto|linear|tree|divergent",
+     "content": "your thinking prompt",
+     "mode": "auto|linear|tree|divergent|reflection|backtracking",
      "confidence": 0.8,
      "key_points": ["point1", "point2"],
      "require_validation": true
    }
    ```
 
-2. **history** - View thinking history
-   ```json
-   {
-     "mode": "linear|tree|divergent",
-     "branch_id": "optional"
-   }
-   ```
+2. **history** - view thinking history
+3. **list-branches** - list all branches
+4. **focus-branch** - switch active branch
+5. **branch-history** - get detailed branch history
+6. **recent-branches** - get recently accessed branches
+7. **validate** - validate thought logical consistency
+8. **prove** - attempt to prove a logical conclusion
+9. **check-syntax** - validate logical statement syntax
+10. **search** - search thoughts
+11. **get-metrics** - system performance and usage metrics
 
-3. **list-branches** - List all branches (tree mode)
+### probabilistic reasoning tools (4 tools)
 
-4. **focus-branch** - Switch active branch
-   ```json
-   {
-     "branch_id": "branch-xxx"
-   }
-   ```
-
-5. **branch-history** - Get detailed branch history
-   ```json
-   {
-     "branch_id": "branch-xxx"
-   }
-   ```
-
-6. **validate** - Validate a thought for logical consistency
-   ```json
-   {
-     "thought_id": "thought-xxx"
-   }
-   ```
-
-7. **prove** - Attempt to prove a logical conclusion
-   ```json
-   {
-     "premises": ["All humans are mortal", "Socrates is human"],
-     "conclusion": "Socrates is mortal"
-   }
-   ```
-
-8. **check-syntax** - Validate logical statement syntax
-   ```json
-   {
-     "statements": ["Statement 1", "Statement 2"]
-   }
-   ```
-
-9. **search** - Search thoughts
-   ```json
-   {
-     "query": "search term",
-     "mode": "optional mode filter"
-   }
-   ```
-
-10. **get-metrics** - Get system performance and usage metrics
-
-11. **recent-branches** - Get recently accessed branches for quick context switching
-    - Returns the last 10 accessed branches with timestamps
-    - Shows active branch for context
-    - Enables fast branch switching without remembering IDs
-
-12. **probabilistic-reasoning** - Bayesian inference and belief updates
+12. **probabilistic-reasoning** - bayesian inference and belief updates
     ```json
     {
       "operation": "create|update|get|combine",
-      "statement": "It will rain tomorrow",
-      "prior_prob": 0.3,
-      "belief_id": "belief-xxx",
-      "likelihood": 0.8,
-      "evidence_prob": 0.4
+      "statement": "it will rain tomorrow",
+      "prior_prob": 0.3
     }
     ```
 
-13. **assess-evidence** - Evidence quality assessment
+13. **assess-evidence** - evidence quality assessment
+14. **detect-contradictions** - find contradictions among thoughts
+15. **sensitivity-analysis** - test robustness of conclusions
+
+### decision & problem-solving tools (3 tools)
+
+16. **make-decision** - multi-criteria decision analysis
     ```json
     {
-      "content": "Evidence content",
-      "source": "Source reference",
-      "claim_id": "claim-xxx",
-      "supports_claim": true
+      "question": "which option should we choose?",
+      "options": [{"name": "option a", "scores": {"cost": 0.8}}],
+      "criteria": [{"name": "cost", "weight": 0.6, "maximize": false}]
     }
     ```
 
-14. **detect-contradictions** - Find contradictions among thoughts
+17. **decompose-problem** - break down complex problems
+18. **verify-thought** - verify thought validity and structure
+
+### metacognition tools (3 tools)
+
+19. **self-evaluate** - metacognitive self-assessment
+20. **detect-biases** - identify cognitive biases and logical fallacies
+21. **detect-blind-spots** - identify unknown unknowns and knowledge gaps
+
+### hallucination & calibration tools (4 tools)
+
+22. **get-hallucination-report** - retrieve hallucination detection reports
+23. **record-prediction** - record a prediction for calibration tracking
+24. **record-outcome** - record prediction outcomes
+25. **get-calibration-report** - retrieve confidence calibration analysis
+
+### perspective & temporal analysis tools (4 tools)
+
+26. **analyze-perspectives** - multi-stakeholder perspective analysis
+27. **analyze-temporal** - short-term vs long-term implications
+28. **compare-time-horizons** - compare across time horizons
+29. **identify-optimal-timing** - determine optimal decision timing
+
+### causal reasoning tools (5 tools)
+
+30. **build-causal-graph** - construct causal graphs from observations
+31. **simulate-intervention** - simulate interventions with do-calculus
+32. **generate-counterfactual** - generate "what if" scenarios
+33. **analyze-correlation-vs-causation** - distinguish correlation from causation
+34. **get-causal-graph** - retrieve previously built causal graph
+
+### integration & orchestration tools (6 tools)
+
+35. **synthesize-insights** - synthesize insights from multiple modes
+36. **detect-emergent-patterns** - detect patterns across reasoning modes
+37. **execute-workflow** - execute predefined multi-tool workflows
+38. **list-workflows** - list available automated workflows
+39. **register-workflow** - register custom workflows
+40. **list-integration-patterns** - discover integration patterns
+
+### dual-process reasoning tools (1 tool)
+
+41. **dual-process-think** - system 1 (fast) vs system 2 (deliberate) reasoning
     ```json
     {
-      "thought_ids": ["thought-1", "thought-2"],
-      "branch_id": "branch-xxx",
-      "mode": "linear|tree|divergent"
+      "content": "problem to analyze",
+      "force_system": "system1|system2"
     }
     ```
 
-15. **make-decision** - Multi-criteria decision analysis
-    ```json
-    {
-      "question": "Which option should we choose?",
-      "options": [{"name": "Option A", "scores": {"cost": 0.8}}],
-      "criteria": [{"name": "Cost", "weight": 0.6, "maximize": false}]
-    }
-    ```
+### backtracking tools (3 tools)
 
-16. **decompose-problem** - Break down complex problems
-    ```json
-    {
-      "problem": "Complex problem description"
-    }
-    ```
+42. **create-checkpoint** - create reasoning checkpoint
+43. **restore-checkpoint** - restore from checkpoint
+44. **list-checkpoints** - list available checkpoints
 
-17. **sensitivity-analysis** - Test robustness of conclusions
-    ```json
-    {
-      "target_claim": "Main conclusion",
-      "assumptions": ["assumption1", "assumption2"],
-      "base_confidence": 0.8
-    }
-    ```
+### abductive reasoning tools (2 tools)
 
-18. **self-evaluate** - Metacognitive self-assessment
-    ```json
-    {
-      "thought_id": "thought-xxx",
-      "branch_id": "branch-xxx"
-    }
-    ```
+45. **generate-hypotheses** - generate explanatory hypotheses
+46. **evaluate-hypotheses** - evaluate hypothesis plausibility
 
-19. **detect-biases** - Identify cognitive biases
-    ```json
-    {
-      "thought_id": "thought-xxx",
-      "branch_id": "branch-xxx"
-    }
-    ```
+### case-based reasoning tools (2 tools)
 
-### Example Prompts
+47. **retrieve-similar-cases** - retrieve similar cases from memory
+48. **perform-cbr-cycle** - execute full cbr cycle (retrieve, reuse, revise, retain)
 
-**Auto Mode (Recommended)**:
-```
-"Analyze this problem using the best thinking approach"
-```
+### symbolic reasoning tools (2 tools)
 
-**Explicit Linear Mode**:
-```
-"Think step by step about solving this"
-```
+49. **prove-theorem** - formal theorem proving
+50. **check-constraints** - check symbolic constraint satisfaction
 
-**Explicit Tree Mode**:
-```
-"Explore multiple branches of this idea with cross-references"
-```
-
-**Explicit Divergent Mode**:
-```
-"What's a creative, unconventional solution to this?"
-"Challenge all assumptions about this problem" (with force_rebellion)
-```
-
-## Architecture
+## architecture
 
 ```
 unified-thinking/
-├── cmd/server/          # Main entry point
+├── cmd/server/             # main entry point
 ├── internal/
-│   ├── types/          # Core data structures (extended with cognitive types)
-│   ├── storage/        # Pluggable storage (in-memory default, SQLite optional)
-│   │   ├── memory.go   # In-memory implementation
-│   │   ├── sqlite.go   # SQLite with write-through cache
-│   │   ├── factory.go  # Storage factory pattern
-│   │   └── config.go   # Configuration management
-│   ├── modes/          # Thinking mode implementations
-│   │   ├── linear.go
-│   │   ├── tree.go
-│   │   ├── divergent.go
-│   │   └── auto.go
-│   ├── reasoning/      # Probabilistic reasoning and decision making
-│   ├── analysis/       # Evidence assessment, contradiction detection, sensitivity analysis
-│   ├── metacognition/  # Self-evaluation and bias detection
-│   ├── validation/     # Logic validation
-│   └── server/         # MCP server implementation
-└── TECHNICAL_PLAN.md   # Detailed technical documentation
+│   ├── types/              # core data structures (50+ types)
+│   ├── storage/            # pluggable storage (memory/sqlite)
+│   │   ├── memory.go       # in-memory implementation
+│   │   ├── sqlite.go       # sqlite with write-through cache
+│   │   ├── factory.go      # storage factory pattern
+│   │   └── config.go       # configuration management
+│   ├── modes/              # thinking mode implementations
+│   │   ├── linear.go       # sequential reasoning
+│   │   ├── tree.go         # parallel exploration
+│   │   ├── divergent.go    # creative ideation
+│   │   ├── reflection.go   # metacognitive reflection
+│   │   ├── backtracking.go # checkpoint-based reasoning
+│   │   └── auto.go         # automatic mode selection
+│   ├── processing/         # dual-process reasoning
+│   │   └── dual_process.go # system 1/2 executor
+│   ├── reasoning/          # probabilistic, causal, temporal
+│   │   ├── probabilistic.go    # bayesian inference
+│   │   ├── causal.go           # pearl's causal framework
+│   │   ├── temporal.go         # temporal analysis
+│   │   ├── abductive.go        # hypothesis generation
+│   │   └── case_based.go       # cbr implementation
+│   ├── analysis/           # evidence, contradiction, perspective
+│   ├── metacognition/      # self-eval, bias detection, unknown unknowns
+│   ├── validation/         # logic validation, fallacy detection, symbolic
+│   ├── integration/        # cross-mode synthesis
+│   ├── orchestration/      # workflow automation
+│   └── server/             # mcp server implementation
+│       └── handlers/       # specialized tool handlers (19 files)
 ```
 
-### Cognitive Architecture
+### cognitive architecture
 
-The server implements a modular cognitive architecture with three specialized packages:
+the server implements a modular cognitive architecture with specialized packages:
 
-- **reasoning**: Implements Bayesian probabilistic inference, multi-criteria decision analysis, and problem decomposition
-- **analysis**: Provides evidence quality assessment, contradiction detection, and sensitivity analysis for robustness testing
-- **metacognition**: Enables self-evaluation and cognitive bias detection with mitigation strategies
+- **modes**: six thinking modes (linear, tree, divergent, reflection, backtracking, auto)
+- **processing**: dual-process reasoning (fast intuitive vs slow deliberate)
+- **reasoning**: probabilistic inference, causal analysis, temporal reasoning, abductive inference, case-based reasoning
+- **analysis**: evidence assessment, contradiction detection, perspective analysis, sensitivity testing
+- **metacognition**: self-evaluation, bias detection, unknown unknowns identification
+- **validation**: logical validation, fallacy detection, symbolic constraint solving
+- **integration**: cross-mode synthesis and emergent pattern detection
+- **orchestration**: automated multi-tool workflow execution
 
-All components are thread-safe, composable, and maintain backward compatibility with existing functionality.
+all components are thread-safe, composable, and maintain backward compatibility.
 
-## Development
+## development
 
-### Build
+### build
 
 ```bash
-# Build the server binary
+# build the server binary
 make build
 
-# Clean build artifacts
+# clean build artifacts
 make clean
 ```
 
-```bash
-# For protocol debugging only (waits for MCP messages on stdin)
-go run ./cmd/server/main.go
-
-# With debug logging
-DEBUG=true go run ./cmd/server/main.go
-```
-
-### Testing
+### testing
 
 ```bash
-# Run tests
+# run all tests
 make test
 
-# Run with verbose output
+# run with verbose output
 go test -v ./...
+
+# run with coverage
+make test-coverage
+
+# run benchmarks
+make benchmark
 ```
 
-## Troubleshooting
+test coverage: >70% overall, >94% for validation package
 
-### Server won't start
+## troubleshooting
 
-1. Check that Go is installed: `go version`
-2. Verify the binary was built: Check `bin/` directory
-3. Enable debug mode: Set `DEBUG=true` in env
+### server won't start
 
-### Tools not appearing
+1. check that go is installed: `go version`
+2. verify the binary was built: check `bin/` directory
+3. enable debug mode: set `debug=true` in env
 
-1. Restart Claude Desktop completely
-2. Check config file syntax
-3. Verify the executable path is correct
+### tools not appearing
 
-### Performance issues
+1. restart claude desktop completely
+2. check config file syntax
+3. verify the executable path is correct
 
-**In-Memory Mode** (default):
-- Data is lost on server restart
-- For long sessions with many thoughts, consider periodic restarts
-- Monitor memory usage if processing thousands of thoughts
+### performance issues
 
-**SQLite Mode** (persistent):
-- Data persists across restarts
-- Uses write-through caching for fast access
-- Automatic memory management via cache eviction
-- Enable with `STORAGE_TYPE=sqlite` environment variable
+**in-memory mode** (default):
+- data is lost on server restart
+- for long sessions, consider periodic restarts
+- monitor memory usage if processing thousands of thoughts
 
-## Contributing
+**sqlite mode** (persistent):
+- data persists across restarts
+- uses write-through caching for fast access
+- automatic memory management via cache eviction
+- enable with `storage_type=sqlite` environment variable
 
-See [TECHNICAL_PLAN.md](TECHNICAL_PLAN.md) for detailed architecture and implementation notes.
+## technical details
 
-## License
+### key features
 
-MIT License
+- 50 specialized mcp tools across 8 categories
+- 6 thinking modes with automatic mode selection
+- dual-process reasoning (fast vs slow thinking)
+- checkpoint-based backtracking
+- probabilistic bayesian inference
+- causal reasoning with do-calculus
+- abductive hypothesis generation
+- case-based reasoning
+- symbolic constraint solving
+- hallucination detection
+- confidence calibration tracking
+- unknown unknowns detection
+- workflow orchestration for multi-tool automation
+- pluggable storage (in-memory or sqlite)
+- thread-safe operations
+- comprehensive test coverage
 
-## Technical Details
+### implementation highlights
 
-### Data Structures
+- modular package design for composability
+- interface-based architecture for testability
+- builder patterns for complex object construction
+- write-through caching for sqlite performance
+- fts5 full-text search
+- wal mode for concurrent database reads
+- automatic schema migrations
+- graceful fallback handling
+- resource limits to prevent dos
 
-The system includes 15 specialized cognitive data structures:
+## license
 
-- **Evidence**: Quality assessment with reliability and relevance scoring
-- **ProbabilisticBelief**: Bayesian beliefs with prior/posterior tracking
-- **Contradiction**: Cross-thought contradiction detection results
-- **Perspective**: Stakeholder viewpoint analysis
-- **TemporalAnalysis**: Short-term vs long-term reasoning
-- **Decision**: Structured decision framework with criteria and options
-- **ProblemDecomposition**: Complex problem breakdown into subproblems
-- **Synthesis**: Cross-mode insight integration
-- **SensitivityAnalysis**: Robustness testing of conclusions
-- **Analogy**: Cross-domain analogical reasoning
-- **SelfEvaluation**: Metacognitive self-assessment
-- **CognitiveBias**: Detected biases with mitigation strategies
-
-### Implementation Features
-
-- Modular package design for composability
-- Thread-safe operations with proper locking patterns
-- Comprehensive test coverage for all cognitive capabilities
-- Backward compatible with existing functionality
-- Pluggable storage architecture:
-  - In-memory storage optimized for speed (default)
-  - SQLite storage with write-through caching for persistence
-  - Graceful fallback handling
-  - Factory pattern for extensibility
+mit license
