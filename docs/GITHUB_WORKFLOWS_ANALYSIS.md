@@ -263,9 +263,8 @@ jobs:
         with:
           files: |
             bin/*
-          body_path: release_notes.md
-          draft: false
-          prerelease: false
+              prerelease: false
+            env:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
