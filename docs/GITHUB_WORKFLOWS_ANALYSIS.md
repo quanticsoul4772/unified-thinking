@@ -477,12 +477,12 @@ jobs:
           if [[ "${{ github.actor }}" == "dependabot[bot]" ]]; then
             echo "Skipping changelog check for dependabot"
             exit 0
-          fi
+              # Check if CHANGELOG.md was modified
+              if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CHANGELOG.md"; then
+                echo "::error::CHANGELOG.md was not updated. Please add an entry for this PR."
+                exit 1
+              fi
 
-          # Check if CHANGELOG.md was modified
-          git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CHANGELOG.md" || {
-            echo "::warning::CHANGELOG.md was not updated. Consider adding an entry for this PR."
-            exit 0
           }
 
           echo "✓ CHANGELOG.md was updated"
