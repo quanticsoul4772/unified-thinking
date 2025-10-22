@@ -800,7 +800,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 					Timestamp:  time.Now(),
 				}
 				// Some writes may fail due to locks, that's expected with SQLite
-				_ = _ = storage.StoreThought(th)
+				_ = storage.StoreThought(th)
 			}()
 		}
 
