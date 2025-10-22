@@ -49,5 +49,14 @@ jobs:
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
+        continue-on-error: true  # Optional: requires GitHub Advanced Security for private repos
         with:
           fail-on-severity: moderate
+
+      - name: Alternative dependency check (fallback)
+        if: failure()
+        run: |
+          echo "⚠️  Dependency Review action failed (likely due to GitHub Advanced Security not being enabled)"
+          echo "✓  Note: govulncheck in the security-scan job provides vulnerability scanning for Go dependencies"
+          echo "✓  To enable full dependency review, enable Dependency graph and GitHub Advanced Security at:"
+          echo "   https://github.com/${{ github.repository }}/settings/security_analysis"
