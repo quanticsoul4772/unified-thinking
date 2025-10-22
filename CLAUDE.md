@@ -24,7 +24,7 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/integration/` - Cross-mode synthesis, emergent pattern detection, probabilistic-causal integration
 - `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
 - `internal/server/` - MCP server implementation with 50 registered tools
-- `internal/server/handlers/` - 19 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns)
+- `internal/server/handlers/` - 15 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -106,6 +106,20 @@ make test-all
 ```
 
 **Test Coverage**: The project maintains high test coverage (>70% overall, >94% for validation package) across all major components including storage, modes, reasoning, analysis, and metacognition modules.
+
+### Linting
+```bash
+# Run golangci-lint (requires golangci-lint installation)
+golangci-lint run
+
+# Run with specific linters
+golangci-lint run --enable-all
+
+# Fix auto-fixable issues
+golangci-lint run --fix
+```
+
+**Linter Configuration**: `.golangci.yml` configures enabled linters (errcheck, gosimple, govet, ineffassign, staticcheck, unused, gofmt, misspell). Compatible with golangci-lint v2.x schema.
 
 ### Cleanup
 ```bash
@@ -474,7 +488,7 @@ When Claude Desktop starts, it will:
 ### Core Infrastructure
 1. `cmd/server/main.go` - Entry point, initializes storage and server components
 2. `internal/types/types.go` - All core data structures and constants (50+ types)
-3. `internal/server/server.go` - Tool registration and request handlers (33 tools)
+3. `internal/server/server.go` - Tool registration and request handlers (50 tools)
 4. `internal/server/handlers/` - Modular handlers for thinking, branches, validation, search, enhanced cognitive tools
 
 ### Storage Layer

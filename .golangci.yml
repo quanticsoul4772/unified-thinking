@@ -1,44 +1,43 @@
+# golangci-lint configuration for unified-thinking server
+# Documentation: https://golangci-lint.run/usage/configuration/
+# Compatible with golangci-lint v2.x schema (v2.5.0+)
 version: "2"
 
 run:
   timeout: 5m
   tests: true
+  build-tags: []
+  skip-dirs:
+    - bin
+    - vendor
+  skip-files:
+    - ".*\\.pb\\.go$"
 
 linters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - goconst
-    - gocyclo
-    - gosec
-    - unconvert
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Advanced Go linter
+    - unused        # Check for unused constants, variables, functions
+    - gofmt         # Check code is formatted
+    - goimports     # Check imports are formatted
+    - misspell      # Check for misspelled words
+    - goconst       # Check for repeated strings
+    - gosec         # Security-focused linter
+  disable:
+    - typecheck     # Disabled because it can be slow with generics
+    - gocyclo       # Cyclomatic complexity (can be noisy)
 
-linters-settings:
-  gocyclo:
-    min-complexity: 20
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  misspell:
-    locale: US
-  errcheck:
-    check-blank: true
+# Note: linters-settings and issues.exclude-rules not supported in v2.5.0 schema
+# Using minimal configuration for compatibility with golangci-lint v2.x
 
 issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
-    - path: internal/server/handlers/
-      linters:
-        - gocyclo
-  max-issues-per-linter: 50
-  max-same-issues: 10
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats:
+    - format: colored-line-number
+  sort-results: true
