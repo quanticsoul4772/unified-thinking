@@ -263,8 +263,7 @@ jobs:
         with:
           files: |
             bin/*
-              prerelease: false
-            env:
+          prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
