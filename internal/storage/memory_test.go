@@ -81,7 +81,7 @@ func TestStoreThought(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
-			_ = err := storage.StoreThought(tt.thought)
+			err := storage.StoreThought(tt.thought)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreThought() error = %v, wantErr %v", err, tt.wantErr)
@@ -212,7 +212,7 @@ func TestStoreBranch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
-			_ = err := storage.StoreBranch(tt.branch)
+			err := storage.StoreBranch(tt.branch)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreBranch() error = %v, wantErr %v", err, tt.wantErr)
