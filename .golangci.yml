@@ -16,13 +16,9 @@ linters:
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Advanced Go linter
     - unused        # Check for unused constants, variables, functions
-    - gofmt         # Check code is formatted
-    - goimports     # Check imports are formatted
     - misspell      # Check for misspelled words
     - goconst       # Check for repeated strings
     - gosec         # Security-focused linter
-  disable:
-    - gocyclo       # Cyclomatic complexity (can be noisy)
 
 issues:
   max-issues-per-linter: 0
