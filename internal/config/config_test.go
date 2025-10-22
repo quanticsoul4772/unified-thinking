@@ -482,7 +482,7 @@ func clearEnv(t *testing.T) {
 	}
 
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 }
 

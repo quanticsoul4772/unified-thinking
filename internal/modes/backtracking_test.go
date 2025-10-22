@@ -224,11 +224,11 @@ func TestBacktrackingManager_GetCheckpointDiff(t *testing.T) {
 	thought1 := &types.Thought{ID: "thought-1", Content: "First"}
 	thought2 := &types.Thought{ID: "thought-2", Content: "Second"}
 	branch.Thoughts = append(branch.Thoughts, thought1, thought2)
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	// Record the changes
-	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-1", thought1)
-	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-2", thought2)
+	_ = 	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-1", thought1)
+	_ = 	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-2", thought2)
 
 	// Create second checkpoint
 	cp2, _ := bm.CreateCheckpoint(ctx, "branch-1", "cp2", "After changes")
@@ -304,7 +304,7 @@ func TestBacktrackingManager_SnapshotCreation(t *testing.T) {
 			ID:      fmt.Sprintf("thought-%d", i),
 			Content: fmt.Sprintf("Thought %d", i),
 		}
-		bm.RecordChange("branch-1", DeltaAdd, EntityThought, thought.ID, thought)
+		_ = bm.RecordChange("branch-1", DeltaAdd, EntityThought, thought.ID, thought)
 	}
 
 	// Create checkpoint (should trigger snapshot creation)

@@ -287,7 +287,7 @@ func TestAutoMode_ProcessThoughtModeSelection(t *testing.T) {
 			ID:    "test-branch",
 			State: types.StateActive,
 		}
-		store.StoreBranch(branch)
+		_ = store.StoreBranch(branch)
 
 		input := ThoughtInput{
 			Content:    "Simple content",

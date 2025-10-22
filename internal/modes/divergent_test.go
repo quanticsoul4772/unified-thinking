@@ -193,7 +193,7 @@ func TestDivergentMode_BranchThought(t *testing.T) {
 		Type:       "creative",
 		Confidence: 0.8,
 	}
-	store.StoreThought(sourceThought)
+	_ = store.StoreThought(sourceThought)
 
 	directions := []string{"more_extreme", "opposite", "tangential", "simplified", "combined", "unknown"}
 
@@ -283,7 +283,7 @@ func TestDivergentMode_ListThoughts(t *testing.T) {
 			Type:       "creative",
 			Confidence: 0.8,
 		}
-		mode.ProcessThought(ctx, input)
+		_, _ = mode.ProcessThought(ctx, input)
 	}
 
 	// List thoughts
