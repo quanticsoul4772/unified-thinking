@@ -71,13 +71,13 @@ func TestLoadFromEnv(t *testing.T) {
 	clearEnv(t)
 
 	// Set environment variables
-	os.Setenv("UT_SERVER_NAME", "test-server")
-	os.Setenv("UT_SERVER_ENVIRONMENT", "production")
-	os.Setenv("UT_STORAGE_MAX_THOUGHTS", "5000")
-	os.Setenv("UT_FEATURES_LINEAR_MODE", "false")
-	os.Setenv("UT_FEATURES_PROBABILISTIC_REASONING", "true")
-	os.Setenv("UT_PERFORMANCE_MAX_CONCURRENT_THOUGHTS", "50")
-	os.Setenv("UT_LOGGING_LEVEL", "debug")
+	_ = os.Setenv("UT_SERVER_NAME", "test-server")
+	_ = os.Setenv("UT_SERVER_ENVIRONMENT", "production")
+	_ = os.Setenv("UT_STORAGE_MAX_THOUGHTS", "5000")
+	_ = os.Setenv("UT_FEATURES_LINEAR_MODE", "false")
+	_ = os.Setenv("UT_FEATURES_PROBABILISTIC_REASONING", "true")
+	_ = os.Setenv("UT_PERFORMANCE_MAX_CONCURRENT_THOUGHTS", "50")
+	_ = os.Setenv("UT_LOGGING_LEVEL", "debug")
 
 	defer clearEnv(t)
 
@@ -214,8 +214,8 @@ func TestLoadFromFileWithEnvOverride(t *testing.T) {
 
 	// Set environment variable to override file
 	clearEnv(t)
-	os.Setenv("UT_SERVER_NAME", "env-server")
-	os.Setenv("UT_FEATURES_LINEAR_MODE", "true")
+	_ = os.Setenv("UT_SERVER_NAME", "env-server")
+	_ = os.Setenv("UT_FEATURES_LINEAR_MODE", "true")
 	defer clearEnv(t)
 
 	cfg, err := LoadFromFile(configPath)

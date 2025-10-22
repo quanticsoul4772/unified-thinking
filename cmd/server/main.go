@@ -37,7 +37,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize storage: %v", err)
 	}
-	defer storage.CloseStorage(store)
+	defer func() {
+		if err := storage.CloseStorage(store); err != nil {
+			log.Printf("Warning: failed to close storage: %v", err)
+		}
+	}()
 
 	// Initialize modes
 	linearMode := modes.NewLinearMode(store)
