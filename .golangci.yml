@@ -27,7 +27,6 @@ linters:
     - goconst       # Check for repeated strings
     - gosec         # Security-focused linter
   disable:
-    - typecheck     # Disabled because it can be slow with generics
     - gocyclo       # Cyclomatic complexity (can be noisy)
 
 # Note: linters-settings and issues.exclude-rules not supported in v2.5.0 schema
