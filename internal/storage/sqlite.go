@@ -21,7 +21,6 @@ type SQLiteStorage struct {
 
 	mu               sync.RWMutex
 	activeBranchID   string
-	recentBranchIDs  []string
 	thoughtCounter   atomic.Int64
 	branchCounter    atomic.Int64
 	insightCounter   atomic.Int64
@@ -78,7 +77,6 @@ func NewSQLiteStorage(dbPath string, timeoutMs int) (*SQLiteStorage, error) {
 	s := &SQLiteStorage{
 		db:    db,
 		cache: NewMemoryStorage(),
-		recentBranchIDs: make([]string, 0, MaxRecentBranches),
 	}
 
 	// Prepare statements
@@ -936,7 +934,55 @@ func (s *SQLiteStorage) UpdateBranchConfidence(branchID string, confidence float
 }
 
 func (s *SQLiteStorage) GetRecentBranches() ([]*types.Branch, error) {
-	return s.cache.GetRecentBranches()
+	// Query database for recently accessed branches
+	rows, err := s.db.Query(`
+		SELECT id, parent_branch_id, state, priority, confidence,
+		       created_at, updated_at, last_accessed_at
+		FROM branches
+		ORDER BY last_accessed_at DESC
+		LIMIT ?
+	`, MaxRecentBranches)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query recent branches: %w", err)
+	}
+	defer rows.Close()
+
+	branches := make([]*types.Branch, 0)
+	for rows.Next() {
+		branch := &types.Branch{}
+		var parentBranchID sql.NullString
+		var createdAt, updatedAt, lastAccessedAt int64
+
+		err := rows.Scan(
+			&branch.ID, &parentBranchID, &branch.State, &branch.Priority, &branch.Confidence,
+			&createdAt, &updatedAt, &lastAccessedAt,
+		)
+		if err != nil {
+			log.Printf("Warning: failed to scan branch: %v", err)
+			continue
+		}
+
+		if parentBranchID.Valid {
+			branch.ParentBranchID = parentBranchID.String
+		}
+		branch.CreatedAt = time.Unix(createdAt, 0)
+		branch.UpdatedAt = time.Unix(updatedAt, 0)
+		branch.LastAccessedAt = time.Unix(lastAccessedAt, 0)
+
+		// Load associated data
+		thoughts, _ := s.loadBranchThoughts(branch.ID)
+		branch.Thoughts = thoughts
+
+		insights, _ := s.loadBranchInsights(branch.ID)
+		branch.Insights = insights
+
+		crossRefs, _ := s.loadBranchCrossRefs(branch.ID)
+		branch.CrossReferences = crossRefs
+
+		branches = append(branches, branch)
+	}
+
+	return branches, nil
 }
 
 func (s *SQLiteStorage) GetMetrics() *Metrics {
