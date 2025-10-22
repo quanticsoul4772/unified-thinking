@@ -70,7 +70,7 @@ func TestNewSQLiteStorage(t *testing.T) {
 
 			if !tt.wantErr {
 				if storage == nil {
-					t.Error("NewSQLiteStorage() returned nil storage")
+					t.Fatal("NewSQLiteStorage() returned nil storage")
 				}
 				if storage.db == nil {
 					t.Error("Database connection is nil")
@@ -1343,7 +1343,6 @@ func TestSQLiteRecentBranches(t *testing.T) {
 	defer storage.Close()
 
 	// Store and access branches to populate recent list
-	branchIDs := []string{}
 	for i := 0; i < 3; i++ {
 		branch := &types.Branch{
 			State:          types.StateActive,
@@ -1357,7 +1356,6 @@ func TestSQLiteRecentBranches(t *testing.T) {
 		if err != nil {
 			t.Fatalf("StoreBranch() error = %v", err)
 		}
-		branchIDs = append(branchIDs, branch.ID)
 
 		// Access each branch to populate recent list
 		err = storage.UpdateBranchAccess(branch.ID)

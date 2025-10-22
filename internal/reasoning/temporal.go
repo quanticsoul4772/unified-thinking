@@ -165,15 +165,18 @@ func (tr *TemporalReasoner) analyzeLongTerm(situation string, horizon string) st
 	}
 
 	// Build long-term view based on horizon
-	horizonPhrase := "over time"
-	if horizon == "days-weeks" {
+	var horizonPhrase string
+	switch horizon {
+	case "days-weeks":
 		horizonPhrase = "in the coming weeks"
-	} else if horizon == "months" {
+	case "months":
 		horizonPhrase = "over the next 6-12 months"
-	} else if horizon == "years" {
+	case "years":
 		horizonPhrase = "over multiple years"
-	} else if horizon == "decades" {
+	case "decades":
 		horizonPhrase = "over the long term"
+	default:
+		horizonPhrase = "over time"
 	}
 
 	if len(implications) == 0 {
@@ -254,9 +257,10 @@ func (tr *TemporalReasoner) generateRecommendation(shortTerm, longTerm string, t
 	}
 
 	// Add horizon-specific guidance
-	if horizon == "days-weeks" {
+	switch horizon {
+	case "days-weeks":
 		recommendation += " Given the immediate timeframe, focus on execution speed and rapid feedback cycles."
-	} else if horizon == "years" || horizon == "decades" {
+	case "years", "decades":
 		recommendation += " Given the extended timeframe, invest in sustainable infrastructure and adaptable systems."
 	}
 

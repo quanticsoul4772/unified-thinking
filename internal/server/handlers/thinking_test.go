@@ -140,7 +140,7 @@ func TestThinkingHandler_HandleThink(t *testing.T) {
 					t.Error("CallToolResult should not be nil")
 				}
 				if response == nil {
-					t.Error("ThinkResponse should not be nil")
+					t.Fatal("ThinkResponse should not be nil")
 				}
 				if response.ThoughtID == "" {
 					t.Error("Response missing ThoughtID")
@@ -240,7 +240,7 @@ func TestThinkingHandler_HandleHistory(t *testing.T) {
 					t.Error("CallToolResult should not be nil")
 				}
 				if response == nil {
-					t.Error("HistoryResponse should not be nil")
+					t.Fatal("HistoryResponse should not be nil")
 				}
 				if response.Thoughts == nil {
 					t.Error("Response.Thoughts should not be nil")
@@ -296,7 +296,7 @@ func TestThinkingHandler_HandleHistory_BranchSpecific(t *testing.T) {
 		t.Error("CallToolResult should not be nil")
 	}
 	if response == nil {
-		t.Error("HistoryResponse should not be nil")
+		t.Fatal("HistoryResponse should not be nil")
 	}
 }
 

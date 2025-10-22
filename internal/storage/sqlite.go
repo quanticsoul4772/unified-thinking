@@ -21,11 +21,11 @@ type SQLiteStorage struct {
 
 	mu               sync.RWMutex
 	activeBranchID   string
-	thoughtCounter   atomic.Int64
-	branchCounter    atomic.Int64
-	insightCounter   atomic.Int64
-	validationCounter atomic.Int64
-	relationshipCounter atomic.Int64
+	thoughtCounter      atomic.Int64
+	branchCounter       atomic.Int64
+	_insightCounter     atomic.Int64 // Reserved for future use
+	_validationCounter  atomic.Int64 // Reserved for future use
+	_relationshipCounter atomic.Int64 // Reserved for future use
 
 	// Prepared statements
 	stmtInsertThought  *sql.Stmt

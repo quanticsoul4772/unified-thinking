@@ -186,7 +186,8 @@ func getStringSliceField(m map[string]interface{}, key string) []string {
 	return nil
 }
 
-func getCriteria(m map[string]interface{}) []map[string]interface{} {
+// getCriteria is reserved for future use in decision criterion extraction
+func _getCriteria(m map[string]interface{}) []map[string]interface{} {
 	if v, ok := m["criteria"]; ok {
 		if criteria, ok := v.([]interface{}); ok {
 			result := make([]map[string]interface{}, 0, len(criteria))

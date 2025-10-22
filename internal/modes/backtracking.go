@@ -200,7 +200,7 @@ func (bm *BacktrackingManager) ForkFromCheckpoint(ctx context.Context, checkpoin
 	newBranch.UpdatedAt = time.Now()
 
 	// Add metadata about fork origin
-	if newBranch.Thoughts != nil && len(newBranch.Thoughts) > 0 {
+	if len(newBranch.Thoughts) > 0 {
 		lastThought := newBranch.Thoughts[len(newBranch.Thoughts)-1]
 		if lastThought.Metadata == nil {
 			lastThought.Metadata = make(map[string]interface{})

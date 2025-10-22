@@ -66,9 +66,10 @@ func (h *DualProcessHandler) HandleDualProcessThink(ctx context.Context, params 
 
 	// Convert force_system from string to ProcessingSystem
 	var forceSystem processing.ProcessingSystem
-	if req.ForceSystem == "system1" {
+	switch req.ForceSystem {
+	case "system1":
 		forceSystem = processing.System1
-	} else if req.ForceSystem == "system2" {
+	case "system2":
 		forceSystem = processing.System2
 	}
 

@@ -25,9 +25,9 @@ func NewLogicValidator() *LogicValidator {
 // Logical connectives and patterns
 var (
 	implications = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
-	negations    = []string{"not ", "no ", "never ", "none "}
-	universals   = []string{"all ", "every ", "each "}
-	existentials = []string{"some ", "exists ", "there is ", "there are "}
+	negations     = []string{"not ", "no ", "never ", "none "}
+	universals    = []string{"all ", "every ", "each "}
+	_existentials = []string{"some ", "exists ", "there is ", "there are "} // Reserved for future use
 )
 
 // ValidateThought validates a thought for logical consistency by checking
@@ -837,7 +837,8 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 }
 
 // extractAtomicPropositions extracts atomic propositions from a logical statement
-func extractAtomicPropositions(statement string) []string {
+// Reserved for future use in advanced logical decomposition
+func _extractAtomicPropositions(statement string) []string {
 	// Remove logical operators to get atoms
 	cleaned := statement
 	operators := []string{" if ", " then ", " and ", " or ", " not ", " implies ", " therefore "}

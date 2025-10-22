@@ -81,7 +81,7 @@ func (dpe *DualProcessExecutor) ProcessThought(ctx context.Context, req *Process
 	if system == System1 {
 		thought, err := dpe.executeSystem1(ctx, req)
 		if err != nil {
-			return nil, fmt.Errorf("System 1 failed: %w", err)
+			return nil, fmt.Errorf("system 1 failed: %w", err)
 		}
 
 		result.Thought = thought
@@ -109,7 +109,7 @@ func (dpe *DualProcessExecutor) ProcessThought(ctx context.Context, req *Process
 		// Execute System 2 directly
 		thought, err := dpe.executeSystem2(ctx, req)
 		if err != nil {
-			return nil, fmt.Errorf("System 2 failed: %w", err)
+			return nil, fmt.Errorf("system 2 failed: %w", err)
 		}
 
 		result.Thought = thought

@@ -159,9 +159,10 @@ func (cti *CausalTemporalIntegration) analyzeMediumTermEffects(intervention *typ
 	indirectEffects := []*types.PredictedEffect{}
 
 	for _, effect := range intervention.PredictedEffects {
-		if effect.PathLength == 2 {
+		switch effect.PathLength {
+		case 2:
 			directEffects = append(directEffects, effect)
-		} else if effect.PathLength == 3 {
+		case 3:
 			indirectEffects = append(indirectEffects, effect)
 		}
 	}
