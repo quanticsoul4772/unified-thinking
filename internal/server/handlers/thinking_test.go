@@ -150,10 +150,9 @@ func TestThinkingHandler_HandleThink(t *testing.T) {
 				}
 
 				// Confidence is returned from the mode processing
-				if response.Confidence == 0 {
-					// Some modes may return 0 confidence, that's ok
-					// Just verify the response was created
-				}
+				// Some modes may return 0 confidence, that's ok
+				// Just verify the response was created
+				_ = response.Confidence
 			}
 		})
 	}

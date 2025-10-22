@@ -124,7 +124,7 @@ func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
 	// Tokenize content by splitting on whitespace and punctuation
 	content := strings.ToLower(thought.Content)
 	words := strings.FieldsFunc(content, func(r rune) bool {
-		return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'))
+		return (r < 'a' || r > 'z') && (r < '0' || r > '9')
 	})
 
 	// Add thought ID to index for each unique word
@@ -443,7 +443,7 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []string {
 	queryLower := strings.ToLower(query)
 	queryWords := strings.FieldsFunc(queryLower, func(r rune) bool {
-		return !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'))
+		return (r < 'a' || r > 'z') && (r < '0' || r > '9')
 	})
 
 	if len(queryWords) == 0 {

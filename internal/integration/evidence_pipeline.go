@@ -18,7 +18,7 @@ import (
 type EvidencePipeline struct {
 	probabilisticReasoner *reasoning.ProbabilisticReasoner
 	causalReasoner        *reasoning.CausalReasoner
-	decisionMaker         *reasoning.DecisionMaker
+	_decisionMaker        *reasoning.DecisionMaker // Reserved for future decision re-evaluation
 	evidenceAnalyzer      *analysis.EvidenceAnalyzer
 
 	// Track relationships
@@ -39,7 +39,7 @@ func NewEvidencePipeline(
 	return &EvidencePipeline{
 		probabilisticReasoner: probReasoner,
 		causalReasoner:        causalReasoner,
-		decisionMaker:         decisionMaker,
+		_decisionMaker:        decisionMaker,
 		evidenceAnalyzer:      evidenceAnalyzer,
 		evidenceToBeliefs:     make(map[string][]string),
 		evidenceToCausal:      make(map[string][]string),
@@ -288,13 +288,15 @@ func (ep *EvidencePipeline) calculateStrengthAdjustment(evidence *types.Evidence
 }
 
 // calculateScoreAdjustment determines how much to adjust decision scores
-func (ep *EvidencePipeline) calculateScoreAdjustment(evidence *types.Evidence) float64 {
+// Reserved for future decision re-evaluation implementation
+func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) float64 {
 	// Adjustment proportional to evidence quality
 	return evidence.OverallScore * 0.15 // Max adjustment of 0.15
 }
 
 // evidenceRelatesToOption checks if evidence relates to a decision option
-func (ep *EvidencePipeline) evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
+// Reserved for future decision re-evaluation implementation
+func (ep *EvidencePipeline) _evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
 	// Simple heuristic: check if evidence content mentions option name
 	// In production, this would use more sophisticated matching
 	contentLower := toLower(evidence.Content)

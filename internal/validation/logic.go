@@ -918,9 +918,10 @@ func (v *LogicValidator) getSyntaxIssues(statement string) []string {
 func (v *LogicValidator) hasBalancedParentheses(statement string) bool {
 	stack := 0
 	for _, ch := range statement {
-		if ch == '(' || ch == '[' || ch == '{' {
+		switch ch {
+		case '(', '[', '{':
 			stack++
-		} else if ch == ')' || ch == ']' || ch == '}' {
+		case ')', ']', '}':
 			stack--
 			if stack < 0 {
 				return false

@@ -85,13 +85,13 @@ func (h *SymbolicHandler) HandleProveTheorem(ctx context.Context, params map[str
 
 	// Build response
 	resp := &ProveTheoremResponse{
-		Name:       theorem.Name,
-		Status:     string(theorem.Status),
-		IsValid:    proof.IsValid,
-		Confidence: proof.Confidence,
+		Name:   theorem.Name,
+		Status: string(theorem.Status),
 	}
 
 	if proof != nil {
+		resp.IsValid = proof.IsValid
+		resp.Confidence = proof.Confidence
 		steps := make([]*ProofStepOutput, len(proof.Steps))
 		for i, step := range proof.Steps {
 			steps[i] = &ProofStepOutput{
@@ -164,11 +164,14 @@ func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map
 
 	// Add symbols
 	for _, sym := range req.Symbols {
-		symbolType := validation.SymbolVariable
-		if sym.Type == "constant" {
+		var symbolType validation.SymbolType
+		switch sym.Type {
+		case "constant":
 			symbolType = validation.SymbolConstant
-		} else if sym.Type == "function" {
+		case "function":
 			symbolType = validation.SymbolFunction
+		default:
+			symbolType = validation.SymbolVariable
 		}
 
 		h.reasoner.AddSymbol(sym.Name, symbolType, sym.Domain)
