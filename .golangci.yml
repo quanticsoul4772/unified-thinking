@@ -1,17 +1,12 @@
 # golangci-lint configuration for unified-thinking server
 # Documentation: https://golangci-lint.run/usage/configuration/
-# Compatible with golangci-lint v2.x schema (v2.5.0+)
+# Minimal configuration compatible with golangci-lint v2.x schema (v2.5.0+)
 version: "2"
 
 run:
   timeout: 5m
   tests: true
   build-tags: []
-  skip-dirs:
-    - bin
-    - vendor
-  skip-files:
-    - ".*\\.pb\\.go$"
 
 linters:
   enable:
@@ -29,14 +24,6 @@ linters:
   disable:
     - gocyclo       # Cyclomatic complexity (can be noisy)
 
-# Note: linters-settings and issues.exclude-rules not supported in v2.5.0 schema
-# Using minimal configuration for compatibility with golangci-lint v2.x
-
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
-output:
-  formats:
-    colored-line-number: {}
-  sort-results: true
