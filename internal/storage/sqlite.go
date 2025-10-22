@@ -977,7 +977,7 @@ func (s *SQLiteStorage) GetRecentBranches() ([]*types.Branch, error) {
 		branch.Insights = insights
 
 		crossRefs, _ := s.loadBranchCrossRefs(branch.ID)
-		branch.CrossReferences = crossRefs
+		branch.CrossRefs = crossRefs
 
 		branches = append(branches, branch)
 	}
