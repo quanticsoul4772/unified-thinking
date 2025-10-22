@@ -39,9 +39,9 @@ func TestSearchHandler_HandleSearch(t *testing.T) {
 		Mode(types.ModeLinear).
 		Build()
 
-	store.StoreThought(thought1)
-	store.StoreThought(thought2)
-	store.StoreThought(thought3)
+	_ = _ = store.StoreThought(thought1)
+	_ = _ = store.StoreThought(thought2)
+	_ = _ = store.StoreThought(thought3)
 
 	tests := []struct {
 		name       string
@@ -192,12 +192,12 @@ func TestSearchHandler_HandleGetMetrics(t *testing.T) {
 		Confidence(0.85).
 		Build()
 
-	store.StoreThought(thought1)
-	store.StoreThought(thought2)
-	store.StoreThought(thought3)
+	_ = _ = store.StoreThought(thought1)
+	_ = _ = store.StoreThought(thought2)
+	_ = _ = store.StoreThought(thought3)
 
 	branch := types.NewBranch().Build()
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	insight := types.NewInsight().
 		Content("Test insight").
@@ -302,7 +302,7 @@ func TestSearchHandler_SearchPagination(t *testing.T) {
 			Content("Thought " + string(rune('0'+i))).
 			Mode(types.ModeLinear).
 			Build()
-		store.StoreThought(thought)
+		_ = store.StoreThought(thought)
 	}
 
 	ctx := context.Background()
@@ -349,9 +349,9 @@ func TestSearchHandler_ModeFiltering(t *testing.T) {
 		Mode(types.ModeDivergent).
 		Build()
 
-	store.StoreThought(linearThought)
-	store.StoreThought(treeThought)
-	store.StoreThought(divergentThought)
+	_ = store.StoreThought(linearThought)
+	_ = store.StoreThought(treeThought)
+	_ = store.StoreThought(divergentThought)
 
 	ctx := context.Background()
 	req := &mcp.CallToolRequest{}

@@ -81,7 +81,7 @@ func TestStoreThought(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
-			err := storage.StoreThought(tt.thought)
+			_ = err := storage.StoreThought(tt.thought)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreThought() error = %v, wantErr %v", err, tt.wantErr)
@@ -120,7 +120,7 @@ func TestGetThought(t *testing.T) {
 		Metadata:   map[string]interface{}{"test": "data"},
 		Timestamp:  time.Now(),
 	}
-	storage.StoreThought(thought)
+	_ = storage.StoreThought(thought)
 
 	tests := []struct {
 		name    string
@@ -212,7 +212,7 @@ func TestStoreBranch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
-			err := storage.StoreBranch(tt.branch)
+			_ = err := storage.StoreBranch(tt.branch)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreBranch() error = %v, wantErr %v", err, tt.wantErr)
@@ -249,7 +249,7 @@ func TestGetBranch(t *testing.T) {
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
-	storage.StoreBranch(branch)
+	_ = storage.StoreBranch(branch)
 
 	tests := []struct {
 		name    string
@@ -294,9 +294,9 @@ func TestListBranches(t *testing.T) {
 	branch2 := &types.Branch{ID: "b2", State: types.StateSuspended, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	branch3 := &types.Branch{ID: "b3", State: types.StateCompleted, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 
-	storage.StoreBranch(branch1)
-	storage.StoreBranch(branch2)
-	storage.StoreBranch(branch3)
+	_ = storage.StoreBranch(branch1)
+	_ = storage.StoreBranch(branch2)
+	_ = storage.StoreBranch(branch3)
 
 	branches := storage.ListBranches()
 
@@ -331,7 +331,7 @@ func TestGetActiveBranch(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	storage.StoreBranch(branch)
+	_ = storage.StoreBranch(branch)
 
 	active, err := storage.GetActiveBranch()
 	if err != nil {
@@ -350,8 +350,8 @@ func TestSetActiveBranch(t *testing.T) {
 	branch1 := &types.Branch{ID: "b1", State: types.StateActive, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	branch2 := &types.Branch{ID: "b2", State: types.StateSuspended, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 
-	storage.StoreBranch(branch1)
-	storage.StoreBranch(branch2)
+	_ = storage.StoreBranch(branch1)
+	_ = storage.StoreBranch(branch2)
 
 	tests := []struct {
 		name     string
@@ -460,7 +460,7 @@ func TestSearchThoughts(t *testing.T) {
 	}
 
 	for _, th := range thoughts {
-		storage.StoreThought(th)
+		_ = storage.StoreThought(th)
 	}
 
 	tests := []struct {
@@ -535,7 +535,7 @@ func TestConcurrency(t *testing.T) {
 					Mode:      types.ModeLinear,
 					Timestamp: time.Now(),
 				}
-				storage.StoreThought(thought)
+				_ = storage.StoreThought(thought)
 			}(i)
 		}
 
@@ -556,7 +556,7 @@ func TestConcurrency(t *testing.T) {
 			Mode:      types.ModeLinear,
 			Timestamp: time.Now(),
 		}
-		storage.StoreThought(thought)
+		_ = storage.StoreThought(thought)
 
 		var wg sync.WaitGroup
 		numGoroutines := 20
@@ -595,7 +595,7 @@ func TestDataIsolation(t *testing.T) {
 		Timestamp: time.Now(),
 	}
 
-	storage.StoreThought(original)
+	_ = storage.StoreThought(original)
 
 	// Retrieve and modify
 	retrieved, _ := storage.GetThought("isolation-test")

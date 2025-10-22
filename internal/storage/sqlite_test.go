@@ -142,7 +142,7 @@ func TestSQLiteStoreAndGetThought(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := storage.StoreThought(tt.thought)
+			_ = err := storage.StoreThought(tt.thought)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreThought() error = %v, wantErr %v", err, tt.wantErr)
@@ -193,7 +193,7 @@ func TestSQLiteGetThought(t *testing.T) {
 		Confidence: 0.8,
 		Timestamp:  time.Now(),
 	}
-	storage.StoreThought(thought)
+	_ = storage.StoreThought(thought)
 
 	tests := []struct {
 		name    string
@@ -248,7 +248,7 @@ func TestSQLitePersistenceAcrossRestarts(t *testing.T) {
 		Metadata:   map[string]interface{}{"persisted": true},
 		Timestamp:  time.Now(),
 	}
-	err = storage1.StoreThought(thought)
+	_ = err = storage1.StoreThought(thought)
 	if err != nil {
 		t.Fatalf("Failed to store thought: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestSQLitePersistenceAcrossRestarts(t *testing.T) {
 		UpdatedAt:  time.Now(),
 		LastAccessedAt: time.Now(),
 	}
-	err = storage1.StoreBranch(branch)
+	_ = err = storage1.StoreBranch(branch)
 	if err != nil {
 		t.Fatalf("Failed to store branch: %v", err)
 	}
@@ -311,7 +311,7 @@ func TestSQLiteCacheConsistency(t *testing.T) {
 		Confidence: 0.8,
 		Timestamp:  time.Now(),
 	}
-	storage.StoreThought(thought)
+	_ = storage.StoreThought(thought)
 
 	// Retrieve from cache (first call)
 	cached, err := storage.GetThought("cache-test")
@@ -376,7 +376,7 @@ func TestSQLiteStoreBranch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := storage.StoreBranch(tt.branch)
+			_ = err := storage.StoreBranch(tt.branch)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StoreBranch() error = %v, wantErr %v", err, tt.wantErr)
@@ -419,7 +419,7 @@ func TestSQLiteBranchWithAssociations(t *testing.T) {
 		UpdatedAt:      time.Now(),
 		LastAccessedAt: time.Now(),
 	}
-	err := storage.StoreBranch(branch)
+	_ = err := storage.StoreBranch(branch)
 	if err != nil {
 		t.Fatalf("StoreBranch() error = %v", err)
 	}
@@ -441,11 +441,11 @@ func TestSQLiteBranchWithAssociations(t *testing.T) {
 		Confidence: 0.85,
 		Timestamp:  time.Now().Add(1 * time.Second),
 	}
-	err = storage.StoreThought(thought1)
+	_ = err = storage.StoreThought(thought1)
 	if err != nil {
 		t.Fatalf("StoreThought(thought1) error = %v", err)
 	}
-	err = storage.StoreThought(thought2)
+	_ = err = storage.StoreThought(thought2)
 	if err != nil {
 		t.Fatalf("StoreThought(thought2) error = %v", err)
 	}
@@ -504,7 +504,7 @@ func TestSQLiteFullTextSearch(t *testing.T) {
 	}
 
 	for _, th := range thoughts {
-		err := storage.StoreThought(th)
+		_ = err := storage.StoreThought(th)
 		if err != nil {
 			t.Fatalf("StoreThought() error = %v", err)
 		}
@@ -672,7 +672,7 @@ func TestSQLiteUpdateBranchPriority(t *testing.T) {
 		UpdatedAt:      time.Now(),
 		LastAccessedAt: time.Now(),
 	}
-	storage.StoreBranch(branch)
+	_ = storage.StoreBranch(branch)
 
 	// Update priority
 	err := storage.UpdateBranchPriority("update-test", 0.95)
@@ -701,7 +701,7 @@ func TestSQLiteUpdateBranchConfidence(t *testing.T) {
 		UpdatedAt:      time.Now(),
 		LastAccessedAt: time.Now(),
 	}
-	storage.StoreBranch(branch)
+	_ = storage.StoreBranch(branch)
 
 	// Update confidence
 	err := storage.UpdateBranchConfidence("confidence-test", 0.88)
@@ -737,7 +737,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 					Confidence: 0.8,
 					Timestamp:  time.Now(),
 				}
-				err := storage.StoreThought(thought)
+				_ = err := storage.StoreThought(thought)
 				if err != nil {
 					// SQLite may have some lock contention, that's expected
 					errorCount++
@@ -764,7 +764,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 			Confidence: 0.8,
 			Timestamp:  time.Now(),
 		}
-		err := storage.StoreThought(thought)
+		_ = err := storage.StoreThought(thought)
 		if err != nil {
 			t.Fatalf("Failed to store initial thought: %v", err)
 		}
@@ -800,7 +800,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 					Timestamp:  time.Now(),
 				}
 				// Some writes may fail due to locks, that's expected with SQLite
-				_ = storage.StoreThought(th)
+				_ = _ = storage.StoreThought(th)
 			}()
 		}
 
@@ -967,7 +967,7 @@ func TestSQLiteWarmCache(t *testing.T) {
 			Confidence: 0.8,
 			Timestamp:  time.Now(),
 		}
-		err := storage1.StoreThought(thought)
+		_ = err := storage1.StoreThought(thought)
 		if err != nil {
 			t.Fatalf("StoreThought() error = %v", err)
 		}
@@ -1002,7 +1002,7 @@ func TestSQLiteUpdateThought(t *testing.T) {
 		Confidence: 0.5,
 		Timestamp:  time.Now(),
 	}
-	err := storage.StoreThought(thought)
+	_ = err := storage.StoreThought(thought)
 	if err != nil {
 		t.Fatalf("StoreThought() error = %v", err)
 	}
@@ -1010,7 +1010,7 @@ func TestSQLiteUpdateThought(t *testing.T) {
 	// Update thought (SQLite uses ON CONFLICT DO UPDATE)
 	thought.Content = "Updated content"
 	thought.Confidence = 0.9
-	err = storage.StoreThought(thought)
+	_ = err = storage.StoreThought(thought)
 	if err != nil {
 		t.Fatalf("StoreThought() update error = %v", err)
 	}
@@ -1046,7 +1046,7 @@ func TestSQLiteListBranches(t *testing.T) {
 			UpdatedAt:      time.Now(),
 			LastAccessedAt: time.Now(),
 		}
-		err := storage.StoreBranch(branch)
+		_ = err := storage.StoreBranch(branch)
 		if err != nil {
 			t.Fatalf("StoreBranch() error = %v", err)
 		}
@@ -1079,11 +1079,11 @@ func TestSQLiteActiveBranch(t *testing.T) {
 		LastAccessedAt: time.Now(),
 	}
 
-	err := storage.StoreBranch(branch1)
+	_ = err := storage.StoreBranch(branch1)
 	if err != nil {
 		t.Fatalf("StoreBranch(branch1) error = %v", err)
 	}
-	err = storage.StoreBranch(branch2)
+	_ = err = storage.StoreBranch(branch2)
 	if err != nil {
 		t.Fatalf("StoreBranch(branch2) error = %v", err)
 	}
@@ -1118,7 +1118,7 @@ func TestSQLiteSearchPagination(t *testing.T) {
 			Confidence: 0.8,
 			Timestamp:  time.Now(),
 		}
-		err := storage.StoreThought(thought)
+		_ = err := storage.StoreThought(thought)
 		if err != nil {
 			t.Fatalf("StoreThought() error = %v", err)
 		}
@@ -1249,7 +1249,7 @@ func TestSQLiteScanThought(t *testing.T) {
 		IsRebellion:          true,
 		ChallengesAssumption: false,
 	}
-	err := storage.StoreThought(thought)
+	_ = err := storage.StoreThought(thought)
 	if err != nil {
 		t.Fatalf("StoreThought() error = %v", err)
 	}
@@ -1352,7 +1352,7 @@ func TestSQLiteRecentBranches(t *testing.T) {
 			UpdatedAt:      time.Now(),
 			LastAccessedAt: time.Now(),
 		}
-		err := storage.StoreBranch(branch)
+		_ = err := storage.StoreBranch(branch)
 		if err != nil {
 			t.Fatalf("StoreBranch() error = %v", err)
 		}

@@ -156,7 +156,7 @@ func TestTreeMode_ProcessThoughtWithExistingBranch(t *testing.T) {
 		Insights:   []*types.Insight{},
 		CrossRefs:  []*types.CrossRef{},
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	// Process thought with existing branch
 	input := ThoughtInput{
@@ -197,7 +197,7 @@ func TestTreeMode_ListBranches(t *testing.T) {
 			Type:       "exploration",
 			Confidence: 0.8,
 		}
-		mode.ProcessThought(ctx, input)
+		_, _ = mode.ProcessThought(ctx, input)
 	}
 
 	// List branches
@@ -264,8 +264,8 @@ func TestTreeMode_SetActiveBranch(t *testing.T) {
 	branch1 := &types.Branch{ID: "branch1", State: types.StateActive}
 	branch2 := &types.Branch{ID: "branch2", State: types.StateSuspended}
 
-	store.StoreBranch(branch1)
-	store.StoreBranch(branch2)
+	_ = store.StoreBranch(branch1)
+	_ = store.StoreBranch(branch2)
 
 	// Set active branch
 	err := mode.SetActiveBranch(ctx, "branch2")
@@ -377,7 +377,7 @@ func TestTreeMode_CrossRefTypes(t *testing.T) {
 				ID:    "target-branch",
 				State: types.StateActive,
 			}
-			store.StoreBranch(targetBranch)
+			_ = store.StoreBranch(targetBranch)
 
 			input := ThoughtInput{
 				Content:    "Thought with cross ref",

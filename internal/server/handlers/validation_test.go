@@ -37,7 +37,7 @@ func TestValidationHandler_HandleValidate(t *testing.T) {
 		Content("If P then Q. P is true. Therefore Q is true.").
 		Mode(types.ModeLinear).
 		Build()
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	tests := []struct {
 		name    string
@@ -258,7 +258,7 @@ func TestValidationHandler_ValidateThoughtLifecycle(t *testing.T) {
 		Content("Test logical thought").
 		Mode(types.ModeLinear).
 		Build()
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	// Validate it
 	_, validateResp, err := handler.HandleValidate(ctx, req, ValidateRequest{
@@ -421,7 +421,7 @@ func TestValidationHandler_Integration(t *testing.T) {
 		Content("Modus ponens: P and P->Q implies Q").
 		Mode(types.ModeLinear).
 		Build()
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	_, validateResp, err := handler.HandleValidate(ctx, req, ValidateRequest{
 		ThoughtID: thought.ID,

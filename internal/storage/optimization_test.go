@@ -68,7 +68,7 @@ func TestAppendThoughtToBranch_Concurrency(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	var wg sync.WaitGroup
 	numGoroutines := 20
@@ -86,7 +86,7 @@ func TestAppendThoughtToBranch_Concurrency(t *testing.T) {
 				Confidence: 0.8,
 				Timestamp:  time.Now(),
 			}
-			store.StoreThought(thought)
+			_ = store.StoreThought(thought)
 			store.AppendThoughtToBranch("concurrent-branch", thought)
 		}(i)
 	}
@@ -110,7 +110,7 @@ func TestAppendInsightToBranch(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	insight := &types.Insight{
 		ID:                 "test-insight",
@@ -144,7 +144,7 @@ func TestAppendCrossRefToBranch(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	crossRef := &types.CrossRef{
 		FromBranch:  "crossref-branch",
@@ -177,7 +177,7 @@ func TestUpdateBranchPriority(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	err := store.UpdateBranchPriority("priority-branch", 2.5)
 	if err != nil {
@@ -200,7 +200,7 @@ func TestUpdateBranchConfidence(t *testing.T) {
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	err := store.UpdateBranchConfidence("confidence-branch", 0.95)
 	if err != nil {
@@ -225,7 +225,7 @@ func TestGetRecentBranches(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		store.StoreBranch(branch)
+		_ = store.StoreBranch(branch)
 		store.UpdateBranchAccess(id)
 		time.Sleep(10 * time.Millisecond) // Ensure different timestamps
 	}
@@ -261,7 +261,7 @@ func TestGetMetrics(t *testing.T) {
 			Confidence: 0.8,
 			Timestamp:  time.Now(),
 		}
-		store.StoreThought(thought)
+		_ = store.StoreThought(thought)
 	}
 
 	for i := 0; i < 3; i++ {
@@ -270,7 +270,7 @@ func TestGetMetrics(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		store.StoreBranch(branch)
+		_ = store.StoreBranch(branch)
 	}
 
 	metrics := store.GetMetrics()
@@ -299,7 +299,7 @@ func TestAppendOperations_DataIsolation(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	thought := &types.Thought{
 		ID:         "mutable-thought",
@@ -339,7 +339,7 @@ func TestConcurrentUpdateOperations(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	var wg sync.WaitGroup
 	updates := 100
@@ -373,7 +373,7 @@ func TestUpdateBranchAccess_LRU(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		store.StoreBranch(branch)
+		_ = store.StoreBranch(branch)
 		store.UpdateBranchAccess(fmt.Sprintf("branch-%d", i))
 		time.Sleep(5 * time.Millisecond)
 	}

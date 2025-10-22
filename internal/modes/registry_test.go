@@ -75,7 +75,7 @@ func TestRegistry_Get(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	linear := NewLinearMode(store)
 
-	registry.Register(linear)
+	_ = registry.Register(linear)
 
 	tests := []struct {
 		name      string
@@ -125,9 +125,9 @@ func TestRegistry_SelectBest(t *testing.T) {
 	tree := NewTreeMode(store)
 	divergent := NewDivergentMode(store)
 
-	registry.Register(linear)
-	registry.Register(tree)
-	registry.Register(divergent)
+	_ = registry.Register(linear)
+	_ = registry.Register(tree)
+	_ = registry.Register(divergent)
 
 	tests := []struct {
 		name     string
@@ -204,8 +204,8 @@ func TestRegistry_Available(t *testing.T) {
 	linear := NewLinearMode(store)
 	tree := NewTreeMode(store)
 
-	registry.Register(linear)
-	registry.Register(tree)
+	_ = registry.Register(linear)
+	_ = registry.Register(tree)
 
 	modeNames := registry.Available()
 
@@ -235,17 +235,17 @@ func TestRegistry_Count(t *testing.T) {
 		t.Errorf("Count() = %d, want 0", registry.Count())
 	}
 
-	registry.Register(NewLinearMode(store))
+	_ = registry.Register(NewLinearMode(store))
 	if registry.Count() != 1 {
 		t.Errorf("Count() = %d, want 1", registry.Count())
 	}
 
-	registry.Register(NewTreeMode(store))
+	_ = registry.Register(NewTreeMode(store))
 	if registry.Count() != 2 {
 		t.Errorf("Count() = %d, want 2", registry.Count())
 	}
 
-	registry.Register(NewDivergentMode(store))
+	_ = registry.Register(NewDivergentMode(store))
 	if registry.Count() != 3 {
 		t.Errorf("Count() = %d, want 3", registry.Count())
 	}
@@ -400,12 +400,12 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 	done := make(chan bool, 2)
 
 	go func() {
-		registry.Register(linear)
+		_ = registry.Register(linear)
 		done <- true
 	}()
 
 	go func() {
-		registry.Register(tree)
+		_ = registry.Register(tree)
 		done <- true
 	}()
 

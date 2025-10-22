@@ -52,7 +52,7 @@ func TestReflectionLoop_RefineThought_HighQualityInitial(t *testing.T) {
 		Mode:    types.ModeLinear,
 		Confidence: 0.9,
 	}
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
 		MaxIterations:      5,
@@ -87,7 +87,7 @@ func TestReflectionLoop_RefineThought_LowQualityWithFallacy(t *testing.T) {
 		Mode:    types.ModeLinear,
 		Confidence: 0.5,
 	}
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
 		MaxIterations:      3,
@@ -123,7 +123,7 @@ func TestReflectionLoop_RefineThought_MaxIterations(t *testing.T) {
 		Mode:    types.ModeLinear,
 		Confidence: 0.6,
 	}
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
 		MaxIterations:      2,
@@ -284,7 +284,7 @@ func TestReflectionLoop_RefineThought_MinImprovement(t *testing.T) {
 		Mode:    types.ModeLinear,
 		Confidence: 0.7,
 	}
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
 		MaxIterations:      5,
@@ -316,7 +316,7 @@ func TestReflectionLoop_RefineThought_ImprovementTracking(t *testing.T) {
 		Mode:    types.ModeLinear,
 		Confidence: 0.5,
 	}
-	store.StoreThought(thought)
+	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
 		MaxIterations:      3,

@@ -38,8 +38,8 @@ func TestBranchHandler_HandleListBranches(t *testing.T) {
 	// Create some test branches
 	branch1 := types.NewBranch().Build()
 	branch2 := types.NewBranch().Build()
-	store.StoreBranch(branch1)
-	store.StoreBranch(branch2)
+	_ = store.StoreBranch(branch1)
+	_ = store.StoreBranch(branch2)
 
 	result, response, err := handler.HandleListBranches(ctx, req, EmptyRequest{})
 
@@ -101,7 +101,7 @@ func TestBranchHandler_HandleFocusBranch(t *testing.T) {
 
 	// Create a test branch
 	branch := types.NewBranch().Build()
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	tests := []struct {
 		name       string
@@ -181,7 +181,7 @@ func TestBranchHandler_HandleBranchHistory(t *testing.T) {
 		WithThought(types.NewThought().Content("Thought 1").Build()).
 		WithThought(types.NewThought().Content("Thought 2").Build()).
 		Build()
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	tests := []struct {
 		name    string
@@ -246,8 +246,8 @@ func TestBranchHandler_HandleRecentBranches(t *testing.T) {
 	// Create and access some branches
 	branch1 := types.NewBranch().Build()
 	branch2 := types.NewBranch().Build()
-	store.StoreBranch(branch1)
-	store.StoreBranch(branch2)
+	_ = store.StoreBranch(branch1)
+	_ = store.StoreBranch(branch2)
 
 	// Access them to populate recent list
 	store.SetActiveBranch(branch1.ID)
@@ -287,8 +287,8 @@ func TestBranchHandler_ActiveBranchTracking(t *testing.T) {
 	// Create branches
 	branch1 := types.NewBranch().Build()
 	branch2 := types.NewBranch().Build()
-	store.StoreBranch(branch1)
-	store.StoreBranch(branch2)
+	_ = store.StoreBranch(branch1)
+	_ = store.StoreBranch(branch2)
 
 	// Focus branch1
 	handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch1.ID})
@@ -331,7 +331,7 @@ func TestBranchHandler_BranchLifecycle(t *testing.T) {
 	branch := types.NewBranch().
 		State(types.StateActive).
 		Build()
-	store.StoreBranch(branch)
+	_ = store.StoreBranch(branch)
 
 	// List should show it
 	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})
