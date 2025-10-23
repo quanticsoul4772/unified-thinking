@@ -228,6 +228,6 @@ func BenchmarkBayesianUpdate(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		reasoner.UpdateBelief(belief.ID, evidenceID, 0.8, 0.6)
+		_, _ = reasoner.UpdateBelief(belief.ID, evidenceID, 0.8, 0.6)
 	}
 }

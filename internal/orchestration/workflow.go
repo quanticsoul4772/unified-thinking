@@ -278,7 +278,7 @@ func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow
 		// Store result
 		if step.StoreAs != "" {
 			reasoningCtx.Results[step.StoreAs] = stepResult
-			o.UpdateContext(reasoningCtx)
+			_ = o.UpdateContext(reasoningCtx)
 		}
 
 		result.StepResults[step.ID] = stepResult
@@ -336,7 +336,7 @@ func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, 
 		result.StepResults[id] = res
 	}
 
-	o.UpdateContext(reasoningCtx)
+	_ = o.UpdateContext(reasoningCtx)
 	return nil
 }
 
@@ -387,7 +387,7 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 			// Store result
 			if step.StoreAs != "" {
 				reasoningCtx.Results[step.StoreAs] = stepResult
-				o.UpdateContext(reasoningCtx)
+				_ = o.UpdateContext(reasoningCtx)
 			}
 
 			result.StepResults[step.ID] = stepResult

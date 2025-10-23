@@ -104,8 +104,8 @@ func TestCBR_Retrieve_SimilarCases(t *testing.T) {
 		Domain: "api",
 	}
 
-	cbr.StoreCase(ctx, case1)
-	cbr.StoreCase(ctx, case2)
+	_ = cbr.StoreCase(ctx, case1)
+	_ = cbr.StoreCase(ctx, case2)
 
 	// Retrieve cases similar to database problem
 	req := &RetrieveRequest{
@@ -149,7 +149,7 @@ func TestCBR_Retrieve_NoMatches(t *testing.T) {
 		Outcome: &Outcome{Success: true, Effectiveness: 0.9},
 		Domain:  "database",
 	}
-	cbr.StoreCase(ctx, c)
+	_ = cbr.StoreCase(ctx, c)
 
 	// Try to retrieve completely different problem
 	req := &RetrieveRequest{
@@ -329,7 +329,7 @@ func TestCBR_PerformCBRCycle(t *testing.T) {
 		Domain:      "database",
 		SuccessRate: 0.9,
 	}
-	cbr.StoreCase(ctx, existingCase)
+	_ = cbr.StoreCase(ctx, existingCase)
 
 	// Now perform CBR cycle for similar problem
 	newProblem := &ProblemDescription{

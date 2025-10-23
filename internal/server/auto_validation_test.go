@@ -14,8 +14,8 @@ import (
 // TestAutoValidationTriggering tests that low-confidence thoughts trigger auto-validation
 func TestAutoValidationTriggering(t *testing.T) {
 	// Enable debug mode for testing
-	os.Setenv("DEBUG", "true")
-	defer os.Unsetenv("DEBUG")
+	_ = os.Setenv("DEBUG", "true")
+	defer func() { _ = os.Unsetenv("DEBUG") }()
 
 	// Setup
 	store := storage.NewMemoryStorage()
