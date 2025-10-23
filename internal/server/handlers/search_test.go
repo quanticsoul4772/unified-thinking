@@ -39,9 +39,9 @@ func TestSearchHandler_HandleSearch(t *testing.T) {
 		Mode(types.ModeLinear).
 		Build()
 
-	_ = _ = store.StoreThought(thought1)
-	_ = _ = store.StoreThought(thought2)
-	_ = _ = store.StoreThought(thought3)
+	_ = store.StoreThought(thought1)
+	_ = store.StoreThought(thought2)
+	_ = store.StoreThought(thought3)
 
 	tests := []struct {
 		name       string
@@ -192,9 +192,9 @@ func TestSearchHandler_HandleGetMetrics(t *testing.T) {
 		Confidence(0.85).
 		Build()
 
-	_ = _ = store.StoreThought(thought1)
-	_ = _ = store.StoreThought(thought2)
-	_ = _ = store.StoreThought(thought3)
+	_ = store.StoreThought(thought1)
+	_ = store.StoreThought(thought2)
+	_ = store.StoreThought(thought3)
 
 	branch := types.NewBranch().Build()
 	_ = store.StoreBranch(branch)

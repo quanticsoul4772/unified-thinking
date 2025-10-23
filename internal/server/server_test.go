@@ -498,7 +498,7 @@ func TestHandleDetectBiases_WithFallacies(t *testing.T) {
 		Confidence: 0.7,
 		Timestamp:  time.Now(),
 	}
-	_ = err := server.storage.StoreThought(thought)
+	err := server.storage.StoreThought(thought)
 	if err != nil {
 		t.Fatalf("Failed to store thought: %v", err)
 	}
@@ -608,7 +608,7 @@ func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
 	}
 
 	// Store the branch
-	_ = err := server.storage.StoreBranch(branch)
+	err := server.storage.StoreBranch(branch)
 	if err != nil {
 		t.Fatalf("Failed to store branch: %v", err)
 	}
