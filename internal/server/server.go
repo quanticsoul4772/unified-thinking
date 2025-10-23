@@ -820,7 +820,7 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 								"coherence":    evaluation.CoherenceScore,
 							}
 							// Re-store the thought with updated metadata
-							s.storage.StoreThought(retryThought)
+							_ = s.storage.StoreThought(retryThought)
 						}
 					}
 				} else {
@@ -835,7 +835,7 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 						"coherence":    evaluation.CoherenceScore,
 					}
 					// Re-store the thought with updated metadata
-					s.storage.StoreThought(thought)
+					_ = s.storage.StoreThought(thought)
 				}
 			}
 		}

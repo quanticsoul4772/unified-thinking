@@ -172,9 +172,9 @@ func TestThinkingHandler_HandleHistory(t *testing.T) {
 	req := &mcp.CallToolRequest{}
 
 	// Add thoughts in different modes
-	handler.HandleThink(ctx, req, ThinkRequest{Content: "Linear 1", Mode: "linear"})
-	handler.HandleThink(ctx, req, ThinkRequest{Content: "Linear 2", Mode: "linear"})
-	handler.HandleThink(ctx, req, ThinkRequest{Content: "Tree 1", Mode: "tree"})
+	_, _, _ = handler.HandleThink(ctx, req, ThinkRequest{Content: "Linear 1", Mode: "linear"})
+	_, _, _ = handler.HandleThink(ctx, req, ThinkRequest{Content: "Linear 2", Mode: "linear"})
+	_, _, _ = handler.HandleThink(ctx, req, ThinkRequest{Content: "Tree 1", Mode: "tree"})
 
 	tests := []struct {
 		name       string

@@ -202,13 +202,13 @@ func TestSearchHandler_HandleGetMetrics(t *testing.T) {
 	insight := types.NewInsight().
 		Content("Test insight").
 		Build()
-	store.StoreInsight(insight)
+	_ = store.StoreInsight(insight)
 
 	validation := &types.Validation{
 		IsValid: true,
 		Reason:  "Test validation",
 	}
-	store.StoreValidation(validation)
+	_ = store.StoreValidation(validation)
 
 	ctx := context.Background()
 	req := &mcp.CallToolRequest{}

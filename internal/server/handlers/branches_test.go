@@ -250,8 +250,8 @@ func TestBranchHandler_HandleRecentBranches(t *testing.T) {
 	_ = store.StoreBranch(branch2)
 
 	// Access them to populate recent list
-	store.SetActiveBranch(branch1.ID)
-	store.SetActiveBranch(branch2.ID)
+	_ = store.SetActiveBranch(branch1.ID)
+	_ = store.SetActiveBranch(branch2.ID)
 
 	result, response, err := handler.HandleRecentBranches(ctx, req, EmptyRequest{})
 
@@ -291,7 +291,7 @@ func TestBranchHandler_ActiveBranchTracking(t *testing.T) {
 	_ = store.StoreBranch(branch2)
 
 	// Focus branch1
-	handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch1.ID})
+	_, _, _ = handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch1.ID})
 
 	// List branches should show branch1 as active
 	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})
@@ -304,7 +304,7 @@ func TestBranchHandler_ActiveBranchTracking(t *testing.T) {
 	}
 
 	// Focus branch2
-	handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch2.ID})
+	_, _, _ = handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch2.ID})
 
 	// Verify branch2 is now active
 	activeBranch, _ = store.GetActiveBranch()
