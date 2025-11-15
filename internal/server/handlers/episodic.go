@@ -12,17 +12,19 @@ import (
 
 // EpisodicMemoryHandler handles episodic memory operations
 type EpisodicMemoryHandler struct {
-	store    *memory.EpisodicMemoryStore
-	tracker  *memory.SessionTracker
-	learner  *memory.LearningEngine
+	store         *memory.EpisodicMemoryStore
+	tracker       *memory.SessionTracker
+	learner       *memory.LearningEngine
+	retrospective *memory.RetrospectiveAnalyzer
 }
 
 // NewEpisodicMemoryHandler creates a new episodic memory handler
 func NewEpisodicMemoryHandler(store *memory.EpisodicMemoryStore, tracker *memory.SessionTracker, learner *memory.LearningEngine) *EpisodicMemoryHandler {
 	return &EpisodicMemoryHandler{
-		store:   store,
-		tracker: tracker,
-		learner: learner,
+		store:         store,
+		tracker:       tracker,
+		learner:       learner,
+		retrospective: memory.NewRetrospectiveAnalyzer(store),
 	}
 }
 
@@ -280,6 +282,30 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
 }
 
+// AnalyzeTrajectoryRequest requests retrospective analysis
+type AnalyzeTrajectoryRequest struct {
+	TrajectoryID string `json:"trajectory_id"`
+}
+
+// HandleAnalyzeTrajectory performs retrospective analysis of a completed session
+func (h *EpisodicMemoryHandler) HandleAnalyzeTrajectory(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
+	var req AnalyzeTrajectoryRequest
+	if err := unmarshalParams(params, &req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	if req.TrajectoryID == "" {
+		return nil, fmt.Errorf("trajectory_id is required")
+	}
+
+	analysis, err := h.retrospective.AnalyzeTrajectory(ctx, req.TrajectoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(analysis)}, nil
+}
+
 // ComputeProblemHash is exported for testing
 func ComputeProblemHash(problem *memory.ProblemDescription) string {
 	return memory.ComputeProblemHash(problem)
@@ -493,6 +519,70 @@ understanding what worked in the past and learning from both successes and failu
 		}
 		
 		response := &SearchTrajectoriesResponse{}
+		return result, response, nil
+	})
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "analyze-trajectory",
+		Description: `Perform retrospective analysis of a completed reasoning session.
+
+Provides comprehensive post-session analysis including strengths, weaknesses, actionable 
+improvements, lessons learned, and comparative analysis against similar past sessions.
+
+**Parameters:**
+- trajectory_id (required): ID of trajectory to analyze (returned from complete-reasoning-session)
+
+**Returns:**
+- summary: High-level assessment with success/quality scores, duration, strategy
+- strengths: What went well (efficiency, coherence, completeness, innovation, reliability)
+- weaknesses: Areas for improvement with specific metrics
+- improvements: Prioritized actionable suggestions with expected impact
+- lessons_learned: Key takeaways for future sessions
+- comparative_analysis: How this session compares to similar past sessions (percentile rank)
+- detailed_metrics: Deep dive into each quality metric with explanations and suggestions
+
+**Quality Metrics Analyzed:**
+1. **Efficiency**: Steps taken vs optimal (7-10 steps baseline)
+2. **Coherence**: Logical consistency (contradictions, fallacies)
+3. **Completeness**: Goal achievement rate
+4. **Innovation**: Use of creative/advanced tools
+5. **Reliability**: Confidence in results
+
+**Improvement Categories:**
+- efficiency: Reduce unnecessary steps
+- quality: Improve logical consistency
+- approach: Change reasoning strategy
+- tools: Use different/better tools
+
+**Use Cases:**
+1. Learn from successful sessions - understand what worked
+2. Improve future performance - get specific actionable advice
+3. Track progress - see percentile rank vs similar problems
+4. Identify patterns - discover your reasoning strengths/weaknesses
+
+**Example:**
+{
+  "trajectory_id": "traj_session_001_problem_abc_1234567890"
+}
+
+**Returns comprehensive analysis including:**
+- Overall assessment: "excellent", "good", "fair", or "poor"
+- Top 3-5 strengths with metrics
+- Top 3-5 weaknesses with root causes
+- Prioritized improvement suggestions
+- Percentile rank (e.g., "better than 75% of similar sessions")
+- Detailed metric breakdowns with actionable next steps`,
+	}, func(ctx context.Context, req *mcp.CallToolRequest, input AnalyzeTrajectoryRequest) (*mcp.CallToolResult, *memory.RetrospectiveAnalysis, error) {
+		var params map[string]interface{}
+		paramsBytes, _ := json.Marshal(input)
+		json.Unmarshal(paramsBytes, &params)
+		
+		result, err := handler.HandleAnalyzeTrajectory(ctx, params)
+		if err != nil {
+			return nil, nil, err
+		}
+		
+		response := &memory.RetrospectiveAnalysis{}
 		return result, response, nil
 	})
 }

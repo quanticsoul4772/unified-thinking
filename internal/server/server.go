@@ -1,6 +1,6 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 62 tools for
+// This package provides the MCP server implementation that exposes 63 tools for
 // thought processing, validation, search, and advanced cognitive reasoning. All
 // responses are JSON formatted for consumption by Claude AI via stdio transport.
 //
@@ -41,9 +41,9 @@
 //   - decompose-argument, generate-counter-arguments, detect-fallacies
 //   - process-evidence-pipeline, analyze-temporal-causal-effects, analyze-decision-timing
 //
-// Episodic Memory & Learning Tools (4):
+// Episodic Memory & Learning Tools (5):
 //   - start-reasoning-session, complete-reasoning-session
-//   - get-recommendations, search-trajectories
+//   - get-recommendations, search-trajectories, analyze-trajectory
 package server
 
 import (

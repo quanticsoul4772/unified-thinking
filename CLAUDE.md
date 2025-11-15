@@ -147,7 +147,7 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (62 total):
+**Available Tools** (63 total):
 
 **Core Thinking Tools** (11 tools):
 1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
@@ -235,11 +235,12 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 57. `analyze-temporal-causal-effects` - Analyze temporal progression of causal effects (short/medium/long-term)
 58. `analyze-decision-timing` - Determine optimal timing for decisions based on causal and temporal factors
 
-**Episodic Memory & Learning Tools** (4 tools):
+**Episodic Memory & Learning Tools** (5 tools):
 59. `start-reasoning-session` - Start tracking a reasoning session to learn from experience
 60. `complete-reasoning-session` - Complete session, calculate quality metrics, trigger pattern learning
 61. `get-recommendations` - Get adaptive recommendations based on similar past problems
 62. `search-trajectories` - Search past reasoning sessions to learn from successes and failures
+63. `analyze-trajectory` - Perform retrospective analysis of completed session (strengths, weaknesses, improvements, lessons learned)
 
 ## Storage Architecture
 
