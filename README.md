@@ -29,7 +29,7 @@ a model context protocol (mcp) server that consolidates multiple cognitive think
 
 ### advanced cognitive reasoning
 
-the server includes 50+ specialized tools across 8 major categories:
+the server includes 58 specialized tools across 9 major categories:
 
 #### probabilistic reasoning (4 tools)
 - bayesian inference with prior and posterior belief updates
@@ -81,6 +81,15 @@ the server includes 50+ specialized tools across 8 major categories:
 - logical statement syntax checking
 - theorem proving with constraint checking
 
+#### enhanced tools (8 tools)
+- cross-domain analogical reasoning (find and apply analogies)
+- argument decomposition (premises, claims, assumptions, inference chains)
+- counter-argument generation using multiple strategies
+- fallacy detection (formal and informal logical fallacies)
+- evidence pipeline integration (auto-update beliefs/graphs/decisions)
+- temporal-causal effect analysis (short/medium/long-term impacts)
+- decision timing optimization based on causal factors
+
 ## installation
 
 ### prerequisites
@@ -100,6 +109,16 @@ or using make:
 ```bash
 make build
 ```
+
+## documentation
+
+comprehensive documentation is available:
+
+- **[API Reference](API_REFERENCE.md)** - complete reference for all 50 mcp tools with parameters, examples, and response formats
+- **[Architecture Diagrams](ARCHITECTURE.md)** - visual representations of system architecture, data flows, and component interactions
+- **[Project Index](PROJECT_INDEX.md)** - comprehensive project structure, architecture, and component overview
+- **[MCP Integration Test Report](MCP_INTEGRATION_TEST_REPORT.md)** - end-to-end validation results and production readiness certification
+- **[Architecture Guide](CLAUDE.md)** - detailed technical architecture and implementation guide
 
 ## configuration
 
@@ -354,7 +373,33 @@ make test-coverage
 make benchmark
 ```
 
-test coverage: >70% overall, >94% for validation package
+**test coverage**: ~75% overall | 415 tests | 100% pass rate
+
+### coverage by package
+
+| package | coverage | status |
+|---------|----------|--------|
+| `internal/types` | 100.0% | ✅ excellent |
+| `internal/metrics` | 100.0% | ✅ excellent |
+| `internal/validation` | 91.2% | ✅ excellent |
+| `internal/metacognition` | 90.2% | ✅ excellent |
+| `internal/analysis` | 89.3% | ✅ excellent |
+| `internal/orchestration` | 87.2% | ✅ excellent |
+| `internal/reasoning` | 86.5% | ✅ excellent |
+| `internal/processing` | 83.3% | ✅ excellent |
+| `internal/integration` | 82.2% | ✅ excellent |
+| **`internal/server/handlers`** | **81.2%** | **✅ improved (+29.6%)** |
+| `internal/storage` | 81.0% | ✅ excellent |
+| `internal/modes` | 77.8% | ✅ good |
+| `internal/config` | 64.5% | ⚠️ adequate |
+| `internal/server` | 45.5% | ⚠️ adequate |
+| `cmd/server` | 25.0% | ℹ️ expected (entry point) |
+
+**recent improvements:**
+- handlers package: 51.6% → 81.2% (+29.6 percentage points)
+- 100+ new test cases across 7 test files
+- comprehensive edge case coverage
+- zero test failures (415/415 passing)
 
 ## troubleshooting
 

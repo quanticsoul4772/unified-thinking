@@ -183,9 +183,15 @@ func TestCausalTemporalIntegration_identifyTimeSensitiveVariables(t *testing.T) 
 				return
 			}
 
-			for i, expected := range tt.expected {
-				if i >= len(result) || result[i] != expected {
-					t.Errorf("identifyTimeSensitiveVariables() = %v, want %v", result, tt.expected)
+			// Check set equality rather than order since map iteration order isn't guaranteed
+			resultMap := make(map[string]bool)
+			for _, v := range result {
+				resultMap[v] = true
+			}
+
+			for _, expected := range tt.expected {
+				if !resultMap[expected] {
+					t.Errorf("identifyTimeSensitiveVariables() missing expected value %v in result %v", expected, result)
 				}
 			}
 		})

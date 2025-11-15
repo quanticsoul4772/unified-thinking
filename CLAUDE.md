@@ -146,7 +146,7 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (50 total):
+**Available Tools** (58 total):
 
 **Core Thinking Tools** (11 tools):
 1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
@@ -223,6 +223,16 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 **Symbolic Reasoning Tools** (2 tools):
 49. `prove-theorem` - Formal theorem proving
 50. `check-constraints` - Check symbolic constraint satisfaction
+
+**Enhanced Tools** (8 tools):
+51. `find-analogy` - Find analogies between source and target domains for cross-domain reasoning
+52. `apply-analogy` - Apply an existing analogy to a new context
+53. `decompose-argument` - Break down arguments into premises, claims, assumptions, and inference chains
+54. `generate-counter-arguments` - Generate counter-arguments using multiple strategies
+55. `detect-fallacies` - Detect formal and informal logical fallacies (ad hominem, straw man, false dichotomy, etc.)
+56. `process-evidence-pipeline` - Automatically update beliefs, causal graphs, and decisions from new evidence
+57. `analyze-temporal-causal-effects` - Analyze temporal progression of causal effects (short/medium/long-term)
+58. `analyze-decision-timing` - Determine optimal timing for decisions based on causal and temporal factors
 
 ## Storage Architecture
 

@@ -1,29 +1,45 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 19 tools for
+// This package provides the MCP server implementation that exposes 58 tools for
 // thought processing, validation, search, and advanced cognitive reasoning. All
 // responses are JSON formatted for consumption by Claude AI via stdio transport.
 //
-// Available tools:
-//   - think: Main thinking tool with multiple cognitive modes
-//   - history: View thinking history
-//   - list-branches: List all thinking branches
-//   - focus-branch: Switch active branch
-//   - branch-history: Get detailed branch history
-//   - validate: Validate thought logical consistency
-//   - prove: Attempt logical proof
-//   - check-syntax: Validate logical statement syntax
-//   - search: Search through all thoughts
-//   - get-metrics: Get system performance and usage metrics
-//   - recent-branches: Get recently accessed branches for quick context switching
-//   - probabilistic-reasoning: Bayesian inference and probabilistic belief updates
-//   - assess-evidence: Evidence quality and strength assessment
-//   - detect-contradictions: Find contradictions among thoughts
-//   - make-decision: Structured multi-criteria decision making
-//   - decompose-problem: Break complex problems into subproblems
-//   - sensitivity-analysis: Test robustness of conclusions to assumption changes
-//   - self-evaluate: Metacognitive self-assessment of reasoning quality
-//   - detect-biases: Identify cognitive biases in reasoning
+// Core Tools (11):
+//   - think, history, list-branches, focus-branch, branch-history, recent-branches
+//   - validate, prove, check-syntax, search, get-metrics
+//
+// Probabilistic & Evidence Tools (4):
+//   - probabilistic-reasoning, assess-evidence, detect-contradictions, sensitivity-analysis
+//
+// Decision & Problem-Solving Tools (3):
+//   - make-decision, decompose-problem, verify-thought
+//
+// Metacognition Tools (3):
+//   - self-evaluate, detect-biases, detect-blind-spots
+//
+// Hallucination & Calibration Tools (4):
+//   - get-hallucination-report, record-prediction, record-outcome, get-calibration-report
+//
+// Temporal & Perspective Tools (4):
+//   - analyze-perspectives, analyze-temporal, compare-time-horizons, identify-optimal-timing
+//
+// Causal Reasoning Tools (5):
+//   - build-causal-graph, simulate-intervention, generate-counterfactual
+//   - analyze-correlation-vs-causation, get-causal-graph
+//
+// Integration & Synthesis Tools (6):
+//   - synthesize-insights, detect-emergent-patterns
+//   - execute-workflow, list-workflows, register-workflow, list-integration-patterns
+//
+// Advanced Reasoning Tools (10):
+//   - dual-process-think, create-checkpoint, restore-checkpoint, list-checkpoints
+//   - generate-hypotheses, evaluate-hypotheses, retrieve-similar-cases, perform-cbr-cycle
+//   - prove-theorem, check-constraints
+//
+// Enhanced Tools (8):
+//   - find-analogy, apply-analogy
+//   - decompose-argument, generate-counter-arguments, detect-fallacies
+//   - process-evidence-pipeline, analyze-temporal-causal-effects, analyze-decision-timing
 package server
 
 import (
@@ -82,6 +98,11 @@ type UnifiedServer struct {
 	caseBasedHandler       *handlers.CaseBasedHandler
 	unknownUnknownsHandler *handlers.UnknownUnknownsHandler
 	symbolicHandler        *handlers.SymbolicHandler
+	// Enhanced tools components
+	analogicalReasoner         *reasoning.AnalogicalReasoner
+	argumentAnalyzer           *analysis.ArgumentAnalyzer
+	evidencePipeline           *integration.EvidencePipeline
+	causalTemporalIntegration  *integration.CausalTemporalIntegration
 }
 
 func NewUnifiedServer(
@@ -154,6 +175,20 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 	// Symbolic reasoner
 	symbolicReasoner := validation.NewSymbolicReasoner()
 	s.symbolicHandler = handlers.NewSymbolicHandler(symbolicReasoner, s.storage)
+
+	// Enhanced tools components
+	s.analogicalReasoner = reasoning.NewAnalogicalReasoner()
+	s.argumentAnalyzer = analysis.NewArgumentAnalyzer()
+	s.evidencePipeline = integration.NewEvidencePipeline(
+		s.probabilisticReasoner,
+		s.causalReasoner,
+		s.decisionMaker,
+		s.evidenceAnalyzer,
+	)
+	s.causalTemporalIntegration = integration.NewCausalTemporalIntegration(
+		s.causalReasoner,
+		s.temporalReasoner,
+	)
 }
 
 // SetOrchestrator sets the workflow orchestrator for the server
@@ -673,6 +708,17 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		Name:        "check-constraints",
 		Description: "Check consistency of symbolic constraints. Detect conflicts and contradictions. Parameters: symbols (array of {name, type, domain}), constraints (array of {type, expression, symbols}). Returns: is_consistent, conflicts (array), explanation",
 	}, s.handleCheckConstraints)
+
+	// Register enhanced tools (analogical reasoning, argument analysis, fallacy detection, evidence pipeline, temporal-causal integration)
+	handlers.RegisterEnhancedTools(
+		mcpServer,
+		s.analogicalReasoner,
+		s.argumentAnalyzer,
+		s.fallacyDetector,
+		s.orchestrator,
+		s.evidencePipeline,
+		s.causalTemporalIntegration,
+	)
 }
 
 type ThinkRequest struct {

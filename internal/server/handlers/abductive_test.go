@@ -181,3 +181,156 @@ func TestAbductiveHandler_HandleGenerateHypotheses_DefaultValues(t *testing.T) {
 		t.Error("Expected result")
 	}
 }
+
+func TestAbductiveHandler_HandleEvaluateHypotheses(t *testing.T) {
+	mockStorage := &MockStorage{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	handler := NewAbductiveHandler(realReasoner, mockStorage)
+
+	tests := []struct {
+		name    string
+		params  map[string]interface{}
+		wantErr bool
+	}{
+		{
+			name: "valid request with hypotheses",
+			params: map[string]interface{}{
+				"observations": []map[string]interface{}{
+					{"description": "Observation 1", "confidence": 0.9},
+					{"description": "Observation 2", "confidence": 0.8},
+				},
+				"hypotheses": []map[string]interface{}{
+					{
+						"description":       "Hypothesis 1",
+						"observations":      []string{"obs1", "obs2"},
+						"prior_probability": 0.5,
+					},
+					{
+						"description":       "Hypothesis 2",
+						"observations":      []string{"obs1"},
+						"prior_probability": 0.3,
+					},
+				},
+				"method": "combined",
+			},
+			wantErr: false,
+		},
+		{
+			name: "default method",
+			params: map[string]interface{}{
+				"observations": []map[string]interface{}{
+					{"description": "Observation"},
+				},
+				"hypotheses": []map[string]interface{}{
+					{
+						"description":  "Hypothesis",
+						"observations": []string{"obs1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing observations",
+			params: map[string]interface{}{
+				"hypotheses": []map[string]interface{}{
+					{"description": "Hypothesis"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing hypotheses",
+			params: map[string]interface{}{
+				"observations": []map[string]interface{}{
+					{"description": "Observation"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty observations",
+			params: map[string]interface{}{
+				"observations": []map[string]interface{}{},
+				"hypotheses": []map[string]interface{}{
+					{"description": "Hypothesis"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty hypotheses",
+			params: map[string]interface{}{
+				"observations": []map[string]interface{}{
+					{"description": "Observation"},
+				},
+				"hypotheses": []map[string]interface{}{},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			result, err := handler.HandleEvaluateHypotheses(ctx, tt.params)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("HandleEvaluateHypotheses() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr && result == nil {
+				t.Error("HandleEvaluateHypotheses() should return result on success")
+			}
+		})
+	}
+}
+
+func TestAbductiveHandler_HandleEvaluateHypotheses_WithDefaultPriors(t *testing.T) {
+	mockStorage := &MockStorage{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	handler := NewAbductiveHandler(realReasoner, mockStorage)
+
+	params := map[string]interface{}{
+		"observations": []map[string]interface{}{
+			{"description": "Observation without confidence"},
+		},
+		"hypotheses": []map[string]interface{}{
+			{
+				"description":  "Hypothesis without prior",
+				"observations": []string{"obs1"},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	result, err := handler.HandleEvaluateHypotheses(ctx, params)
+
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if result == nil {
+		t.Error("Expected result")
+	}
+}
+
+func TestAbductiveHandler_NewAbductiveHandler(t *testing.T) {
+	mockStorage := &MockStorage{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+
+	handler := NewAbductiveHandler(realReasoner, mockStorage)
+
+	if handler == nil {
+		t.Error("NewAbductiveHandler() should return a handler")
+	}
+
+	if handler.reasoner == nil {
+		t.Error("Handler should have a reasoner")
+	}
+
+	if handler.storage == nil {
+		t.Error("Handler should have storage")
+	}
+}
