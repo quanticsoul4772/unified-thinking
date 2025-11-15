@@ -178,12 +178,27 @@ func (cd *ContradictionDetector) extractSubjects(content string) []string {
 	words := strings.Fields(content)
 
 	articles := map[string]bool{"the": true, "a": true, "an": true}
+	verbs := map[string]bool{
+		"is": true, "are": true, "was": true, "were": true, "be": true, "been": true,
+		"have": true, "has": true, "had": true, "do": true, "does": true, "did": true,
+		"will": true, "would": true, "can": true, "could": true, "may": true, "might": true,
+		"prevents": true, "allows": true, "works": true, "manages": true, "authenticates": true,
+		"while": true, "allowing": true, "to": true,
+		"logs": true, "login": true, "log": true,
+	}
 
 	for i := 0; i < len(words)-1; i++ {
-		if articles[words[i]] {
-			subject := strings.TrimRight(words[i+1], ".,!?;:")
-			if len(subject) > 2 {
-				subjects = append(subjects, subject)
+		word := strings.ToLower(words[i])
+		if articles[word] {
+			// Extract compound noun phrase (consecutive words until we hit a verb or end)
+			j := i + 1
+			for j < len(words) {
+				nextWord := strings.TrimRight(words[j], ".,!?;:")
+				if len(nextWord) <= 2 || verbs[strings.ToLower(nextWord)] {
+					break
+				}
+				subjects = append(subjects, nextWord)
+				j++
 			}
 		}
 	}
@@ -201,6 +216,10 @@ func (cd *ContradictionDetector) hasContradictoryPredicates(content1, content2, 
 		if strings.Contains(s1, subject) {
 			for _, s2 := range sentences2 {
 				if strings.Contains(s2, subject) {
+					// Check if subject appears in same context (not "System A" vs "System B")
+					if !cd.isSameSubjectContext(s1, s2, subject) {
+						continue
+					}
 					// Check for contradictory verbs
 					if cd.hasContradictoryVerbs(s1, s2) {
 						return true
@@ -211,6 +230,46 @@ func (cd *ContradictionDetector) hasContradictoryPredicates(content1, content2, 
 	}
 
 	return false
+}
+
+// isSameSubjectContext checks if the subject appears in the same context in both sentences
+// For example, "System A" and "System B" are different subjects even though both contain "System"
+func (cd *ContradictionDetector) isSameSubjectContext(s1, s2, subject string) bool {
+	// Find the word after the subject in each sentence
+	words1 := strings.Fields(s1)
+	words2 := strings.Fields(s2)
+
+	// Find position of subject in each sentence
+	idx1 := -1
+	idx2 := -1
+	for i, word := range words1 {
+		if strings.Contains(word, subject) {
+			idx1 = i
+			break
+		}
+	}
+	for i, word := range words2 {
+		if strings.Contains(word, subject) {
+			idx2 = i
+			break
+		}
+	}
+
+	if idx1 == -1 || idx2 == -1 {
+		return false
+	}
+
+	// If there's a word after the subject in both sentences, check if they're different identifiers
+	if idx1+1 < len(words1) && idx2+1 < len(words2) {
+		next1 := words1[idx1+1]
+		next2 := words2[idx2+1]
+		// If the next words are single letters or different identifiers, they're different subjects
+		if len(next1) == 1 && len(next2) == 1 && next1 != next2 {
+			return false
+		}
+	}
+
+	return true
 }
 
 // hasContradictoryVerbs checks for contradictory action verbs
@@ -232,20 +291,70 @@ func (cd *ContradictionDetector) hasContradictoryVerbs(s1, s2 string) bool {
 		if strings.Contains(s1, positive) {
 			for _, negative := range negatives {
 				if strings.Contains(s2, negative) {
-					return true
+					// Check if the predicate after the verb is similar
+					if cd.hasSimilarPredicate(s1, s2, positive, negative) {
+						return true
+					}
 				}
 			}
 		}
 		if strings.Contains(s2, positive) {
 			for _, negative := range negatives {
 				if strings.Contains(s1, negative) {
-					return true
+					// Check if the predicate after the verb is similar
+					if cd.hasSimilarPredicate(s2, s1, positive, negative) {
+						return true
+					}
 				}
 			}
 		}
 	}
 
 	return false
+}
+
+// hasSimilarPredicate checks if the words following the verb phrases are similar
+func (cd *ContradictionDetector) hasSimilarPredicate(s1, s2, positive, negative string) bool {
+	// Find the position of the verb in each sentence
+	idx1 := strings.Index(s1, positive)
+	idx2 := strings.Index(s2, negative)
+
+	if idx1 == -1 || idx2 == -1 {
+		return false
+	}
+
+	// Get the text after the verb
+	after1 := s1[idx1+len(positive):]
+	after2 := s2[idx2+len(negative):]
+
+	// Trim whitespace
+	after1 = strings.TrimSpace(after1)
+	after2 = strings.TrimSpace(after2)
+
+	// If both are empty or very short, consider them similar
+	if len(after1) == 0 && len(after2) == 0 {
+		return true
+	}
+
+	if len(after1) < 3 || len(after2) < 3 {
+		return len(after1) < 3 && len(after2) < 3
+	}
+
+	// Get the first word after the verb in each sentence
+	words1 := strings.Fields(after1)
+	words2 := strings.Fields(after2)
+
+	if len(words1) == 0 || len(words2) == 0 {
+		return false
+	}
+
+	// Check if the first words are the same or similar
+	// For "is operational" vs "is not the same", first1="operational", first2="the"
+	first1 := strings.ToLower(words1[0])
+	first2 := strings.ToLower(words2[0])
+
+	// If first words are different, predicates are different (not a real contradiction)
+	return first1 == first2
 }
 
 // createContradiction creates a contradiction record

@@ -104,6 +104,12 @@ func main() {
 //   2. Workflow input parameters
 //   3. If unresolved, returns original template string for debugging
 func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
+	// Guard against nil orchestrator
+	if orchestrator == nil {
+		log.Println("Warning: Cannot register workflows with nil orchestrator")
+		return
+	}
+
 	// Register causal analysis workflow
 	causalAnalysisWorkflow := &orchestration.Workflow{
 		ID:          "causal-analysis",

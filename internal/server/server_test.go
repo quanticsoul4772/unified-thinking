@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"unified-thinking/internal/modes"
+	"unified-thinking/internal/orchestration"
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
@@ -22,6 +24,25 @@ func setupTestServer() *UnifiedServer {
 	validator := validation.NewLogicValidator()
 
 	return NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+}
+
+type stubExecutor struct {
+	result    interface{}
+	err       error
+	lastTool  string
+	lastInput map[string]interface{}
+}
+
+func (s *stubExecutor) ExecuteTool(_ context.Context, toolName string, input map[string]interface{}) (interface{}, error) {
+	s.lastTool = toolName
+	s.lastInput = input
+	if s.err != nil {
+		return nil, s.err
+	}
+	if s.result != nil {
+		return s.result, nil
+	}
+	return map[string]interface{}{"id": "result-1", "confidence": 0.9}, nil
 }
 
 func TestHandleThink_LinearMode(t *testing.T) {
@@ -86,10 +107,10 @@ func TestHandleThink_DivergentMode(t *testing.T) {
 	ctx := context.Background()
 
 	input := ThinkRequest{
-		Content:       "Creative problem solving",
-		Mode:          "divergent",
+		Content:        "Creative problem solving",
+		Mode:           "divergent",
 		ForceRebellion: true,
-		Confidence:    0.7,
+		Confidence:     0.7,
 	}
 
 	_, resp, err := server.handleThink(ctx, nil, input)
@@ -591,7 +612,7 @@ func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
 	thoughtContents := []string{
 		"The first person I asked agreed, so everyone must agree.", // Hasty generalization
 		"You're wrong because you're not an expert.",               // Ad hominem
-		"We've always done it this way, so it must be right.",       // Appeal to tradition
+		"We've always done it this way, so it must be right.",      // Appeal to tradition
 	}
 
 	for i, content := range thoughtContents {
@@ -639,5 +660,242 @@ func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
 	// Verify we're analyzing the whole branch
 	if response.Count == 0 {
 		t.Error("Count should be greater than 0 for branch with problematic content")
+	}
+}
+
+func TestHandleExecuteWorkflow_Success(t *testing.T) {
+	server := setupTestServer()
+	exec := &stubExecutor{}
+	orch := orchestration.NewOrchestratorWithExecutor(exec)
+
+	workflow := &orchestration.Workflow{
+		ID:   "wf-success",
+		Name: "Workflow Success",
+		Type: orchestration.WorkflowSequential,
+		Steps: []*orchestration.WorkflowStep{
+			{
+				ID:      "step-1",
+				Tool:    "think",
+				Input:   map[string]interface{}{"content": "$problem", "mode": "linear"},
+				StoreAs: "analysis",
+			},
+		},
+	}
+
+	if err := orch.RegisterWorkflow(workflow); err != nil {
+		t.Fatalf("RegisterWorkflow() error = %v", err)
+	}
+
+	server.SetOrchestrator(orch)
+
+	ctx := context.Background()
+	req := ExecuteWorkflowRequest{
+		WorkflowID: "wf-success",
+		Input:      map[string]interface{}{"problem": "Investigate latency"},
+	}
+
+	result, resp, err := server.handleExecuteWorkflow(ctx, nil, req)
+	if err != nil {
+		t.Fatalf("handleExecuteWorkflow() returned error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected call result")
+	}
+
+	if resp.Status != "completed" {
+		t.Fatalf("resp.Status = %s, want completed", resp.Status)
+	}
+
+	if resp.Result == nil {
+		t.Fatal("expected workflow result payload")
+	}
+
+	if resp.Result.Status != "success" {
+		t.Fatalf("workflow status = %s, want success", resp.Result.Status)
+	}
+
+	if exec.lastTool != "think" {
+		t.Fatalf("expected executor to invoke think, got %s", exec.lastTool)
+	}
+
+	if got := exec.lastInput["content"]; got != "Investigate latency" {
+		t.Fatalf("expected content to resolve template, got %v", got)
+	}
+
+	if _, ok := resp.Result.StepResults["step-1"]; !ok {
+		t.Fatal("expected step result for step-1")
+	}
+}
+
+func TestHandleExecuteWorkflow_ToolError(t *testing.T) {
+	server := setupTestServer()
+	exec := &stubExecutor{err: errors.New("tool failure")}
+	orch := orchestration.NewOrchestratorWithExecutor(exec)
+
+	workflow := &orchestration.Workflow{
+		ID:   "wf-error",
+		Name: "Workflow Error",
+		Type: orchestration.WorkflowSequential,
+		Steps: []*orchestration.WorkflowStep{
+			{
+				ID:    "step-1",
+				Tool:  "think",
+				Input: map[string]interface{}{"content": "$problem"},
+			},
+		},
+	}
+
+	if err := orch.RegisterWorkflow(workflow); err != nil {
+		t.Fatalf("RegisterWorkflow() error = %v", err)
+	}
+
+	server.SetOrchestrator(orch)
+
+	ctx := context.Background()
+	req := ExecuteWorkflowRequest{
+		WorkflowID: "wf-error",
+		Input:      map[string]interface{}{"problem": "Investigate latency"},
+	}
+
+	result, resp, err := server.handleExecuteWorkflow(ctx, nil, req)
+	if err != nil {
+		t.Fatalf("handleExecuteWorkflow() returned error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected call result")
+	}
+
+	if resp.Status != "failed" {
+		t.Fatalf("resp.Status = %s, want failed", resp.Status)
+	}
+
+	if resp.Result != nil {
+		t.Fatal("expected no workflow result when execution fails")
+	}
+
+	if resp.Error == "" {
+		t.Fatal("expected error message in response")
+	}
+}
+
+func TestHandleListWorkflows_NotInitialized(t *testing.T) {
+	server := setupTestServer()
+	server.orchestrator = nil
+
+	ctx := context.Background()
+	_, _, err := server.handleListWorkflows(ctx, nil, EmptyRequest{})
+	if err == nil || err.Error() != "orchestrator not initialized" {
+		t.Fatalf("expected orchestrator not initialized error, got %v", err)
+	}
+}
+
+func TestHandleListWorkflows_ReturnsRegistered(t *testing.T) {
+	server := setupTestServer()
+	exec := &stubExecutor{}
+	orch := orchestration.NewOrchestratorWithExecutor(exec)
+
+	workflow := &orchestration.Workflow{
+		ID:   "wf-list",
+		Name: "Workflow List",
+		Type: orchestration.WorkflowSequential,
+		Steps: []*orchestration.WorkflowStep{
+			{
+				ID:    "step-1",
+				Tool:  "think",
+				Input: map[string]interface{}{},
+			},
+		},
+	}
+
+	if err := orch.RegisterWorkflow(workflow); err != nil {
+		t.Fatalf("RegisterWorkflow() error = %v", err)
+	}
+
+	server.SetOrchestrator(orch)
+
+	ctx := context.Background()
+	_, resp, err := server.handleListWorkflows(ctx, nil, EmptyRequest{})
+	if err != nil {
+		t.Fatalf("handleListWorkflows() error = %v", err)
+	}
+
+	if resp.Count != 1 {
+		t.Fatalf("resp.Count = %d, want 1", resp.Count)
+	}
+
+	if len(resp.Workflows) != 1 {
+		t.Fatalf("Workflows length = %d, want 1", len(resp.Workflows))
+	}
+
+	if resp.Workflows[0].ID != "wf-list" {
+		t.Fatalf("expected workflow ID wf-list, got %s", resp.Workflows[0].ID)
+	}
+}
+
+func TestHandleRegisterWorkflow(t *testing.T) {
+	server := setupTestServer()
+	exec := &stubExecutor{}
+	orch := orchestration.NewOrchestratorWithExecutor(exec)
+	server.SetOrchestrator(orch)
+
+	ctx := context.Background()
+
+	req := RegisterWorkflowRequest{
+		Workflow: &orchestration.Workflow{
+			ID:   "new-workflow",
+			Name: "New Workflow",
+			Type: orchestration.WorkflowSequential,
+			Steps: []*orchestration.WorkflowStep{
+				{
+					ID:    "step-1",
+					Tool:  "think",
+					Input: map[string]interface{}{},
+				},
+			},
+		},
+	}
+
+	result, resp, err := server.handleRegisterWorkflow(ctx, nil, req)
+	if err != nil {
+		t.Fatalf("handleRegisterWorkflow() error = %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected call result")
+	}
+
+	if !resp.Success {
+		t.Fatalf("expected workflow registration success, got %+v", resp)
+	}
+
+	// Attempt duplicate registration
+	reqDuplicate := RegisterWorkflowRequest{
+		Workflow: &orchestration.Workflow{
+			ID:   "new-workflow",
+			Name: "Duplicate",
+			Type: orchestration.WorkflowSequential,
+			Steps: []*orchestration.WorkflowStep{
+				{
+					ID:    "step-1",
+					Tool:  "think",
+					Input: map[string]interface{}{},
+				},
+			},
+		},
+	}
+
+	_, duplicateResp, err := server.handleRegisterWorkflow(ctx, nil, reqDuplicate)
+	if err != nil {
+		t.Fatalf("handleRegisterWorkflow() duplicate error = %v", err)
+	}
+
+	if duplicateResp.Success {
+		t.Fatal("expected duplicate registration to fail")
+	}
+
+	if duplicateResp.Error == "" {
+		t.Fatal("expected duplicate registration error message")
 	}
 }

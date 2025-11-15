@@ -253,6 +253,10 @@ func (cti *CausalTemporalIntegration) generateTemporalRecommendation(pattern, pe
 
 	// Based on pattern
 	switch pattern {
+	case "immediate":
+		recommendations = append(recommendations, "Immediate action recommended")
+	case "delayed":
+		recommendations = append(recommendations, "Plan for delayed effects")
 	case "increasing":
 		recommendations = append(recommendations, "Effects strengthen over time - patience is beneficial")
 	case "decreasing":
@@ -261,9 +265,12 @@ func (cti *CausalTemporalIntegration) generateTemporalRecommendation(pattern, pe
 		recommendations = append(recommendations, "Effects vary - monitor closely and adapt strategy")
 	case "stable":
 		recommendations = append(recommendations, "Effects are consistent across timeframes")
+	default:
+		// Unknown or empty pattern - return empty recommendation
+		return ""
 	}
 
-	// Based on peak effect
+	// Based on peak effect (only for recognized patterns)
 	recommendations = append(recommendations, peakEffect)
 
 	// Based on certainty
@@ -289,13 +296,8 @@ func (cti *CausalTemporalIntegration) identifyTimeSensitiveVariables(graph *type
 	}
 
 	for varID, count := range outgoingCount {
-		if count >= 3 { // High influence
-			for _, v := range graph.Variables {
-				if v.ID == varID {
-					timeSensitive = append(timeSensitive, v.Name)
-					break
-				}
-			}
+		if count >= 2 { // High influence (threshold: 2 or more outgoing links)
+			timeSensitive = append(timeSensitive, varID)
 		}
 	}
 
@@ -308,6 +310,18 @@ func (cti *CausalTemporalIntegration) determineTimingWindows(
 	timeSensitive []string,
 ) []map[string]string {
 	windows := []map[string]string{}
+
+	// Return empty if no time-sensitive variables identified
+	if len(timeSensitive) == 0 {
+		return windows
+	}
+
+	// Return empty if temporal analysis indicates unknown or uncertain effects
+	if temporal != nil && temporal.ShortTermView != "" {
+		if containsKeywords(temporal.ShortTermView, []string{"Unknown", "unknown"}) {
+			return windows
+		}
+	}
 
 	// Early window: capitalize on short-term effects
 	windows = append(windows, map[string]string{
@@ -339,13 +353,64 @@ func (cti *CausalTemporalIntegration) determineTimingWindows(
 
 func (cti *CausalTemporalIntegration) synthesizeTimingRecommendation(windows []map[string]string) string {
 	if len(windows) == 0 {
-		return "Unable to determine optimal timing"
+		return ""
 	}
 
-	// Default recommendation based on first window
-	return fmt.Sprintf("Consider acting within the %s to %s",
-		windows[0]["name"],
-		windows[0]["focus"])
+	// Analyze window data to detect temporal pattern
+	pattern := cti.detectPatternFromWindows(windows)
+
+	// Map pattern to recommendation type
+	switch pattern {
+	case "immediate":
+		return "immediate_action_required"
+	case "delayed":
+		return "delayed_monitoring_advised"
+	case "sustained":
+		return "sustained_effort_needed"
+	default:
+		return ""
+	}
+}
+
+// detectPatternFromWindows analyzes window content to identify temporal pattern
+func (cti *CausalTemporalIntegration) detectPatternFromWindows(windows []map[string]string) string {
+	if len(windows) == 0 {
+		return "unknown"
+	}
+
+	// Check for immediate pattern indicators in short_term view
+	for _, window := range windows {
+		if shortTerm, exists := window["short_term"]; exists {
+			// Immediate pattern: effects visible immediately
+			if containsKeywords(shortTerm, []string{"Immediate", "immediate"}) {
+				return "immediate"
+			}
+			// Delayed pattern: effects build over time
+			if containsKeywords(shortTerm, []string{"build", "over time"}) {
+				return "delayed"
+			}
+			// Sustained pattern: long-term effects dominate
+			if containsKeywords(shortTerm, []string{"Long-term", "long-term", "dominate"}) {
+				return "sustained"
+			}
+		}
+	}
+
+	return "unknown"
+}
+
+// containsKeywords checks if text contains any of the given keywords
+func containsKeywords(text string, keywords []string) bool {
+	for _, keyword := range keywords {
+		if len(text) >= len(keyword) {
+			for i := 0; i <= len(text)-len(keyword); i++ {
+				if text[i:i+len(keyword)] == keyword {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // Helper functions

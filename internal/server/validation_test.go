@@ -3,6 +3,9 @@ package server
 import (
 	"strings"
 	"testing"
+
+	"unified-thinking/internal/orchestration"
+	"unified-thinking/internal/types"
 )
 
 func TestValidateThinkRequest(t *testing.T) {
@@ -686,5 +689,598 @@ func TestValidationError(t *testing.T) {
 	expected := "validation error on field 'test_field': test message"
 	if err.Error() != expected {
 		t.Errorf("ValidationError.Error() = %v, want %v", err.Error(), expected)
+	}
+}
+
+func TestValidateExecuteWorkflowRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *ExecuteWorkflowRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid basic request",
+			req: &ExecuteWorkflowRequest{
+				WorkflowID: "workflow-1",
+				Input:      map[string]interface{}{"foo": "bar"},
+			},
+		},
+		{
+			name: "valid comprehensive analysis",
+			req: &ExecuteWorkflowRequest{
+				WorkflowID: "comprehensive-analysis",
+				Input:      map[string]interface{}{"problem": "Investigate"},
+			},
+		},
+		{
+			name: "missing workflow id",
+			req: &ExecuteWorkflowRequest{
+				WorkflowID: "",
+				Input:      map[string]interface{}{"foo": "bar"},
+			},
+			wantErr: true,
+			errMsg:  "workflow_id is required",
+		},
+		{
+			name: "nil input map",
+			req: &ExecuteWorkflowRequest{
+				WorkflowID: "workflow-2",
+				Input:      nil,
+			},
+			wantErr: true,
+			errMsg:  "input object is required",
+		},
+		{
+			name: "missing problem for comprehensive analysis",
+			req: &ExecuteWorkflowRequest{
+				WorkflowID: "comprehensive-analysis",
+				Input:      map[string]interface{}{},
+			},
+			wantErr: true,
+			errMsg:  "requires 'problem' field",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateExecuteWorkflowRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateExecuteWorkflowRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateRegisterWorkflowRequest(t *testing.T) {
+	validWorkflow := &orchestration.Workflow{
+		ID:   "simple-workflow",
+		Name: "Simple Workflow",
+		Type: orchestration.WorkflowSequential,
+		Steps: []*orchestration.WorkflowStep{
+			{
+				ID:    "step-1",
+				Tool:  "think",
+				Input: map[string]interface{}{},
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		req     *RegisterWorkflowRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid workflow",
+			req: &RegisterWorkflowRequest{
+				Workflow: validWorkflow,
+			},
+		},
+		{
+			name: "nil workflow",
+			req: &RegisterWorkflowRequest{
+				Workflow: nil,
+			},
+			wantErr: true,
+			errMsg:  "workflow is required",
+		},
+		{
+			name: "missing id",
+			req: &RegisterWorkflowRequest{
+				Workflow: &orchestration.Workflow{
+					Name:  "Missing ID",
+					Type:  orchestration.WorkflowSequential,
+					Steps: validWorkflow.Steps,
+				},
+			},
+			wantErr: true,
+			errMsg:  "workflow ID is required",
+		},
+		{
+			name: "invalid type",
+			req: &RegisterWorkflowRequest{
+				Workflow: &orchestration.Workflow{
+					ID:    "wf-invalid",
+					Name:  "Invalid",
+					Type:  orchestration.WorkflowType("unknown"),
+					Steps: validWorkflow.Steps,
+				},
+			},
+			wantErr: true,
+			errMsg:  "workflow type must be",
+		},
+		{
+			name: "missing steps",
+			req: &RegisterWorkflowRequest{
+				Workflow: &orchestration.Workflow{
+					ID:    "wf-no-steps",
+					Name:  "No Steps",
+					Type:  orchestration.WorkflowSequential,
+					Steps: []*orchestration.WorkflowStep{},
+				},
+			},
+			wantErr: true,
+			errMsg:  "workflow must have at least one step",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateRegisterWorkflowRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateRegisterWorkflowRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateProbabilisticReasoningRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *ProbabilisticReasoningRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid create operation",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "create",
+				Statement: "It will rain tomorrow",
+				PriorProb: 0.3,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid update operation",
+			req: &ProbabilisticReasoningRequest{
+				Operation:    "update",
+				BeliefID:     "belief-1",
+				EvidenceID:   "evidence-1",
+				Likelihood:   0.8,
+				EvidenceProb: 0.6,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid get operation",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "get",
+				BeliefID:  "belief-1",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid combine operation",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "combine",
+				BeliefIDs: []string{"belief-1", "belief-2"},
+				CombineOp: "and",
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid operation",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "invalid",
+			},
+			wantErr: true,
+			errMsg:  "operation must be",
+		},
+		{
+			name: "create missing statement",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "create",
+				PriorProb: 0.5,
+			},
+			wantErr: true,
+			errMsg:  "statement is required",
+		},
+		{
+			name: "create invalid prior prob",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "create",
+				Statement: "Test statement",
+				PriorProb: 1.5,
+			},
+			wantErr: true,
+			errMsg:  "prior_prob must be between 0 and 1",
+		},
+		{
+			name: "update missing belief id",
+			req: &ProbabilisticReasoningRequest{
+				Operation:    "update",
+				EvidenceID:   "evidence-1",
+				Likelihood:   0.8,
+				EvidenceProb: 0.6,
+			},
+			wantErr: true,
+			errMsg:  "belief_id is required",
+		},
+		{
+			name: "update invalid likelihood",
+			req: &ProbabilisticReasoningRequest{
+				Operation:    "update",
+				BeliefID:     "belief-1",
+				EvidenceID:   "evidence-1",
+				Likelihood:   -0.1,
+				EvidenceProb: 0.6,
+			},
+			wantErr: true,
+			errMsg:  "likelihood must be between 0 and 1",
+		},
+		{
+			name: "combine missing belief ids",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "combine",
+				CombineOp: "and",
+			},
+			wantErr: true,
+			errMsg:  "at least one belief_id is required",
+		},
+		{
+			name: "combine invalid combine op",
+			req: &ProbabilisticReasoningRequest{
+				Operation: "combine",
+				BeliefIDs: []string{"belief-1"},
+				CombineOp: "xor",
+			},
+			wantErr: true,
+			errMsg:  "combine_op must be",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateProbabilisticReasoningRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateProbabilisticReasoningRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateAssessEvidenceRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *AssessEvidenceRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid request",
+			req: &AssessEvidenceRequest{
+				Content: "Study shows significant improvement",
+				Source:  "Peer-reviewed journal",
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing content",
+			req: &AssessEvidenceRequest{
+				Source: "Journal",
+			},
+			wantErr: true,
+			errMsg:  "content is required",
+		},
+		{
+			name: "missing source",
+			req: &AssessEvidenceRequest{
+				Content: "Evidence content",
+			},
+			wantErr: true,
+			errMsg:  "source is required",
+		},
+		{
+			name: "content too long",
+			req: &AssessEvidenceRequest{
+				Content: strings.Repeat("a", MaxContentLength+1),
+				Source:  "Source",
+			},
+			wantErr: true,
+			errMsg:  "content exceeds max length",
+		},
+		{
+			name: "source too long",
+			req: &AssessEvidenceRequest{
+				Content: "Content",
+				Source:  strings.Repeat("a", MaxQueryLength+1),
+			},
+			wantErr: true,
+			errMsg:  "source exceeds max length",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateAssessEvidenceRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateAssessEvidenceRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateDetectContradictionsRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *DetectContradictionsRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid empty request",
+			req:     &DetectContradictionsRequest{},
+			wantErr: false,
+		},
+		{
+			name: "valid with thought ids",
+			req: &DetectContradictionsRequest{
+				ThoughtIDs: []string{"thought-1", "thought-2"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid with branch id",
+			req: &DetectContradictionsRequest{
+				BranchID: "branch-1",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid with mode",
+			req: &DetectContradictionsRequest{
+				Mode: "linear",
+			},
+			wantErr: false,
+		},
+		{
+			name: "too many thought ids",
+			req: &DetectContradictionsRequest{
+				ThoughtIDs: make([]string, 101),
+			},
+			wantErr: true,
+			errMsg:  "too many thought_ids",
+		},
+		{
+			name: "invalid mode",
+			req: &DetectContradictionsRequest{
+				Mode: "invalid",
+			},
+			wantErr: true,
+			errMsg:  "invalid mode",
+		},
+		{
+			name: "branch id too long",
+			req: &DetectContradictionsRequest{
+				BranchID: strings.Repeat("a", MaxBranchIDLength+1),
+			},
+			wantErr: true,
+			errMsg:  "branch_id too long",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateDetectContradictionsRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateDetectContradictionsRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateMakeDecisionRequest(t *testing.T) {
+	validOptions := []*types.DecisionOption{
+		{
+			ID:          "opt-1",
+			Name:        "Option 1",
+			Description: "First option",
+			Scores:      map[string]float64{"crit-1": 0.8},
+			Pros:        []string{"Pro 1"},
+			Cons:        []string{"Con 1"},
+		},
+	}
+
+	validCriteria := []*types.DecisionCriterion{
+		{
+			ID:          "crit-1",
+			Name:        "Criterion 1",
+			Description: "First criterion",
+			Weight:      0.5,
+			Maximize:    true,
+		},
+	}
+
+	tests := []struct {
+		name    string
+		req     *MakeDecisionRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid request",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options:  validOptions,
+				Criteria: validCriteria,
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing question",
+			req: &MakeDecisionRequest{
+				Options:  validOptions,
+				Criteria: validCriteria,
+			},
+			wantErr: true,
+			errMsg:  "question is required",
+		},
+		{
+			name: "missing options",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Criteria: validCriteria,
+			},
+			wantErr: true,
+			errMsg:  "at least one option is required",
+		},
+		{
+			name: "missing criteria",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options:  validOptions,
+			},
+			wantErr: true,
+			errMsg:  "at least one criterion is required",
+		},
+		{
+			name: "option missing name",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options: []*types.DecisionOption{
+					{
+						ID:     "opt-1",
+						Scores: map[string]float64{"crit-1": 0.8},
+					},
+				},
+				Criteria: validCriteria,
+			},
+			wantErr: true,
+			errMsg:  "option[0].name is required",
+		},
+		{
+			name: "option missing scores",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options: []*types.DecisionOption{
+					{
+						ID:   "opt-1",
+						Name: "Option 1",
+					},
+				},
+				Criteria: validCriteria,
+			},
+			wantErr: true,
+			errMsg:  "option[0].scores is required",
+		},
+		{
+			name: "criterion missing name",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options:  validOptions,
+				Criteria: []*types.DecisionCriterion{
+					{
+						ID:     "crit-1",
+						Weight: 0.5,
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "criterion[0].name is required",
+		},
+		{
+			name: "criterion missing id",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options:  validOptions,
+				Criteria: []*types.DecisionCriterion{
+					{
+						Name:   "Criterion 1",
+						Weight: 0.5,
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "criterion[0].id is required",
+		},
+		{
+			name: "negative weight",
+			req: &MakeDecisionRequest{
+				Question: "Which option?",
+				Options:  validOptions,
+				Criteria: []*types.DecisionCriterion{
+					{
+						ID:     "crit-1",
+						Name:   "Criterion 1",
+						Weight: -0.1,
+					},
+				},
+			},
+			wantErr: true,
+			errMsg:  "criterion[0].weight must be non-negative",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateMakeDecisionRequest(tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateMakeDecisionRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.errMsg) {
+					t.Fatalf("expected error containing %q, got %v", tt.errMsg, err)
+				}
+			}
+		})
 	}
 }
