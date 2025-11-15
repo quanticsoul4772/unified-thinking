@@ -329,6 +329,18 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 	return recommendations, nil
 }
 
+// GetAllTrajectories returns all stored trajectories (for search operations)
+func (s *EpisodicMemoryStore) GetAllTrajectories() []*ReasoningTrajectory {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	trajectories := make([]*ReasoningTrajectory, 0, len(s.trajectories))
+	for _, traj := range s.trajectories {
+		trajectories = append(trajectories, traj)
+	}
+	return trajectories
+}
+
 // Helper functions
 
 func generateTrajectoryID(trajectory *ReasoningTrajectory) string {

@@ -207,7 +207,7 @@ func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, pa
 	// Find similar trajectories
 	similar, err := h.store.RetrieveSimilarTrajectories(ctx, problem, req.Limit)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve similar trajectories: %w", err)
 	}
 
 	// Get recommendations
@@ -217,11 +217,19 @@ func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, pa
 	}
 	recommendations, err := h.store.GetRecommendations(ctx, recCtx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate recommendations: %w", err)
 	}
 
-	// Get learned patterns
+	// Get learned patterns (don't fail if this errors)
 	patterns, _ := h.learner.GetLearnedPatterns(ctx, problem)
+
+	// Initialize empty arrays if nil to ensure valid JSON
+	if recommendations == nil {
+		recommendations = make([]*memory.Recommendation, 0)
+	}
+	if patterns == nil {
+		patterns = make([]*memory.TrajectoryPattern, 0)
+	}
 
 	resp := &GetRecommendationsResponse{
 		Recommendations: recommendations,
@@ -272,11 +280,94 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 		req.Limit = 10
 	}
 
-	// This would be a more sophisticated search in production
-	// For now, return empty results as placeholder
+	// Get all trajectories and filter
+	allTrajectories := h.store.GetAllTrajectories()
+
+	// Filter by criteria
+	filtered := make([]*memory.ReasoningTrajectory, 0)
+	for _, traj := range allTrajectories {
+		// Filter by domain
+		if req.Domain != "" && traj.Domain != req.Domain {
+			continue
+		}
+
+		// Filter by problem type
+		if req.ProblemType != "" && traj.Problem != nil && traj.Problem.ProblemType != req.ProblemType {
+			continue
+		}
+
+		// Filter by minimum success score
+		if req.MinSuccess > 0 && traj.SuccessScore < req.MinSuccess {
+			continue
+		}
+
+		// Filter by tags
+		if len(req.Tags) > 0 {
+			hasTag := false
+			for _, reqTag := range req.Tags {
+				for _, trajTag := range traj.Tags {
+					if reqTag == trajTag {
+						hasTag = true
+						break
+					}
+				}
+				if hasTag {
+					break
+				}
+			}
+			if !hasTag {
+				continue
+			}
+		}
+
+		filtered = append(filtered, traj)
+	}
+
+	// Sort by success score (descending)
+	for i := 0; i < len(filtered); i++ {
+		for j := i + 1; j < len(filtered); j++ {
+			if filtered[i].SuccessScore < filtered[j].SuccessScore {
+				filtered[i], filtered[j] = filtered[j], filtered[i]
+			}
+		}
+	}
+
+	// Apply limit
+	if req.Limit > 0 && len(filtered) > req.Limit {
+		filtered = filtered[:req.Limit]
+	}
+
+	// Convert to summaries
+	summaries := make([]*TrajectorySummary, len(filtered))
+	for i, traj := range filtered {
+		problemDesc := ""
+		if traj.Problem != nil {
+			problemDesc = traj.Problem.Description
+		}
+
+		strategy := ""
+		toolsUsed := make([]string, 0)
+		if traj.Approach != nil {
+			strategy = traj.Approach.Strategy
+			toolsUsed = traj.Approach.ToolSequence
+		}
+
+		summaries[i] = &TrajectorySummary{
+			ID:           traj.ID,
+			SessionID:    traj.SessionID,
+			Problem:      problemDesc,
+			Domain:       traj.Domain,
+			Strategy:     strategy,
+			ToolsUsed:    toolsUsed,
+			SuccessScore: traj.SuccessScore,
+			Duration:     traj.Duration.String(),
+			Tags:         traj.Tags,
+		}
+	}
+
 	resp := &SearchTrajectoriesResponse{
-		Trajectories: []*TrajectorySummary{},
-		Count:        0,
+		Trajectories: summaries,
+		Count:        len(summaries),
 	}
 
 	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
