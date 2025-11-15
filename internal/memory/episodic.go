@@ -232,7 +232,8 @@ func (s *EpisodicMemoryStore) RetrieveSimilarTrajectories(ctx context.Context, p
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var matches []*TrajectoryMatch
+	// Initialize with empty array (never return nil)
+	matches := make([]*TrajectoryMatch, 0)
 
 	// Find candidates by problem similarity
 	problemHash := computeProblemHash(problem)
@@ -289,7 +290,8 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var recommendations []*Recommendation
+	// Initialize with empty array (never return nil)
+	recommendations := make([]*Recommendation, 0)
 
 	// Analyze similar trajectories for patterns
 	for _, match := range recCtx.SimilarTrajectories {
