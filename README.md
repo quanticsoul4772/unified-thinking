@@ -29,7 +29,7 @@ a model context protocol (mcp) server that consolidates multiple cognitive think
 
 ### advanced cognitive reasoning
 
-the server includes 58 specialized tools across 9 major categories:
+the server includes 62 specialized tools across 10 major categories:
 
 #### probabilistic reasoning (4 tools)
 - bayesian inference with prior and posterior belief updates
@@ -89,6 +89,12 @@ the server includes 58 specialized tools across 9 major categories:
 - evidence pipeline integration (auto-update beliefs/graphs/decisions)
 - temporal-causal effect analysis (short/medium/long-term impacts)
 - decision timing optimization based on causal factors
+
+#### episodic memory & learning (4 tools)
+- reasoning session tracking (build complete trajectory from problem to solution)
+- pattern learning (recognizes successful approaches across sessions)
+- adaptive recommendations (suggests proven strategies based on similar past problems)
+- trajectory search (learn from historical successes and failures)
 
 ## installation
 

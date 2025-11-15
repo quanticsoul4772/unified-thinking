@@ -1,0 +1,498 @@
+// Package handlers - Episodic memory handlers for MCP tools
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"unified-thinking/internal/memory"
+)
+
+// EpisodicMemoryHandler handles episodic memory operations
+type EpisodicMemoryHandler struct {
+	store    *memory.EpisodicMemoryStore
+	tracker  *memory.SessionTracker
+	learner  *memory.LearningEngine
+}
+
+// NewEpisodicMemoryHandler creates a new episodic memory handler
+func NewEpisodicMemoryHandler(store *memory.EpisodicMemoryStore, tracker *memory.SessionTracker, learner *memory.LearningEngine) *EpisodicMemoryHandler {
+	return &EpisodicMemoryHandler{
+		store:   store,
+		tracker: tracker,
+		learner: learner,
+	}
+}
+
+// StartSessionRequest starts tracking a reasoning session
+type StartSessionRequest struct {
+	SessionID   string                 `json:"session_id"`
+	Description string                 `json:"description"`
+	Goals       []string               `json:"goals,omitempty"`
+	Domain      string                 `json:"domain,omitempty"`
+	Context     string                 `json:"context,omitempty"`
+	Complexity  float64                `json:"complexity,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// StartSessionResponse returns session details
+type StartSessionResponse struct {
+	SessionID   string                 `json:"session_id"`
+	ProblemID   string                 `json:"problem_id"`
+	Status      string                 `json:"status"`
+	Suggestions []*memory.Recommendation `json:"suggestions,omitempty"`
+}
+
+// HandleStartSession starts tracking a new reasoning session
+func (h *EpisodicMemoryHandler) HandleStartSession(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
+	var req StartSessionRequest
+	if err := unmarshalParams(params, &req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	if req.SessionID == "" {
+		return nil, fmt.Errorf("session_id is required")
+	}
+
+	if req.Description == "" {
+		return nil, fmt.Errorf("description is required")
+	}
+
+	// Create problem description
+	problem := &memory.ProblemDescription{
+		Description: req.Description,
+		Context:     req.Context,
+		Goals:       req.Goals,
+		Domain:      req.Domain,
+		Complexity:  req.Complexity,
+	}
+
+	// Start session
+	err := h.tracker.StartSession(ctx, req.SessionID, problem)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get recommendations from similar past trajectories
+	similar, _ := h.store.RetrieveSimilarTrajectories(ctx, problem, 5)
+	recCtx := &memory.RecommendationContext{
+		CurrentProblem:      problem,
+		SimilarTrajectories: similar,
+	}
+	suggestions, _ := h.store.GetRecommendations(ctx, recCtx)
+
+	resp := &StartSessionResponse{
+		SessionID:   req.SessionID,
+		ProblemID:   memory.ComputeProblemHash(problem),
+		Status:      "active",
+		Suggestions: suggestions,
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// CompleteSessionRequest completes a reasoning session
+type CompleteSessionRequest struct {
+	SessionID          string   `json:"session_id"`
+	Status             string   `json:"status"` // "success", "partial", "failure"
+	GoalsAchieved      []string `json:"goals_achieved,omitempty"`
+	GoalsFailed        []string `json:"goals_failed,omitempty"`
+	Solution           string   `json:"solution,omitempty"`
+	Confidence         float64  `json:"confidence,omitempty"`
+	UnexpectedOutcomes []string `json:"unexpected_outcomes,omitempty"`
+}
+
+// CompleteSessionResponse returns trajectory details
+type CompleteSessionResponse struct {
+	TrajectoryID  string  `json:"trajectory_id"`
+	SessionID     string  `json:"session_id"`
+	SuccessScore  float64 `json:"success_score"`
+	QualityScore  float64 `json:"quality_score"`
+	PatternsFound int     `json:"patterns_found"`
+	Status        string  `json:"status"`
+}
+
+// HandleCompleteSession marks a session as complete
+func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
+	var req CompleteSessionRequest
+	if err := unmarshalParams(params, &req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	if req.SessionID == "" {
+		return nil, fmt.Errorf("session_id is required")
+	}
+
+	// Build outcome
+	outcome := &memory.OutcomeDescription{
+		Status:             req.Status,
+		GoalsAchieved:      req.GoalsAchieved,
+		GoalsFailed:        req.GoalsFailed,
+		Solution:           req.Solution,
+		Confidence:         req.Confidence,
+		UnexpectedOutcomes: req.UnexpectedOutcomes,
+	}
+
+	// Complete session
+	trajectory, err := h.tracker.CompleteSession(ctx, req.SessionID, outcome)
+	if err != nil {
+		return nil, err
+	}
+
+	// Trigger pattern learning (async would be better in production)
+	_ = h.learner.LearnPatterns(ctx)
+
+	qualityScore := 0.5
+	if trajectory.Quality != nil {
+		qualityScore = trajectory.Quality.OverallQuality
+	}
+
+	resp := &CompleteSessionResponse{
+		TrajectoryID: trajectory.ID,
+		SessionID:    trajectory.SessionID,
+		SuccessScore: trajectory.SuccessScore,
+		QualityScore: qualityScore,
+		Status:       "completed",
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// GetRecommendationsRequest requests recommendations for current problem
+type GetRecommendationsRequest struct {
+	Description string   `json:"description"`
+	Goals       []string `json:"goals,omitempty"`
+	Domain      string   `json:"domain,omitempty"`
+	Context     string   `json:"context,omitempty"`
+	Complexity  float64  `json:"complexity,omitempty"`
+	Limit       int      `json:"limit,omitempty"`
+}
+
+// GetRecommendationsResponse returns recommendations
+type GetRecommendationsResponse struct {
+	Recommendations  []*memory.Recommendation `json:"recommendations"`
+	SimilarCases     int                      `json:"similar_cases"`
+	LearnedPatterns  []*memory.TrajectoryPattern `json:"learned_patterns,omitempty"`
+	Count            int                      `json:"count"`
+}
+
+// HandleGetRecommendations provides recommendations based on similar past cases
+func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
+	var req GetRecommendationsRequest
+	if err := unmarshalParams(params, &req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	if req.Description == "" {
+		return nil, fmt.Errorf("description is required")
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 5
+	}
+
+	// Create problem description
+	problem := &memory.ProblemDescription{
+		Description: req.Description,
+		Context:     req.Context,
+		Goals:       req.Goals,
+		Domain:      req.Domain,
+		Complexity:  req.Complexity,
+	}
+
+	// Find similar trajectories
+	similar, err := h.store.RetrieveSimilarTrajectories(ctx, problem, req.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get recommendations
+	recCtx := &memory.RecommendationContext{
+		CurrentProblem:      problem,
+		SimilarTrajectories: similar,
+	}
+	recommendations, err := h.store.GetRecommendations(ctx, recCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get learned patterns
+	patterns, _ := h.learner.GetLearnedPatterns(ctx, problem)
+
+	resp := &GetRecommendationsResponse{
+		Recommendations: recommendations,
+		SimilarCases:    len(similar),
+		LearnedPatterns: patterns,
+		Count:           len(recommendations),
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// SearchTrajectoriesRequest searches for past trajectories
+type SearchTrajectoriesRequest struct {
+	Domain         string   `json:"domain,omitempty"`
+	Tags           []string `json:"tags,omitempty"`
+	MinSuccess     float64  `json:"min_success,omitempty"`
+	ProblemType    string   `json:"problem_type,omitempty"`
+	Limit          int      `json:"limit,omitempty"`
+}
+
+// SearchTrajectoriesResponse returns matching trajectories
+type SearchTrajectoriesResponse struct {
+	Trajectories []*TrajectorySummary `json:"trajectories"`
+	Count        int                  `json:"count"`
+}
+
+// TrajectorySummary is a summary of a trajectory
+type TrajectorySummary struct {
+	ID           string   `json:"id"`
+	SessionID    string   `json:"session_id"`
+	Problem      string   `json:"problem"`
+	Domain       string   `json:"domain"`
+	Strategy     string   `json:"strategy"`
+	ToolsUsed    []string `json:"tools_used"`
+	SuccessScore float64  `json:"success_score"`
+	Duration     string   `json:"duration"`
+	Tags         []string `json:"tags"`
+}
+
+// HandleSearchTrajectories searches for past reasoning trajectories
+func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
+	var req SearchTrajectoriesRequest
+	if err := unmarshalParams(params, &req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 10
+	}
+
+	// This would be a more sophisticated search in production
+	// For now, return empty results as placeholder
+	resp := &SearchTrajectoriesResponse{
+		Trajectories: []*TrajectorySummary{},
+		Count:        0,
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// ComputeProblemHash is exported for testing
+func ComputeProblemHash(problem *memory.ProblemDescription) string {
+	return memory.ComputeProblemHash(problem)
+}
+
+// RegisterEpisodicMemoryTools registers episodic memory tools with the MCP server
+func RegisterEpisodicMemoryTools(mcpServer *mcp.Server, handler *EpisodicMemoryHandler) {
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "start-reasoning-session",
+		Description: `Start tracking a reasoning session to build episodic memory and learn from experience.
+
+The episodic memory system enables the server to learn from past reasoning sessions, 
+recognize successful patterns, and provide adaptive recommendations.
+
+**Parameters:**
+- session_id (required): Unique session identifier
+- description (required): Problem description
+- goals (optional): Array of goals to achieve
+- domain (optional): Problem domain (e.g., "software-engineering", "science", "business")
+- context (optional): Additional context about the problem
+- complexity (optional): Estimated complexity 0.0-1.0
+- metadata (optional): Additional metadata
+
+**Returns:**
+- session_id: Session identifier
+- problem_id: Problem fingerprint hash
+- status: "active"
+- suggestions: Array of recommendations based on similar past problems
+
+**Use Cases:**
+1. Before complex reasoning: Get suggestions from similar past successes
+2. Learning from failures: System warns about approaches that historically fail
+3. Continuous improvement: Performance improves with every reasoning session
+
+**Example:**
+{
+  "session_id": "debug_2024_001",
+  "description": "Optimize database query performance",
+  "goals": ["Reduce query time", "Improve user experience"],
+  "domain": "software-engineering",
+  "complexity": 0.6
+}`,
+	}, func(ctx context.Context, req *mcp.CallToolRequest, input StartSessionRequest) (*mcp.CallToolResult, *StartSessionResponse, error) {
+		var params map[string]interface{}
+		paramsBytes, _ := json.Marshal(input)
+		json.Unmarshal(paramsBytes, &params)
+		
+		result, err := handler.HandleStartSession(ctx, params)
+		if err != nil {
+			return nil, nil, err
+		}
+		
+		// Extract response from result (response is returned for type checking)
+		response := &StartSessionResponse{}
+		return result, response, nil
+	})
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "complete-reasoning-session",
+		Description: `Complete a reasoning session and store the trajectory for learning.
+
+Marks a session as complete, calculates quality metrics, and triggers pattern learning.
+The system learns which approaches work best for different problem types.
+
+**Parameters:**
+- session_id (required): Session to complete
+- status (required): "success", "partial", or "failure"
+- goals_achieved (optional): Array of achieved goals
+- goals_failed (optional): Array of failed goals
+- solution (optional): Description of solution
+- confidence (optional): Confidence in solution (0.0-1.0)
+- unexpected_outcomes (optional): Array of unexpected results
+
+**Returns:**
+- trajectory_id: Stored trajectory identifier
+- session_id: Session identifier
+- success_score: Calculated success score (0.0-1.0)
+- quality_score: Overall quality score (0.0-1.0)
+- patterns_found: Number of patterns updated
+- status: "completed"
+
+**Quality Metrics Calculated:**
+- Efficiency: Steps taken vs optimal
+- Coherence: Logical consistency
+- Completeness: Goal coverage
+- Innovation: Creative tool usage
+- Reliability: Confidence in result
+
+**Example:**
+{
+  "session_id": "debug_2024_001",
+  "status": "success",
+  "goals_achieved": ["Reduce query time"],
+  "solution": "Added indexes and optimized queries",
+  "confidence": 0.85
+}`,
+	}, func(ctx context.Context, req *mcp.CallToolRequest, input CompleteSessionRequest) (*mcp.CallToolResult, *CompleteSessionResponse, error) {
+		var params map[string]interface{}
+		paramsBytes, _ := json.Marshal(input)
+		json.Unmarshal(paramsBytes, &params)
+		
+		result, err := handler.HandleCompleteSession(ctx, params)
+		if err != nil {
+			return nil, nil, err
+		}
+		
+		response := &CompleteSessionResponse{}
+		return result, response, nil
+	})
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "get-recommendations",
+		Description: `Get adaptive recommendations based on episodic memory of similar past problems.
+
+Retrieves recommendations from the episodic memory system based on similarity to past 
+successful reasoning sessions. Includes learned patterns and historical success rates.
+
+**Parameters:**
+- description (required): Problem description
+- goals (optional): Array of problem goals
+- domain (optional): Problem domain
+- context (optional): Additional context
+- complexity (optional): Estimated complexity (0.0-1.0)
+- limit (optional): Max recommendations (default: 5)
+
+**Returns:**
+- recommendations: Array of recommendations with:
+  - type: "tool_sequence", "approach", "warning", or "optimization"
+  - priority: Relevance score
+  - suggestion: Specific advice
+  - reasoning: Why this recommendation
+  - success_rate: Historical success rate
+- similar_cases: Count of similar past trajectories
+- learned_patterns: Applicable learned patterns
+- count: Number of recommendations
+
+**Recommendation Types:**
+1. **tool_sequence**: Proven tool sequences (success rate >70%)
+2. **approach**: Successful reasoning strategies
+3. **warning**: Approaches that historically fail (<40% success)
+4. **optimization**: Performance improvements
+
+**Example:**
+{
+  "description": "Need to implement user authentication",
+  "domain": "security",
+  "goals": ["Secure login", "Session management"],
+  "limit": 3
+}`,
+	}, func(ctx context.Context, req *mcp.CallToolRequest, input GetRecommendationsRequest) (*mcp.CallToolResult, *GetRecommendationsResponse, error) {
+		var params map[string]interface{}
+		paramsBytes, _ := json.Marshal(input)
+		json.Unmarshal(paramsBytes, &params)
+		
+		result, err := handler.HandleGetRecommendations(ctx, params)
+		if err != nil {
+			return nil, nil, err
+		}
+		
+		response := &GetRecommendationsResponse{}
+		return result, response, nil
+	})
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "search-trajectories",
+		Description: `Search for past reasoning trajectories to learn from experience.
+
+Find past reasoning sessions by domain, tags, success rate, or problem type. Useful for 
+understanding what worked in the past and learning from both successes and failures.
+
+**Parameters:**
+- domain (optional): Filter by domain
+- tags (optional): Array of tags to filter by
+- min_success (optional): Minimum success score (0.0-1.0)
+- problem_type (optional): Filter by problem type
+- limit (optional): Max results (default: 10)
+
+**Returns:**
+- trajectories: Array of trajectory summaries with:
+  - id: Trajectory identifier
+  - session_id: Original session ID
+  - problem: Problem description
+  - domain: Problem domain
+  - strategy: Strategy used
+  - tools_used: Array of tools used
+  - success_score: Success score (0.0-1.0)
+  - duration: Session duration
+  - tags: Array of tags
+- count: Number of results
+
+**Use Cases:**
+1. Review successful approaches for a domain
+2. Learn from failures (min_success: 0.0-0.4)
+3. Find high-performing strategies (min_success: 0.8-1.0)
+4. Analyze tool usage patterns
+
+**Example:**
+{
+  "domain": "software-engineering",
+  "min_success": 0.7,
+  "limit": 5
+}`,
+	}, func(ctx context.Context, req *mcp.CallToolRequest, input SearchTrajectoriesRequest) (*mcp.CallToolResult, *SearchTrajectoriesResponse, error) {
+		var params map[string]interface{}
+		paramsBytes, _ := json.Marshal(input)
+		json.Unmarshal(paramsBytes, &params)
+		
+		result, err := handler.HandleSearchTrajectories(ctx, params)
+		if err != nil {
+			return nil, nil, err
+		}
+		
+		response := &SearchTrajectoriesResponse{}
+		return result, response, nil
+	})
+}

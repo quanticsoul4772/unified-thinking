@@ -1,6 +1,6 @@
 // Package server implements the MCP (Model Context Protocol) server for unified thinking.
 //
-// This package provides the MCP server implementation that exposes 58 tools for
+// This package provides the MCP server implementation that exposes 62 tools for
 // thought processing, validation, search, and advanced cognitive reasoning. All
 // responses are JSON formatted for consumption by Claude AI via stdio transport.
 //
@@ -40,6 +40,10 @@
 //   - find-analogy, apply-analogy
 //   - decompose-argument, generate-counter-arguments, detect-fallacies
 //   - process-evidence-pipeline, analyze-temporal-causal-effects, analyze-decision-timing
+//
+// Episodic Memory & Learning Tools (4):
+//   - start-reasoning-session, complete-reasoning-session
+//   - get-recommendations, search-trajectories
 package server
 
 import (
@@ -52,6 +56,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
 	"unified-thinking/internal/integration"
+	"unified-thinking/internal/memory"
 	"unified-thinking/internal/metacognition"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
@@ -103,6 +108,8 @@ type UnifiedServer struct {
 	argumentAnalyzer           *analysis.ArgumentAnalyzer
 	evidencePipeline           *integration.EvidencePipeline
 	causalTemporalIntegration  *integration.CausalTemporalIntegration
+	// Episodic memory system (Phase 2)
+	episodicMemoryHandler      *handlers.EpisodicMemoryHandler
 }
 
 func NewUnifiedServer(
@@ -189,6 +196,24 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 		s.causalReasoner,
 		s.temporalReasoner,
 	)
+
+	// Initialize episodic memory system (Phase 2)
+	s.initializeEpisodicMemory()
+}
+
+// initializeEpisodicMemory initializes the episodic reasoning memory system
+func (s *UnifiedServer) initializeEpisodicMemory() {
+	// Create episodic memory store
+	store := memory.NewEpisodicMemoryStore()
+
+	// Create session tracker
+	tracker := memory.NewSessionTracker(store)
+
+	// Create learning engine
+	learner := memory.NewLearningEngine(store)
+
+	// Create episodic memory handler
+	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(store, tracker, learner)
 }
 
 // SetOrchestrator sets the workflow orchestrator for the server
@@ -719,6 +744,9 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		s.evidencePipeline,
 		s.causalTemporalIntegration,
 	)
+
+	// Register episodic memory tools (Phase 2)
+	handlers.RegisterEpisodicMemoryTools(mcpServer, s.episodicMemoryHandler)
 }
 
 type ThinkRequest struct {

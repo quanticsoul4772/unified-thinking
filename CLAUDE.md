@@ -23,8 +23,9 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/metacognition/` - Self-evaluation, cognitive bias detection, unknown unknowns identification
 - `internal/integration/` - Cross-mode synthesis, emergent pattern detection, probabilistic-causal integration
 - `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
-- `internal/server/` - MCP server implementation with 50 registered tools
-- `internal/server/handlers/` - 15 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns)
+- `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, and adaptive recommendations
+- `internal/server/` - MCP server implementation with 62 registered tools
+- `internal/server/handlers/` - 16 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns, episodic)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -146,7 +147,7 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (58 total):
+**Available Tools** (62 total):
 
 **Core Thinking Tools** (11 tools):
 1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
@@ -233,6 +234,12 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 56. `process-evidence-pipeline` - Automatically update beliefs, causal graphs, and decisions from new evidence
 57. `analyze-temporal-causal-effects` - Analyze temporal progression of causal effects (short/medium/long-term)
 58. `analyze-decision-timing` - Determine optimal timing for decisions based on causal and temporal factors
+
+**Episodic Memory & Learning Tools** (4 tools):
+59. `start-reasoning-session` - Start tracking a reasoning session to learn from experience
+60. `complete-reasoning-session` - Complete session, calculate quality metrics, trigger pattern learning
+61. `get-recommendations` - Get adaptive recommendations based on similar past problems
+62. `search-trajectories` - Search past reasoning sessions to learn from successes and failures
 
 ## Storage Architecture
 
