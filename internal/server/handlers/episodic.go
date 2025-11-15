@@ -85,6 +85,11 @@ func (h *EpisodicMemoryHandler) HandleStartSession(ctx context.Context, params m
 	}
 	suggestions, _ := h.store.GetRecommendations(ctx, recCtx)
 
+	// Ensure suggestions is never nil (MCP requires arrays, not null)
+	if suggestions == nil {
+		suggestions = make([]*memory.Recommendation, 0)
+	}
+
 	resp := &StartSessionResponse{
 		SessionID:   req.SessionID,
 		ProblemID:   memory.ComputeProblemHash(problem),
@@ -349,7 +354,15 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 		toolsUsed := make([]string, 0)
 		if traj.Approach != nil {
 			strategy = traj.Approach.Strategy
-			toolsUsed = traj.Approach.ToolSequence
+			if traj.Approach.ToolSequence != nil {
+				toolsUsed = traj.Approach.ToolSequence
+			}
+		}
+
+		// Ensure tags is never nil (MCP requires arrays, not null)
+		tags := traj.Tags
+		if tags == nil {
+			tags = make([]string, 0)
 		}
 
 		summaries[i] = &TrajectorySummary{
@@ -361,7 +374,7 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 			ToolsUsed:    toolsUsed,
 			SuccessScore: traj.SuccessScore,
 			Duration:     traj.Duration.String(),
-			Tags:         traj.Tags,
+			Tags:         tags,
 		}
 	}
 
