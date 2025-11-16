@@ -134,6 +134,9 @@ func NewUnifiedServer(
 	decisionMaker := reasoning.NewDecisionMaker()
 	problemDecomposer := reasoning.NewProblemDecomposer()
 	sensitivityAnalyzer := analysis.NewSensitivityAnalyzer()
+	perspectiveAnalyzer := analysis.NewPerspectiveAnalyzer()
+	temporalReasoner := reasoning.NewTemporalReasoner()
+	causalReasoner := reasoning.NewCausalReasoner()
 
 	s := &UnifiedServer{
 		storage:               store,
@@ -156,13 +159,13 @@ func NewUnifiedServer(
 		decisionHandler:      handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
 		metacognitionHandler: handlers.NewMetacognitionHandler(store, metacognition.NewSelfEvaluator(), metacognition.NewBiasDetector(), validation.NewFallacyDetector()),
 		// Phase 2: Initialize temporal handler delegate
-		temporalHandler: handlers.NewTemporalHandler(analysis.NewPerspectiveAnalyzer(), reasoning.NewTemporalReasoner()),
+		temporalHandler: handlers.NewTemporalHandler(perspectiveAnalyzer, temporalReasoner),
 		// Phase 2-3: Initialize advanced reasoning modules
-		perspectiveAnalyzer: analysis.NewPerspectiveAnalyzer(),
-		temporalReasoner:    reasoning.NewTemporalReasoner(),
-		causalReasoner:      reasoning.NewCausalReasoner(),
-		// Phase 2: Initialize causal handler delegate
-		causalHandler: handlers.NewCausalHandler(reasoning.NewCausalReasoner()),
+		perspectiveAnalyzer: perspectiveAnalyzer,
+		temporalReasoner:    temporalReasoner,
+		causalReasoner:      causalReasoner,
+		// Phase 2: Initialize causal handler delegate (FIXED: reuse causalReasoner instance)
+		causalHandler: handlers.NewCausalHandler(causalReasoner),
 		synthesizer:   integration.NewSynthesizer(),
 		// Initialize hallucination handler
 		hallucinationHandler: handlers.NewHallucinationHandler(store),

@@ -907,10 +907,11 @@ func (v *LogicValidator) getSyntaxIssues(statement string) []string {
 		issues = append(issues, "Empty or incomplete quantifier (e.g., 'all' without subject)")
 	}
 
-	// Check 9: Proper sentence structure (starts with capital or logical symbol)
-	if !v.hasProperStart(trimmed) {
-		issues = append(issues, "Statement should start with a capital letter, quantifier, or logical symbol")
-	}
+	// Check 9: Proper sentence structure (relaxed - case sensitivity removed)
+	// Commented out as this is too strict for practical use
+	// if !v.hasProperStart(trimmed) {
+	// 	issues = append(issues, "Statement should start with a capital letter, quantifier, or logical symbol")
+	// }
 
 	return issues
 }

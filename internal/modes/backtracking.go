@@ -217,11 +217,11 @@ func (bm *BacktrackingManager) ForkFromCheckpoint(ctx context.Context, checkpoin
 	return newBranch, nil
 }
 
-// ListCheckpoints lists all checkpoints for a branch
+// ListCheckpoints lists all checkpoints for a branch (or all if branchID is empty)
 func (bm *BacktrackingManager) ListCheckpoints(branchID string) []*Checkpoint {
 	checkpoints := make([]*Checkpoint, 0)
 	for _, cp := range bm.checkpoints {
-		if cp.BranchID == branchID {
+		if branchID == "" || cp.BranchID == branchID {
 			checkpoints = append(checkpoints, cp)
 		}
 	}

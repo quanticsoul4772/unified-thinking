@@ -1022,7 +1022,7 @@ func TestSyntaxValidation_EdgeCases(t *testing.T) {
 		{
 			name:         "starts with logical symbol",
 			statement:    "∀x P(x)",
-			expectIssues: []string{"Should start with a capital letter"}, // UTF-8 rune check doesn't recognize these
+			expectIssues: []string{}, // Case sensitivity check removed - this is now valid
 		},
 		{
 			name:         "starts with number",

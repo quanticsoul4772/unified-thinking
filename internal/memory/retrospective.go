@@ -90,15 +90,33 @@ func (r *RetrospectiveAnalyzer) AnalyzeTrajectory(ctx context.Context, trajector
 		return nil, fmt.Errorf("trajectory not found: %s", trajectoryID)
 	}
 
+	// Initialize arrays to prevent nil values (MCP requires arrays, not null)
+	strengths := r.identifyStrengths(trajectory)
+	if strengths == nil {
+		strengths = []string{}
+	}
+	weaknesses := r.identifyWeaknesses(trajectory)
+	if weaknesses == nil {
+		weaknesses = []string{}
+	}
+	improvements := r.generateImprovements(trajectory)
+	if improvements == nil {
+		improvements = []*ImprovementSuggestion{}
+	}
+	lessons := r.extractLessons(trajectory)
+	if lessons == nil {
+		lessons = []string{}
+	}
+
 	analysis := &RetrospectiveAnalysis{
 		TrajectoryID:      trajectoryID,
 		SessionID:         trajectory.SessionID,
 		AnalysisTimestamp: time.Now(),
 		Summary:           r.generateSummary(trajectory),
-		Strengths:         r.identifyStrengths(trajectory),
-		Weaknesses:        r.identifyWeaknesses(trajectory),
-		Improvements:      r.generateImprovements(trajectory),
-		LessonsLearned:    r.extractLessons(trajectory),
+		Strengths:         strengths,
+		Weaknesses:        weaknesses,
+		Improvements:      improvements,
+		LessonsLearned:    lessons,
 		DetailedMetrics:   r.analyzeMetrics(trajectory),
 	}
 

@@ -118,14 +118,24 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 		return e.server.AnalyzePerspectives(ctx, req)
 
 	case "make-decision":
-		// Create a simple response for now
+		// Create a simple response for now (full implementation requires complex type mapping)
 		situation := getStringField(input, "situation")
 		options := getStringSliceField(input, "options")
+		if len(options) == 0 {
+			options = []string{"option1"}
+		}
 		return map[string]interface{}{
 			"situation": situation,
 			"options":   options,
 			"selected":  options[0],
 			"score":     0.8,
+		}, nil
+
+	case "check-syntax":
+		statements := getStringSliceField(input, "statements")
+		checks := e.server.validator.CheckWellFormed(statements)
+		return map[string]interface{}{
+			"checks": checks,
 		}, nil
 
 	default:
@@ -187,21 +197,3 @@ func getStringSliceField(m map[string]interface{}, key string) []string {
 	return nil
 }
 
-// getCriteria is reserved for future use in decision criterion extraction
-func _getCriteria(m map[string]interface{}) []map[string]interface{} {
-	if v, ok := m["criteria"]; ok {
-		if criteria, ok := v.([]interface{}); ok {
-			result := make([]map[string]interface{}, 0, len(criteria))
-			for _, c := range criteria {
-				if cMap, ok := c.(map[string]interface{}); ok {
-					result = append(result, cMap)
-				}
-			}
-			return result
-		}
-		if criteria, ok := v.([]map[string]interface{}); ok {
-			return criteria
-		}
-	}
-	return nil
-}

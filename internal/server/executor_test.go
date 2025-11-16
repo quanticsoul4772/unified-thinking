@@ -68,23 +68,8 @@ func TestGetStringSliceField(t *testing.T) {
 	}
 }
 
-func TestGetCriteria(t *testing.T) {
-	input := map[string]interface{}{
-		"criteria": []interface{}{
-			map[string]interface{}{"name": "impact"},
-			map[string]interface{}{"name": "cost"},
-		},
-	}
-
-	got := _getCriteria(input)
-	if len(got) != 2 {
-		t.Fatalf("expected two criteria, got %d", len(got))
-	}
-
-	if got[0]["name"] != "impact" || got[1]["name"] != "cost" {
-		t.Fatalf("unexpected criteria contents: %v", got)
-	}
-}
+// TestGetCriteria removed - _getCriteria helper function no longer needed
+// as make-decision tool uses simplified response format in orchestrator
 
 func TestExecuteToolAssessEvidence(t *testing.T) {
 	executor := &serverToolExecutor{}

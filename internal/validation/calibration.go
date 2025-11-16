@@ -147,7 +147,9 @@ func (ct *CalibrationTracker) GetCalibrationReport() *CalibrationReport {
 	report := &CalibrationReport{
 		TotalPredictions: len(ct.predictions),
 		TotalOutcomes:    len(ct.outcomes),
+		Buckets:          []CalibrationBucket{},
 		ByMode:           make(map[string]*ModeCalibration),
+		Recommendations:  []string{},
 		GeneratedAt:      time.Now(),
 	}
 

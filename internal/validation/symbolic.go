@@ -256,6 +256,7 @@ func (sr *SymbolicReasoner) attemptDerivation(premises []string, conclusion stri
 		}
 	}
 
+	// Try single-step inference rules first
 	// Modus ponens: If we have "A" and "A → B", derive "B"
 	if sr.tryModusPonensSymbolic(premises, conclusion, proof, stepNum) {
 		return true
@@ -268,6 +269,11 @@ func (sr *SymbolicReasoner) attemptDerivation(premises []string, conclusion stri
 
 	// Conjunction: If we have "A" and "B", derive "A ∧ B"
 	if sr.tryConjunction(premises, conclusion, proof, stepNum) {
+		return true
+	}
+
+	// If single-step rules fail, try modus ponens chaining (multi-step)
+	if sr.tryModusPonensChaining(premises, conclusion, proof, stepNum) {
 		return true
 	}
 
@@ -334,6 +340,130 @@ func (sr *SymbolicReasoner) tryModusPonensSymbolic(premises []string, conclusion
 		}
 	}
 	return false
+}
+
+// tryModusPonensChaining attempts multi-step modus ponens reasoning
+// This enables chaining like: A, A→B, B→C ⊢ C
+func (sr *SymbolicReasoner) tryModusPonensChaining(premises []string, conclusion string, proof *TheoremProof, stepNum *int) bool {
+	const maxChainDepth = 5 // Prevent infinite loops
+
+	// Build a knowledge base of all available facts
+	// Start with original premises
+	knownFacts := make(map[string]bool)
+	for _, premise := range premises {
+		knownFacts[strings.ToLower(strings.TrimSpace(premise))] = true
+	}
+
+	// Collect all implications (A → B patterns)
+	implications := sr.extractImplications(premises)
+
+	// Try to derive the conclusion by iteratively applying modus ponens
+	for depth := 0; depth < maxChainDepth; depth++ {
+		derivedNew := false
+
+		// Try to apply each implication
+		for _, impl := range implications {
+			antecedentNorm := strings.Join(strings.Fields(impl.antecedent), " ")
+
+			// Check if we have the antecedent in our known facts
+			if knownFacts[antecedentNorm] {
+				consequentNorm := strings.Join(strings.Fields(impl.consequent), " ")
+
+				// If we don't already have this consequent, derive it
+				if !knownFacts[consequentNorm] {
+					// Add proof step
+					step := &ProofStep{
+						StepNumber:    *stepNum,
+						Statement:     impl.consequentOriginal,
+						Justification: fmt.Sprintf("Modus ponens from derived fact and step %d", impl.implStepNum),
+						Rule:          "modus_ponens_chain",
+						Dependencies:  []int{impl.implStepNum},
+					}
+					proof.Steps = append(proof.Steps, step)
+					*stepNum++
+
+					// Add to known facts
+					knownFacts[consequentNorm] = true
+					derivedNew = true
+
+					// Check if we've derived the conclusion
+					conclusionNorm := strings.Join(strings.Fields(strings.ToLower(conclusion)), " ")
+					if consequentNorm == conclusionNorm || strings.Contains(consequentNorm, conclusionNorm) {
+						return true
+					}
+				}
+			}
+		}
+
+		// If we didn't derive anything new in this iteration, stop
+		if !derivedNew {
+			break
+		}
+	}
+
+	return false
+}
+
+// implicationPattern holds extracted implication information
+type implicationPattern struct {
+	antecedent        string // normalized antecedent
+	consequent        string // normalized consequent
+	consequentOriginal string // original form for proof steps
+	implStepNum       int    // step number of the implication premise
+}
+
+// extractImplications finds all A → B patterns in premises
+func (sr *SymbolicReasoner) extractImplications(premises []string) []*implicationPattern {
+	implications := make([]*implicationPattern, 0)
+
+	for i, premise := range premises {
+		premiseLower := strings.ToLower(strings.TrimSpace(premise))
+
+		// Check for implication patterns
+		for _, implWord := range []string{" implies ", " → ", " then ", "if ", " means "} {
+			if strings.Contains(premiseLower, implWord) {
+				var antecedent, consequent, consequentOrig string
+
+				// Handle "if A then B" pattern
+				if strings.Contains(premiseLower, "if ") && strings.Contains(premiseLower, " then ") {
+					parts := strings.Split(premiseLower, " then ")
+					if len(parts) == 2 {
+						antecedent = strings.TrimSpace(strings.TrimPrefix(parts[0], "if "))
+						consequent = strings.TrimSpace(parts[1])
+						consequentOrig = strings.TrimSpace(strings.Split(premise, " then ")[1])
+					}
+				} else {
+					// Handle "A implies B" pattern
+					parts := strings.Split(premiseLower, implWord)
+					if len(parts) == 2 {
+						antecedent = strings.TrimSpace(parts[0])
+						consequent = strings.TrimSpace(parts[1])
+
+						// Get original case for consequent
+						origParts := strings.Split(premise, implWord)
+						if len(origParts) == 2 {
+							consequentOrig = strings.TrimSpace(origParts[1])
+						}
+					}
+				}
+
+				if antecedent != "" && consequent != "" {
+					// Normalize
+					antecedentNorm := strings.Join(strings.Fields(antecedent), " ")
+					consequentNorm := strings.Join(strings.Fields(consequent), " ")
+
+					implications = append(implications, &implicationPattern{
+						antecedent:        antecedentNorm,
+						consequent:        consequentNorm,
+						consequentOriginal: consequentOrig,
+						implStepNum:       i + 1, // step numbers are 1-indexed
+					})
+				}
+			}
+		}
+	}
+
+	return implications
 }
 
 // trySimplification attempts simplification rule

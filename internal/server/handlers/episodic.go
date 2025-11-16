@@ -149,7 +149,12 @@ func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, param
 	}
 
 	// Trigger pattern learning (async would be better in production)
-	_ = h.learner.LearnPatterns(ctx)
+	patternsFound := 0
+	if err := h.learner.LearnPatterns(ctx); err == nil {
+		// LearnPatterns returns error only, patterns are stored internally
+		// Count would require querying the pattern store, so use 0 for now
+		patternsFound = 0
+	}
 
 	qualityScore := 0.5
 	if trajectory.Quality != nil {
@@ -157,11 +162,12 @@ func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, param
 	}
 
 	resp := &CompleteSessionResponse{
-		TrajectoryID: trajectory.ID,
-		SessionID:    trajectory.SessionID,
-		SuccessScore: trajectory.SuccessScore,
-		QualityScore: qualityScore,
-		Status:       "completed",
+		TrajectoryID:  trajectory.ID,
+		SessionID:     trajectory.SessionID,
+		SuccessScore:  trajectory.SuccessScore,
+		QualityScore:  qualityScore,
+		PatternsFound: patternsFound,
+		Status:        "completed",
 	}
 
 	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
