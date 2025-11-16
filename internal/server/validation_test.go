@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"unified-thinking/internal/orchestration"
+	"unified-thinking/internal/server/handlers"
 	"unified-thinking/internal/types"
 )
 
@@ -853,13 +854,13 @@ func TestValidateRegisterWorkflowRequest(t *testing.T) {
 func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 	tests := []struct {
 		name    string
-		req     *ProbabilisticReasoningRequest
+		req     *handlers.ProbabilisticReasoningRequest
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name: "valid create operation",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "create",
 				Statement: "It will rain tomorrow",
 				PriorProb: 0.3,
@@ -868,7 +869,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "valid update operation",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation:    "update",
 				BeliefID:     "belief-1",
 				EvidenceID:   "evidence-1",
@@ -879,7 +880,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "valid get operation",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "get",
 				BeliefID:  "belief-1",
 			},
@@ -887,7 +888,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "valid combine operation",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "combine",
 				BeliefIDs: []string{"belief-1", "belief-2"},
 				CombineOp: "and",
@@ -896,7 +897,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "invalid operation",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "invalid",
 			},
 			wantErr: true,
@@ -904,7 +905,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "create missing statement",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "create",
 				PriorProb: 0.5,
 			},
@@ -913,7 +914,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "create invalid prior prob",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "create",
 				Statement: "Test statement",
 				PriorProb: 1.5,
@@ -923,7 +924,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "update missing belief id",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation:    "update",
 				EvidenceID:   "evidence-1",
 				Likelihood:   0.8,
@@ -934,7 +935,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "update invalid likelihood",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation:    "update",
 				BeliefID:     "belief-1",
 				EvidenceID:   "evidence-1",
@@ -946,7 +947,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "combine missing belief ids",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "combine",
 				CombineOp: "and",
 			},
@@ -955,7 +956,7 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 		},
 		{
 			name: "combine invalid combine op",
-			req: &ProbabilisticReasoningRequest{
+			req: &handlers.ProbabilisticReasoningRequest{
 				Operation: "combine",
 				BeliefIDs: []string{"belief-1"},
 				CombineOp: "xor",
@@ -967,10 +968,10 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateProbabilisticReasoningRequest(tt.req)
+			err := handlers.ValidateProbabilisticReasoningRequest(tt.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateProbabilisticReasoningRequest() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("handlers.ValidateProbabilisticReasoningRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if tt.wantErr && tt.errMsg != "" {
@@ -985,13 +986,13 @@ func TestValidateProbabilisticReasoningRequest(t *testing.T) {
 func TestValidateAssessEvidenceRequest(t *testing.T) {
 	tests := []struct {
 		name    string
-		req     *AssessEvidenceRequest
+		req     *handlers.AssessEvidenceRequest
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name: "valid request",
-			req: &AssessEvidenceRequest{
+			req: &handlers.AssessEvidenceRequest{
 				Content: "Study shows significant improvement",
 				Source:  "Peer-reviewed journal",
 			},
@@ -999,7 +1000,7 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 		},
 		{
 			name: "missing content",
-			req: &AssessEvidenceRequest{
+			req: &handlers.AssessEvidenceRequest{
 				Source: "Journal",
 			},
 			wantErr: true,
@@ -1007,7 +1008,7 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 		},
 		{
 			name: "missing source",
-			req: &AssessEvidenceRequest{
+			req: &handlers.AssessEvidenceRequest{
 				Content: "Evidence content",
 			},
 			wantErr: true,
@@ -1015,7 +1016,7 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 		},
 		{
 			name: "content too long",
-			req: &AssessEvidenceRequest{
+			req: &handlers.AssessEvidenceRequest{
 				Content: strings.Repeat("a", MaxContentLength+1),
 				Source:  "Source",
 			},
@@ -1024,7 +1025,7 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 		},
 		{
 			name: "source too long",
-			req: &AssessEvidenceRequest{
+			req: &handlers.AssessEvidenceRequest{
 				Content: "Content",
 				Source:  strings.Repeat("a", MaxQueryLength+1),
 			},
@@ -1035,10 +1036,10 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateAssessEvidenceRequest(tt.req)
+			err := handlers.ValidateAssessEvidenceRequest(tt.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateAssessEvidenceRequest() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("handlers.ValidateAssessEvidenceRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if tt.wantErr && tt.errMsg != "" {
@@ -1053,39 +1054,39 @@ func TestValidateAssessEvidenceRequest(t *testing.T) {
 func TestValidateDetectContradictionsRequest(t *testing.T) {
 	tests := []struct {
 		name    string
-		req     *DetectContradictionsRequest
+		req     *handlers.DetectContradictionsRequest
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name:    "valid empty request",
-			req:     &DetectContradictionsRequest{},
+			req:     &handlers.DetectContradictionsRequest{},
 			wantErr: false,
 		},
 		{
 			name: "valid with thought ids",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				ThoughtIDs: []string{"thought-1", "thought-2"},
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid with branch id",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				BranchID: "branch-1",
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid with mode",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				Mode: "linear",
 			},
 			wantErr: false,
 		},
 		{
 			name: "too many thought ids",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				ThoughtIDs: make([]string, 101),
 			},
 			wantErr: true,
@@ -1093,7 +1094,7 @@ func TestValidateDetectContradictionsRequest(t *testing.T) {
 		},
 		{
 			name: "invalid mode",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				Mode: "invalid",
 			},
 			wantErr: true,
@@ -1101,7 +1102,7 @@ func TestValidateDetectContradictionsRequest(t *testing.T) {
 		},
 		{
 			name: "branch id too long",
-			req: &DetectContradictionsRequest{
+			req: &handlers.DetectContradictionsRequest{
 				BranchID: strings.Repeat("a", MaxBranchIDLength+1),
 			},
 			wantErr: true,
@@ -1111,10 +1112,10 @@ func TestValidateDetectContradictionsRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateDetectContradictionsRequest(tt.req)
+			err := handlers.ValidateDetectContradictionsRequest(tt.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateDetectContradictionsRequest() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("handlers.ValidateDetectContradictionsRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if tt.wantErr && tt.errMsg != "" {

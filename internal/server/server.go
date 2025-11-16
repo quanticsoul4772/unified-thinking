@@ -86,6 +86,8 @@ type UnifiedServer struct {
 	selfEvaluator          *metacognition.SelfEvaluator
 	biasDetector           *metacognition.BiasDetector
 	fallacyDetector        *validation.FallacyDetector
+	// Phase 1: Handler delegates
+	probabilisticHandler   *handlers.ProbabilisticHandler
 	// Phase 2-3: Advanced reasoning modules
 	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
 	temporalReasoner       *reasoning.TemporalReasoner
@@ -121,6 +123,11 @@ func NewUnifiedServer(
 	auto *modes.AutoMode,
 	validator *validation.LogicValidator,
 ) *UnifiedServer {
+	// Initialize core reasoning engines
+	probabilisticReasoner := reasoning.NewProbabilisticReasoner()
+	evidenceAnalyzer := analysis.NewEvidenceAnalyzer()
+	contradictionDetector := analysis.NewContradictionDetector()
+
 	s := &UnifiedServer{
 		storage:                store,
 		linear:                 linear,
@@ -128,15 +135,17 @@ func NewUnifiedServer(
 		divergent:              divergent,
 		auto:                   auto,
 		validator:              validator,
-		probabilisticReasoner:  reasoning.NewProbabilisticReasoner(),
-		evidenceAnalyzer:       analysis.NewEvidenceAnalyzer(),
-		contradictionDetector:  analysis.NewContradictionDetector(),
+		probabilisticReasoner:  probabilisticReasoner,
+		evidenceAnalyzer:       evidenceAnalyzer,
+		contradictionDetector:  contradictionDetector,
 		decisionMaker:          reasoning.NewDecisionMaker(),
 		problemDecomposer:      reasoning.NewProblemDecomposer(),
 		sensitivityAnalyzer:    analysis.NewSensitivityAnalyzer(),
 		selfEvaluator:          metacognition.NewSelfEvaluator(),
 		biasDetector:           metacognition.NewBiasDetector(),
 		fallacyDetector:        validation.NewFallacyDetector(),
+		// Phase 1: Initialize handler delegates
+		probabilisticHandler:   handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
 		// Phase 2-3: Initialize advanced reasoning modules
 		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
 		temporalReasoner:       reasoning.NewTemporalReasoner(),
@@ -1335,169 +1344,24 @@ func (s *UnifiedServer) handleRecentBranches(ctx context.Context, req *mcp.CallT
 // Probabilistic Reasoning Tool
 // ============================================================================
 
-type ProbabilisticReasoningRequest struct {
-	Operation    string   `json:"operation"`              // "create", "update", or "combine"
-	Statement    string   `json:"statement,omitempty"`    // For create operation
-	PriorProb    float64  `json:"prior_prob,omitempty"`   // For create operation
-	BeliefID     string   `json:"belief_id,omitempty"`    // For update/get operations
-	EvidenceID   string   `json:"evidence_id,omitempty"`  // For update operation
-	Likelihood   float64  `json:"likelihood,omitempty"`   // For update operation
-	EvidenceProb float64  `json:"evidence_prob,omitempty"` // For update operation
-	BeliefIDs    []string `json:"belief_ids,omitempty"`   // For combine operation
-	CombineOp    string   `json:"combine_op,omitempty"`   // "and" or "or" for combine
-}
-
-type ProbabilisticReasoningResponse struct {
-	Belief           *types.ProbabilisticBelief `json:"belief,omitempty"`
-	CombinedProb     float64                    `json:"combined_prob,omitempty"`
-	Operation        string                     `json:"operation"`
-	Status           string                     `json:"status"`
-}
-
-func (s *UnifiedServer) handleProbabilisticReasoning(ctx context.Context, req *mcp.CallToolRequest, input ProbabilisticReasoningRequest) (*mcp.CallToolResult, *ProbabilisticReasoningResponse, error) {
-	if err := ValidateProbabilisticReasoningRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	response := &ProbabilisticReasoningResponse{
-		Operation: input.Operation,
-		Status:    "success",
-	}
-
-	switch input.Operation {
-	case "create":
-		belief, err := s.probabilisticReasoner.CreateBelief(input.Statement, input.PriorProb)
-		if err != nil {
-			return nil, nil, err
-		}
-		response.Belief = belief
-
-	case "update":
-		belief, err := s.probabilisticReasoner.UpdateBelief(input.BeliefID, input.EvidenceID, input.Likelihood, input.EvidenceProb)
-		if err != nil {
-			return nil, nil, err
-		}
-		response.Belief = belief
-
-	case "get":
-		belief, err := s.probabilisticReasoner.GetBelief(input.BeliefID)
-		if err != nil {
-			return nil, nil, err
-		}
-		response.Belief = belief
-
-	case "combine":
-		combinedProb, err := s.probabilisticReasoner.CombineBeliefs(input.BeliefIDs, input.CombineOp)
-		if err != nil {
-			return nil, nil, err
-		}
-		response.CombinedProb = combinedProb
-
-	default:
-		return nil, nil, fmt.Errorf("unknown operation: %s", input.Operation)
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleProbabilisticReasoning(ctx context.Context, req *mcp.CallToolRequest, input handlers.ProbabilisticReasoningRequest) (*mcp.CallToolResult, *handlers.ProbabilisticReasoningResponse, error) {
+	return s.probabilisticHandler.HandleProbabilisticReasoning(ctx, req, input)
 }
 
 // ============================================================================
 // Assess Evidence Tool
 // ============================================================================
 
-type AssessEvidenceRequest struct {
-	Content       string `json:"content"`
-	Source        string `json:"source"`
-	ClaimID       string `json:"claim_id,omitempty"`
-	SupportsClaim bool   `json:"supports_claim"`
-}
-
-type AssessEvidenceResponse struct {
-	Evidence *types.Evidence `json:"evidence"`
-	Status   string          `json:"status"`
-}
-
-func (s *UnifiedServer) handleAssessEvidence(ctx context.Context, req *mcp.CallToolRequest, input AssessEvidenceRequest) (*mcp.CallToolResult, *AssessEvidenceResponse, error) {
-	if err := ValidateAssessEvidenceRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	evidence, err := s.evidenceAnalyzer.AssessEvidence(input.Content, input.Source, input.ClaimID, input.SupportsClaim)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &AssessEvidenceResponse{
-		Evidence: evidence,
-		Status:   "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleAssessEvidence(ctx context.Context, req *mcp.CallToolRequest, input handlers.AssessEvidenceRequest) (*mcp.CallToolResult, *handlers.AssessEvidenceResponse, error) {
+	return s.probabilisticHandler.HandleAssessEvidence(ctx, req, input)
 }
 
 // ============================================================================
 // Detect Contradictions Tool
 // ============================================================================
 
-type DetectContradictionsRequest struct {
-	ThoughtIDs []string `json:"thought_ids,omitempty"` // Specific thought IDs to check
-	BranchID   string   `json:"branch_id,omitempty"`   // Or check all thoughts in a branch
-	Mode       string   `json:"mode,omitempty"`        // Or check all thoughts in a mode
-}
-
-type DetectContradictionsResponse struct {
-	Contradictions []*types.Contradiction `json:"contradictions"`
-	Count          int                    `json:"count"`
-	Status         string                 `json:"status"`
-}
-
-func (s *UnifiedServer) handleDetectContradictions(ctx context.Context, req *mcp.CallToolRequest, input DetectContradictionsRequest) (*mcp.CallToolResult, *DetectContradictionsResponse, error) {
-	if err := ValidateDetectContradictionsRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	var thoughts []*types.Thought
-
-	// Gather thoughts based on input
-	if len(input.ThoughtIDs) > 0 {
-		for _, id := range input.ThoughtIDs {
-			thought, err := s.storage.GetThought(id)
-			if err != nil {
-				return nil, nil, fmt.Errorf("thought not found: %s", id)
-			}
-			thoughts = append(thoughts, thought)
-		}
-	} else if input.BranchID != "" {
-		branch, err := s.storage.GetBranch(input.BranchID)
-		if err != nil {
-			return nil, nil, err
-		}
-		thoughts = branch.Thoughts
-	} else if input.Mode != "" {
-		mode := types.ThinkingMode(input.Mode)
-		thoughts = s.storage.SearchThoughts("", mode, 1000, 0)
-	} else {
-		// Check all thoughts
-		thoughts = s.storage.SearchThoughts("", "", 1000, 0)
-	}
-
-	contradictions, err := s.contradictionDetector.DetectContradictions(thoughts)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &DetectContradictionsResponse{
-		Contradictions: contradictions,
-		Count:          len(contradictions),
-		Status:         "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleDetectContradictions(ctx context.Context, req *mcp.CallToolRequest, input handlers.DetectContradictionsRequest) (*mcp.CallToolResult, *handlers.DetectContradictionsResponse, error) {
+	return s.probabilisticHandler.HandleDetectContradictions(ctx, req, input)
 }
 
 // ============================================================================
@@ -2262,7 +2126,7 @@ func (s *UnifiedServer) BuildCausalGraph(ctx context.Context, description string
 }
 
 // ProbabilisticReasoning performs probabilistic reasoning operations
-func (s *UnifiedServer) ProbabilisticReasoning(ctx context.Context, req ProbabilisticReasoningRequest) (interface{}, error) {
+func (s *UnifiedServer) ProbabilisticReasoning(ctx context.Context, req handlers.ProbabilisticReasoningRequest) (interface{}, error) {
 	switch req.Operation {
 	case "create":
 		return s.probabilisticReasoner.CreateBelief(req.Statement, req.PriorProb)
@@ -2287,7 +2151,7 @@ func (s *UnifiedServer) MakeDecision(ctx context.Context, req MakeDecisionReques
 }
 
 // DetectContradictions finds contradictions in statements or thoughts
-func (s *UnifiedServer) DetectContradictions(ctx context.Context, req DetectContradictionsRequest) ([]*types.Contradiction, error) {
+func (s *UnifiedServer) DetectContradictions(ctx context.Context, req handlers.DetectContradictionsRequest) ([]*types.Contradiction, error) {
 	var thoughts []*types.Thought
 
 	if len(req.ThoughtIDs) > 0 {
@@ -2339,7 +2203,7 @@ func (s *UnifiedServer) DetectBiases(ctx context.Context, req DetectBiasesReques
 }
 
 // AssessEvidence evaluates the quality of evidence
-func (s *UnifiedServer) AssessEvidence(ctx context.Context, req AssessEvidenceRequest) (*types.Evidence, error) {
+func (s *UnifiedServer) AssessEvidence(ctx context.Context, req handlers.AssessEvidenceRequest) (*types.Evidence, error) {
 	return s.evidenceAnalyzer.AssessEvidence(req.Content, req.Source, req.ClaimID, req.SupportsClaim)
 }
 

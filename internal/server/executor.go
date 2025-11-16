@@ -7,6 +7,7 @@ import (
 
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
+	"unified-thinking/internal/server/handlers"
 )
 
 // NewServerToolExecutor creates a new executor with access to server handlers
@@ -55,7 +56,7 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 		return e.server.BuildCausalGraph(ctx, description, observations)
 
 	case "probabilistic-reasoning":
-		req := ProbabilisticReasoningRequest{
+		req := handlers.ProbabilisticReasoningRequest{
 			Operation:     getStringField(input, "operation"),
 			Statement:     getStringField(input, "statement"),
 			PriorProb:     getFloatField(input, "prior_prob"),
