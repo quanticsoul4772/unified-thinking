@@ -456,14 +456,21 @@ recognize successful patterns, and provide adaptive recommendations.
 		var params map[string]interface{}
 		paramsBytes, _ := json.Marshal(input)
 		json.Unmarshal(paramsBytes, &params)
-		
+
 		result, err := handler.HandleStartSession(ctx, params)
 		if err != nil {
 			return nil, nil, err
 		}
-		
-		// Extract response from result (response is returned for type checking)
-		response := &StartSessionResponse{}
+
+		// Unmarshal result back into response for MCP schema validation
+		response := &StartSessionResponse{
+			Suggestions: make([]*memory.Recommendation, 0), // Initialize array to prevent nil
+		}
+		if len(result.Content) > 0 {
+			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
+				json.Unmarshal([]byte(textContent.Text), response)
+			}
+		}
 		return result, response, nil
 	})
 
@@ -563,13 +570,22 @@ successful reasoning sessions. Includes learned patterns and historical success 
 		var params map[string]interface{}
 		paramsBytes, _ := json.Marshal(input)
 		json.Unmarshal(paramsBytes, &params)
-		
+
 		result, err := handler.HandleGetRecommendations(ctx, params)
 		if err != nil {
 			return nil, nil, err
 		}
-		
-		response := &GetRecommendationsResponse{}
+
+		// Unmarshal result back into response for MCP schema validation
+		response := &GetRecommendationsResponse{
+			Recommendations: make([]*memory.Recommendation, 0), // Initialize arrays to prevent nil
+			LearnedPatterns: make([]*memory.TrajectoryPattern, 0),
+		}
+		if len(result.Content) > 0 {
+			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
+				json.Unmarshal([]byte(textContent.Text), response)
+			}
+		}
 		return result, response, nil
 	})
 
@@ -616,13 +632,21 @@ understanding what worked in the past and learning from both successes and failu
 		var params map[string]interface{}
 		paramsBytes, _ := json.Marshal(input)
 		json.Unmarshal(paramsBytes, &params)
-		
+
 		result, err := handler.HandleSearchTrajectories(ctx, params)
 		if err != nil {
 			return nil, nil, err
 		}
-		
-		response := &SearchTrajectoriesResponse{}
+
+		// Unmarshal result back into response for MCP schema validation
+		response := &SearchTrajectoriesResponse{
+			Trajectories: make([]*TrajectorySummary, 0), // Initialize array to prevent nil
+		}
+		if len(result.Content) > 0 {
+			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
+				json.Unmarshal([]byte(textContent.Text), response)
+			}
+		}
 		return result, response, nil
 	})
 

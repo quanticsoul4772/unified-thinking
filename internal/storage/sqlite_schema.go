@@ -16,6 +16,19 @@ CREATE TABLE IF NOT EXISTS schema_metadata (
     value TEXT NOT NULL
 );
 
+-- Branches table (MUST be created BEFORE thoughts due to foreign key constraint)
+CREATE TABLE IF NOT EXISTS branches (
+    id TEXT PRIMARY KEY,
+    parent_branch_id TEXT,
+    state TEXT NOT NULL,
+    priority REAL NOT NULL DEFAULT 0.0,
+    confidence REAL NOT NULL DEFAULT 0.0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    last_accessed_at INTEGER NOT NULL,
+    FOREIGN KEY (parent_branch_id) REFERENCES branches(id) ON DELETE SET NULL
+);
+
 -- Thoughts table
 CREATE TABLE IF NOT EXISTS thoughts (
     id TEXT PRIMARY KEY,
@@ -31,19 +44,6 @@ CREATE TABLE IF NOT EXISTS thoughts (
     is_rebellion INTEGER DEFAULT 0,
     challenges_assumption INTEGER DEFAULT 0,
     FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
-);
-
--- Branches table
-CREATE TABLE IF NOT EXISTS branches (
-    id TEXT PRIMARY KEY,
-    parent_branch_id TEXT,
-    state TEXT NOT NULL,
-    priority REAL NOT NULL DEFAULT 0.0,
-    confidence REAL NOT NULL DEFAULT 0.0,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    last_accessed_at INTEGER NOT NULL,
-    FOREIGN KEY (parent_branch_id) REFERENCES branches(id) ON DELETE SET NULL
 );
 
 -- Insights table
@@ -174,3 +174,4 @@ func configureSQLite(db *sql.DB) error {
 
 	return nil
 }
+

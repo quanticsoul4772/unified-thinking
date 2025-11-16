@@ -122,17 +122,18 @@ func (l *LearningEngine) analyzeTrajectoryGroup(trajectories []*ReasoningTraject
 
 	// Create pattern
 	pattern := &TrajectoryPattern{
-		ID:                generatePatternID(problemSig),
-		Name:              generatePatternName(problemSig, commonApproach),
-		Description:       generatePatternDescription(successful),
-		ProblemSignature:  problemSig,
-		SuccessfulApproach: commonApproach,
-		AverageQuality:    avgQuality,
-		SuccessRate:       successRate,
-		UsageCount:        len(trajectories),
-		LastUsed:          time.Now(),
+		ID:                  generatePatternID(problemSig),
+		Name:                generatePatternName(problemSig, commonApproach),
+		Description:         generatePatternDescription(successful),
+		ProblemSignature:    problemSig,
+		SuccessfulApproach:  commonApproach,
+		AverageQuality:      avgQuality,
+		SuccessRate:         successRate,
+		UsageCount:          len(trajectories),
+		LastUsed:            time.Now(),
 		ExampleTrajectories: extractTrajectoryIDs(successful, 3),
-		Tags:              extractCommonTags(successful),
+		Tags:                extractCommonTags(successful),
+		Metadata:            make(map[string]interface{}),
 	}
 
 	return pattern

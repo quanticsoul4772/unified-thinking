@@ -299,12 +299,14 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 			// Recommend successful tool sequences
 			if match.Trajectory.Approach != nil {
 				rec := &Recommendation{
-					Type:        "tool_sequence",
-					Priority:    match.SimilarityScore * match.Trajectory.SuccessScore,
-					Suggestion:  fmt.Sprintf("Consider using: %v", match.Trajectory.Approach.ToolSequence),
-					Reasoning:   fmt.Sprintf("Similar problem solved successfully with %.0f%% success rate", match.Trajectory.SuccessScore*100),
-					BasedOn:     []string{match.Trajectory.ID},
-					SuccessRate: match.Trajectory.SuccessScore,
+					Type:            "tool_sequence",
+					Priority:        match.SimilarityScore * match.Trajectory.SuccessScore,
+					Suggestion:      fmt.Sprintf("Consider using: %v", match.Trajectory.Approach.ToolSequence),
+					Reasoning:       fmt.Sprintf("Similar problem solved successfully with %.0f%% success rate", match.Trajectory.SuccessScore*100),
+					BasedOn:         []string{match.Trajectory.ID},
+					SuccessRate:     match.Trajectory.SuccessScore,
+					EstimatedImpact: 0.0,
+					Metadata:        make(map[string]interface{}),
 				}
 				recommendations = append(recommendations, rec)
 			}
@@ -312,11 +314,14 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 			// Warn about failed approaches
 			if match.Trajectory.Approach != nil {
 				rec := &Recommendation{
-					Type:     "warning",
-					Priority: match.SimilarityScore * 0.8,
-					Suggestion: fmt.Sprintf("Avoid approach: %s", match.Trajectory.Approach.Strategy),
-					Reasoning: fmt.Sprintf("Similar problem failed with this approach (%.0f%% success)", match.Trajectory.SuccessScore*100),
-					BasedOn:   []string{match.Trajectory.ID},
+					Type:            "warning",
+					Priority:        match.SimilarityScore * 0.8,
+					Suggestion:      fmt.Sprintf("Avoid approach: %s", match.Trajectory.Approach.Strategy),
+					Reasoning:       fmt.Sprintf("Similar problem failed with this approach (%.0f%% success)", match.Trajectory.SuccessScore*100),
+					BasedOn:         []string{match.Trajectory.ID},
+					SuccessRate:     0.0,
+					EstimatedImpact: 0.0,
+					Metadata:        make(map[string]interface{}),
 				}
 				recommendations = append(recommendations, rec)
 			}

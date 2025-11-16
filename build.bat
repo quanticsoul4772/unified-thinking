@@ -50,7 +50,18 @@ echo.
 REM Create bin directory if it doesn't exist
 if not exist bin mkdir bin
 
-go build -o bin\unified-thinking.exe .\cmd\server
+REM Try to build directly first
+go build -o bin\unified-thinking.exe .\cmd\server 2>nul
+if %errorlevel% equ 0 (
+    echo Build successful!
+    goto :build_success
+)
+
+REM If that failed, try building to temporary name
+echo Note: bin\unified-thinking.exe is locked (Claude Desktop running?)
+echo Building to bin\unified-thinking-new.exe instead...
+echo.
+go build -o bin\unified-thinking-new.exe .\cmd\server
 if %errorlevel% neq 0 (
     echo ERROR: Build failed!
     echo.
@@ -58,6 +69,18 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+
+echo.
+echo Build successful, but cannot replace running binary.
+echo.
+echo TO UPDATE:
+echo 1. Close Claude Desktop
+echo 2. Run: copy /Y bin\unified-thinking-new.exe bin\unified-thinking.exe
+echo 3. Restart Claude Desktop
+echo.
+goto :end
+
+:build_success
 
 echo.
 echo ============================================
@@ -108,3 +131,4 @@ if exist bin\unified-thinking.exe (
 )
 
 pause
+
