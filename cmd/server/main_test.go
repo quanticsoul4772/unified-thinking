@@ -171,11 +171,8 @@ func TestMainInitialization(t *testing.T) {
 			// Test tool registration
 			srv.RegisterTools(mcpServer)
 
-			// Test transport creation
-			transport := &mcp.StdioTransport{}
-			if transport == nil {
-				t.Error("Failed to create stdio transport")
-			}
+			// Test transport creation (struct literal pointer is always non-nil)
+			_ = &mcp.StdioTransport{}
 
 			// Note: We don't test the actual server.Run() as it would block
 			// and require stdio interaction
@@ -240,11 +237,11 @@ func TestWorkflowStructure(t *testing.T) {
 
 	// Verify step dependencies
 	steps := causalWorkflow.Steps
-	if steps[1].DependsOn == nil || len(steps[1].DependsOn) == 0 {
+	if len(steps[1].DependsOn) == 0 {
 		t.Error("Second step should depend on first step")
 	}
 
-	if steps[2].DependsOn == nil || len(steps[2].DependsOn) == 0 {
+	if len(steps[2].DependsOn) == 0 {
 		t.Error("Third step should depend on second step")
 	}
 

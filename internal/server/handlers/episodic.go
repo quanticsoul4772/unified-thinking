@@ -560,7 +560,9 @@ The system learns which approaches work best for different problem types.
 		response := &CompleteSessionResponse{}
 		if len(result.Content) > 0 {
 			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				json.Unmarshal([]byte(textContent.Text), response)
+				if err := json.Unmarshal([]byte(textContent.Text), response); err != nil {
+					log.Printf("warning: failed to unmarshal response for validation: %v", err)
+				}
 			}
 		}
 		return result, response, nil
@@ -777,7 +779,9 @@ improvements, lessons learned, and comparative analysis against similar past ses
 		}
 		if len(result.Content) > 0 {
 			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				json.Unmarshal([]byte(textContent.Text), response)
+				if err := json.Unmarshal([]byte(textContent.Text), response); err != nil {
+					log.Printf("warning: failed to unmarshal response for validation: %v", err)
+				}
 			}
 		}
 		return result, response, nil

@@ -47,6 +47,7 @@ func NewEvidencePipeline(
 	}
 }
 
+//nolint:unused // Reserved for future use
 // PipelineResult contains the results of evidence propagation
 type PipelineResult struct {
 	EvidenceID       string                       `json:"evidence_id"`
@@ -289,6 +290,7 @@ func (ep *EvidencePipeline) calculateStrengthAdjustment(evidence *types.Evidence
 
 // calculateScoreAdjustment determines how much to adjust decision scores
 // Reserved for future decision re-evaluation implementation
+//nolint:unused // Reserved for future use
 func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) float64 {
 	// Adjustment proportional to evidence quality
 	return evidence.OverallScore * 0.15 // Max adjustment of 0.15
@@ -296,6 +298,7 @@ func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) 
 
 // evidenceRelatesToOption checks if evidence relates to a decision option
 // Reserved for future decision re-evaluation implementation
+//nolint:unused // Reserved for future use
 func (ep *EvidencePipeline) _evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
 	// Simple heuristic: check if evidence content mentions option name
 	// In production, this would use more sophisticated matching
@@ -344,6 +347,7 @@ func max(a, b float64) float64 {
 	return b
 }
 
+//nolint:unused // Reserved for future use
 func toLower(s string) string {
 	result := make([]byte, len(s))
 	for i := 0; i < len(s); i++ {
@@ -357,6 +361,7 @@ func toLower(s string) string {
 	return string(result)
 }
 
+//nolint:unused // Reserved for future use
 func contains(s, substr string) bool {
 	if len(substr) == 0 {
 		return true

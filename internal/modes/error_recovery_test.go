@@ -35,12 +35,13 @@ type MockFailingStorage struct {
 	failOnStoreRelationship bool
 	slowOperation           bool // Add slow operation support
 
-	thoughts        map[string]*types.Thought
-	branches        map[string]*types.Branch
-	insights        map[string]*types.Insight
-	validations     map[string]*types.Validation
-	relationships   map[string]*types.Relationship
-	activeBranchID  string
+	thoughts       map[string]*types.Thought
+	branches       map[string]*types.Branch
+	insights       map[string]*types.Insight
+	validations    map[string]*types.Validation
+	relationships  map[string]*types.Relationship
+	activeBranchID string
+	//nolint:unused // Reserved for future use
 	recentBranchIDs []string
 
 	// Add mutex for thread safety

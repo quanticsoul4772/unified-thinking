@@ -323,7 +323,7 @@ func TestAbductiveHandler_NewAbductiveHandler(t *testing.T) {
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	if handler == nil {
-		t.Error("NewAbductiveHandler() should return a handler")
+		t.Fatal("NewAbductiveHandler() should return a handler")
 	}
 
 	if handler.reasoner == nil {

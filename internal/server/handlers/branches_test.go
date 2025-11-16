@@ -294,7 +294,7 @@ func TestBranchHandler_ActiveBranchTracking(t *testing.T) {
 	_, _, _ = handler.HandleFocusBranch(ctx, req, FocusBranchRequest{BranchID: branch1.ID})
 
 	// List branches should show branch1 as active
-	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})
+	_, _, _ = handler.HandleListBranches(ctx, req, EmptyRequest{})
 
 	// Note: ListBranchesResponse doesn't have ActiveBranchID field in this handler
 	// but we can verify through storage
@@ -334,7 +334,7 @@ func TestBranchHandler_BranchLifecycle(t *testing.T) {
 	_ = store.StoreBranch(branch)
 
 	// List should show it
-	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})
+	_, _, _ = handler.HandleListBranches(ctx, req, EmptyRequest{})
 	if listResp.Count == 0 {
 		t.Error("Expected at least 1 branch")
 	}

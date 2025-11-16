@@ -16,7 +16,7 @@ func TestUnknownUnknownsHandler_NewUnknownUnknownsHandler(t *testing.T) {
 	handler := NewUnknownUnknownsHandler(detector, store)
 
 	if handler == nil {
-		t.Error("NewUnknownUnknownsHandler() should return a handler")
+		t.Fatal("NewUnknownUnknownsHandler() should return a handler")
 	}
 
 	if handler.detector == nil {

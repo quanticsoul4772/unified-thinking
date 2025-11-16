@@ -20,7 +20,7 @@ func TestDualProcessHandler_NewDualProcessHandler(t *testing.T) {
 	handler := NewDualProcessHandler(executor, store)
 
 	if handler == nil {
-		t.Error("NewDualProcessHandler() should return a handler")
+		t.Fatal("NewDualProcessHandler() should return a handler")
 	}
 
 	if handler.executor == nil {

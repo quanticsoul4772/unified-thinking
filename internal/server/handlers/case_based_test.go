@@ -16,7 +16,7 @@ func TestCaseBasedHandler_NewCaseBasedHandler(t *testing.T) {
 	handler := NewCaseBasedHandler(reasoner, store)
 
 	if handler == nil {
-		t.Error("NewCaseBasedHandler() should return a handler")
+		t.Fatal("NewCaseBasedHandler() should return a handler")
 	}
 
 	if handler.reasoner == nil {

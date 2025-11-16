@@ -58,7 +58,7 @@ func ConfigFromEnv() Config {
 	if cfg.Type == StorageTypeSQLite {
 		dir := filepath.Dir(cfg.SQLitePath)
 		if err := os.MkdirAll(dir, 0750); err != nil {
-			// Log warning but don't fail - factory will handle this
+			log.Printf("warning: failed to create SQLite directory %s: %v (factory will handle this)", dir, err)
 		}
 	}
 

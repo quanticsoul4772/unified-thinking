@@ -19,12 +19,15 @@ type SQLiteStorage struct {
 	db    *sql.DB
 	cache *MemoryStorage // Write-through cache for fast reads
 
-	mu                   sync.RWMutex
-	activeBranchID       string
-	thoughtCounter       atomic.Int64
-	branchCounter        atomic.Int64
-	_insightCounter      atomic.Int64 // Reserved for future use
-	_validationCounter   atomic.Int64 // Reserved for future use
+	mu             sync.RWMutex
+	activeBranchID string
+	thoughtCounter atomic.Int64
+	branchCounter  atomic.Int64
+	//nolint:unused // Reserved for future use
+	_insightCounter atomic.Int64 // Reserved for future use
+	//nolint:unused // Reserved for future use
+	_validationCounter atomic.Int64 // Reserved for future use
+	//nolint:unused // Reserved for future use
 	_relationshipCounter atomic.Int64 // Reserved for future use
 
 	// Prepared statements
@@ -210,7 +213,7 @@ func (s *SQLiteStorage) warmCache() error {
 	if err != nil {
 		return fmt.Errorf("failed to query thoughts: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	for rows.Next() {
 		thought, err := s.scanThought(rows)
@@ -449,7 +452,7 @@ func (s *SQLiteStorage) searchThoughtsFTS(query string, mode types.ThinkingMode,
 		log.Printf("FTS search error: %v", err)
 		return nil
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	results := make([]*types.Thought, 0, limit)
 	for rows.Next() {
@@ -562,7 +565,7 @@ func (s *SQLiteStorage) loadBranchThoughts(branchID string) ([]*types.Thought, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to query branch thoughts: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	thoughts := make([]*types.Thought, 0)
 	for rows.Next() {
@@ -589,7 +592,7 @@ func (s *SQLiteStorage) loadBranchInsights(branchID string) ([]*types.Insight, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to query branch insights: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	insights := make([]*types.Insight, 0)
 	for rows.Next() {
@@ -615,7 +618,7 @@ func (s *SQLiteStorage) loadBranchCrossRefs(branchID string) ([]*types.CrossRef,
 	if err != nil {
 		return nil, fmt.Errorf("failed to query branch cross-refs: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	crossRefs := make([]*types.CrossRef, 0)
 	for rows.Next() {
@@ -981,7 +984,7 @@ func (s *SQLiteStorage) GetRecentBranches() ([]*types.Branch, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query recent branches: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
 	branches := make([]*types.Branch, 0)
 	for rows.Next() {

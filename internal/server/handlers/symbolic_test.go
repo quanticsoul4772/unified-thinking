@@ -16,7 +16,7 @@ func TestSymbolicHandler_NewSymbolicHandler(t *testing.T) {
 	handler := NewSymbolicHandler(reasoner, store)
 
 	if handler == nil {
-		t.Error("NewSymbolicHandler() should return a handler")
+		t.Fatal("NewSymbolicHandler() should return a handler")
 	}
 
 	if handler.reasoner == nil {

@@ -24,9 +24,10 @@ func NewLogicValidator() *LogicValidator {
 
 // Logical connectives and patterns
 var (
-	implications  = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
-	negations     = []string{"not ", "no ", "never ", "none "}
-	universals    = []string{"all ", "every ", "each "}
+	implications = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
+	negations    = []string{"not ", "no ", "never ", "none "}
+	universals   = []string{"all ", "every ", "each "}
+	//nolint:unused // Reserved for future use
 	_existentials = []string{"some ", "exists ", "there is ", "there are "} // Reserved for future use
 )
 
@@ -838,6 +839,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 
 // extractAtomicPropositions extracts atomic propositions from a logical statement
 // Reserved for future use in advanced logical decomposition
+//nolint:unused // Reserved for future use
 func _extractAtomicPropositions(statement string) []string {
 	// Remove logical operators to get atoms
 	cleaned := statement

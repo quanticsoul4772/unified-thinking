@@ -17,7 +17,7 @@ func TestBacktrackingHandler_NewBacktrackingHandler(t *testing.T) {
 	handler := NewBacktrackingHandler(manager, store)
 
 	if handler == nil {
-		t.Error("NewBacktrackingHandler() should return a handler")
+		t.Fatal("NewBacktrackingHandler() should return a handler")
 	}
 
 	if handler.manager == nil {

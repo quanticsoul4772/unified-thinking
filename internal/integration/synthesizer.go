@@ -394,10 +394,10 @@ func (s *Synthesizer) DetectEmergentPatterns(inputs []*Input) ([]string, error) 
 			hasDelay = true
 			// Mark as having both causal and temporal if both keywords present
 			if input.Mode == "causal" || strings.Contains(contentLower, "cause") {
-				hasCausal = true
+				_ = hasCausal // Will be used in future enhancements
 			}
 			if input.Mode == "temporal" || strings.Contains(contentLower, "time") {
-				hasTemporal = true
+				_ = hasTemporal // Will be used in future enhancements
 			}
 			break
 		}

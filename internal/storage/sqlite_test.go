@@ -1190,7 +1190,7 @@ func TestSQLiteCorruptDatabase(t *testing.T) {
 	dbPath := filepath.Join(tempDir, "corrupt.db")
 
 	// Create corrupt file
-	err := os.WriteFile(dbPath, []byte("This is not a valid SQLite database"), 0644)
+	err := os.WriteFile(dbPath, []byte("This is not a valid SQLite database"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create corrupt file: %v", err)
 	}
