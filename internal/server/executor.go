@@ -97,13 +97,13 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 		}, nil
 
 	case "decompose-problem":
-		req := DecomposeProblemRequest{
+		req := handlers.DecomposeProblemRequest{
 			Problem: getStringField(input, "problem"),
 		}
 		return e.server.DecomposeProblem(ctx, req)
 
 	case "sensitivity-analysis":
-		req := SensitivityAnalysisRequest{
+		req := handlers.SensitivityAnalysisRequest{
 			TargetClaim:    getStringField(input, "target_claim"),
 			Assumptions:    getStringSliceField(input, "assumptions"),
 			BaseConfidence: getFloatField(input, "base_confidence"),

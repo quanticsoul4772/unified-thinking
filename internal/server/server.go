@@ -52,7 +52,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
@@ -88,6 +87,7 @@ type UnifiedServer struct {
 	fallacyDetector        *validation.FallacyDetector
 	// Phase 1: Handler delegates
 	probabilisticHandler   *handlers.ProbabilisticHandler
+	decisionHandler        *handlers.DecisionHandler
 	// Phase 2-3: Advanced reasoning modules
 	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
 	temporalReasoner       *reasoning.TemporalReasoner
@@ -127,6 +127,9 @@ func NewUnifiedServer(
 	probabilisticReasoner := reasoning.NewProbabilisticReasoner()
 	evidenceAnalyzer := analysis.NewEvidenceAnalyzer()
 	contradictionDetector := analysis.NewContradictionDetector()
+	decisionMaker := reasoning.NewDecisionMaker()
+	problemDecomposer := reasoning.NewProblemDecomposer()
+	sensitivityAnalyzer := analysis.NewSensitivityAnalyzer()
 
 	s := &UnifiedServer{
 		storage:                store,
@@ -138,14 +141,15 @@ func NewUnifiedServer(
 		probabilisticReasoner:  probabilisticReasoner,
 		evidenceAnalyzer:       evidenceAnalyzer,
 		contradictionDetector:  contradictionDetector,
-		decisionMaker:          reasoning.NewDecisionMaker(),
-		problemDecomposer:      reasoning.NewProblemDecomposer(),
-		sensitivityAnalyzer:    analysis.NewSensitivityAnalyzer(),
+		decisionMaker:          decisionMaker,
+		problemDecomposer:      problemDecomposer,
+		sensitivityAnalyzer:    sensitivityAnalyzer,
 		selfEvaluator:          metacognition.NewSelfEvaluator(),
 		biasDetector:           metacognition.NewBiasDetector(),
 		fallacyDetector:        validation.NewFallacyDetector(),
 		// Phase 1: Initialize handler delegates
 		probabilisticHandler:   handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
+		decisionHandler:        handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
 		// Phase 2-3: Initialize advanced reasoning modules
 		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
 		temporalReasoner:       reasoning.NewTemporalReasoner(),
@@ -1368,183 +1372,25 @@ func (s *UnifiedServer) handleDetectContradictions(ctx context.Context, req *mcp
 // Make Decision Tool
 // ============================================================================
 
-type MakeDecisionRequest struct {
-	Question string                       `json:"question"`
-	Options  []*types.DecisionOption      `json:"options"`
-	Criteria []*types.DecisionCriterion   `json:"criteria"`
-}
-
-type MakeDecisionResponse struct {
-	Decision *types.Decision          `json:"decision"`
-	Status   string                   `json:"status"`
-	Metadata *types.ResponseMetadata  `json:"metadata,omitempty"`
-}
-
-func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToolRequest, input MakeDecisionRequest) (*mcp.CallToolResult, *MakeDecisionResponse, error) {
-	if err := ValidateMakeDecisionRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	decision, err := s.decisionMaker.CreateDecision(input.Question, input.Options, input.Criteria)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Generate metadata for Claude orchestration
-	metadataGen := handlers.NewMetadataGenerator()
-	metadata := metadataGen.GenerateDecisionMetadata(decision)
-
-	response := &MakeDecisionResponse{
-		Decision: decision,
-		Status:   "success",
-		Metadata: metadata,
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToolRequest, input handlers.MakeDecisionRequest) (*mcp.CallToolResult, *handlers.MakeDecisionResponse, error) {
+	return s.decisionHandler.HandleMakeDecision(ctx, req, input)
 }
 
 // ============================================================================
 // Decompose Problem Tool
 // ============================================================================
 
-type DecomposeProblemRequest struct {
-	Problem string `json:"problem"`
+func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.CallToolRequest, input handlers.DecomposeProblemRequest) (*mcp.CallToolResult, *handlers.DecomposeProblemResponse, error) {
+	return s.decisionHandler.HandleDecomposeProblem(ctx, req, input)
 }
 
-type DecomposeProblemResponse struct {
-	Decomposition     *types.ProblemDecomposition `json:"decomposition,omitempty"`
-	CanDecompose      bool                        `json:"can_decompose"`
-	ProblemType       string                      `json:"problem_type,omitempty"`
-	ClassificationReason string                   `json:"reason,omitempty"`
-	Approach          string                      `json:"approach,omitempty"`
-	SuggestedTools    []string                    `json:"suggested_tools,omitempty"`
-	Status            string                      `json:"status"`
-	Metadata          *types.ResponseMetadata     `json:"metadata,omitempty"`
-}
-
-func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.CallToolRequest, input DecomposeProblemRequest) (*mcp.CallToolResult, *DecomposeProblemResponse, error) {
-	if err := ValidateDecomposeProblemRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	// SEMANTIC CLASSIFICATION: Check if problem is actually decomposable
-	classifier := reasoning.NewProblemClassifier()
-	classification := classifier.ClassifyProblem(input.Problem)
-
-	// If problem is NOT decomposable, return classification result
-	if classification.Type != reasoning.ProblemTypeDecomposable {
-		// Extract suggested tools from approach text
-		suggestedTools := extractToolSuggestions(classification.Approach)
-
-		response := &DecomposeProblemResponse{
-			CanDecompose:      false,
-			ProblemType:       string(classification.Type),
-			ClassificationReason: classification.Reasoning,
-			Approach:          classification.Approach,
-			SuggestedTools:    suggestedTools,
-			Status:            "success",
-		}
-
-		return &mcp.CallToolResult{
-			Content: toJSONContent(response),
-		}, response, nil
-	}
-
-	// Problem IS decomposable - proceed with normal decomposition
-	decomposition, err := s.problemDecomposer.DecomposeProblem(input.Problem)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Generate metadata for Claude orchestration
-	metadataGen := handlers.NewMetadataGenerator()
-	metadata := metadataGen.GenerateDecomposeProblemMetadata(decomposition)
-
-	response := &DecomposeProblemResponse{
-		CanDecompose:  true,
-		ProblemType:   string(reasoning.ProblemTypeDecomposable),
-		Decomposition: decomposition,
-		Status:        "success",
-		Metadata:      metadata,
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-// extractToolSuggestions extracts tool names from approach text
-func extractToolSuggestions(approach string) []string {
-	tools := make([]string, 0)
-	approachLower := strings.ToLower(approach)
-
-	// Extract tool names mentioned in approach
-	toolMentions := []string{
-		"unified-thinking:think",
-		"unified-thinking:analyze-perspectives",
-		"unified-thinking:analyze-temporal",
-		"unified-thinking:make-decision",
-		"unified-thinking:find-analogy",
-		"unified-thinking:build-causal-graph",
-		"unified-thinking:simulate-intervention",
-		"unified-thinking:retrieve-similar-cases",
-		"unified-thinking:perform-cbr-cycle",
-	}
-
-	for _, tool := range toolMentions {
-		if strings.Contains(approachLower, tool) ||
-		   strings.Contains(approachLower, strings.TrimPrefix(tool, "unified-thinking:")) {
-			tools = append(tools, tool)
-		}
-	}
-
-	// If no tools extracted, provide defaults based on context
-	if len(tools) == 0 {
-		if strings.Contains(approachLower, "philosophical") || strings.Contains(approachLower, "reflective") {
-			tools = append(tools, "unified-thinking:think", "unified-thinking:analyze-perspectives")
-		} else if strings.Contains(approachLower, "creative") || strings.Contains(approachLower, "divergent") {
-			tools = append(tools, "unified-thinking:think (mode='divergent')", "unified-thinking:find-analogy")
-		}
-	}
-
-	return tools
-}
 
 // ============================================================================
 // Sensitivity Analysis Tool
 // ============================================================================
 
-type SensitivityAnalysisRequest struct {
-	TargetClaim    string   `json:"target_claim"`
-	Assumptions    []string `json:"assumptions"`
-	BaseConfidence float64  `json:"base_confidence"`
-}
-
-type SensitivityAnalysisResponse struct {
-	Analysis *types.SensitivityAnalysis `json:"analysis"`
-	Status   string                     `json:"status"`
-}
-
-func (s *UnifiedServer) handleSensitivityAnalysis(ctx context.Context, req *mcp.CallToolRequest, input SensitivityAnalysisRequest) (*mcp.CallToolResult, *SensitivityAnalysisResponse, error) {
-	if err := ValidateSensitivityAnalysisRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	analysis, err := s.sensitivityAnalyzer.AnalyzeSensitivity(input.TargetClaim, input.Assumptions, input.BaseConfidence)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &SensitivityAnalysisResponse{
-		Analysis: analysis,
-		Status:   "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleSensitivityAnalysis(ctx context.Context, req *mcp.CallToolRequest, input handlers.SensitivityAnalysisRequest) (*mcp.CallToolResult, *handlers.SensitivityAnalysisResponse, error) {
+	return s.decisionHandler.HandleSensitivityAnalysis(ctx, req, input)
 }
 
 // ============================================================================
@@ -2146,7 +1992,7 @@ func (s *UnifiedServer) ProbabilisticReasoning(ctx context.Context, req handlers
 }
 
 // MakeDecision creates a structured decision
-func (s *UnifiedServer) MakeDecision(ctx context.Context, req MakeDecisionRequest) (*types.Decision, error) {
+func (s *UnifiedServer) MakeDecision(ctx context.Context, req handlers.MakeDecisionRequest) (*types.Decision, error) {
 	return s.decisionMaker.CreateDecision(req.Question, req.Options, req.Criteria)
 }
 
@@ -2226,12 +2072,12 @@ func (s *UnifiedServer) SelfEvaluate(ctx context.Context, req SelfEvaluateReques
 }
 
 // DecomposeProblem breaks down a complex problem
-func (s *UnifiedServer) DecomposeProblem(ctx context.Context, req DecomposeProblemRequest) (*types.ProblemDecomposition, error) {
+func (s *UnifiedServer) DecomposeProblem(ctx context.Context, req handlers.DecomposeProblemRequest) (*types.ProblemDecomposition, error) {
 	return s.problemDecomposer.DecomposeProblem(req.Problem)
 }
 
 // SensitivityAnalysis tests robustness of conclusions
-func (s *UnifiedServer) SensitivityAnalysis(ctx context.Context, req SensitivityAnalysisRequest) (*types.SensitivityAnalysis, error) {
+func (s *UnifiedServer) SensitivityAnalysis(ctx context.Context, req handlers.SensitivityAnalysisRequest) (*types.SensitivityAnalysis, error) {
 	return s.sensitivityAnalyzer.AnalyzeSensitivity(req.TargetClaim, req.Assumptions, req.BaseConfidence)
 }
 

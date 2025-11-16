@@ -1151,13 +1151,13 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     *MakeDecisionRequest
+		req     *handlers.MakeDecisionRequest
 		wantErr bool
 		errMsg  string
 	}{
 		{
 			name: "valid request",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options:  validOptions,
 				Criteria: validCriteria,
@@ -1166,7 +1166,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "missing question",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Options:  validOptions,
 				Criteria: validCriteria,
 			},
@@ -1175,7 +1175,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "missing options",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Criteria: validCriteria,
 			},
@@ -1184,7 +1184,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "missing criteria",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options:  validOptions,
 			},
@@ -1193,7 +1193,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "option missing name",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options: []*types.DecisionOption{
 					{
@@ -1208,7 +1208,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "option missing scores",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options: []*types.DecisionOption{
 					{
@@ -1223,7 +1223,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "criterion missing name",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options:  validOptions,
 				Criteria: []*types.DecisionCriterion{
@@ -1238,7 +1238,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "criterion missing id",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options:  validOptions,
 				Criteria: []*types.DecisionCriterion{
@@ -1253,7 +1253,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 		},
 		{
 			name: "negative weight",
-			req: &MakeDecisionRequest{
+			req: &handlers.MakeDecisionRequest{
 				Question: "Which option?",
 				Options:  validOptions,
 				Criteria: []*types.DecisionCriterion{
@@ -1271,10 +1271,10 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateMakeDecisionRequest(tt.req)
+			err := handlers.ValidateMakeDecisionRequest(tt.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("ValidateMakeDecisionRequest() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("handlers.ValidateMakeDecisionRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if tt.wantErr && tt.errMsg != "" {
