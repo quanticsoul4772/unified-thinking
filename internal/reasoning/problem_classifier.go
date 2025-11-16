@@ -98,6 +98,18 @@ func (pc *ProblemClassifier) detectMetaQuestion(problemLower string) *Classifica
 		{"what questions", "questions"},
 		{"which problems", "problems"},
 		{"which questions", "questions"},
+		{"what situations", "situations"},
+		{"which situations", "situations"},
+		{"what scenarios", "scenarios"},
+		{"which scenarios", "scenarios"},
+		{"what cases", "cases"},
+		{"which cases", "cases"},
+		{"what circumstances", "circumstances"},
+		{"which circumstances", "circumstances"},
+		{"what approaches", "approaches"},
+		{"which approaches", "approaches"},
+		{"what methods", "methods"},
+		{"which methods", "methods"},
 		{"what types of", "categorization"},
 		{"what kind of", "categorization"},
 	}
@@ -109,10 +121,18 @@ func (pc *ProblemClassifier) detectMetaQuestion(problemLower string) *Classifica
 				strings.Contains(problemLower, "cannot") ||
 				strings.Contains(problemLower, "can't") ||
 				strings.Contains(problemLower, "don't") ||
+				strings.Contains(problemLower, "doesn't") ||
+				strings.Contains(problemLower, "won't") ||
+				strings.Contains(problemLower, "wouldn't") ||
 				strings.Contains(problemLower, "fail") ||
 				strings.Contains(problemLower, "beyond") ||
 				strings.Contains(problemLower, "limit") ||
-				strings.Contains(problemLower, "impossible") {
+				strings.Contains(problemLower, "impossible") ||
+				strings.Contains(problemLower, "not suitable") ||
+				strings.Contains(problemLower, "not work") ||
+				strings.Contains(problemLower, "not benefit") ||
+				strings.Contains(problemLower, "inappropriate") ||
+				strings.Contains(problemLower, "unsuitable") {
 				hasMetaStructure = true
 				indicators = append(indicators, "meta-question about "+pattern.domain+" limits")
 			}
@@ -134,8 +154,20 @@ func (pc *ProblemClassifier) detectMetaQuestion(problemLower string) *Classifica
 		if strings.Contains(problemLower, term) {
 			// If combined with resistance/limits
 			if strings.Contains(problemLower, "resist") ||
+				strings.Contains(problemLower, "cannot") ||
+				strings.Contains(problemLower, "can't") ||
+				strings.Contains(problemLower, "don't") ||
+				strings.Contains(problemLower, "doesn't") ||
+				strings.Contains(problemLower, "won't") ||
+				strings.Contains(problemLower, "wouldn't") ||
 				strings.Contains(problemLower, "beyond") ||
-				strings.Contains(problemLower, "limit") {
+				strings.Contains(problemLower, "limit") ||
+				strings.Contains(problemLower, "fail") ||
+				strings.Contains(problemLower, "not suitable") ||
+				strings.Contains(problemLower, "not work") ||
+				strings.Contains(problemLower, "not benefit") ||
+				strings.Contains(problemLower, "inappropriate") ||
+				strings.Contains(problemLower, "unsuitable") {
 				hasMetaStructure = true
 				indicators = append(indicators, "questioning "+term+" itself")
 			}

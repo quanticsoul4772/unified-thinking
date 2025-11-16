@@ -302,6 +302,9 @@ func (se *SelfEvaluator) identifyWeaknesses(thought *types.Thought, quality, com
 	} else if quality < 0.6 {
 		// TIER 2: Moderate quality issues (0.4-0.59)
 		weaknesses = append(weaknesses, "Could strengthen reasoning with more evidence")
+	} else if quality < 0.8 {
+		// TIER 3: Minor quality improvements (0.6-0.79)
+		weaknesses = append(weaknesses, "Consider adding more specific examples or data to support claims")
 	}
 
 	// TIER 1: Critical completeness issues (<0.4)
@@ -310,6 +313,9 @@ func (se *SelfEvaluator) identifyWeaknesses(thought *types.Thought, quality, com
 	} else if completeness < 0.6 {
 		// TIER 2: Moderate completeness issues (0.4-0.59)
 		weaknesses = append(weaknesses, "Could expand analysis to cover more dimensions")
+	} else if completeness < 0.8 {
+		// TIER 3: Minor completeness improvements (0.6-0.79)
+		weaknesses = append(weaknesses, "Some aspects could be explored in greater depth")
 	}
 
 	// TIER 1: Critical coherence issues (<0.5)
