@@ -21,11 +21,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version: '1.23.x'
+          cache: true
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          # Pin to a specific version of golangci-lint for reproducible builds.
+          # See https://github.com/golangci/golangci-lint/releases for latest versions.
+          version: v1.59.1
           args: --timeout=5m
-          skip-cache: false
