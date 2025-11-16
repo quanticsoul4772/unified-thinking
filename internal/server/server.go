@@ -91,6 +91,7 @@ type UnifiedServer struct {
 	metacognitionHandler   *handlers.MetacognitionHandler
 	// Phase 2: Handler delegates
 	temporalHandler        *handlers.TemporalHandler
+	causalHandler          *handlers.CausalHandler
 	// Phase 2-3: Advanced reasoning modules
 	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
 	temporalReasoner       *reasoning.TemporalReasoner
@@ -160,6 +161,8 @@ func NewUnifiedServer(
 		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
 		temporalReasoner:       reasoning.NewTemporalReasoner(),
 		causalReasoner:         reasoning.NewCausalReasoner(),
+		// Phase 2: Initialize causal handler delegate
+		causalHandler:          handlers.NewCausalHandler(reasoning.NewCausalReasoner()),
 		synthesizer:            integration.NewSynthesizer(),
 		// Initialize hallucination handler
 		hallucinationHandler:   handlers.NewHallucinationHandler(store),
@@ -1437,170 +1440,26 @@ func (s *UnifiedServer) handleIdentifyOptimalTiming(ctx context.Context, req *mc
 	return s.temporalHandler.HandleIdentifyOptimalTiming(ctx, req, input)
 }
 
-// Phase 3: Causal Reasoning
+// Phase 3: Causal Reasoning - Delegated to handlers.CausalHandler
 
-type BuildCausalGraphRequest struct {
-	Description  string   `json:"description"`
-	Observations []string `json:"observations"`
+func (s *UnifiedServer) handleBuildCausalGraph(ctx context.Context, req *mcp.CallToolRequest, input handlers.BuildCausalGraphRequest) (*mcp.CallToolResult, *handlers.BuildCausalGraphResponse, error) {
+	return s.causalHandler.HandleBuildCausalGraph(ctx, req, input)
 }
 
-type BuildCausalGraphResponse struct {
-	Graph    *types.CausalGraph       `json:"graph"`
-	Status   string                   `json:"status"`
-	Metadata *types.ResponseMetadata  `json:"metadata,omitempty"`
+func (s *UnifiedServer) handleSimulateIntervention(ctx context.Context, req *mcp.CallToolRequest, input handlers.SimulateInterventionRequest) (*mcp.CallToolResult, *handlers.SimulateInterventionResponse, error) {
+	return s.causalHandler.HandleSimulateIntervention(ctx, req, input)
 }
 
-func (s *UnifiedServer) handleBuildCausalGraph(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input BuildCausalGraphRequest,
-) (*mcp.CallToolResult, *BuildCausalGraphResponse, error) {
-	graph, err := s.causalReasoner.BuildCausalGraph(input.Description, input.Observations)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Generate metadata for Claude orchestration
-	metadataGen := handlers.NewMetadataGenerator()
-	metadata := metadataGen.GenerateCausalGraphMetadata(graph)
-
-	response := &BuildCausalGraphResponse{
-		Graph:    graph,
-		Status:   "success",
-		Metadata: metadata,
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleGenerateCounterfactual(ctx context.Context, req *mcp.CallToolRequest, input handlers.GenerateCounterfactualRequest) (*mcp.CallToolResult, *handlers.GenerateCounterfactualResponse, error) {
+	return s.causalHandler.HandleGenerateCounterfactual(ctx, req, input)
 }
 
-type SimulateInterventionRequest struct {
-	GraphID          string `json:"graph_id"`
-	VariableID       string `json:"variable_id"`
-	InterventionType string `json:"intervention_type"`
+func (s *UnifiedServer) handleAnalyzeCorrelationVsCausation(ctx context.Context, req *mcp.CallToolRequest, input handlers.AnalyzeCorrelationVsCausationRequest) (*mcp.CallToolResult, *handlers.AnalyzeCorrelationVsCausationResponse, error) {
+	return s.causalHandler.HandleAnalyzeCorrelationVsCausation(ctx, req, input)
 }
 
-type SimulateInterventionResponse struct {
-	Intervention *types.CausalIntervention `json:"intervention"`
-	Status       string                    `json:"status"`
-}
-
-func (s *UnifiedServer) handleSimulateIntervention(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input SimulateInterventionRequest,
-) (*mcp.CallToolResult, *SimulateInterventionResponse, error) {
-	intervention, err := s.causalReasoner.SimulateIntervention(
-		input.GraphID,
-		input.VariableID,
-		input.InterventionType,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &SimulateInterventionResponse{
-		Intervention: intervention,
-		Status:       "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-type GenerateCounterfactualRequest struct {
-	GraphID  string            `json:"graph_id"`
-	Scenario string            `json:"scenario"`
-	Changes  map[string]string `json:"changes"`
-}
-
-type GenerateCounterfactualResponse struct {
-	Counterfactual *types.Counterfactual `json:"counterfactual"`
-	Status         string                `json:"status"`
-}
-
-func (s *UnifiedServer) handleGenerateCounterfactual(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input GenerateCounterfactualRequest,
-) (*mcp.CallToolResult, *GenerateCounterfactualResponse, error) {
-	counterfactual, err := s.causalReasoner.GenerateCounterfactual(
-		input.GraphID,
-		input.Scenario,
-		input.Changes,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &GenerateCounterfactualResponse{
-		Counterfactual: counterfactual,
-		Status:         "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-type AnalyzeCorrelationVsCausationRequest struct {
-	Observation string `json:"observation"`
-}
-
-type AnalyzeCorrelationVsCausationResponse struct {
-	Analysis string `json:"analysis"`
-	Status   string `json:"status"`
-}
-
-func (s *UnifiedServer) handleAnalyzeCorrelationVsCausation(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input AnalyzeCorrelationVsCausationRequest,
-) (*mcp.CallToolResult, *AnalyzeCorrelationVsCausationResponse, error) {
-	analysis, err := s.causalReasoner.AnalyzeCorrelationVsCausation(input.Observation)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &AnalyzeCorrelationVsCausationResponse{
-		Analysis: analysis,
-		Status:   "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-type GetCausalGraphRequest struct {
-	GraphID string `json:"graph_id"`
-}
-
-type GetCausalGraphResponse struct {
-	Graph  *types.CausalGraph `json:"graph"`
-	Status string             `json:"status"`
-}
-
-func (s *UnifiedServer) handleGetCausalGraph(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input GetCausalGraphRequest,
-) (*mcp.CallToolResult, *GetCausalGraphResponse, error) {
-	graph, err := s.causalReasoner.GetGraph(input.GraphID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &GetCausalGraphResponse{
-		Graph:  graph,
-		Status: "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleGetCausalGraph(ctx context.Context, req *mcp.CallToolRequest, input handlers.GetCausalGraphRequest) (*mcp.CallToolResult, *handlers.GetCausalGraphResponse, error) {
+	return s.causalHandler.HandleGetCausalGraph(ctx, req, input)
 }
 
 // Phase 3: Cross-Mode Synthesis
@@ -1815,12 +1674,12 @@ func (s *UnifiedServer) AnalyzeTemporal(ctx context.Context, req handlers.Analyz
 }
 
 // SimulateIntervention simulates causal interventions
-func (s *UnifiedServer) SimulateIntervention(ctx context.Context, req SimulateInterventionRequest) (*types.CausalIntervention, error) {
+func (s *UnifiedServer) SimulateIntervention(ctx context.Context, req handlers.SimulateInterventionRequest) (*types.CausalIntervention, error) {
 	return s.causalReasoner.SimulateIntervention(req.GraphID, req.VariableID, req.InterventionType)
 }
 
 // GenerateCounterfactual creates counterfactual scenarios
-func (s *UnifiedServer) GenerateCounterfactual(ctx context.Context, req GenerateCounterfactualRequest) (*types.Counterfactual, error) {
+func (s *UnifiedServer) GenerateCounterfactual(ctx context.Context, req handlers.GenerateCounterfactualRequest) (*types.Counterfactual, error) {
 	return s.causalReasoner.GenerateCounterfactual(req.GraphID, req.Scenario, req.Changes)
 }
 
