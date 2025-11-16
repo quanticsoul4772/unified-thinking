@@ -131,6 +131,12 @@ func (pc *ProblemClassifier) detectMetaQuestion(problemLower string) *Classifica
 				strings.Contains(problemLower, "not suitable") ||
 				strings.Contains(problemLower, "not work") ||
 				strings.Contains(problemLower, "not benefit") ||
+				strings.Contains(problemLower, "aren't suitable") ||
+				strings.Contains(problemLower, "isn't suitable") ||
+				strings.Contains(problemLower, "aren't work") ||
+				strings.Contains(problemLower, "doesn't work") ||
+				strings.Contains(problemLower, "isn't benefit") ||
+				strings.Contains(problemLower, "aren't benefit") ||
 				strings.Contains(problemLower, "inappropriate") ||
 				strings.Contains(problemLower, "unsuitable") {
 				hasMetaStructure = true
@@ -166,6 +172,12 @@ func (pc *ProblemClassifier) detectMetaQuestion(problemLower string) *Classifica
 				strings.Contains(problemLower, "not suitable") ||
 				strings.Contains(problemLower, "not work") ||
 				strings.Contains(problemLower, "not benefit") ||
+				strings.Contains(problemLower, "aren't suitable") ||
+				strings.Contains(problemLower, "isn't suitable") ||
+				strings.Contains(problemLower, "aren't work") ||
+				strings.Contains(problemLower, "doesn't work") ||
+				strings.Contains(problemLower, "isn't benefit") ||
+				strings.Contains(problemLower, "aren't benefit") ||
 				strings.Contains(problemLower, "inappropriate") ||
 				strings.Contains(problemLower, "unsuitable") {
 				hasMetaStructure = true
