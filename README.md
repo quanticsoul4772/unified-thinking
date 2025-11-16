@@ -29,7 +29,7 @@ a model context protocol (mcp) server that consolidates multiple cognitive think
 
 ### advanced cognitive reasoning
 
-the server includes 63 specialized tools across 10 major categories:
+the server includes 63 specialized tools across 13 major categories:
 
 #### probabilistic reasoning (4 tools)
 - bayesian inference with prior and posterior belief updates
@@ -121,7 +121,7 @@ make build
 
 comprehensive documentation is available:
 
-- **[API Reference](API_REFERENCE.md)** - complete reference for all 50 mcp tools with parameters, examples, and response formats
+- **[API Reference](API_REFERENCE.md)** - complete reference for all 63 mcp tools with parameters, examples, and response formats
 - **[Architecture Diagrams](ARCHITECTURE.md)** - visual representations of system architecture, data flows, and component interactions
 - **[Project Index](PROJECT_INDEX.md)** - comprehensive project structure, architecture, and component overview
 - **[MCP Integration Test Report](MCP_INTEGRATION_TEST_REPORT.md)** - end-to-end validation results and production readiness certification
@@ -178,7 +178,7 @@ for persistent storage across sessions:
 
 after saving the config, restart claude desktop.
 
-## available tools (50 total)
+## available tools (63 total)
 
 ### core thinking tools (11 tools)
 
@@ -301,6 +301,35 @@ after saving the config, restart claude desktop.
 49. **prove-theorem** - formal theorem proving
 50. **check-constraints** - check symbolic constraint satisfaction
 
+### enhanced tools (8 tools)
+
+51. **find-analogy** - find analogies between source and target domains for cross-domain reasoning
+52. **apply-analogy** - apply an existing analogy to a new context
+53. **decompose-argument** - break down arguments into premises, claims, assumptions, and inference chains
+54. **generate-counter-arguments** - generate counter-arguments using multiple strategies
+55. **detect-fallacies** - detect formal and informal logical fallacies (ad hominem, straw man, false dichotomy, etc.)
+56. **process-evidence-pipeline** - automatically update beliefs, causal graphs, and decisions from new evidence
+57. **analyze-temporal-causal-effects** - analyze temporal progression of causal effects (short/medium/long-term)
+58. **analyze-decision-timing** - determine optimal timing for decisions based on causal and temporal factors
+
+### episodic memory & learning tools (5 tools)
+
+59. **start-reasoning-session** - start tracking a reasoning session to build episodic memory
+    ```json
+    {
+      "session_id": "debug_2024_001",
+      "description": "optimize database query performance",
+      "goals": ["reduce query time", "improve user experience"],
+      "domain": "software-engineering",
+      "complexity": 0.6
+    }
+    ```
+
+60. **complete-reasoning-session** - complete session, calculate quality metrics, trigger pattern learning
+61. **get-recommendations** - get adaptive recommendations based on similar past problems
+62. **search-trajectories** - search past reasoning sessions to learn from successes and failures
+63. **analyze-trajectory** - perform retrospective analysis of completed session (strengths, weaknesses, improvements)
+
 ## architecture
 
 ```
@@ -333,6 +362,10 @@ unified-thinking/
 │   ├── validation/         # logic validation, fallacy detection, symbolic
 │   ├── integration/        # cross-mode synthesis
 │   ├── orchestration/      # workflow automation
+│   ├── memory/             # episodic memory and pattern learning
+│   │   ├── episodic.go     # reasoning trajectory storage
+│   │   ├── learning.go     # pattern recognition
+│   │   └── retrospective.go # post-session analysis
 │   └── server/             # mcp server implementation
 │       └── handlers/       # specialized tool handlers (19 files)
 ```
@@ -349,6 +382,7 @@ the server implements a modular cognitive architecture with specialized packages
 - **validation**: logical validation, fallacy detection, symbolic constraint solving
 - **integration**: cross-mode synthesis and emergent pattern detection
 - **orchestration**: automated multi-tool workflow execution
+- **memory**: episodic memory for session tracking, pattern learning, and adaptive recommendations
 
 all components are thread-safe, composable, and maintain backward compatibility.
 
@@ -435,11 +469,67 @@ make benchmark
 - automatic memory management via cache eviction
 - enable with `storage_type=sqlite` environment variable
 
+### sqlite initialization issues
+
+**if you see "falling back to memory storage":**
+
+this was a known issue (fixed in commit e7cc5c7) caused by incorrect table ordering in the schema. if you're experiencing this:
+
+1. **ensure you have the latest version**:
+   ```bash
+   git pull origin main
+   go build -o bin/unified-thinking.exe cmd/server/main.go
+   ```
+
+2. **delete the old database** (forces fresh schema):
+   ```powershell
+   Remove-Item "$env:APPDATA\Claude\unified-thinking.db*"
+   ```
+
+3. **restart claude desktop** to pick up the new binary
+
+**what was fixed:**
+- removed duplicate `thoughts` table definition in schema
+- corrected table creation order (branches before thoughts)
+- fixed foreign key constraint validation with `PRAGMA foreign_keys=ON`
+
+**verify it's working:**
+- check logs for: `SQLite storage initialized successfully`
+- no "falling back to memory" messages
+- episodic memory persists across restarts
+
+### episodic memory tool errors
+
+**if you see validation errors like "type null, want array":**
+
+this was fixed in commit e7cc5c7. the issue was in the MCP tool registration layer not properly initializing response arrays.
+
+**affected tools** (now fixed):
+- `get-recommendations`
+- `search-trajectories`
+- `start-reasoning-session`
+
+**what was fixed:**
+- tool registration functions now properly unmarshal responses for MCP schema validation
+- all array fields initialized to prevent nil values
+- defensive initialization in nested structs (Recommendation, TrajectoryPattern)
+
+**verify it's working:**
+```javascript
+// Should return empty arrays, not null
+mcp__unified-thinking__get-recommendations({
+  "description": "test",
+  "domain": "software-engineering"
+})
+// Expected: {"recommendations": [], "learned_patterns": [], ...}
+// NOT: {"recommendations": null, ...}
+```
+
 ## technical details
 
 ### key features
 
-- 50 specialized mcp tools across 8 categories
+- 63 specialized mcp tools across 13 categories
 - 6 thinking modes with automatic mode selection
 - dual-process reasoning (fast vs slow thinking)
 - checkpoint-based backtracking
@@ -452,6 +542,9 @@ make benchmark
 - confidence calibration tracking
 - unknown unknowns detection
 - workflow orchestration for multi-tool automation
+- episodic memory with session tracking and pattern learning
+- adaptive recommendations based on historical reasoning sessions
+- retrospective analysis for continuous improvement
 - pluggable storage (in-memory or sqlite)
 - thread-safe operations
 - comprehensive test coverage

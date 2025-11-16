@@ -542,6 +542,36 @@ When Claude Desktop starts, it will:
 24. `internal/orchestration/workflow.go` - Workflow orchestration system
 25. `internal/orchestration/interface.go` - ToolExecutor abstraction for workflow steps
 
+## Recent Fixes (November 2024)
+
+### Episodic Memory Fixes (Commit e7cc5c7)
+
+**Issue 1: SQLite Foreign Key Constraint Failure**
+- **Problem**: SQLite initialization failing with "no such column: branch_id", server falling back to memory storage
+- **Root Cause**: Duplicate `thoughts` table definition with one created before `branches` table, causing foreign key validation failure with `PRAGMA foreign_keys=ON`
+- **Fix**: Removed duplicate table definition, ensured correct table ordering (branches before thoughts)
+- **Files Modified**: `internal/storage/sqlite_schema.go`
+- **Impact**: Episodic memory now persists correctly across Claude Desktop restarts
+
+**Issue 2: Nil Array Validation Errors**
+- **Problem**: Three episodic memory tools failing with MCP validation error: "type null, want array"
+- **Affected Tools**: `get-recommendations`, `search-trajectories`, `start-reasoning-session`
+- **Root Cause**: MCP tool registration functions creating empty response structs with nil array fields for schema validation
+- **Fix**:
+  - Modified tool registration to properly unmarshal responses for MCP validation
+  - Initialized all array fields in response structs to prevent nil values
+  - Added defensive initialization in nested structs (Recommendation, TrajectoryPattern)
+- **Files Modified**:
+  - `internal/server/handlers/episodic.go` (3 tool registration functions)
+  - `internal/memory/episodic.go` (Recommendation struct initialization)
+  - `internal/memory/learning.go` (TrajectoryPattern struct initialization)
+- **Impact**: All episodic memory tools now return valid JSON arrays instead of null values
+
+**Verification**:
+- SQLite: Check logs for "SQLite storage initialized successfully" (no "falling back to memory")
+- Tools: All episodic memory tools return `[]` (empty arrays) instead of `null` when no data exists
+- Persistence: Reasoning sessions survive Claude Desktop restarts
+
 ## Technical Constraints
 
 - Go 1.23+ required
