@@ -15,11 +15,11 @@ type RetrospectiveAnalysis struct {
 	AnalysisTimestamp  time.Time                `json:"analysis_timestamp"`
 	Summary            *AnalysisSummary         `json:"summary"`
 	Strengths          []string                 `json:"strengths"`
-	Weaknesses         []string                 `json:"weaknesses"`
-	Improvements       []*ImprovementSuggestion `json:"improvements"`
-	LessonsLearned     []string                 `json:"lessons_learned"`
-	ComparativAnalysis *ComparativeAnalysis     `json:"comparative_analysis,omitempty"`
-	DetailedMetrics    *DetailedMetricsAnalysis `json:"detailed_metrics"`
+	Weaknesses          []string                 `json:"weaknesses"`
+	Improvements        []*ImprovementSuggestion `json:"improvements"`
+	LessonsLearned      []string                 `json:"lessons_learned"`
+	ComparativeAnalysis *ComparativeAnalysis     `json:"comparative_analysis,omitempty"`
+	DetailedMetrics     *DetailedMetricsAnalysis `json:"detailed_metrics"`
 }
 
 // AnalysisSummary provides high-level summary of the session
@@ -122,7 +122,21 @@ func (r *RetrospectiveAnalyzer) AnalyzeTrajectory(ctx context.Context, trajector
 
 	// Add comparative analysis if similar trajectories exist
 	if comparative := r.performComparativeAnalysis(ctx, trajectory); comparative != nil {
-		analysis.ComparativAnalysis = comparative
+		analysis.ComparativeAnalysis = comparative
+	}
+
+	// Final defensive check - ensure NO nil arrays (triple-check for MCP validation)
+	if analysis.Strengths == nil {
+		analysis.Strengths = []string{}
+	}
+	if analysis.Weaknesses == nil {
+		analysis.Weaknesses = []string{}
+	}
+	if analysis.Improvements == nil {
+		analysis.Improvements = []*ImprovementSuggestion{}
+	}
+	if analysis.LessonsLearned == nil {
+		analysis.LessonsLearned = []string{}
 	}
 
 	return analysis, nil

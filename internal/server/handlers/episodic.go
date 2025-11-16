@@ -556,7 +556,13 @@ The system learns which approaches work best for different problem types.
 			return nil, nil, err
 		}
 
+		// Properly unmarshal result for MCP validation
 		response := &CompleteSessionResponse{}
+		if len(result.Content) > 0 {
+			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
+				json.Unmarshal([]byte(textContent.Text), response)
+			}
+		}
 		return result, response, nil
 	})
 
@@ -762,7 +768,18 @@ improvements, lessons learned, and comparative analysis against similar past ses
 			return nil, nil, err
 		}
 
-		response := &memory.RetrospectiveAnalysis{}
+		// Properly unmarshal result for MCP validation
+		response := &memory.RetrospectiveAnalysis{
+			Strengths:      []string{},
+			Weaknesses:     []string{},
+			Improvements:   []*memory.ImprovementSuggestion{},
+			LessonsLearned: []string{},
+		}
+		if len(result.Content) > 0 {
+			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
+				json.Unmarshal([]byte(textContent.Text), response)
+			}
+		}
 		return result, response, nil
 	})
 }
