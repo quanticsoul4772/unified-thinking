@@ -183,16 +183,16 @@ if %CRITICAL_FAILURES% equ 0 (
     echo [OK] ALL CRITICAL CHECKS PASSED
     if %FAILURES% gtr 0 (
         echo.
-        echo Note: %FAILURES% optional check(s) failed (golangci-lint, gosec, etc.)
+        echo Note: %FAILURES% optional check^(s^) did not pass ^(golangci-lint, gosec, etc.^)
         echo These are handled by CI/CD and are not blocking.
     )
     echo.
     echo Safe to push to GitHub!
     exit /b 0
 ) else (
-    echo [ERROR] %CRITICAL_FAILURES% CRITICAL CHECK(S) FAILED
+    echo [ERROR] %CRITICAL_FAILURES% CRITICAL CHECK^(S^) FAILED
     if %FAILURES% gtr %CRITICAL_FAILURES% (
-        echo Also: Optional checks failed (not blocking)
+        echo Also: Optional checks did not pass ^(not blocking^)
     )
     echo.
     echo Fix critical issues before pushing to GitHub.
