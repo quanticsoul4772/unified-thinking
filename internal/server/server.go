@@ -89,6 +89,8 @@ type UnifiedServer struct {
 	probabilisticHandler   *handlers.ProbabilisticHandler
 	decisionHandler        *handlers.DecisionHandler
 	metacognitionHandler   *handlers.MetacognitionHandler
+	// Phase 2: Handler delegates
+	temporalHandler        *handlers.TemporalHandler
 	// Phase 2-3: Advanced reasoning modules
 	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
 	temporalReasoner       *reasoning.TemporalReasoner
@@ -152,6 +154,8 @@ func NewUnifiedServer(
 		probabilisticHandler:   handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
 		decisionHandler:        handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
 		metacognitionHandler:   handlers.NewMetacognitionHandler(store, metacognition.NewSelfEvaluator(), metacognition.NewBiasDetector(), validation.NewFallacyDetector()),
+		// Phase 2: Initialize temporal handler delegate
+		temporalHandler:        handlers.NewTemporalHandler(analysis.NewPerspectiveAnalyzer(), reasoning.NewTemporalReasoner()),
 		// Phase 2-3: Initialize advanced reasoning modules
 		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
 		temporalReasoner:       reasoning.NewTemporalReasoner(),
@@ -1415,143 +1419,22 @@ func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToo
 // Phase 2-3: Advanced Reasoning Tool Handlers
 // ========================================
 
-// Phase 2: Perspective Analysis
+// Phase 2: Temporal Analysis - Delegated to handlers.TemporalHandler
 
-type AnalyzePerspectivesRequest struct {
-	Situation        string   `json:"situation"`
-	StakeholderHints []string `json:"stakeholder_hints,omitempty"`
+func (s *UnifiedServer) handleAnalyzePerspectives(ctx context.Context, req *mcp.CallToolRequest, input handlers.AnalyzePerspectivesRequest) (*mcp.CallToolResult, *handlers.AnalyzePerspectivesResponse, error) {
+	return s.temporalHandler.HandleAnalyzePerspectives(ctx, req, input)
 }
 
-type AnalyzePerspectivesResponse struct {
-	Perspectives []*types.Perspective `json:"perspectives"`
-	Count        int                  `json:"count"`
-	Conflicts    []string             `json:"conflicts,omitempty"`
-	Status       string               `json:"status"`
-	Metadata     *types.ResponseMetadata `json:"metadata,omitempty"`
+func (s *UnifiedServer) handleAnalyzeTemporal(ctx context.Context, req *mcp.CallToolRequest, input handlers.AnalyzeTemporalRequest) (*mcp.CallToolResult, *handlers.AnalyzeTemporalResponse, error) {
+	return s.temporalHandler.HandleAnalyzeTemporal(ctx, req, input)
 }
 
-func (s *UnifiedServer) handleAnalyzePerspectives(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input AnalyzePerspectivesRequest,
-) (*mcp.CallToolResult, *AnalyzePerspectivesResponse, error) {
-	perspectives, err := s.perspectiveAnalyzer.AnalyzePerspectives(input.Situation, input.StakeholderHints)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Generate metadata for Claude orchestration
-	metadataGen := handlers.NewMetadataGenerator()
-	metadata := metadataGen.GeneratePerspectiveAnalysisMetadata(perspectives)
-
-	// Note: conflict detection is done internally, made available through ComparePerspectives if needed
-	response := &AnalyzePerspectivesResponse{
-		Perspectives: perspectives,
-		Count:        len(perspectives),
-		Status:       "success",
-		Metadata:     metadata,
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleCompareTimeHorizons(ctx context.Context, req *mcp.CallToolRequest, input handlers.CompareTimeHorizonsRequest) (*mcp.CallToolResult, *handlers.CompareTimeHorizonsResponse, error) {
+	return s.temporalHandler.HandleCompareTimeHorizons(ctx, req, input)
 }
 
-// Phase 2: Temporal Reasoning
-
-type AnalyzeTemporalRequest struct {
-	Situation   string `json:"situation"`
-	TimeHorizon string `json:"time_horizon,omitempty"`
-}
-
-type AnalyzeTemporalResponse struct {
-	Analysis *types.TemporalAnalysis `json:"analysis"`
-	Status   string                  `json:"status"`
-	Metadata *types.ResponseMetadata `json:"metadata,omitempty"`
-}
-
-func (s *UnifiedServer) handleAnalyzeTemporal(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input AnalyzeTemporalRequest,
-) (*mcp.CallToolResult, *AnalyzeTemporalResponse, error) {
-	analysis, err := s.temporalReasoner.AnalyzeTemporal(input.Situation, input.TimeHorizon)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Generate metadata for Claude orchestration
-	metadataGen := handlers.NewMetadataGenerator()
-	metadata := metadataGen.GenerateTemporalAnalysisMetadata(analysis)
-
-	response := &AnalyzeTemporalResponse{
-		Analysis: analysis,
-		Status:   "success",
-		Metadata: metadata,
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-type CompareTimeHorizonsRequest struct {
-	Situation string `json:"situation"`
-}
-
-type CompareTimeHorizonsResponse struct {
-	Analyses map[string]*types.TemporalAnalysis `json:"analyses"`
-	Status   string                             `json:"status"`
-}
-
-func (s *UnifiedServer) handleCompareTimeHorizons(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input CompareTimeHorizonsRequest,
-) (*mcp.CallToolResult, *CompareTimeHorizonsResponse, error) {
-	analyses, err := s.temporalReasoner.CompareTimeHorizons(input.Situation)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &CompareTimeHorizonsResponse{
-		Analyses: analyses,
-		Status:   "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
-}
-
-type IdentifyOptimalTimingRequest struct {
-	Situation   string   `json:"situation"`
-	Constraints []string `json:"constraints,omitempty"`
-}
-
-type IdentifyOptimalTimingResponse struct {
-	Recommendation string `json:"recommendation"`
-	Status         string `json:"status"`
-}
-
-func (s *UnifiedServer) handleIdentifyOptimalTiming(
-	ctx context.Context,
-	req *mcp.CallToolRequest,
-	input IdentifyOptimalTimingRequest,
-) (*mcp.CallToolResult, *IdentifyOptimalTimingResponse, error) {
-	recommendation, err := s.temporalReasoner.IdentifyOptimalTiming(input.Situation, input.Constraints)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &IdentifyOptimalTimingResponse{
-		Recommendation: recommendation,
-		Status:         "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleIdentifyOptimalTiming(ctx context.Context, req *mcp.CallToolRequest, input handlers.IdentifyOptimalTimingRequest) (*mcp.CallToolResult, *handlers.IdentifyOptimalTimingResponse, error) {
+	return s.temporalHandler.HandleIdentifyOptimalTiming(ctx, req, input)
 }
 
 // Phase 3: Causal Reasoning
@@ -1922,12 +1805,12 @@ func (s *UnifiedServer) SensitivityAnalysis(ctx context.Context, req handlers.Se
 }
 
 // AnalyzePerspectives analyzes multiple stakeholder perspectives
-func (s *UnifiedServer) AnalyzePerspectives(ctx context.Context, req AnalyzePerspectivesRequest) ([]*types.Perspective, error) {
+func (s *UnifiedServer) AnalyzePerspectives(ctx context.Context, req handlers.AnalyzePerspectivesRequest) ([]*types.Perspective, error) {
 	return s.perspectiveAnalyzer.AnalyzePerspectives(req.Situation, req.StakeholderHints)
 }
 
 // AnalyzeTemporal performs temporal reasoning
-func (s *UnifiedServer) AnalyzeTemporal(ctx context.Context, req AnalyzeTemporalRequest) (*types.TemporalAnalysis, error) {
+func (s *UnifiedServer) AnalyzeTemporal(ctx context.Context, req handlers.AnalyzeTemporalRequest) (*types.TemporalAnalysis, error) {
 	return s.temporalReasoner.AnalyzeTemporal(req.Situation, req.TimeHorizon)
 }
 

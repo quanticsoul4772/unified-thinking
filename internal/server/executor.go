@@ -111,7 +111,7 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 		return e.server.SensitivityAnalysis(ctx, req)
 
 	case "analyze-perspectives":
-		req := AnalyzePerspectivesRequest{
+		req := handlers.AnalyzePerspectivesRequest{
 			Situation:        getStringField(input, "situation"),
 			StakeholderHints: getStringSliceField(input, "stakeholder_hints"),
 		}
