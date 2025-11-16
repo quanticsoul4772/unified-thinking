@@ -4,6 +4,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -80,7 +81,9 @@ func (t *SessionTracker) RecordStep(ctx context.Context, sessionID string, step 
 			Description: "Implicit problem from tool usage",
 			Domain:      "unknown",
 		}
-		t.StartSession(ctx, sessionID, problem)
+		if err := t.StartSession(ctx, sessionID, problem); err != nil {
+			log.Printf("Warning: failed to auto-start session: %v", err)
+		}
 
 		t.mu.RLock()
 		session = t.activeSessions[sessionID]
@@ -201,7 +204,9 @@ func (t *SessionTracker) CompleteSession(ctx context.Context, sessionID string, 
 
 	// Store in episodic memory
 	if t.store != nil {
-		t.store.StoreTrajectory(ctx, trajectory)
+		if err := t.store.StoreTrajectory(ctx, trajectory); err != nil {
+			log.Printf("Warning: failed to store trajectory: %v", err)
+		}
 	}
 
 	return trajectory, nil

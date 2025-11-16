@@ -2,13 +2,43 @@ package modes
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/types"
 )
+
+// secureRandomFloat64 generates a cryptographically secure random float64 between 0 and 1
+func secureRandomFloat64() float64 {
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// Fallback to timestamp-based randomness if crypto/rand fails
+		return float64(time.Now().UnixNano()%1000) / 1000.0
+	}
+	// Convert to uint64 and normalize to [0, 1)
+	return float64(binary.BigEndian.Uint64(b[:])&0x1FFFFFFFFFFFFF) / float64(0x1FFFFFFFFFFFFF)
+}
+
+// secureRandomInt generates a cryptographically secure random int in range [0, max)
+func secureRandomInt(max int) int {
+	if max <= 0 {
+		return 0
+	}
+	var b [8]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// Fallback to timestamp-based randomness if crypto/rand fails
+		return int(time.Now().UnixNano() % int64(max))
+	}
+	// Perform modulo first to ensure result is always less than max (which is an int)
+	// This is safe from overflow because the modulo result will always be < max
+	randomValue := binary.BigEndian.Uint64(b[:])
+	result := randomValue % uint64(max)
+	// Safe conversion: result is guaranteed to be less than max (an int)
+	return int(result) // #nosec G115 - result is always < max after modulo
+}
 
 // DivergentMode implements creative/rebellious ideation
 type DivergentMode struct {
@@ -31,8 +61,8 @@ func (m *DivergentMode) ProcessThought(ctx context.Context, input ThoughtInput) 
 		Type:                 input.Type,
 		Confidence:           input.Confidence,
 		Timestamp:            time.Now(),
-		IsRebellion:          input.ForceRebellion || rand.Float64() > 0.5,
-		ChallengesAssumption: rand.Float64() > 0.3,
+		IsRebellion:          input.ForceRebellion || secureRandomFloat64() > 0.5,
+		ChallengesAssumption: secureRandomFloat64() > 0.3,
 	}
 
 	if input.PreviousThoughtID != "" {
@@ -74,10 +104,10 @@ func (m *DivergentMode) generateCreativeThought(problem string, forceRebellion b
 			fmt.Sprintf("What if the 'problem' of %s is actually a feature, not a bug?", problem),
 			fmt.Sprintf("Let's deliberately break every rule about %s and see what happens.", problem),
 		}
-		return rebellious[rand.Intn(len(rebellious))]
+		return rebellious[secureRandomInt(len(rebellious))]
 	}
 
-	return approaches[rand.Intn(len(approaches))]
+	return approaches[secureRandomInt(len(approaches))]
 }
 
 // BranchThought creates a new creative branch from an existing thought

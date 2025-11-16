@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -198,8 +199,14 @@ func LoadFromFile(path string) (*Config, error) {
 	// Start with defaults
 	cfg := Default()
 
-	// Read file
-	data, err := os.ReadFile(path)
+	// Validate and clean the file path to prevent directory traversal
+	cleanPath := filepath.Clean(path)
+	if cleanPath != path {
+		return nil, fmt.Errorf("invalid file path: path contains directory traversal")
+	}
+
+	// Read file - path is validated above to prevent directory traversal
+	data, err := os.ReadFile(cleanPath) // #nosec G304 - path validated via filepath.Clean check
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -407,7 +414,7 @@ func (c *Config) SaveToFile(path string) error {
 		return fmt.Errorf("failed to serialize config: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 

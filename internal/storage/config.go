@@ -57,7 +57,7 @@ func ConfigFromEnv() Config {
 	// Ensure parent directory exists for SQLite
 	if cfg.Type == StorageTypeSQLite {
 		dir := filepath.Dir(cfg.SQLitePath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			// Log warning but don't fail - factory will handle this
 		}
 	}

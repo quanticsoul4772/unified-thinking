@@ -58,19 +58,19 @@ func NewSQLiteStorage(dbPath string, timeoutMs int) (*SQLiteStorage, error) {
 
 	// Verify connection
 	if err := db.Ping(); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error during cleanup
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	// Configure SQLite pragmas
 	if err := configureSQLite(db); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error during cleanup
 		return nil, fmt.Errorf("failed to configure SQLite: %w", err)
 	}
 
 	// Initialize schema
 	if err := initializeSchema(db); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error during cleanup
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
 
@@ -81,7 +81,7 @@ func NewSQLiteStorage(dbPath string, timeoutMs int) (*SQLiteStorage, error) {
 
 	// Prepare statements
 	if err := s.prepareStatements(); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error during cleanup
 		return nil, fmt.Errorf("failed to prepare statements: %w", err)
 	}
 
@@ -218,7 +218,9 @@ func (s *SQLiteStorage) warmCache() error {
 			log.Printf("Warning: failed to scan thought: %v", err)
 			continue
 		}
-		s.cache.StoreThought(thought)
+		if err := s.cache.StoreThought(thought); err != nil {
+			log.Printf("Warning: failed to cache thought: %v", err)
+		}
 	}
 
 	log.Printf("Warmed cache with %d thoughts", len(s.cache.thoughts))
@@ -275,7 +277,9 @@ func (s *SQLiteStorage) GetThought(id string) (*types.Thought, error) {
 	}
 
 	// Warm cache
-	s.cache.StoreThought(thought)
+	if err := s.cache.StoreThought(thought); err != nil {
+		log.Printf("Warning: failed to warm cache with thought: %v", err)
+	}
 	return copyThought(thought), nil
 }
 
@@ -310,10 +314,14 @@ func (s *SQLiteStorage) fetchThought(id string) (*types.Thought, error) {
 	thought.ChallengesAssumption = challengesAssumption == 1
 
 	if len(keyPointsJSON) > 0 {
-		json.Unmarshal(keyPointsJSON, &thought.KeyPoints)
+		if err := json.Unmarshal(keyPointsJSON, &thought.KeyPoints); err != nil {
+			log.Printf("Warning: failed to unmarshal thought key points: %v", err)
+		}
 	}
 	if len(metadataJSON) > 0 {
-		json.Unmarshal(metadataJSON, &thought.Metadata)
+		if err := json.Unmarshal(metadataJSON, &thought.Metadata); err != nil {
+			log.Printf("Warning: failed to unmarshal thought metadata: %v", err)
+		}
 	}
 	if thought.Metadata == nil {
 		thought.Metadata = make(map[string]interface{})
@@ -350,10 +358,14 @@ func (s *SQLiteStorage) scanThought(row interface{ Scan(...interface{}) error })
 	thought.ChallengesAssumption = challengesAssumption == 1
 
 	if len(keyPointsJSON) > 0 {
-		json.Unmarshal(keyPointsJSON, &thought.KeyPoints)
+		if err := json.Unmarshal(keyPointsJSON, &thought.KeyPoints); err != nil {
+			log.Printf("Warning: failed to unmarshal thought key points: %v", err)
+		}
 	}
 	if len(metadataJSON) > 0 {
-		json.Unmarshal(metadataJSON, &thought.Metadata)
+		if err := json.Unmarshal(metadataJSON, &thought.Metadata); err != nil {
+			log.Printf("Warning: failed to unmarshal thought metadata: %v", err)
+		}
 	}
 	if thought.Metadata == nil {
 		thought.Metadata = make(map[string]interface{})
@@ -380,13 +392,19 @@ func (s *SQLiteStorage) scanInsight(row interface{ Scan(...interface{}) error })
 	insight.CreatedAt = time.Unix(createdAt, 0)
 
 	if len(contextJSON) > 0 {
-		json.Unmarshal(contextJSON, &insight.Context)
+		if err := json.Unmarshal(contextJSON, &insight.Context); err != nil {
+			log.Printf("Warning: failed to unmarshal insight context: %v", err)
+		}
 	}
 	if len(parentInsightsJSON) > 0 {
-		json.Unmarshal(parentInsightsJSON, &insight.ParentInsights)
+		if err := json.Unmarshal(parentInsightsJSON, &insight.ParentInsights); err != nil {
+			log.Printf("Warning: failed to unmarshal insight parent insights: %v", err)
+		}
 	}
 	if len(supportingEvidenceJSON) > 0 {
-		json.Unmarshal(supportingEvidenceJSON, &insight.SupportingEvidence)
+		if err := json.Unmarshal(supportingEvidenceJSON, &insight.SupportingEvidence); err != nil {
+			log.Printf("Warning: failed to unmarshal insight supporting evidence: %v", err)
+		}
 	}
 
 	// Initialize empty slices if nil
@@ -526,7 +544,9 @@ func (s *SQLiteStorage) GetBranch(id string) (*types.Branch, error) {
 	branch.CrossRefs = crossRefs
 
 	// Warm cache
-	s.cache.StoreBranch(branch)
+	if err := s.cache.StoreBranch(branch); err != nil {
+		log.Printf("Warning: failed to warm cache with branch: %v", err)
+	}
 	return copyBranch(branch), nil
 }
 
@@ -723,13 +743,19 @@ func (s *SQLiteStorage) GetInsight(id string) (*types.Insight, error) {
 
 	// Unmarshal JSON fields
 	if len(contextJSON) > 0 {
-		json.Unmarshal(contextJSON, &insight.Context)
+		if err := json.Unmarshal(contextJSON, &insight.Context); err != nil {
+			log.Printf("Warning: failed to unmarshal insight context: %v", err)
+		}
 	}
 	if len(parentInsightsJSON) > 0 {
-		json.Unmarshal(parentInsightsJSON, &insight.ParentInsights)
+		if err := json.Unmarshal(parentInsightsJSON, &insight.ParentInsights); err != nil {
+			log.Printf("Warning: failed to unmarshal insight parent insights: %v", err)
+		}
 	}
 	if len(supportingEvidenceJSON) > 0 {
-		json.Unmarshal(supportingEvidenceJSON, &insight.SupportingEvidence)
+		if err := json.Unmarshal(supportingEvidenceJSON, &insight.SupportingEvidence); err != nil {
+			log.Printf("Warning: failed to unmarshal insight supporting evidence: %v", err)
+		}
 	}
 
 	// Initialize empty slices
@@ -744,7 +770,9 @@ func (s *SQLiteStorage) GetInsight(id string) (*types.Insight, error) {
 	}
 
 	// Warm cache
-	s.cache.StoreInsight(insight)
+	if err := s.cache.StoreInsight(insight); err != nil {
+		log.Printf("Warning: failed to warm cache with insight: %v", err)
+	}
 	return copyInsight(insight), nil
 }
 
@@ -804,14 +832,18 @@ func (s *SQLiteStorage) GetValidation(id string) (*types.Validation, error) {
 
 	// Unmarshal validation_data
 	if len(validationDataJSON) > 0 {
-		json.Unmarshal(validationDataJSON, &validation.ValidationData)
+		if err := json.Unmarshal(validationDataJSON, &validation.ValidationData); err != nil {
+			log.Printf("Warning: failed to unmarshal validation data: %v", err)
+		}
 	}
 	if validation.ValidationData == nil {
 		validation.ValidationData = make(map[string]interface{})
 	}
 
 	// Warm cache
-	s.cache.StoreValidation(validation)
+	if err := s.cache.StoreValidation(validation); err != nil {
+		log.Printf("Warning: failed to warm cache with validation: %v", err)
+	}
 	return copyValidation(validation), nil
 }
 
@@ -868,14 +900,18 @@ func (s *SQLiteStorage) GetRelationship(id string) (*types.Relationship, error) 
 
 	// Unmarshal metadata
 	if len(metadataJSON) > 0 {
-		json.Unmarshal(metadataJSON, &relationship.Metadata)
+		if err := json.Unmarshal(metadataJSON, &relationship.Metadata); err != nil {
+			log.Printf("Warning: failed to unmarshal relationship metadata: %v", err)
+		}
 	}
 	if relationship.Metadata == nil {
 		relationship.Metadata = make(map[string]interface{})
 	}
 
 	// Warm cache
-	s.cache.StoreRelationship(relationship)
+	if err := s.cache.StoreRelationship(relationship); err != nil {
+		log.Printf("Warning: failed to warm cache with relationship: %v", err)
+	}
 	return copyRelationship(relationship), nil
 }
 
@@ -991,33 +1027,33 @@ func (s *SQLiteStorage) GetMetrics() *Metrics {
 
 // Close releases database resources
 func (s *SQLiteStorage) Close() error {
-	// Close prepared statements
+	// Close prepared statements (ignore errors in cleanup)
 	if s.stmtInsertThought != nil {
-		s.stmtInsertThought.Close()
+		_ = s.stmtInsertThought.Close()
 	}
 	if s.stmtGetThought != nil {
-		s.stmtGetThought.Close()
+		_ = s.stmtGetThought.Close()
 	}
 	if s.stmtSearchFTS != nil {
-		s.stmtSearchFTS.Close()
+		_ = s.stmtSearchFTS.Close()
 	}
 	if s.stmtInsertBranch != nil {
-		s.stmtInsertBranch.Close()
+		_ = s.stmtInsertBranch.Close()
 	}
 	if s.stmtGetBranch != nil {
-		s.stmtGetBranch.Close()
+		_ = s.stmtGetBranch.Close()
 	}
 	if s.stmtUpdateBranchAccess != nil {
-		s.stmtUpdateBranchAccess.Close()
+		_ = s.stmtUpdateBranchAccess.Close()
 	}
 	if s.stmtInsertInsight != nil {
-		s.stmtInsertInsight.Close()
+		_ = s.stmtInsertInsight.Close()
 	}
 	if s.stmtInsertCrossRef != nil {
-		s.stmtInsertCrossRef.Close()
+		_ = s.stmtInsertCrossRef.Close()
 	}
 	if s.stmtInsertValidation != nil {
-		s.stmtInsertValidation.Close()
+		_ = s.stmtInsertValidation.Close()
 	}
 
 	// Close database

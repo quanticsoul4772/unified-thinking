@@ -1,0 +1,124 @@
+{
+	"Golang errors": {
+		"": [
+			{
+				"line": 0,
+				"column": 0,
+				"error": "# command-line-arguments\ninternal/memory/tracker.go:84:4: undefined: log\ninternal/memory/tracker.go:207:4: undefined: log"
+			},
+			{
+				"line": 0,
+				"column": 0,
+				"error": "# command-line-arguments\ninternal/config/config.go:202:15: undefined: filepath"
+			}
+		],
+		"/home/user/unified-thinking/internal/config/config.go": [
+			{
+				"line": 202,
+				"column": 15,
+				"error": "undefined: filepath"
+			}
+		],
+		"/home/user/unified-thinking/internal/memory/tracker.go": [
+			{
+				"line": 84,
+				"column": 4,
+				"error": "undefined: log"
+			},
+			{
+				"line": 207,
+				"column": 4,
+				"error": "undefined: log"
+			}
+		],
+		"/home/user/unified-thinking/internal/server/handlers/episodic.go": [
+			{
+				"line": 483,
+				"column": 6,
+				"error": "undefined: log"
+			},
+			{
+				"line": 610,
+				"column": 6,
+				"error": "undefined: log"
+			},
+			{
+				"line": 678,
+				"column": 6,
+				"error": "undefined: log"
+			}
+		],
+		"/home/user/unified-thinking/internal/server/server.go": [
+			{
+				"line": 1938,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 1966,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 1994,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2022,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2050,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2078,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2106,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2134,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2162,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2190,
+				"column": 5,
+				"error": "undefined: log"
+			},
+			{
+				"line": 2218,
+				"column": 5,
+				"error": "undefined: log"
+			}
+		],
+		"/home/user/unified-thinking/internal/storage/sqlite.go": [
+			{
+				"line": 13,
+				"column": 4,
+				"error": "could not import modernc.org/sqlite (invalid package name: \"\")"
+			}
+		]
+	},
+	"Issues": [],
+	"Stats": {
+		"files": 80,
+		"lines": 28912,
+		"nosec": 2,
+		"found": 0
+	},
+	"GosecVersion": "dev"
+}
