@@ -413,6 +413,20 @@ func (h *EpisodicMemoryHandler) HandleAnalyzeTrajectory(ctx context.Context, par
 		return nil, err
 	}
 
+	// Additional defensive nil checks for MCP validation (belt-and-suspenders approach)
+	if analysis.Strengths == nil {
+		analysis.Strengths = []string{}
+	}
+	if analysis.Weaknesses == nil {
+		analysis.Weaknesses = []string{}
+	}
+	if analysis.Improvements == nil {
+		analysis.Improvements = []*memory.ImprovementSuggestion{}
+	}
+	if analysis.LessonsLearned == nil {
+		analysis.LessonsLearned = []string{}
+	}
+
 	return &mcp.CallToolResult{Content: toJSONContent(analysis)}, nil
 }
 

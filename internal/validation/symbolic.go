@@ -347,11 +347,12 @@ func (sr *SymbolicReasoner) tryModusPonensSymbolic(premises []string, conclusion
 func (sr *SymbolicReasoner) tryModusPonensChaining(premises []string, conclusion string, proof *TheoremProof, stepNum *int) bool {
 	const maxChainDepth = 5 // Prevent infinite loops
 
-	// Build a knowledge base of all available facts
+	// Build a knowledge base of all available facts (normalized using extractCoreStatement)
 	// Start with original premises
-	knownFacts := make(map[string]bool)
+	knownFacts := make(map[string]string) // normalized -> original
 	for _, premise := range premises {
-		knownFacts[strings.ToLower(strings.TrimSpace(premise))] = true
+		core := sr.extractCoreStatement(strings.ToLower(premise))
+		knownFacts[core] = premise
 	}
 
 	// Collect all implications (A → B patterns)
@@ -363,19 +364,27 @@ func (sr *SymbolicReasoner) tryModusPonensChaining(premises []string, conclusion
 
 		// Try to apply each implication
 		for _, impl := range implications {
-			antecedentNorm := strings.Join(strings.Fields(impl.antecedent), " ")
+			// Check if we have the antecedent in our known facts using statement matching
+			antecedentCore := sr.extractCoreStatement(impl.antecedent)
+			hasAntecedent := false
 
-			// Check if we have the antecedent in our known facts
-			if knownFacts[antecedentNorm] {
-				consequentNorm := strings.Join(strings.Fields(impl.consequent), " ")
+			for knownCore := range knownFacts {
+				if sr.statementsMatch(knownCore, antecedentCore) {
+					hasAntecedent = true
+					break
+				}
+			}
+
+			if hasAntecedent {
+				consequentCore := sr.extractCoreStatement(impl.consequent)
 
 				// If we don't already have this consequent, derive it
-				if !knownFacts[consequentNorm] {
+				if _, exists := knownFacts[consequentCore]; !exists {
 					// Add proof step
 					step := &ProofStep{
 						StepNumber:    *stepNum,
 						Statement:     impl.consequentOriginal,
-						Justification: fmt.Sprintf("Modus ponens from derived fact and step %d", impl.implStepNum),
+						Justification: fmt.Sprintf("Modus ponens chaining from step %d", impl.implStepNum),
 						Rule:          "modus_ponens_chain",
 						Dependencies:  []int{impl.implStepNum},
 					}
@@ -383,12 +392,12 @@ func (sr *SymbolicReasoner) tryModusPonensChaining(premises []string, conclusion
 					*stepNum++
 
 					// Add to known facts
-					knownFacts[consequentNorm] = true
+					knownFacts[consequentCore] = impl.consequentOriginal
 					derivedNew = true
 
 					// Check if we've derived the conclusion
-					conclusionNorm := strings.Join(strings.Fields(strings.ToLower(conclusion)), " ")
-					if consequentNorm == conclusionNorm || strings.Contains(consequentNorm, conclusionNorm) {
+					conclusionCore := sr.extractCoreStatement(strings.ToLower(conclusion))
+					if sr.statementsMatch(consequentCore, conclusionCore) {
 						return true
 					}
 				}
