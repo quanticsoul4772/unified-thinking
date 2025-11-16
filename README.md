@@ -420,21 +420,21 @@ make benchmark
 
 | package | coverage | status |
 |---------|----------|--------|
-| `internal/types` | 100.0% | ✅ excellent |
-| `internal/metrics` | 100.0% | ✅ excellent |
-| `internal/validation` | 91.2% | ✅ excellent |
-| `internal/metacognition` | 90.2% | ✅ excellent |
-| `internal/analysis` | 89.3% | ✅ excellent |
-| `internal/orchestration` | 87.2% | ✅ excellent |
-| `internal/reasoning` | 86.5% | ✅ excellent |
-| `internal/processing` | 83.3% | ✅ excellent |
-| `internal/integration` | 82.2% | ✅ excellent |
-| **`internal/server/handlers`** | **81.2%** | **✅ improved (+29.6%)** |
-| `internal/storage` | 81.0% | ✅ excellent |
-| `internal/modes` | 77.8% | ✅ good |
-| `internal/config` | 64.5% | ⚠️ adequate |
-| `internal/server` | 45.5% | ⚠️ adequate |
-| `cmd/server` | 25.0% | ℹ️ expected (entry point) |
+| `internal/types` | 100.0% | excellent |
+| `internal/metrics` | 100.0% | excellent |
+| `internal/validation` | 91.2% | excellent |
+| `internal/metacognition` | 90.2% | excellent |
+| `internal/analysis` | 89.3% | excellent |
+| `internal/orchestration` | 87.2% | excellent |
+| `internal/reasoning` | 86.5% | excellent |
+| `internal/processing` | 83.3% | excellent |
+| `internal/integration` | 82.2% | excellent |
+| **`internal/server/handlers`** | **81.2%** | **improved (+29.6%)** |
+| `internal/storage` | 81.0% | excellent |
+| `internal/modes` | 77.8% | good |
+| `internal/config` | 64.5% | adequate |
+| `internal/server` | 45.5% | adequate |
+| `cmd/server` | 25.0% | expected (entry point) |
 
 **recent improvements:**
 - handlers package: 51.6% → 81.2% (+29.6 percentage points)
