@@ -27,5 +27,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          # Pin to a specific version of golangci-lint for reproducible builds.
+          # See https://github.com/golangci/golangci-lint/releases for latest versions.
+          version: v1.59.1
           args: --timeout=5m
