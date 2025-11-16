@@ -40,3 +40,13 @@ data/
 *.db
 *.db-shm
 *.db-wal
+
+# Coverage files
+coverage
+coverage_*
+*_coverage
+cover.out
+coverage.out
+
+# Documentation fixes (temporary)
+docs/fixes/
