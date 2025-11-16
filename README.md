@@ -367,7 +367,7 @@ unified-thinking/
 │   │   ├── learning.go     # pattern recognition
 │   │   └── retrospective.go # post-session analysis
 │   └── server/             # mcp server implementation
-│       └── handlers/       # specialized tool handlers (19 files)
+│       └── handlers/       # specialized tool handlers (21 files)
 ```
 
 ### cognitive architecture
