@@ -108,6 +108,12 @@ func (uud *UnknownUnknownsDetector) DetectBlindSpots(ctx context.Context, req *G
 		Confidence:              0.7,
 	}
 
+	// PRIORITY: Semantic self-referential detection (runs first)
+	selfRefSpot := uud.detectSelfReferentialOverconfidence(req)
+	if selfRefSpot != nil {
+		result.BlindSpots = append(result.BlindSpots, selfRefSpot)
+	}
+
 	// 1. Check for pattern-based blind spots
 	patternSpots := uud.detectPatternBasedBlindSpots(req)
 	result.BlindSpots = append(result.BlindSpots, patternSpots...)
@@ -457,4 +463,198 @@ func (uud *UnknownUnknownsDetector) IdentifyKnowledgeGaps(thought *types.Thought
 	}
 
 	return gaps, nil
+}
+
+// Semantic Analysis Functions for Self-Referential Detection
+
+// detectSelfReferentialOverconfidence uses semantic analysis to detect
+// overconfident claims about the system/tool itself
+func (uud *UnknownUnknownsDetector) detectSelfReferentialOverconfidence(req *GapAnalysisRequest) *BlindSpot {
+	content := req.Content
+	contentLower := strings.ToLower(content)
+
+	// Step 1: Detect self-referential subject
+	if !uud.hasSelfReferentialSubject(contentLower) {
+		return nil
+	}
+
+	// Step 2: Detect absolute/universal claims
+	hasAbsoluteClaim := uud.hasUniversalQuantifier(contentLower) && uud.hasPositiveClaim(contentLower)
+
+	// Step 3: Check for absence of hedging (lack of qualifiers)
+	hasNoHedges := !uud.hasHedging(contentLower)
+
+	// Only flag if self-referential + (absolute claim OR no hedging)
+	if !hasAbsoluteClaim && !hasNoHedges {
+		return nil
+	}
+
+	// Calculate severity based on strength of claim
+	severity := 0.7
+	if hasAbsoluteClaim && hasNoHedges {
+		severity = 0.95 // Both absolute claim and no hedging
+	} else if hasAbsoluteClaim {
+		severity = 0.85 // Absolute claim but has some hedging
+	} else {
+		severity = 0.75 // No hedging but not absolute
+	}
+
+	return &BlindSpot{
+		ID:          fmt.Sprintf("blindspot-meta-%d", time.Now().UnixNano()),
+		Type:        BlindSpotOverconfidence,
+		Description: "Self-referential overconfidence detected - making strong claims about the system itself",
+		Severity:    severity,
+		Indicators:  uud.extractIndicators(content),
+		Suggestions: []string{
+			"Can any system truly have no limitations?",
+			"What are the fundamental constraints of this approach?",
+			"What edge cases or scenarios might this miss?",
+			"Is this claim falsifiable? How would we test it?",
+			"What would a critic say about this claim?",
+		},
+		DetectedAt: time.Now(),
+		Metadata: map[string]interface{}{
+			"claim_type":      "self-referential",
+			"absolute_claim":  hasAbsoluteClaim,
+			"lacks_hedging":   hasNoHedges,
+			"semantic_analysis": true,
+		},
+	}
+}
+
+// hasSelfReferentialSubject detects if content refers to itself/the system
+func (uud *UnknownUnknownsDetector) hasSelfReferentialSubject(contentLower string) bool {
+	selfRefPatterns := []string{
+		"this tool",
+		"this system",
+		"these tools",
+		"this detector",
+		"this analyzer",
+		"this approach",
+		"this method",
+		"this framework",
+		"the system",
+		"the tool",
+		"the detector",
+	}
+
+	for _, pattern := range selfRefPatterns {
+		if strings.Contains(contentLower, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// hasUniversalQuantifier detects universal quantifiers (all, every, always, never)
+func (uud *UnknownUnknownsDetector) hasUniversalQuantifier(contentLower string) bool {
+	quantifiers := []string{
+		"all ",
+		" all",
+		"every ",
+		"always ",
+		"never ",
+		"100%",
+		"completely ",
+		"entirely ",
+		"totally ",
+		"comprehensive",
+		"addresses most",
+		"covers all",
+		"solves all",
+		"handles every",
+		"handles all",
+	}
+
+	for _, quant := range quantifiers {
+		if strings.Contains(contentLower, quant) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// hasPositiveClaim detects positive action verbs that make claims
+func (uud *UnknownUnknownsDetector) hasPositiveClaim(contentLower string) bool {
+	claimVerbs := []string{
+		"solves",
+		"handles",
+		"addresses",
+		"covers",
+		"provides",
+		"ensures",
+		"guarantees",
+		"eliminates",
+		"prevents",
+		"identifies",
+	}
+
+	for _, verb := range claimVerbs {
+		if strings.Contains(contentLower, verb) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// hasHedging detects hedging language that qualifies claims
+func (uud *UnknownUnknownsDetector) hasHedging(contentLower string) bool {
+	hedges := []string{
+		"may",
+		"might",
+		"could",
+		"possibly",
+		"perhaps",
+		"sometimes",
+		"often",
+		"usually",
+		"typically",
+		"generally",
+		"mostly",
+		"some ",
+		" some",
+		"many ",
+		"most ",
+		"likely",
+		"probably",
+	}
+
+	for _, hedge := range hedges {
+		if strings.Contains(contentLower, hedge) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// extractIndicators extracts specific phrases that triggered detection
+func (uud *UnknownUnknownsDetector) extractIndicators(content string) []string {
+	indicators := make([]string, 0)
+	contentLower := strings.ToLower(content)
+
+	// Extract universal quantifiers found
+	quantifiers := []string{"all", "every", "always", "never", "100%", "comprehensive", "addresses most", "covers all"}
+	for _, q := range quantifiers {
+		if strings.Contains(contentLower, q) {
+			indicators = append(indicators, q)
+		}
+	}
+
+	// Extract claim verbs found
+	verbs := []string{"solves", "handles", "addresses", "covers", "guarantees", "ensures"}
+	for _, v := range verbs {
+		if strings.Contains(contentLower, v) {
+			indicators = append(indicators, v)
+		}
+	}
+
+	if len(indicators) == 0 {
+		indicators = append(indicators, "strong claim without hedging")
+	}
+
+	return indicators
 }

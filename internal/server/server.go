@@ -52,6 +52,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
@@ -1549,9 +1550,14 @@ type DecomposeProblemRequest struct {
 }
 
 type DecomposeProblemResponse struct {
-	Decomposition *types.ProblemDecomposition `json:"decomposition"`
-	Status        string                      `json:"status"`
-	Metadata      *types.ResponseMetadata     `json:"metadata,omitempty"`
+	Decomposition     *types.ProblemDecomposition `json:"decomposition,omitempty"`
+	CanDecompose      bool                        `json:"can_decompose"`
+	ProblemType       string                      `json:"problem_type,omitempty"`
+	ClassificationReason string                   `json:"reason,omitempty"`
+	Approach          string                      `json:"approach,omitempty"`
+	SuggestedTools    []string                    `json:"suggested_tools,omitempty"`
+	Status            string                      `json:"status"`
+	Metadata          *types.ResponseMetadata     `json:"metadata,omitempty"`
 }
 
 func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.CallToolRequest, input DecomposeProblemRequest) (*mcp.CallToolResult, *DecomposeProblemResponse, error) {
@@ -1559,6 +1565,30 @@ func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.Cal
 		return nil, nil, err
 	}
 
+	// SEMANTIC CLASSIFICATION: Check if problem is actually decomposable
+	classifier := reasoning.NewProblemClassifier()
+	classification := classifier.ClassifyProblem(input.Problem)
+
+	// If problem is NOT decomposable, return classification result
+	if classification.Type != reasoning.ProblemTypeDecomposable {
+		// Extract suggested tools from approach text
+		suggestedTools := extractToolSuggestions(classification.Approach)
+
+		response := &DecomposeProblemResponse{
+			CanDecompose:      false,
+			ProblemType:       string(classification.Type),
+			ClassificationReason: classification.Reasoning,
+			Approach:          classification.Approach,
+			SuggestedTools:    suggestedTools,
+			Status:            "success",
+		}
+
+		return &mcp.CallToolResult{
+			Content: toJSONContent(response),
+		}, response, nil
+	}
+
+	// Problem IS decomposable - proceed with normal decomposition
 	decomposition, err := s.problemDecomposer.DecomposeProblem(input.Problem)
 	if err != nil {
 		return nil, nil, err
@@ -1569,6 +1599,8 @@ func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.Cal
 	metadata := metadataGen.GenerateDecomposeProblemMetadata(decomposition)
 
 	response := &DecomposeProblemResponse{
+		CanDecompose:  true,
+		ProblemType:   string(reasoning.ProblemTypeDecomposable),
 		Decomposition: decomposition,
 		Status:        "success",
 		Metadata:      metadata,
@@ -1577,6 +1609,43 @@ func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.Cal
 	return &mcp.CallToolResult{
 		Content: toJSONContent(response),
 	}, response, nil
+}
+
+// extractToolSuggestions extracts tool names from approach text
+func extractToolSuggestions(approach string) []string {
+	tools := make([]string, 0)
+	approachLower := strings.ToLower(approach)
+
+	// Extract tool names mentioned in approach
+	toolMentions := []string{
+		"unified-thinking:think",
+		"unified-thinking:analyze-perspectives",
+		"unified-thinking:analyze-temporal",
+		"unified-thinking:make-decision",
+		"unified-thinking:find-analogy",
+		"unified-thinking:build-causal-graph",
+		"unified-thinking:simulate-intervention",
+		"unified-thinking:retrieve-similar-cases",
+		"unified-thinking:perform-cbr-cycle",
+	}
+
+	for _, tool := range toolMentions {
+		if strings.Contains(approachLower, tool) ||
+		   strings.Contains(approachLower, strings.TrimPrefix(tool, "unified-thinking:")) {
+			tools = append(tools, tool)
+		}
+	}
+
+	// If no tools extracted, provide defaults based on context
+	if len(tools) == 0 {
+		if strings.Contains(approachLower, "philosophical") || strings.Contains(approachLower, "reflective") {
+			tools = append(tools, "unified-thinking:think", "unified-thinking:analyze-perspectives")
+		} else if strings.Contains(approachLower, "creative") || strings.Contains(approachLower, "divergent") {
+			tools = append(tools, "unified-thinking:think (mode='divergent')", "unified-thinking:find-analogy")
+		}
+	}
+
+	return tools
 }
 
 // ============================================================================
