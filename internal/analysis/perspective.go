@@ -126,6 +126,7 @@ func (pa *PerspectiveAnalyzer) extractConcerns(situation, stakeholder string) []
 
 	// Stakeholder-specific concern patterns
 	concernPatterns := map[string][]string{
+		// Business stakeholders
 		"user":        {"usability", "accessibility", "privacy", "cost", "reliability"},
 		"customer":    {"value", "quality", "support", "price", "experience"},
 		"employee":    {"workload", "job security", "compensation", "work environment", "career growth"},
@@ -134,6 +135,35 @@ func (pa *PerspectiveAnalyzer) extractConcerns(situation, stakeholder string) []
 		"community":   {"social impact", "environmental impact", "fairness", "accessibility", "safety"},
 		"regulator":   {"compliance", "safety", "fairness", "transparency", "accountability"},
 		"partner":     {"reliability", "communication", "mutual benefit", "contract terms", "long-term viability"},
+
+		// Professional/Academic stakeholders
+		"cognitive":   {"mental models", "cognitive load", "learning efficacy", "information processing", "decision biases"},
+		"scientist":   {"empirical validity", "methodological rigor", "replicability", "theoretical coherence", "measurement precision"},
+		"psychologist": {"psychological impact", "behavioral patterns", "emotional well-being", "developmental stages", "therapeutic efficacy"},
+		"therapist":   {"emotional safety", "trauma sensitivity", "therapeutic alliance", "healing process", "boundaries"},
+		"mathematician": {"logical consistency", "formal proof", "computational complexity", "optimization", "precision"},
+		"engineer":    {"technical feasibility", "system reliability", "performance metrics", "maintenance burden", "scalability"},
+		"researcher":  {"research validity", "data integrity", "peer review", "reproducibility", "ethical considerations"},
+
+		// Creative/Artistic stakeholders
+		"artist":      {"creative expression", "aesthetic integrity", "emotional resonance", "artistic freedom", "cultural impact"},
+		"creative":    {"originality", "innovation", "inspiration", "artistic vision", "experiential quality"},
+		"designer":    {"user experience", "visual harmony", "functional beauty", "accessibility", "iterative refinement"},
+		"writer":      {"narrative coherence", "authentic voice", "reader engagement", "clarity of message", "emotional truth"},
+
+		// Spiritual/Philosophical stakeholders
+		"spiritual":   {"meaning and purpose", "inner peace", "compassion", "interconnectedness", "transcendence"},
+		"philosopher": {"ethical implications", "logical validity", "conceptual clarity", "existential meaning", "moral framework"},
+		"ethicist":    {"moral permissibility", "harm prevention", "fairness", "autonomy", "justice"},
+		"religious":   {"spiritual growth", "faith alignment", "community values", "sacred respect", "moral guidance"},
+
+		// Healthcare/Wellness stakeholders
+		"doctor":      {"patient safety", "clinical efficacy", "evidence-based practice", "side effects", "treatment outcomes"},
+		"nurse":       {"patient comfort", "holistic care", "safety protocols", "workload management", "compassionate delivery"},
+		"counselor":   {"client welfare", "confidentiality", "professional boundaries", "therapeutic effectiveness", "ethical practice"},
+		"grief":       {"emotional processing", "loss acknowledgment", "healing timeline", "support systems", "meaning-making"},
+
+		// Default fallback
 		"default":     {"impact", "feasibility", "risks", "benefits", "implementation"},
 	}
 
@@ -167,6 +197,7 @@ func (pa *PerspectiveAnalyzer) extractPriorities(stakeholder string) []string {
 	stakeholderLower := strings.ToLower(stakeholder)
 
 	priorityMap := map[string][]string{
+		// Business stakeholders
 		"user":        {"ease of use", "reliability", "value for money"},
 		"customer":    {"quality", "price", "customer service"},
 		"employee":    {"fair compensation", "work-life balance", "job security"},
@@ -175,6 +206,33 @@ func (pa *PerspectiveAnalyzer) extractPriorities(stakeholder string) []string {
 		"community":   {"social benefit", "environmental sustainability", "equity"},
 		"regulator":   {"public safety", "compliance", "consumer protection"},
 		"partner":     {"mutual success", "clear communication", "reliable execution"},
+
+		// Professional/Academic stakeholders
+		"cognitive":   {"understanding cognitive processes", "reducing mental strain", "enhancing learning"},
+		"scientist":   {"advancing knowledge", "methodological excellence", "empirical truth"},
+		"psychologist": {"promoting mental health", "understanding behavior", "evidence-based intervention"},
+		"therapist":   {"client healing", "safe therapeutic space", "ethical practice"},
+		"mathematician": {"mathematical rigor", "elegant solutions", "logical clarity"},
+		"engineer":    {"robust solutions", "efficient systems", "practical implementation"},
+		"researcher":  {"scientific integrity", "reproducible results", "advancing understanding"},
+
+		// Creative/Artistic stakeholders
+		"artist":      {"authentic expression", "emotional impact", "creative freedom"},
+		"creative":    {"innovative thinking", "original solutions", "experiential quality"},
+		"designer":    {"beautiful functionality", "intuitive experience", "accessibility"},
+		"writer":      {"clear communication", "engaging narrative", "authentic voice"},
+
+		// Spiritual/Philosophical stakeholders
+		"spiritual":   {"inner growth", "compassionate action", "meaningful existence"},
+		"philosopher": {"conceptual clarity", "ethical soundness", "truth-seeking"},
+		"ethicist":    {"moral integrity", "harm prevention", "justice"},
+		"religious":   {"spiritual alignment", "community welfare", "sacred respect"},
+
+		// Healthcare/Wellness stakeholders
+		"doctor":      {"patient outcomes", "evidence-based care", "do no harm"},
+		"nurse":       {"patient advocacy", "holistic wellness", "compassionate care"},
+		"counselor":   {"client empowerment", "professional ethics", "therapeutic effectiveness"},
+		"grief":       {"honoring loss", "supporting healing", "facilitating meaning"},
 	}
 
 	for key, priorities := range priorityMap {
@@ -191,6 +249,7 @@ func (pa *PerspectiveAnalyzer) extractConstraints(stakeholder string) []string {
 	stakeholderLower := strings.ToLower(stakeholder)
 
 	constraintMap := map[string][]string{
+		// Business stakeholders
 		"user":        {"limited budget", "limited technical expertise", "time constraints"},
 		"customer":    {"budget limitations", "alternative options available", "switching costs"},
 		"employee":    {"limited authority", "resource constraints", "existing workload"},
@@ -199,6 +258,33 @@ func (pa *PerspectiveAnalyzer) extractConstraints(stakeholder string) []string {
 		"community":   {"limited resources", "diverse needs", "existing infrastructure"},
 		"regulator":   {"legal framework", "enforcement capacity", "political pressures"},
 		"partner":     {"contractual obligations", "resource limitations", "competing priorities"},
+
+		// Professional/Academic stakeholders
+		"cognitive":   {"measurement limitations", "individual variability", "confounding factors"},
+		"scientist":   {"funding constraints", "publication pressure", "peer review timeline"},
+		"psychologist": {"ethical boundaries", "individual differences", "treatment limitations"},
+		"therapist":   {"confidentiality requirements", "session time limits", "scope of practice"},
+		"mathematician": {"computational limits", "axiomatic constraints", "proof complexity"},
+		"engineer":    {"physical laws", "material constraints", "budget limitations"},
+		"researcher":  {"sample size limits", "ethical restrictions", "timeframe constraints"},
+
+		// Creative/Artistic stakeholders
+		"artist":      {"medium limitations", "financial constraints", "market pressures"},
+		"creative":    {"resource availability", "time constraints", "commercial viability"},
+		"designer":    {"technical limitations", "user constraints", "budget restrictions"},
+		"writer":      {"publisher requirements", "audience expectations", "deadline pressure"},
+
+		// Spiritual/Philosophical stakeholders
+		"spiritual":   {"individual readiness", "cultural context", "practice traditions"},
+		"philosopher": {"logical consistency", "conceptual clarity", "argument structure"},
+		"ethicist":    {"moral pluralism", "cultural relativism", "practical feasibility"},
+		"religious":   {"doctrinal boundaries", "community norms", "sacred texts"},
+
+		// Healthcare/Wellness stakeholders
+		"doctor":      {"medical ethics", "resource availability", "regulatory compliance"},
+		"nurse":       {"staffing ratios", "time constraints", "institutional policies"},
+		"counselor":   {"professional boundaries", "confidentiality", "competency limits"},
+		"grief":       {"individual pace", "cultural variations", "non-linear process"},
 	}
 
 	for key, constraints := range constraintMap {
