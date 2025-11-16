@@ -10,11 +10,11 @@ import (
 
 // RetrospectiveAnalysis provides detailed analysis of a completed trajectory
 type RetrospectiveAnalysis struct {
-	TrajectoryID       string                   `json:"trajectory_id"`
-	SessionID          string                   `json:"session_id"`
-	AnalysisTimestamp  time.Time                `json:"analysis_timestamp"`
-	Summary            *AnalysisSummary         `json:"summary"`
-	Strengths          []string                 `json:"strengths"`
+	TrajectoryID        string                   `json:"trajectory_id"`
+	SessionID           string                   `json:"session_id"`
+	AnalysisTimestamp   time.Time                `json:"analysis_timestamp"`
+	Summary             *AnalysisSummary         `json:"summary"`
+	Strengths           []string                 `json:"strengths"`
 	Weaknesses          []string                 `json:"weaknesses"`
 	Improvements        []*ImprovementSuggestion `json:"improvements"`
 	LessonsLearned      []string                 `json:"lessons_learned"`

@@ -100,9 +100,9 @@ func main() {
 //   - {{causal_graph.id}} or $causal_graph.id - reference nested field in previous result
 //
 // Resolution Order:
-//   1. Reasoning context results (from previous steps)
-//   2. Workflow input parameters
-//   3. If unresolved, returns original template string for debugging
+//  1. Reasoning context results (from previous steps)
+//  2. Workflow input parameters
+//  3. If unresolved, returns original template string for debugging
 func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 	// Guard against nil orchestrator
 	if orchestrator == nil {

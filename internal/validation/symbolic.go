@@ -415,10 +415,10 @@ func (sr *SymbolicReasoner) tryModusPonensChaining(premises []string, conclusion
 
 // implicationPattern holds extracted implication information
 type implicationPattern struct {
-	antecedent        string // normalized antecedent
-	consequent        string // normalized consequent
+	antecedent         string // normalized antecedent
+	consequent         string // normalized consequent
 	consequentOriginal string // original form for proof steps
-	implStepNum       int    // step number of the implication premise
+	implStepNum        int    // step number of the implication premise
 }
 
 // extractImplications finds all A → B patterns in premises
@@ -462,10 +462,10 @@ func (sr *SymbolicReasoner) extractImplications(premises []string) []*implicatio
 					consequentNorm := strings.Join(strings.Fields(consequent), " ")
 
 					implications = append(implications, &implicationPattern{
-						antecedent:        antecedentNorm,
-						consequent:        consequentNorm,
+						antecedent:         antecedentNorm,
+						consequent:         consequentNorm,
 						consequentOriginal: consequentOrig,
-						implStepNum:       i + 1, // step numbers are 1-indexed
+						implStepNum:        i + 1, // step numbers are 1-indexed
 					})
 				}
 			}
