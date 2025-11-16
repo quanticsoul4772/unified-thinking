@@ -56,7 +56,7 @@ type HypothesisOutput struct {
 func (h *AbductiveHandler) HandleGenerateHypotheses(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req GenerateHypothesesRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if len(req.Observations) == 0 {
@@ -91,7 +91,7 @@ func (h *AbductiveHandler) HandleGenerateHypotheses(ctx context.Context, params 
 	// Generate hypotheses
 	hypotheses, err := h.reasoner.GenerateHypotheses(ctx, genReq)
 	if err != nil {
-		return nil, fmt.Errorf("hypothesis generation failed: " + err.Error())
+		return nil, fmt.Errorf("hypothesis generation failed: %w", err)
 	}
 
 	// Build response
@@ -150,7 +150,7 @@ type RankedHypothesis struct {
 func (h *AbductiveHandler) HandleEvaluateHypotheses(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req EvaluateHypothesesRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if len(req.Observations) == 0 {
@@ -206,7 +206,7 @@ func (h *AbductiveHandler) HandleEvaluateHypotheses(ctx context.Context, params 
 	// Evaluate
 	ranked, err := h.reasoner.EvaluateHypotheses(ctx, evalReq)
 	if err != nil {
-		return nil, fmt.Errorf("hypothesis evaluation failed: " + err.Error())
+		return nil, fmt.Errorf("hypothesis evaluation failed: %w", err)
 	}
 
 	// Build response

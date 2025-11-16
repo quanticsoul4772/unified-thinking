@@ -45,7 +45,7 @@ type CreateCheckpointResponse struct {
 func (h *BacktrackingHandler) HandleCreateCheckpoint(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req CreateCheckpointRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.BranchID == "" {
@@ -57,7 +57,7 @@ func (h *BacktrackingHandler) HandleCreateCheckpoint(ctx context.Context, params
 
 	checkpoint, err := h.manager.CreateCheckpoint(ctx, req.BranchID, req.Name, req.Description)
 	if err != nil {
-		return nil, fmt.Errorf("checkpoint creation failed: " + err.Error())
+		return nil, fmt.Errorf("checkpoint creation failed: %w", err)
 	}
 
 	// Get branch to get counts
@@ -99,7 +99,7 @@ type RestoreCheckpointResponse struct {
 func (h *BacktrackingHandler) HandleRestoreCheckpoint(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req RestoreCheckpointRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.CheckpointID == "" {
@@ -108,7 +108,7 @@ func (h *BacktrackingHandler) HandleRestoreCheckpoint(ctx context.Context, param
 
 	branch, err := h.manager.RestoreCheckpoint(ctx, req.CheckpointID)
 	if err != nil {
-		return nil, fmt.Errorf("checkpoint restoration failed: " + err.Error())
+		return nil, fmt.Errorf("checkpoint restoration failed: %w", err)
 	}
 
 	resp := &RestoreCheckpointResponse{
@@ -146,7 +146,7 @@ type CheckpointInfo struct {
 func (h *BacktrackingHandler) HandleListCheckpoints(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req ListCheckpointsRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	checkpoints := h.manager.ListCheckpoints(req.BranchID)

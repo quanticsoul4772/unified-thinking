@@ -51,7 +51,7 @@ type DualProcessThinkResponse struct {
 func (h *DualProcessHandler) HandleDualProcessThink(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req DualProcessThinkRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.Content == "" {
@@ -85,7 +85,7 @@ func (h *DualProcessHandler) HandleDualProcessThink(ctx context.Context, params 
 	// Execute dual-process thinking
 	result, err := h.executor.ProcessThought(ctx, procReq)
 	if err != nil {
-		return nil, fmt.Errorf("processing failed: " + err.Error())
+		return nil, fmt.Errorf("processing failed: %w", err)
 	}
 
 	// Convert system type to string

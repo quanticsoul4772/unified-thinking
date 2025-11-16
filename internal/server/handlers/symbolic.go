@@ -59,7 +59,7 @@ type ProofStepOutput struct {
 func (h *SymbolicHandler) HandleProveTheorem(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req ProveTheoremRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.Conclusion == "" {
@@ -80,7 +80,7 @@ func (h *SymbolicHandler) HandleProveTheorem(ctx context.Context, params map[str
 	// Prove theorem
 	proof, err := h.reasoner.ProveTheorem(theorem)
 	if err != nil {
-		return nil, fmt.Errorf("theorem proving failed: " + err.Error())
+		return nil, fmt.Errorf("theorem proving failed: %w", err)
 	}
 
 	// Build response
@@ -152,7 +152,7 @@ type ConflictOutput struct {
 func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req CheckConstraintsRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if len(req.Symbols) == 0 {
@@ -184,7 +184,7 @@ func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map
 
 		constraint, err := h.reasoner.AddConstraint(constraintType, cons.Expression, cons.Symbols)
 		if err != nil {
-			return nil, fmt.Errorf("failed to add constraint: " + err.Error())
+			return nil, fmt.Errorf("failed to add constraint: %w", err)
 		}
 		constraintIDs = append(constraintIDs, constraint.ID)
 	}
@@ -192,7 +192,7 @@ func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map
 	// Check consistency
 	result, err := h.reasoner.CheckConstraintConsistency(constraintIDs)
 	if err != nil {
-		return nil, fmt.Errorf("consistency check failed: " + err.Error())
+		return nil, fmt.Errorf("consistency check failed: %w", err)
 	}
 
 	// Build response

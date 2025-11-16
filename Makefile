@@ -1,4 +1,4 @@
-.PHONY: build run test test-verbose test-coverage test-race test-short test-storage test-storage-coverage benchmark test-all pre-commit clean install-deps windows linux help
+.PHONY: build run test test-verbose test-coverage test-race test-short test-storage test-storage-coverage benchmark test-all pre-commit clean install-deps windows linux lint lint-fix fmt-check vet validate-ci help
 
 # Default target
 all: build
@@ -78,8 +78,31 @@ benchmark:
 test-all: test-race test-coverage
 	@echo "All tests complete!"
 
-# Pre-commit checks
-pre-commit: test-short
+# Code quality checks
+lint:
+	@echo "Running golangci-lint..."
+	golangci-lint run --timeout=5m
+
+lint-fix:
+	@echo "Running golangci-lint with auto-fix..."
+	golangci-lint run --fix --timeout=5m
+
+fmt-check:
+	@echo "Checking code formatting..."
+	@for /f %%i in ('gofmt -l . ^| find /c /v ""') do @set COUNT=%%i
+	@if %COUNT% gtr 0 (echo Files need formatting: && gofmt -l . && exit 1) else (echo All files formatted correctly)
+
+vet:
+	@echo "Running go vet..."
+	go vet ./...
+
+# Comprehensive pre-commit validation (matches CI)
+validate-ci:
+	@echo "Running comprehensive CI validation locally..."
+	@.\scripts\validate-workflows.bat
+
+# Pre-commit checks (quick validation before commit)
+pre-commit: fmt-check vet test-short
 	@echo "Pre-commit checks passed!"
 
 # Clean build artifacts
@@ -120,7 +143,14 @@ help:
 	@echo "  test-storage-coverage  - Storage tests with coverage"
 	@echo "  benchmark              - Run performance benchmarks"
 	@echo "  test-all               - Run all test suites (comprehensive)"
-	@echo "  pre-commit             - Run pre-commit checks"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  lint                   - Run golangci-lint"
+	@echo "  lint-fix               - Run golangci-lint with auto-fix"
+	@echo "  fmt-check              - Check code formatting"
+	@echo "  vet                    - Run go vet static analysis"
+	@echo "  pre-commit             - Quick checks before commit (fmt+vet+test-short)"
+	@echo "  validate-ci            - Full CI validation locally (all checks)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean                  - Remove build artifacts"

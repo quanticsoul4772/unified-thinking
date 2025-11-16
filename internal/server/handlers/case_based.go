@@ -74,7 +74,7 @@ type SolutionDescriptionInfo struct {
 func (h *CaseBasedHandler) HandleRetrieveCases(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req RetrieveCasesRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.Problem == nil || req.Problem.Description == "" {
@@ -108,7 +108,7 @@ func (h *CaseBasedHandler) HandleRetrieveCases(ctx context.Context, params map[s
 	// Retrieve cases
 	result, err := h.reasoner.Retrieve(ctx, retrieveReq)
 	if err != nil {
-		return nil, fmt.Errorf("case retrieval failed: " + err.Error())
+		return nil, fmt.Errorf("case retrieval failed: %w", err)
 	}
 
 	// Build response
@@ -159,7 +159,7 @@ type PerformCBRCycleResponse struct {
 func (h *CaseBasedHandler) HandlePerformCBRCycle(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req PerformCBRCycleRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.Problem == nil || req.Problem.Description == "" {
@@ -178,7 +178,7 @@ func (h *CaseBasedHandler) HandlePerformCBRCycle(ctx context.Context, params map
 	// Perform CBR cycle
 	cycle, err := h.reasoner.PerformCBRCycle(ctx, problem, req.Domain)
 	if err != nil {
-		return nil, fmt.Errorf("CBR cycle failed: " + err.Error())
+		return nil, fmt.Errorf("CBR cycle failed: %w", err)
 	}
 
 	resp := &PerformCBRCycleResponse{

@@ -56,7 +56,7 @@ type BlindSpotOutput struct {
 func (h *UnknownUnknownsHandler) HandleDetectBlindSpots(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
 	var req DetectBlindSpotsRequest
 	if err := unmarshalParams(params, &req); err != nil {
-		return nil, fmt.Errorf("invalid request: " + err.Error())
+		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
 	if req.Content == "" {
@@ -80,7 +80,7 @@ func (h *UnknownUnknownsHandler) HandleDetectBlindSpots(ctx context.Context, par
 	// Detect blind spots
 	result, err := h.detector.DetectBlindSpots(ctx, gapReq)
 	if err != nil {
-		return nil, fmt.Errorf("blind spot detection failed: " + err.Error())
+		return nil, fmt.Errorf("blind spot detection failed: %w", err)
 	}
 
 	// Build response
