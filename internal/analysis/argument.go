@@ -14,9 +14,9 @@ import (
 type ArgumentType string
 
 const (
-	ArgumentDeductive  ArgumentType = "deductive"  // Necessarily follows from premises
-	ArgumentInductive  ArgumentType = "inductive"  // Probably follows from premises
-	ArgumentAbductive  ArgumentType = "abductive"  // Best explanation given premises
+	ArgumentDeductive ArgumentType = "deductive" // Necessarily follows from premises
+	ArgumentInductive ArgumentType = "inductive" // Probably follows from premises
+	ArgumentAbductive ArgumentType = "abductive" // Best explanation given premises
 )
 
 // Premise represents a premise in an argument
@@ -29,35 +29,35 @@ type Premise struct {
 
 // InferenceStep represents a step in logical inference
 type InferenceStep struct {
-	ID          string   `json:"id"`
-	From        []string `json:"from"`        // Premise IDs
-	To          string   `json:"to"`          // Conclusion
-	Rule        string   `json:"rule"`        // Inference rule used
-	Confidence  float64  `json:"confidence"`  // 0.0-1.0
+	ID         string   `json:"id"`
+	From       []string `json:"from"`       // Premise IDs
+	To         string   `json:"to"`         // Conclusion
+	Rule       string   `json:"rule"`       // Inference rule used
+	Confidence float64  `json:"confidence"` // 0.0-1.0
 }
 
 // ArgumentDecomposition represents a fully analyzed argument
 type ArgumentDecomposition struct {
-	ID                string            `json:"id"`
-	MainClaim         string            `json:"main_claim"`
-	Premises          []*Premise        `json:"premises"`
-	HiddenAssumptions []string          `json:"hidden_assumptions"`
-	InferenceChain    []*InferenceStep  `json:"inference_chain"`
-	ArgumentType      ArgumentType      `json:"type"`
-	Strength          float64           `json:"strength"`        // 0.0-1.0
-	Vulnerabilities   []string          `json:"vulnerabilities"`
-	CreatedAt         time.Time         `json:"created_at"`
+	ID                string           `json:"id"`
+	MainClaim         string           `json:"main_claim"`
+	Premises          []*Premise       `json:"premises"`
+	HiddenAssumptions []string         `json:"hidden_assumptions"`
+	InferenceChain    []*InferenceStep `json:"inference_chain"`
+	ArgumentType      ArgumentType     `json:"type"`
+	Strength          float64          `json:"strength"` // 0.0-1.0
+	Vulnerabilities   []string         `json:"vulnerabilities"`
+	CreatedAt         time.Time        `json:"created_at"`
 }
 
 // CounterArgument represents an argument opposing a claim
 type CounterArgument struct {
-	ID                string   `json:"id"`
-	TargetClaim       string   `json:"target_claim"`
-	Strategy          string   `json:"strategy"`           // "deny_premise", "break_link", "reductio", "alternative_explanation"
-	CounterClaim      string   `json:"counter_claim"`
-	SupportingPremises []string `json:"supporting_premises"`
-	Strength          float64  `json:"strength"`           // 0.0-1.0
-	CreatedAt         time.Time `json:"created_at"`
+	ID                 string    `json:"id"`
+	TargetClaim        string    `json:"target_claim"`
+	Strategy           string    `json:"strategy"` // "deny_premise", "break_link", "reductio", "alternative_explanation"
+	CounterClaim       string    `json:"counter_claim"`
+	SupportingPremises []string  `json:"supporting_premises"`
+	Strength           float64   `json:"strength"` // 0.0-1.0
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 // ArgumentAnalyzer decomposes and analyzes arguments
@@ -131,9 +131,9 @@ func (aa *ArgumentAnalyzer) GenerateCounterArguments(argumentID string) ([]*Coun
 		weakestPremise := aa.findWeakestPremise(argument.Premises)
 		if weakestPremise != nil {
 			counter := &CounterArgument{
-				ID:          fmt.Sprintf("counter_%d_1", time.Now().UnixNano()),
-				TargetClaim: argument.MainClaim,
-				Strategy:    "deny_premise",
+				ID:           fmt.Sprintf("counter_%d_1", time.Now().UnixNano()),
+				TargetClaim:  argument.MainClaim,
+				Strategy:     "deny_premise",
 				CounterClaim: fmt.Sprintf("The premise '%s' is questionable because...", weakestPremise.Statement),
 				SupportingPremises: []string{
 					"Available evidence contradicts this premise",
@@ -152,9 +152,9 @@ func (aa *ArgumentAnalyzer) GenerateCounterArguments(argumentID string) ([]*Coun
 		weakestInference := aa.findWeakestInference(argument.InferenceChain)
 		if weakestInference != nil {
 			counter := &CounterArgument{
-				ID:          fmt.Sprintf("counter_%d_2", time.Now().UnixNano()),
-				TargetClaim: argument.MainClaim,
-				Strategy:    "break_link",
+				ID:           fmt.Sprintf("counter_%d_2", time.Now().UnixNano()),
+				TargetClaim:  argument.MainClaim,
+				Strategy:     "break_link",
 				CounterClaim: fmt.Sprintf("The inference from premises to '%s' doesn't necessarily follow", weakestInference.To),
 				SupportingPremises: []string{
 					"Additional unstated assumptions are required",
@@ -171,9 +171,9 @@ func (aa *ArgumentAnalyzer) GenerateCounterArguments(argumentID string) ([]*Coun
 	// Strategy 3: Reductio ad absurdum (if applicable)
 	if argument.ArgumentType == ArgumentDeductive {
 		counter := &CounterArgument{
-			ID:          fmt.Sprintf("counter_%d_3", time.Now().UnixNano()),
-			TargetClaim: argument.MainClaim,
-			Strategy:    "reductio",
+			ID:           fmt.Sprintf("counter_%d_3", time.Now().UnixNano()),
+			TargetClaim:  argument.MainClaim,
+			Strategy:     "reductio",
 			CounterClaim: fmt.Sprintf("If '%s' were true, it would lead to absurd consequences", argument.MainClaim),
 			SupportingPremises: []string{
 				"Accepting this claim leads to logical contradictions",
@@ -189,9 +189,9 @@ func (aa *ArgumentAnalyzer) GenerateCounterArguments(argumentID string) ([]*Coun
 	// Strategy 4: Alternative explanation
 	if argument.ArgumentType == ArgumentAbductive {
 		counter := &CounterArgument{
-			ID:          fmt.Sprintf("counter_%d_4", time.Now().UnixNano()),
-			TargetClaim: argument.MainClaim,
-			Strategy:    "alternative_explanation",
+			ID:           fmt.Sprintf("counter_%d_4", time.Now().UnixNano()),
+			TargetClaim:  argument.MainClaim,
+			Strategy:     "alternative_explanation",
 			CounterClaim: "There is a better explanation for the observed evidence",
 			SupportingPremises: []string{
 				"Alternative explanation is simpler (Occam's razor)",

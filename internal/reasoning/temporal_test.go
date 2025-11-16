@@ -15,10 +15,10 @@ func TestAnalyzeTemporal(t *testing.T) {
 	tr := NewTemporalReasoner()
 
 	tests := []struct {
-		name         string
-		situation    string
-		timeHorizon  string
-		expectError  bool
+		name            string
+		situation       string
+		timeHorizon     string
+		expectError     bool
 		expectedHorizon string
 	}{
 		{
@@ -116,7 +116,7 @@ func TestNormalizeTimeHorizon(t *testing.T) {
 		{"strategic", "years"},
 		{"decades", "decades"},
 		{"generation", "decades"},
-		{"", "months"}, // Default
+		{"", "months"},        // Default
 		{"unknown", "months"}, // Default
 	}
 
@@ -237,33 +237,33 @@ func TestIdentifyTradeoffs(t *testing.T) {
 	tr := NewTemporalReasoner()
 
 	tests := []struct {
-		name        string
-		situation   string
+		name         string
+		situation    string
 		minTradeoffs int
 	}{
 		{
-			name:        "speed tradeoff",
-			situation:   "We need rapid deployment but also careful planning",
+			name:         "speed tradeoff",
+			situation:    "We need rapid deployment but also careful planning",
 			minTradeoffs: 1,
 		},
 		{
-			name:        "cost tradeoff",
-			situation:   "Lower initial cost vs higher long-term expenses",
+			name:         "cost tradeoff",
+			situation:    "Lower initial cost vs higher long-term expenses",
 			minTradeoffs: 1,
 		},
 		{
-			name:        "simplicity tradeoff",
-			situation:   "Simple solution now vs comprehensive system later",
+			name:         "simplicity tradeoff",
+			situation:    "Simple solution now vs comprehensive system later",
 			minTradeoffs: 1,
 		},
 		{
-			name:        "automation tradeoff",
-			situation:   "Manual process to start, automation for the future",
+			name:         "automation tradeoff",
+			situation:    "Manual process to start, automation for the future",
 			minTradeoffs: 1,
 		},
 		{
-			name:        "no specific tradeoffs",
-			situation:   "A general decision without clear temporal tensions",
+			name:         "no specific tradeoffs",
+			situation:    "A general decision without clear temporal tensions",
 			minTradeoffs: 1, // Should generate generic tradeoffs
 		},
 	}

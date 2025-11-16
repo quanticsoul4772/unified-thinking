@@ -89,10 +89,10 @@ func (sa *SensitivityAnalyzer) createVariation(id, assumptionChange string, base
 	}
 
 	return &types.Variation{
-		ID:              id,
+		ID:               id,
 		AssumptionChange: assumptionChange,
-		Impact:          impact,
-		ImpactMagnitude: impactMagnitude,
+		Impact:           impact,
+		ImpactMagnitude:  impactMagnitude,
 	}
 }
 

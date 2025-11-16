@@ -34,7 +34,7 @@ type TemporalCausalEffect struct {
 	ID             string                    `json:"id"`
 	GraphID        string                    `json:"graph_id"`
 	Variable       string                    `json:"variable"`
-	TimeHorizons   map[string]*HorizonEffect `json:"time_horizons"` // "short_term", "medium_term", "long_term"
+	TimeHorizons   map[string]*HorizonEffect `json:"time_horizons"`   // "short_term", "medium_term", "long_term"
 	OverallPattern string                    `json:"overall_pattern"` // "increasing", "decreasing", "stable", "oscillating"
 	PeakEffect     string                    `json:"peak_effect"`     // When effect is strongest
 	Recommendation string                    `json:"recommendation"`
@@ -43,11 +43,11 @@ type TemporalCausalEffect struct {
 
 // HorizonEffect describes effect at a specific time horizon
 type HorizonEffect struct {
-	TimeFrame       string                `json:"time_frame"`       // "days-weeks", "months", "years"
+	TimeFrame       string                   `json:"time_frame"` // "days-weeks", "months", "years"
 	DirectEffects   []*types.PredictedEffect `json:"direct_effects"`
 	IndirectEffects []*types.PredictedEffect `json:"indirect_effects"`
-	Magnitude       string                `json:"magnitude"`        // "weak", "moderate", "strong"
-	Certainty       float64               `json:"certainty"`        // 0.0-1.0
+	Magnitude       string                   `json:"magnitude"` // "weak", "moderate", "strong"
+	Certainty       float64                  `json:"certainty"` // 0.0-1.0
 }
 
 // AnalyzeTemporalCausalEffects analyzes how intervention effects evolve over time
@@ -116,11 +116,11 @@ func (cti *CausalTemporalIntegration) AnalyzeDecisionTiming(
 	timingWindows := cti.determineTimingWindows(graph, temporalAnalysis, timeSensitive)
 
 	result := map[string]interface{}{
-		"graph_id":           causalGraphID,
-		"temporal_analysis":  temporalAnalysis,
+		"graph_id":            causalGraphID,
+		"temporal_analysis":   temporalAnalysis,
 		"time_sensitive_vars": timeSensitive,
-		"timing_windows":     timingWindows,
-		"recommendation":     cti.synthesizeTimingRecommendation(timingWindows),
+		"timing_windows":      timingWindows,
+		"recommendation":      cti.synthesizeTimingRecommendation(timingWindows),
 	}
 
 	return result, nil
@@ -325,27 +325,27 @@ func (cti *CausalTemporalIntegration) determineTimingWindows(
 
 	// Early window: capitalize on short-term effects
 	windows = append(windows, map[string]string{
-		"name":        "Early Action Window",
-		"timeframe":   "Immediate to 1 month",
-		"focus":       "Capture short-term benefits before they dissipate",
-		"variables":   joinStrings(timeSensitive, ", "),
-		"priority":    "High if effects are decreasing",
+		"name":      "Early Action Window",
+		"timeframe": "Immediate to 1 month",
+		"focus":     "Capture short-term benefits before they dissipate",
+		"variables": joinStrings(timeSensitive, ", "),
+		"priority":  "High if effects are decreasing",
 	})
 
 	// Strategic window: leverage medium-term effects
 	windows = append(windows, map[string]string{
-		"name":        "Strategic Window",
-		"timeframe":   "1-6 months",
-		"focus":       "Position for medium-term outcomes",
-		"priority":    "High if effects are stable or increasing",
+		"name":      "Strategic Window",
+		"timeframe": "1-6 months",
+		"focus":     "Position for medium-term outcomes",
+		"priority":  "High if effects are stable or increasing",
 	})
 
 	// Long-term window: sustainable change
 	windows = append(windows, map[string]string{
-		"name":        "Long-term Commitment Window",
-		"timeframe":   "6+ months",
-		"focus":       "Establish sustainable patterns",
-		"priority":    "Essential if long-term effects dominate",
+		"name":      "Long-term Commitment Window",
+		"timeframe": "6+ months",
+		"focus":     "Establish sustainable patterns",
+		"priority":  "Essential if long-term effects dominate",
 	})
 
 	return windows

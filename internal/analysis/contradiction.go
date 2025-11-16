@@ -276,12 +276,12 @@ func (cd *ContradictionDetector) isSameSubjectContext(s1, s2, subject string) bo
 func (cd *ContradictionDetector) hasContradictoryVerbs(s1, s2 string) bool {
 	// Pairs of contradictory verbs
 	contradictoryPairs := map[string][]string{
-		"is":       {"is not", "isn't", "are not", "aren't"},
-		"can":      {"cannot", "can't"},
-		"will":     {"will not", "won't"},
-		"should":   {"should not", "shouldn't"},
-		"does":     {"does not", "doesn't"},
-		"has":      {"has not", "hasn't"},
+		"is":        {"is not", "isn't", "are not", "aren't"},
+		"can":       {"cannot", "can't"},
+		"will":      {"will not", "won't"},
+		"should":    {"should not", "shouldn't"},
+		"does":      {"does not", "doesn't"},
+		"has":       {"has not", "hasn't"},
 		"increases": {"decreases"},
 		"improves":  {"worsens", "degrades"},
 		"supports":  {"opposes", "contradicts"},

@@ -13,97 +13,97 @@ import (
 
 // SemanticUncertainty represents different types of uncertainty
 type SemanticUncertainty struct {
-	Overall           float64            `json:"overall"`            // Overall uncertainty score (0-1)
-	Aleatory          float64            `json:"aleatory"`           // Irreducible randomness
-	Epistemic         float64            `json:"epistemic"`          // Lack of knowledge
-	ConfidenceMismatch float64           `json:"confidence_mismatch"` // Difference between stated and measured confidence
-	Type              UncertaintyType    `json:"type"`
+	Overall            float64         `json:"overall"`             // Overall uncertainty score (0-1)
+	Aleatory           float64         `json:"aleatory"`            // Irreducible randomness
+	Epistemic          float64         `json:"epistemic"`           // Lack of knowledge
+	ConfidenceMismatch float64         `json:"confidence_mismatch"` // Difference between stated and measured confidence
+	Type               UncertaintyType `json:"type"`
 }
 
 // UncertaintyType categorizes the kind of uncertainty
 type UncertaintyType string
 
 const (
-	UncertaintyLow       UncertaintyType = "low"        // <0.3
-	UncertaintyModerate  UncertaintyType = "moderate"   // 0.3-0.6
-	UncertaintyHigh      UncertaintyType = "high"       // 0.6-0.8
-	UncertaintyCritical  UncertaintyType = "critical"   // >0.8
+	UncertaintyLow      UncertaintyType = "low"      // <0.3
+	UncertaintyModerate UncertaintyType = "moderate" // 0.3-0.6
+	UncertaintyHigh     UncertaintyType = "high"     // 0.6-0.8
+	UncertaintyCritical UncertaintyType = "critical" // >0.8
 )
 
 // FactualClaim represents an extracted claim that can be verified
 type FactualClaim struct {
-	ID                   string               `json:"id"`
-	Text                 string               `json:"text"`
-	ClaimType            ClaimType            `json:"claim_type"`
-	VerificationStatus   VerificationStatus   `json:"verification_status"`
-	SemanticUncertainty  float64              `json:"semantic_uncertainty"`
-	SupportingEvidence   []string             `json:"supporting_evidence,omitempty"`
-	ContradictingEvidence []string            `json:"contradicting_evidence,omitempty"`
-	Sources              []VerificationSource `json:"sources,omitempty"`
-	VerifiedAt           time.Time            `json:"verified_at"`
+	ID                    string               `json:"id"`
+	Text                  string               `json:"text"`
+	ClaimType             ClaimType            `json:"claim_type"`
+	VerificationStatus    VerificationStatus   `json:"verification_status"`
+	SemanticUncertainty   float64              `json:"semantic_uncertainty"`
+	SupportingEvidence    []string             `json:"supporting_evidence,omitempty"`
+	ContradictingEvidence []string             `json:"contradicting_evidence,omitempty"`
+	Sources               []VerificationSource `json:"sources,omitempty"`
+	VerifiedAt            time.Time            `json:"verified_at"`
 }
 
 // ClaimType categorizes the kind of claim
 type ClaimType string
 
 const (
-	ClaimFactual       ClaimType = "factual"        // Verifiable fact
-	ClaimOpinion       ClaimType = "opinion"        // Subjective statement
-	ClaimPrediction    ClaimType = "prediction"     // Future-oriented
-	ClaimDefinition    ClaimType = "definition"     // Definitional statement
-	ClaimCausal        ClaimType = "causal"         // X causes Y
-	ClaimStatistical   ClaimType = "statistical"    // Numerical claim
+	ClaimFactual     ClaimType = "factual"     // Verifiable fact
+	ClaimOpinion     ClaimType = "opinion"     // Subjective statement
+	ClaimPrediction  ClaimType = "prediction"  // Future-oriented
+	ClaimDefinition  ClaimType = "definition"  // Definitional statement
+	ClaimCausal      ClaimType = "causal"      // X causes Y
+	ClaimStatistical ClaimType = "statistical" // Numerical claim
 )
 
 // VerificationStatus indicates the verification result
 type VerificationStatus string
 
 const (
-	StatusVerified      VerificationStatus = "verified"       // Confirmed true
-	StatusFalse         VerificationStatus = "false"          // Confirmed false (hallucination)
-	StatusContradictory VerificationStatus = "contradictory"  // Mixed evidence
-	StatusUnverifiable  VerificationStatus = "unverifiable"   // Cannot verify
-	StatusPending       VerificationStatus = "pending"        // Not yet verified
+	StatusVerified      VerificationStatus = "verified"      // Confirmed true
+	StatusFalse         VerificationStatus = "false"         // Confirmed false (hallucination)
+	StatusContradictory VerificationStatus = "contradictory" // Mixed evidence
+	StatusUnverifiable  VerificationStatus = "unverifiable"  // Cannot verify
+	StatusPending       VerificationStatus = "pending"       // Not yet verified
 )
 
 // VerificationSource represents where verification info came from
 type VerificationSource struct {
-	Type       string  `json:"type"`        // "memory", "search", "external_api"
-	Source     string  `json:"source"`      // Specific source identifier
-	Confidence float64 `json:"confidence"`  // How confident in this source
+	Type       string    `json:"type"`       // "memory", "search", "external_api"
+	Source     string    `json:"source"`     // Specific source identifier
+	Confidence float64   `json:"confidence"` // How confident in this source
 	Timestamp  time.Time `json:"timestamp"`
 }
 
 // HallucinationReport contains the full analysis of a thought
 type HallucinationReport struct {
-	ThoughtID           string                 `json:"thought_id"`
-	OverallRisk         float64                `json:"overall_risk"`        // 0-1, higher = more likely hallucination
-	SemanticUncertainty SemanticUncertainty    `json:"semantic_uncertainty"`
-	Claims              []FactualClaim         `json:"claims"`
-	HallucinationCount  int                    `json:"hallucination_count"`
-	VerifiedCount       int                    `json:"verified_count"`
-	Recommendations     []string               `json:"recommendations"`
-	AnalyzedAt          time.Time              `json:"analyzed_at"`
-	VerificationLevel   VerificationLevel      `json:"verification_level"`  // How deep the analysis was
+	ThoughtID           string              `json:"thought_id"`
+	OverallRisk         float64             `json:"overall_risk"` // 0-1, higher = more likely hallucination
+	SemanticUncertainty SemanticUncertainty `json:"semantic_uncertainty"`
+	Claims              []FactualClaim      `json:"claims"`
+	HallucinationCount  int                 `json:"hallucination_count"`
+	VerifiedCount       int                 `json:"verified_count"`
+	Recommendations     []string            `json:"recommendations"`
+	AnalyzedAt          time.Time           `json:"analyzed_at"`
+	VerificationLevel   VerificationLevel   `json:"verification_level"` // How deep the analysis was
 }
 
 // VerificationLevel indicates depth of verification
 type VerificationLevel string
 
 const (
-	VerificationFast    VerificationLevel = "fast"      // Quick inline checks only
-	VerificationDeep    VerificationLevel = "deep"      // Comprehensive async verification
-	VerificationHybrid  VerificationLevel = "hybrid"    // Both fast + deep
+	VerificationFast   VerificationLevel = "fast"   // Quick inline checks only
+	VerificationDeep   VerificationLevel = "deep"   // Comprehensive async verification
+	VerificationHybrid VerificationLevel = "hybrid" // Both fast + deep
 )
 
 // HallucinationDetector provides hallucination detection capabilities
 type HallucinationDetector struct {
-	mu                  sync.RWMutex
-	verificationCache   map[string]*HallucinationReport
-	fastCheckThreshold  time.Duration
-	asyncVerifyQueue    chan *verificationTask
-	workersRunning      bool
-	knowledgeSources    []KnowledgeSource
+	mu                 sync.RWMutex
+	verificationCache  map[string]*HallucinationReport
+	fastCheckThreshold time.Duration
+	asyncVerifyQueue   chan *verificationTask
+	workersRunning     bool
+	knowledgeSources   []KnowledgeSource
 }
 
 // KnowledgeSource represents a source for fact verification
@@ -115,11 +115,11 @@ type KnowledgeSource interface {
 
 // VerificationResult contains verification outcome
 type VerificationResult struct {
-	IsVerified           bool
-	Confidence           float64
-	SupportingEvidence   []string
+	IsVerified            bool
+	Confidence            float64
+	SupportingEvidence    []string
 	ContradictingEvidence []string
-	Source               string
+	Source                string
 }
 
 type verificationTask struct {
@@ -183,10 +183,10 @@ func (hd *HallucinationDetector) VerifyThought(ctx context.Context, thought *typ
 // fastVerification performs quick inline checks (< 100ms)
 func (hd *HallucinationDetector) fastVerification(thought *types.Thought) *HallucinationReport {
 	report := &HallucinationReport{
-		ThoughtID:          thought.ID,
-		AnalyzedAt:         time.Now(),
-		VerificationLevel:  VerificationFast,
-		Claims:             []FactualClaim{},
+		ThoughtID:         thought.ID,
+		AnalyzedAt:        time.Now(),
+		VerificationLevel: VerificationFast,
+		Claims:            []FactualClaim{},
 	}
 
 	// Extract potential factual claims (simple heuristics)
@@ -201,9 +201,9 @@ func (hd *HallucinationDetector) fastVerification(thought *types.Thought) *Hallu
 
 	// Calculate semantic uncertainty
 	report.SemanticUncertainty = SemanticUncertainty{
-		Overall:            (1.0 - coherence) * 0.5 + confidenceMismatch * 0.5,
+		Overall:            (1.0-coherence)*0.5 + confidenceMismatch*0.5,
 		ConfidenceMismatch: confidenceMismatch,
-		Type:               hd.categorizeUncertainty((1.0 - coherence) * 0.5 + confidenceMismatch * 0.5),
+		Type:               hd.categorizeUncertainty((1.0-coherence)*0.5 + confidenceMismatch*0.5),
 	}
 
 	// Calculate overall risk
@@ -265,31 +265,31 @@ func (hd *HallucinationDetector) classifyClaimType(sentence string) ClaimType {
 
 	// Causal indicators
 	if strings.Contains(lower, "causes") || strings.Contains(lower, "leads to") ||
-	   strings.Contains(lower, "results in") || strings.Contains(lower, "because") {
+		strings.Contains(lower, "results in") || strings.Contains(lower, "because") {
 		return ClaimCausal
 	}
 
 	// Statistical indicators
 	if strings.Contains(lower, "%") || strings.Contains(lower, "percent") ||
-	   strings.Contains(lower, "probability") || strings.Contains(lower, "average") {
+		strings.Contains(lower, "probability") || strings.Contains(lower, "average") {
 		return ClaimStatistical
 	}
 
 	// Prediction indicators
 	if strings.Contains(lower, "will") || strings.Contains(lower, "going to") ||
-	   strings.Contains(lower, "predict") || strings.Contains(lower, "expect") {
+		strings.Contains(lower, "predict") || strings.Contains(lower, "expect") {
 		return ClaimPrediction
 	}
 
 	// Definition indicators
 	if strings.Contains(lower, "is defined as") || strings.Contains(lower, "means") ||
-	   strings.Contains(lower, "refers to") {
+		strings.Contains(lower, "refers to") {
 		return ClaimDefinition
 	}
 
 	// Opinion indicators
 	if strings.Contains(lower, "i think") || strings.Contains(lower, "believe") ||
-	   strings.Contains(lower, "opinion") || strings.Contains(lower, "should") {
+		strings.Contains(lower, "opinion") || strings.Contains(lower, "should") {
 		return ClaimOpinion
 	}
 

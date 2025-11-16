@@ -37,25 +37,25 @@ func NewDualProcessExecutor(store storage.Storage, modeRegistry map[types.Thinki
 
 // ProcessingRequest contains parameters for dual-process execution
 type ProcessingRequest struct {
-	Content          string
-	Mode             types.ThinkingMode
-	Confidence       float64
-	KeyPoints        []string
-	ForceSystem      ProcessingSystem // 0 = auto, 1 = System1, 2 = System2
-	MaxSystem1Time   time.Duration    // Max time for System1 processing
-	EscalateOnLowConf bool             // Escalate to System2 if confidence < threshold
-	ConfidenceThreshold float64        // Threshold for escalation
+	Content             string
+	Mode                types.ThinkingMode
+	Confidence          float64
+	KeyPoints           []string
+	ForceSystem         ProcessingSystem // 0 = auto, 1 = System1, 2 = System2
+	MaxSystem1Time      time.Duration    // Max time for System1 processing
+	EscalateOnLowConf   bool             // Escalate to System2 if confidence < threshold
+	ConfidenceThreshold float64          // Threshold for escalation
 }
 
 // ProcessingResult contains the result of dual-process execution
 type ProcessingResult struct {
-	Thought        *types.Thought
-	SystemUsed     ProcessingSystem
-	Escalated      bool
-	System1Time    time.Duration
-	System2Time    time.Duration
-	TotalTime      time.Duration
-	ComplexityScore float64
+	Thought          *types.Thought
+	SystemUsed       ProcessingSystem
+	Escalated        bool
+	System1Time      time.Duration
+	System2Time      time.Duration
+	TotalTime        time.Duration
+	ComplexityScore  float64
 	EscalationReason string
 }
 

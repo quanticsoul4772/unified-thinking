@@ -13,13 +13,13 @@ import (
 
 // ThinkingHandler handles think and history operations
 type ThinkingHandler struct {
-	storage          storage.Storage
-	linear           *modes.LinearMode
-	tree             *modes.TreeMode
-	divergent        *modes.DivergentMode
-	auto             *modes.AutoMode
-	validator        *validation.LogicValidator
-	metadataGen      *MetadataGenerator
+	storage     storage.Storage
+	linear      *modes.LinearMode
+	tree        *modes.TreeMode
+	divergent   *modes.DivergentMode
+	auto        *modes.AutoMode
+	validator   *validation.LogicValidator
+	metadataGen *MetadataGenerator
 }
 
 // NewThinkingHandler creates a new thinking handler
@@ -44,31 +44,31 @@ func NewThinkingHandler(
 
 // ThinkRequest represents a thinking request
 type ThinkRequest struct {
-	Content           string                  `json:"content"`
-	Mode              string                  `json:"mode,omitempty"`
-	Type              string                  `json:"type,omitempty"`
-	BranchID          string                  `json:"branch_id,omitempty"`
-	ParentID          string                  `json:"parent_id,omitempty"`
-	PreviousThoughtID string                  `json:"previous_thought_id,omitempty"`
-	Confidence        float64                 `json:"confidence,omitempty"`
-	KeyPoints         []string                `json:"key_points,omitempty"`
-	ForceRebellion    bool                    `json:"force_rebellion,omitempty"`
-	CrossRefs         []modes.CrossRefInput   `json:"cross_refs,omitempty"`
-	RequireValidation bool                    `json:"require_validation,omitempty"`
+	Content           string                `json:"content"`
+	Mode              string                `json:"mode,omitempty"`
+	Type              string                `json:"type,omitempty"`
+	BranchID          string                `json:"branch_id,omitempty"`
+	ParentID          string                `json:"parent_id,omitempty"`
+	PreviousThoughtID string                `json:"previous_thought_id,omitempty"`
+	Confidence        float64               `json:"confidence,omitempty"`
+	KeyPoints         []string              `json:"key_points,omitempty"`
+	ForceRebellion    bool                  `json:"force_rebellion,omitempty"`
+	CrossRefs         []modes.CrossRefInput `json:"cross_refs,omitempty"`
+	RequireValidation bool                  `json:"require_validation,omitempty"`
 }
 
 // ThinkResponse represents a thinking response
 type ThinkResponse struct {
-	ThoughtID            string                `json:"thought_id"`
-	Mode                 string                `json:"mode"`
-	Status               string                `json:"status"`
-	BranchID             string                `json:"branch_id,omitempty"`
-	Confidence           float64               `json:"confidence"`
-	IsRebellion          bool                  `json:"is_rebellion,omitempty"`
-	ChallengesAssumption bool                  `json:"challenges_assumption,omitempty"`
-	InsightCount         int                   `json:"insight_count,omitempty"`
-	CrossRefCount        int                   `json:"cross_ref_count,omitempty"`
-	IsValid              bool                  `json:"is_valid,omitempty"`
+	ThoughtID            string                  `json:"thought_id"`
+	Mode                 string                  `json:"mode"`
+	Status               string                  `json:"status"`
+	BranchID             string                  `json:"branch_id,omitempty"`
+	Confidence           float64                 `json:"confidence"`
+	IsRebellion          bool                    `json:"is_rebellion,omitempty"`
+	ChallengesAssumption bool                    `json:"challenges_assumption,omitempty"`
+	InsightCount         int                     `json:"insight_count,omitempty"`
+	CrossRefCount        int                     `json:"cross_ref_count,omitempty"`
+	IsValid              bool                    `json:"is_valid,omitempty"`
 	Metadata             *types.ResponseMetadata `json:"metadata,omitempty"`
 }
 

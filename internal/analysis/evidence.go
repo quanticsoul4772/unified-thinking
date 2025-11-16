@@ -198,11 +198,11 @@ func (ea *EvidenceAnalyzer) AggregateEvidence(evidences []*types.Evidence) *Evid
 
 	if len(evidences) == 0 {
 		return &EvidenceAggregation{
-			TotalCount:       0,
-			SupportingCount:  0,
-			RefutingCount:    0,
-			AverageQuality:   0,
-			OverallStrength:  0,
+			TotalCount:      0,
+			SupportingCount: 0,
+			RefutingCount:   0,
+			AverageQuality:  0,
+			OverallStrength: 0,
 		}
 	}
 

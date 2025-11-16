@@ -358,12 +358,12 @@ func TestCalculateSynthesisConfidence(t *testing.T) {
 	s := NewSynthesizer()
 
 	tests := []struct {
-		name              string
-		inputs            []*Input
-		synergies         []string
-		conflicts         []string
-		expectedMinConf   float64
-		expectedMaxConf   float64
+		name            string
+		inputs          []*Input
+		synergies       []string
+		conflicts       []string
+		expectedMinConf float64
+		expectedMaxConf float64
 	}{
 		{
 			name: "high confidence with synergies",
@@ -619,7 +619,7 @@ func TestExtractKey(t *testing.T) {
 
 func TestFindMinMax(t *testing.T) {
 	tests := []struct {
-		values     []float64
+		values      []float64
 		expectedMin float64
 		expectedMax float64
 	}{

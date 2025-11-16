@@ -42,9 +42,9 @@ func TestCBR_StoreCase(t *testing.T) {
 	}
 
 	outcome := &Outcome{
-		Success:       true,
-		Effectiveness: 0.85,
-		TimeToSolve:   24 * time.Hour,
+		Success:        true,
+		Effectiveness:  0.85,
+		TimeToSolve:    24 * time.Hour,
 		LessonsLearned: []string{"Index selection is critical", "Cache invalidation is tricky"},
 	}
 

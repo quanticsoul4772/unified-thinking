@@ -24,7 +24,7 @@ func NewLogicValidator() *LogicValidator {
 
 // Logical connectives and patterns
 var (
-	implications = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
+	implications  = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
 	negations     = []string{"not ", "no ", "never ", "none "}
 	universals    = []string{"all ", "every ", "each "}
 	_existentials = []string{"some ", "exists ", "there is ", "there are "} // Reserved for future use
@@ -176,18 +176,18 @@ func (v *LogicValidator) detectContradiction(content string) string {
 
 	// Check for semantic contradictions (bachelor/married, etc.)
 	semanticContradictions := map[string][]string{
-		"bachelor":  {"married", "wife", "husband"},
-		"married":   {"bachelor", "single", "unmarried"},
-		"dead":      {"alive", "living"},
-		"alive":     {"dead", "deceased"},
-		"empty":     {"full", "filled"},
-		"full":      {"empty"},
-		"on":        {"off"},
-		"off":       {"on"},
-		"open":      {"closed", "shut"},
-		"closed":    {"open"},
-		"asleep":    {"awake"},
-		"awake":     {"asleep", "sleeping"},
+		"bachelor": {"married", "wife", "husband"},
+		"married":  {"bachelor", "single", "unmarried"},
+		"dead":     {"alive", "living"},
+		"alive":    {"dead", "deceased"},
+		"empty":    {"full", "filled"},
+		"full":     {"empty"},
+		"on":       {"off"},
+		"off":      {"on"},
+		"open":     {"closed", "shut"},
+		"closed":   {"open"},
+		"asleep":   {"awake"},
+		"awake":    {"asleep", "sleeping"},
 	}
 
 	for term, contradictoryTerms := range semanticContradictions {
@@ -409,8 +409,8 @@ func (v *LogicValidator) tryModusTollens(premises []string, conclusion string) [
 						cleaned := strings.ReplaceAll(normalized2, " not ", " ")
 						// e.g., "ground is not wet" → "ground is wet"
 						if cleaned == normalizedConsequent ||
-						   strings.Contains(cleaned, normalizedConsequent) ||
-						   normalizedConsequent == cleaned {
+							strings.Contains(cleaned, normalizedConsequent) ||
+							normalizedConsequent == cleaned {
 							hasNegation = true
 						}
 					}
@@ -435,9 +435,9 @@ func (v *LogicValidator) tryModusTollens(premises []string, conclusion string) [
 
 							// e.g., "it does not rain" → "rain", antecedent "it rains" or "rains"
 							if cleaned == antecedentNormalized ||
-							   cleaned+"s" == antecedentNormalized ||
-							   cleaned == antecedentNormalized+"s" ||
-							   strings.Contains(antecedentNormalized, cleaned) {
+								cleaned+"s" == antecedentNormalized ||
+								cleaned == antecedentNormalized+"s" ||
+								strings.Contains(antecedentNormalized, cleaned) {
 								conclusionNegatesAntecedent = true
 							}
 						}
@@ -568,8 +568,8 @@ func (v *LogicValidator) tryUniversalInstantiation(premises []string, conclusion
 					if strings.Contains(rest, connector) {
 						parts := strings.Split(rest, connector)
 						if len(parts) == 2 {
-							x := strings.TrimSpace(parts[0])  // e.g., "humans", "programmers"
-							y := strings.TrimSpace(parts[1])  // e.g., "mortal", "write code"
+							x := strings.TrimSpace(parts[0]) // e.g., "humans", "programmers"
+							y := strings.TrimSpace(parts[1]) // e.g., "mortal", "write code"
 
 							// Look for "Z is X" pattern
 							for _, premise2 := range premises {
@@ -597,8 +597,8 @@ func (v *LogicValidator) tryUniversalInstantiation(premises []string, conclusion
 								matched := false
 								for _, variant := range xVariants {
 									if strings.Contains(lower2, " is a "+variant) ||
-									   strings.Contains(lower2, " is an "+variant) ||
-									   strings.Contains(lower2, " is "+variant) {
+										strings.Contains(lower2, " is an "+variant) ||
+										strings.Contains(lower2, " is "+variant) {
 										matched = true
 										break
 									}
@@ -620,8 +620,8 @@ func (v *LogicValidator) tryUniversalInstantiation(premises []string, conclusion
 												actualForm := x
 												for _, variant := range xVariants {
 													if strings.Contains(lower2, " is a "+variant) ||
-													   strings.Contains(lower2, " is an "+variant) ||
-													   strings.Contains(lower2, " is "+variant) {
+														strings.Contains(lower2, " is an "+variant) ||
+														strings.Contains(lower2, " is "+variant) {
 														actualForm = variant
 														break
 													}
@@ -641,14 +641,14 @@ func (v *LogicValidator) tryUniversalInstantiation(premises []string, conclusion
 											// Check if conclusion contains Z and either the plural or singular form
 											// e.g., "Alice writes code" contains "alice" and "writes code"
 											if strings.Contains(lowerConc, z) && (strings.Contains(lowerConc, y) ||
-											   strings.Contains(lowerConc, verbSingular+" "+y) ||
-											   strings.Contains(lowerConc, verb+" "+y)) {
+												strings.Contains(lowerConc, verbSingular+" "+y) ||
+												strings.Contains(lowerConc, verb+" "+y)) {
 												// Get the actual singular form used in premise2
 												actualForm := x
 												for _, variant := range xVariants {
 													if strings.Contains(lower2, " is a "+variant) ||
-													   strings.Contains(lower2, " is an "+variant) ||
-													   strings.Contains(lower2, " is "+variant) {
+														strings.Contains(lower2, " is an "+variant) ||
+														strings.Contains(lower2, " is "+variant) {
 														actualForm = variant
 														break
 													}
@@ -701,7 +701,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 		// Check if premise IS the conclusion but not part of a conditional
 		// Avoid matching "P" in "If P then Q" as a direct derivation
 		if !strings.Contains(lowerPrem, "if ") && !strings.Contains(lowerPrem, "then") &&
-		   !strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
+			!strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
 			// Simple premise, check if it contains conclusion
 			if strings.Contains(lowerPrem, lowerConc) {
 				return []string{
@@ -715,7 +715,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 		// This handles "The sky is blue today" when premise is "The sky is blue"
 		// But only if the premise is NOT a conditional statement
 		if !strings.Contains(lowerPrem, "if ") && !strings.Contains(lowerPrem, "then") &&
-		   !strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
+			!strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
 			if strings.Contains(lowerConc, lowerPrem) {
 				return []string{
 					"Direct derivation:",
@@ -730,7 +730,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 
 		// But again, avoid conditional premises
 		if !strings.Contains(premNormalized, "if ") && !strings.Contains(premNormalized, "then") &&
-		   !strings.Contains(premNormalized, "implies") {
+			!strings.Contains(premNormalized, "implies") {
 			if premNormalized == concNormalized {
 				return []string{
 					"Direct derivation:",
@@ -815,7 +815,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 			// Don't allow extraction from simple statements that aren't exact matches
 			// unless they're non-conditional
 			if !strings.Contains(lowerPrem, "if ") && !strings.Contains(lowerPrem, "then") &&
-			   !strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
+				!strings.Contains(lowerPrem, "implies") && !strings.Contains(lowerPrem, "or") {
 				// Allow from simple non-conditional statements
 				if strings.Contains(lowerPrem, lowerConc) {
 					// Make sure it's not part of a larger word
@@ -997,7 +997,7 @@ func (v *LogicValidator) hasEmptyQuantifier(statement string) bool {
 
 	// Patterns like "all " at end, or "some " at end
 	if strings.HasSuffix(lower, " all") || strings.HasSuffix(lower, " some") ||
-	   strings.HasSuffix(lower, " every") || strings.HasSuffix(lower, " no") {
+		strings.HasSuffix(lower, " every") || strings.HasSuffix(lower, " no") {
 		return true
 	}
 
@@ -1032,7 +1032,7 @@ func (v *LogicValidator) hasProperStart(statement string) bool {
 
 	// Allow logical symbols
 	if firstChar == '∀' || firstChar == '∃' || firstChar == '¬' ||
-	   firstChar == '(' || firstChar == '[' {
+		firstChar == '(' || firstChar == '[' {
 		return true
 	}
 
@@ -1060,11 +1060,11 @@ func (v *LogicValidator) getValidationReason(isValid bool, content string) strin
 
 	// Provide specific reasons for invalid thoughts
 	lower := strings.ToLower(content)
-	
+
 	if strings.Contains(lower, "always") && strings.Contains(lower, "never") {
 		return "Contains contradictory absolute statements (always/never)"
 	}
-	
+
 	if strings.Contains(lower, "all") && strings.Contains(lower, "none") {
 		return "Contains contradictory universal quantifiers (all/none)"
 	}

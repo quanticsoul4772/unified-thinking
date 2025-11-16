@@ -29,8 +29,8 @@ type RecordPredictionRequest struct {
 
 // RecordPredictionResponse contains the result of recording a prediction
 type RecordPredictionResponse struct {
-	Success bool                      `json:"success"`
-	Message string                    `json:"message"`
+	Success    bool                   `json:"success"`
+	Message    string                 `json:"message"`
 	Prediction *validation.Prediction `json:"prediction,omitempty"`
 }
 
@@ -69,9 +69,9 @@ type RecordOutcomeRequest struct {
 
 // RecordOutcomeResponse contains the result of recording an outcome
 type RecordOutcomeResponse struct {
-	Success bool                  `json:"success"`
-	Message string                `json:"message"`
-	Outcome *validation.Outcome   `json:"outcome,omitempty"`
+	Success bool                `json:"success"`
+	Message string              `json:"message"`
+	Outcome *validation.Outcome `json:"outcome,omitempty"`
 }
 
 // HandleRecordOutcome records an outcome for a prediction
@@ -107,7 +107,7 @@ type GetCalibrationReportRequest struct {
 // GetCalibrationReportResponse contains the calibration report
 type GetCalibrationReportResponse struct {
 	Report *validation.CalibrationReport `json:"report"`
-	Status string                         `json:"status"`
+	Status string                        `json:"status"`
 }
 
 // HandleGetCalibrationReport generates and returns a calibration report

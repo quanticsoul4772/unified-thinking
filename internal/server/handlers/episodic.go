@@ -41,9 +41,9 @@ type StartSessionRequest struct {
 
 // StartSessionResponse returns session details
 type StartSessionResponse struct {
-	SessionID   string                 `json:"session_id"`
-	ProblemID   string                 `json:"problem_id"`
-	Status      string                 `json:"status"`
+	SessionID   string                   `json:"session_id"`
+	ProblemID   string                   `json:"problem_id"`
+	Status      string                   `json:"status"`
 	Suggestions []*memory.Recommendation `json:"suggestions,omitempty"`
 }
 
@@ -179,10 +179,10 @@ type GetRecommendationsRequest struct {
 
 // GetRecommendationsResponse returns recommendations
 type GetRecommendationsResponse struct {
-	Recommendations  []*memory.Recommendation `json:"recommendations"`
-	SimilarCases     int                      `json:"similar_cases"`
-	LearnedPatterns  []*memory.TrajectoryPattern `json:"learned_patterns,omitempty"`
-	Count            int                      `json:"count"`
+	Recommendations []*memory.Recommendation    `json:"recommendations"`
+	SimilarCases    int                         `json:"similar_cases"`
+	LearnedPatterns []*memory.TrajectoryPattern `json:"learned_patterns,omitempty"`
+	Count           int                         `json:"count"`
 }
 
 // HandleGetRecommendations provides recommendations based on similar past cases
@@ -248,11 +248,11 @@ func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, pa
 
 // SearchTrajectoriesRequest searches for past trajectories
 type SearchTrajectoriesRequest struct {
-	Domain         string   `json:"domain,omitempty"`
-	Tags           []string `json:"tags,omitempty"`
-	MinSuccess     float64  `json:"min_success,omitempty"`
-	ProblemType    string   `json:"problem_type,omitempty"`
-	Limit          int      `json:"limit,omitempty"`
+	Domain      string   `json:"domain,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	MinSuccess  float64  `json:"min_success,omitempty"`
+	ProblemType string   `json:"problem_type,omitempty"`
+	Limit       int      `json:"limit,omitempty"`
 }
 
 // SearchTrajectoriesResponse returns matching trajectories
@@ -517,12 +517,12 @@ The system learns which approaches work best for different problem types.
 		var params map[string]interface{}
 		paramsBytes, _ := json.Marshal(input)
 		json.Unmarshal(paramsBytes, &params)
-		
+
 		result, err := handler.HandleCompleteSession(ctx, params)
 		if err != nil {
 			return nil, nil, err
 		}
-		
+
 		response := &CompleteSessionResponse{}
 		return result, response, nil
 	})
@@ -704,12 +704,12 @@ improvements, lessons learned, and comparative analysis against similar past ses
 		var params map[string]interface{}
 		paramsBytes, _ := json.Marshal(input)
 		json.Unmarshal(paramsBytes, &params)
-		
+
 		result, err := handler.HandleAnalyzeTrajectory(ctx, params)
 		if err != nil {
 			return nil, nil, err
 		}
-		
+
 		response := &memory.RetrospectiveAnalysis{}
 		return result, response, nil
 	})

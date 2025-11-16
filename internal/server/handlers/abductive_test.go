@@ -37,7 +37,7 @@ func (m *MockStorage) SearchThoughts(query string, mode types.ThinkingMode, limi
 }
 func (m *MockStorage) StoreBranch(branch *types.Branch) error     { return nil }
 func (m *MockStorage) GetBranch(id string) (*types.Branch, error) { return nil, nil }
-func (m *MockStorage) ListBranches() []*types.Branch               { return nil }
+func (m *MockStorage) ListBranches() []*types.Branch              { return nil }
 func (m *MockStorage) GetActiveBranch() (*types.Branch, error)    { return nil, nil }
 func (m *MockStorage) SetActiveBranch(branchID string) error      { return nil }
 func (m *MockStorage) UpdateBranchAccess(branchID string) error   { return nil }

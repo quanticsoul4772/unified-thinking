@@ -47,14 +47,14 @@ type BlindSpot struct {
 type BlindSpotType string
 
 const (
-	BlindSpotMissingAssumption   BlindSpotType = "missing_assumption"
-	BlindSpotUnconsideredFactor  BlindSpotType = "unconsidered_factor"
-	BlindSpotNarrowFraming       BlindSpotType = "narrow_framing"
-	BlindSpotConfirmationBias    BlindSpotType = "confirmation_bias"
-	BlindSpotIncompleteAnalysis  BlindSpotType = "incomplete_analysis"
-	BlindSpotMissingPerspective  BlindSpotType = "missing_perspective"
-	BlindSpotOverconfidence      BlindSpotType = "overconfidence"
-	BlindSpotUnconsideredRisk    BlindSpotType = "unconsidered_risk"
+	BlindSpotMissingAssumption  BlindSpotType = "missing_assumption"
+	BlindSpotUnconsideredFactor BlindSpotType = "unconsidered_factor"
+	BlindSpotNarrowFraming      BlindSpotType = "narrow_framing"
+	BlindSpotConfirmationBias   BlindSpotType = "confirmation_bias"
+	BlindSpotIncompleteAnalysis BlindSpotType = "incomplete_analysis"
+	BlindSpotMissingPerspective BlindSpotType = "missing_perspective"
+	BlindSpotOverconfidence     BlindSpotType = "overconfidence"
+	BlindSpotUnconsideredRisk   BlindSpotType = "unconsidered_risk"
 )
 
 // BlindSpotPattern represents a known pattern that often indicates blind spots
@@ -68,10 +68,10 @@ type BlindSpotPattern struct {
 
 // DomainChecklist provides domain-specific considerations
 type DomainChecklist struct {
-	Domain      string
-	Categories  []string
+	Domain       string
+	Categories   []string
 	MustConsider []string // Things that must be considered in this domain
-	CommonGaps  []string // Common blind spots in this domain
+	CommonGaps   []string // Common blind spots in this domain
 }
 
 // GapAnalysisRequest contains parameters for gap analysis
@@ -85,13 +85,13 @@ type GapAnalysisRequest struct {
 
 // GapAnalysisResult contains detected blind spots and gaps
 type GapAnalysisResult struct {
-	BlindSpots          []*BlindSpot
-	MissingConsiderations []string
+	BlindSpots              []*BlindSpot
+	MissingConsiderations   []string
 	UnchallengedAssumptions []string
-	SuggestedQuestions  []string
-	OverallRisk         float64 // 0-1, risk of missing critical factors
-	Confidence          float64
-	Analysis            string
+	SuggestedQuestions      []string
+	OverallRisk             float64 // 0-1, risk of missing critical factors
+	Confidence              float64
+	Analysis                string
 }
 
 // DetectBlindSpots analyzes content for unknown unknowns
@@ -514,9 +514,9 @@ func (uud *UnknownUnknownsDetector) detectSelfReferentialOverconfidence(req *Gap
 		},
 		DetectedAt: time.Now(),
 		Metadata: map[string]interface{}{
-			"claim_type":      "self-referential",
-			"absolute_claim":  hasAbsoluteClaim,
-			"lacks_hedging":   hasNoHedges,
+			"claim_type":        "self-referential",
+			"absolute_claim":    hasAbsoluteClaim,
+			"lacks_hedging":     hasNoHedges,
 			"semantic_analysis": true,
 		},
 	}

@@ -19,19 +19,19 @@ const (
 
 // Config holds storage configuration
 type Config struct {
-	Type         StorageType // Storage backend type
-	SQLitePath   string      // Path to SQLite database file
+	Type          StorageType // Storage backend type
+	SQLitePath    string      // Path to SQLite database file
 	SQLiteTimeout int         // SQLite busy timeout in milliseconds
-	FallbackType StorageType // Fallback storage type on errors
+	FallbackType  StorageType // Fallback storage type on errors
 }
 
 // DefaultConfig returns default configuration with in-memory storage
 func DefaultConfig() Config {
 	return Config{
-		Type:         StorageTypeMemory,
-		SQLitePath:   "./data/unified-thinking.db",
+		Type:          StorageTypeMemory,
+		SQLitePath:    "./data/unified-thinking.db",
 		SQLiteTimeout: 5000,
-		FallbackType: StorageTypeMemory,
+		FallbackType:  StorageTypeMemory,
 	}
 }
 

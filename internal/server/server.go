@@ -70,39 +70,39 @@ import (
 
 // UnifiedServer coordinates all thinking modes and provides MCP tool handlers.
 type UnifiedServer struct {
-	storage                storage.Storage
-	linear                 *modes.LinearMode
-	tree                   *modes.TreeMode
-	divergent              *modes.DivergentMode
-	auto                   *modes.AutoMode
-	validator              *validation.LogicValidator
-	probabilisticReasoner  *reasoning.ProbabilisticReasoner
-	evidenceAnalyzer       *analysis.EvidenceAnalyzer
-	contradictionDetector  *analysis.ContradictionDetector
-	decisionMaker          *reasoning.DecisionMaker
-	problemDecomposer      *reasoning.ProblemDecomposer
-	sensitivityAnalyzer    *analysis.SensitivityAnalyzer
-	selfEvaluator          *metacognition.SelfEvaluator
-	biasDetector           *metacognition.BiasDetector
-	fallacyDetector        *validation.FallacyDetector
+	storage               storage.Storage
+	linear                *modes.LinearMode
+	tree                  *modes.TreeMode
+	divergent             *modes.DivergentMode
+	auto                  *modes.AutoMode
+	validator             *validation.LogicValidator
+	probabilisticReasoner *reasoning.ProbabilisticReasoner
+	evidenceAnalyzer      *analysis.EvidenceAnalyzer
+	contradictionDetector *analysis.ContradictionDetector
+	decisionMaker         *reasoning.DecisionMaker
+	problemDecomposer     *reasoning.ProblemDecomposer
+	sensitivityAnalyzer   *analysis.SensitivityAnalyzer
+	selfEvaluator         *metacognition.SelfEvaluator
+	biasDetector          *metacognition.BiasDetector
+	fallacyDetector       *validation.FallacyDetector
 	// Phase 1: Handler delegates
-	probabilisticHandler   *handlers.ProbabilisticHandler
-	decisionHandler        *handlers.DecisionHandler
-	metacognitionHandler   *handlers.MetacognitionHandler
+	probabilisticHandler *handlers.ProbabilisticHandler
+	decisionHandler      *handlers.DecisionHandler
+	metacognitionHandler *handlers.MetacognitionHandler
 	// Phase 2: Handler delegates
-	temporalHandler        *handlers.TemporalHandler
-	causalHandler          *handlers.CausalHandler
+	temporalHandler *handlers.TemporalHandler
+	causalHandler   *handlers.CausalHandler
 	// Phase 2-3: Advanced reasoning modules
-	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
-	temporalReasoner       *reasoning.TemporalReasoner
-	causalReasoner         *reasoning.CausalReasoner
-	synthesizer            *integration.Synthesizer
+	perspectiveAnalyzer *analysis.PerspectiveAnalyzer
+	temporalReasoner    *reasoning.TemporalReasoner
+	causalReasoner      *reasoning.CausalReasoner
+	synthesizer         *integration.Synthesizer
 	// Workflow orchestration
-	orchestrator           *orchestration.Orchestrator
+	orchestrator *orchestration.Orchestrator
 	// Hallucination detection (Phase 1 implementation)
-	hallucinationHandler   *handlers.HallucinationHandler
+	hallucinationHandler *handlers.HallucinationHandler
 	// Confidence calibration tracking (Phase 1 implementation)
-	calibrationHandler     *handlers.CalibrationHandler
+	calibrationHandler *handlers.CalibrationHandler
 	// Phase 2-3: New reasoning handlers
 	dualProcessHandler     *handlers.DualProcessHandler
 	backtrackingHandler    *handlers.BacktrackingHandler
@@ -111,12 +111,12 @@ type UnifiedServer struct {
 	unknownUnknownsHandler *handlers.UnknownUnknownsHandler
 	symbolicHandler        *handlers.SymbolicHandler
 	// Enhanced tools components
-	analogicalReasoner         *reasoning.AnalogicalReasoner
-	argumentAnalyzer           *analysis.ArgumentAnalyzer
-	evidencePipeline           *integration.EvidencePipeline
-	causalTemporalIntegration  *integration.CausalTemporalIntegration
+	analogicalReasoner        *reasoning.AnalogicalReasoner
+	argumentAnalyzer          *analysis.ArgumentAnalyzer
+	evidencePipeline          *integration.EvidencePipeline
+	causalTemporalIntegration *integration.CausalTemporalIntegration
 	// Episodic memory system (Phase 2)
-	episodicMemoryHandler      *handlers.EpisodicMemoryHandler
+	episodicMemoryHandler *handlers.EpisodicMemoryHandler
 }
 
 func NewUnifiedServer(
@@ -136,38 +136,38 @@ func NewUnifiedServer(
 	sensitivityAnalyzer := analysis.NewSensitivityAnalyzer()
 
 	s := &UnifiedServer{
-		storage:                store,
-		linear:                 linear,
-		tree:                   tree,
-		divergent:              divergent,
-		auto:                   auto,
-		validator:              validator,
-		probabilisticReasoner:  probabilisticReasoner,
-		evidenceAnalyzer:       evidenceAnalyzer,
-		contradictionDetector:  contradictionDetector,
-		decisionMaker:          decisionMaker,
-		problemDecomposer:      problemDecomposer,
-		sensitivityAnalyzer:    sensitivityAnalyzer,
-		selfEvaluator:          metacognition.NewSelfEvaluator(),
-		biasDetector:           metacognition.NewBiasDetector(),
-		fallacyDetector:        validation.NewFallacyDetector(),
+		storage:               store,
+		linear:                linear,
+		tree:                  tree,
+		divergent:             divergent,
+		auto:                  auto,
+		validator:             validator,
+		probabilisticReasoner: probabilisticReasoner,
+		evidenceAnalyzer:      evidenceAnalyzer,
+		contradictionDetector: contradictionDetector,
+		decisionMaker:         decisionMaker,
+		problemDecomposer:     problemDecomposer,
+		sensitivityAnalyzer:   sensitivityAnalyzer,
+		selfEvaluator:         metacognition.NewSelfEvaluator(),
+		biasDetector:          metacognition.NewBiasDetector(),
+		fallacyDetector:       validation.NewFallacyDetector(),
 		// Phase 1: Initialize handler delegates
-		probabilisticHandler:   handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
-		decisionHandler:        handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
-		metacognitionHandler:   handlers.NewMetacognitionHandler(store, metacognition.NewSelfEvaluator(), metacognition.NewBiasDetector(), validation.NewFallacyDetector()),
+		probabilisticHandler: handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
+		decisionHandler:      handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
+		metacognitionHandler: handlers.NewMetacognitionHandler(store, metacognition.NewSelfEvaluator(), metacognition.NewBiasDetector(), validation.NewFallacyDetector()),
 		// Phase 2: Initialize temporal handler delegate
-		temporalHandler:        handlers.NewTemporalHandler(analysis.NewPerspectiveAnalyzer(), reasoning.NewTemporalReasoner()),
+		temporalHandler: handlers.NewTemporalHandler(analysis.NewPerspectiveAnalyzer(), reasoning.NewTemporalReasoner()),
 		// Phase 2-3: Initialize advanced reasoning modules
-		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
-		temporalReasoner:       reasoning.NewTemporalReasoner(),
-		causalReasoner:         reasoning.NewCausalReasoner(),
+		perspectiveAnalyzer: analysis.NewPerspectiveAnalyzer(),
+		temporalReasoner:    reasoning.NewTemporalReasoner(),
+		causalReasoner:      reasoning.NewCausalReasoner(),
 		// Phase 2: Initialize causal handler delegate
-		causalHandler:          handlers.NewCausalHandler(reasoning.NewCausalReasoner()),
-		synthesizer:            integration.NewSynthesizer(),
+		causalHandler: handlers.NewCausalHandler(reasoning.NewCausalReasoner()),
+		synthesizer:   integration.NewSynthesizer(),
 		// Initialize hallucination handler
-		hallucinationHandler:   handlers.NewHallucinationHandler(store),
+		hallucinationHandler: handlers.NewHallucinationHandler(store),
 		// Initialize calibration tracker
-		calibrationHandler:     handlers.NewCalibrationHandler(),
+		calibrationHandler: handlers.NewCalibrationHandler(),
 	}
 
 	// Initialize Phase 2-3 handlers
@@ -478,7 +478,7 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	}, s.handleVerifyThought)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
-		Name:        "get-hallucination-report",
+		Name: "get-hallucination-report",
 		Description: `Retrieve cached hallucination verification report for a thought.
 
 **Parameters:**
@@ -794,15 +794,15 @@ type CrossRefInput struct {
 }
 
 type ThinkResponse struct {
-	ThoughtID    string                   `json:"thought_id"`
-	Mode         string                   `json:"mode"`
-	BranchID     string                   `json:"branch_id,omitempty"`
-	Status       string                   `json:"status"`
-	Priority     float64                  `json:"priority,omitempty"`
-	Confidence   float64                  `json:"confidence"`
-	InsightCount int                      `json:"insight_count,omitempty"`
-	IsValid      bool                     `json:"is_valid,omitempty"`
-	Metadata     *types.ResponseMetadata  `json:"metadata"`
+	ThoughtID    string                  `json:"thought_id"`
+	Mode         string                  `json:"mode"`
+	BranchID     string                  `json:"branch_id,omitempty"`
+	Status       string                  `json:"status"`
+	Priority     float64                 `json:"priority,omitempty"`
+	Confidence   float64                 `json:"confidence"`
+	InsightCount int                     `json:"insight_count,omitempty"`
+	IsValid      bool                    `json:"is_valid,omitempty"`
+	Metadata     *types.ResponseMetadata `json:"metadata"`
 }
 
 func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolRequest, input ThinkRequest) (*mcp.CallToolResult, *ThinkResponse, error) {
@@ -1393,7 +1393,6 @@ func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.Cal
 	return s.decisionHandler.HandleDecomposeProblem(ctx, req, input)
 }
 
-
 // ============================================================================
 // Sensitivity Analysis Tool
 // ============================================================================
@@ -1465,7 +1464,7 @@ func (s *UnifiedServer) handleGetCausalGraph(ctx context.Context, req *mcp.CallT
 // Phase 3: Cross-Mode Synthesis
 
 type SynthesizeInsightsRequest struct {
-	Context string                   `json:"context"`
+	Context string               `json:"context"`
 	Inputs  []*integration.Input `json:"inputs"`
 }
 
@@ -1698,9 +1697,9 @@ type ExecuteWorkflowRequest struct {
 }
 
 type ExecuteWorkflowResponse struct {
-	Result   *orchestration.WorkflowResult `json:"result"`
-	Status   string                        `json:"status"`
-	Error    string                        `json:"error,omitempty"`
+	Result *orchestration.WorkflowResult `json:"result"`
+	Status string                        `json:"status"`
+	Error  string                        `json:"error,omitempty"`
 }
 
 type ListWorkflowsResponse struct {
@@ -1911,7 +1910,6 @@ func (s *UnifiedServer) handleGetCalibrationReport(ctx context.Context, req *mcp
 	}, response, nil
 }
 
-
 // Phase 2-3: Advanced reasoning handler methods
 
 // handleDualProcessThink handles dual-process thinking
@@ -1919,19 +1917,19 @@ func (s *UnifiedServer) handleDualProcessThink(ctx context.Context, req *mcp.Cal
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.dualProcessHandler.HandleDualProcessThink(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.DualProcessThinkResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -1940,19 +1938,19 @@ func (s *UnifiedServer) handleCreateCheckpoint(ctx context.Context, req *mcp.Cal
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.backtrackingHandler.HandleCreateCheckpoint(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.CreateCheckpointResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -1961,19 +1959,19 @@ func (s *UnifiedServer) handleRestoreCheckpoint(ctx context.Context, req *mcp.Ca
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.backtrackingHandler.HandleRestoreCheckpoint(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.RestoreCheckpointResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -1982,19 +1980,19 @@ func (s *UnifiedServer) handleListCheckpoints(ctx context.Context, req *mcp.Call
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.backtrackingHandler.HandleListCheckpoints(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.ListCheckpointsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2003,19 +2001,19 @@ func (s *UnifiedServer) handleGenerateHypotheses(ctx context.Context, req *mcp.C
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.abductiveHandler.HandleGenerateHypotheses(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.GenerateHypothesesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2024,19 +2022,19 @@ func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.C
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.abductiveHandler.HandleEvaluateHypotheses(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.EvaluateHypothesesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2045,19 +2043,19 @@ func (s *UnifiedServer) handleRetrieveCases(ctx context.Context, req *mcp.CallTo
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.caseBasedHandler.HandleRetrieveCases(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.RetrieveCasesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2066,19 +2064,19 @@ func (s *UnifiedServer) handlePerformCBRCycle(ctx context.Context, req *mcp.Call
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.caseBasedHandler.HandlePerformCBRCycle(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.PerformCBRCycleResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2087,19 +2085,19 @@ func (s *UnifiedServer) handleDetectBlindSpots(ctx context.Context, req *mcp.Cal
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.unknownUnknownsHandler.HandleDetectBlindSpots(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.DetectBlindSpotsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2108,19 +2106,19 @@ func (s *UnifiedServer) handleProveTheorem(ctx context.Context, req *mcp.CallToo
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.symbolicHandler.HandleProveTheorem(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.ProveTheoremResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }
 
@@ -2129,18 +2127,18 @@ func (s *UnifiedServer) handleCheckConstraints(ctx context.Context, req *mcp.Cal
 	params := make(map[string]interface{})
 	data, _ := json.Marshal(input)
 	json.Unmarshal(data, &params)
-	
+
 	result, err := s.symbolicHandler.HandleCheckConstraints(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	var response handlers.CheckConstraintsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
 			json.Unmarshal([]byte(textContent.Text), &response)
 		}
 	}
-	
+
 	return result, &response, nil
 }

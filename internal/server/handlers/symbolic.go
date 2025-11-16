@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/storage"
@@ -48,11 +48,11 @@ type ProofOutput struct {
 
 // ProofStepOutput represents a proof step
 type ProofStepOutput struct {
-	StepNumber    int      `json:"step_number"`
-	Statement     string   `json:"statement"`
-	Justification string   `json:"justification"`
-	Rule          string   `json:"rule"`
-	Dependencies  []int    `json:"dependencies"`
+	StepNumber    int    `json:"step_number"`
+	Statement     string `json:"statement"`
+	Justification string `json:"justification"`
+	Rule          string `json:"rule"`
+	Dependencies  []int  `json:"dependencies"`
 }
 
 // HandleProveTheorem attempts to prove a theorem

@@ -57,15 +57,15 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 
 	case "probabilistic-reasoning":
 		req := handlers.ProbabilisticReasoningRequest{
-			Operation:     getStringField(input, "operation"),
-			Statement:     getStringField(input, "statement"),
-			PriorProb:     getFloatField(input, "prior_prob"),
-			BeliefID:      getStringField(input, "belief_id"),
-			EvidenceID:    getStringField(input, "evidence_id"),
-			Likelihood:    getFloatField(input, "likelihood"),
-			EvidenceProb:  getFloatField(input, "evidence_prob"),
-			BeliefIDs:     getStringSliceField(input, "belief_ids"),
-			CombineOp:     getStringField(input, "combine_op"),
+			Operation:    getStringField(input, "operation"),
+			Statement:    getStringField(input, "statement"),
+			PriorProb:    getFloatField(input, "prior_prob"),
+			BeliefID:     getStringField(input, "belief_id"),
+			EvidenceID:   getStringField(input, "evidence_id"),
+			Likelihood:   getFloatField(input, "likelihood"),
+			EvidenceProb: getFloatField(input, "evidence_prob"),
+			BeliefIDs:    getStringSliceField(input, "belief_ids"),
+			CombineOp:    getStringField(input, "combine_op"),
 		}
 		return e.server.ProbabilisticReasoning(ctx, req)
 

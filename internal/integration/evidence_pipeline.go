@@ -22,8 +22,8 @@ type EvidencePipeline struct {
 	evidenceAnalyzer      *analysis.EvidenceAnalyzer
 
 	// Track relationships
-	evidenceToBeliefs map[string][]string // evidence_id -> belief_ids
-	evidenceToCausal  map[string][]string // evidence_id -> graph_ids
+	evidenceToBeliefs   map[string][]string // evidence_id -> belief_ids
+	evidenceToCausal    map[string][]string // evidence_id -> graph_ids
 	evidenceToDecisions map[string][]string // evidence_id -> decision_ids
 
 	mu sync.RWMutex
@@ -49,12 +49,12 @@ func NewEvidencePipeline(
 
 // PipelineResult contains the results of evidence propagation
 type PipelineResult struct {
-	EvidenceID       string                        `json:"evidence_id"`
-	UpdatedBeliefs   []*types.ProbabilisticBelief  `json:"updated_beliefs"`
-	UpdatedGraphs    []*types.CausalGraph          `json:"updated_graphs,omitempty"`
-	UpdatedDecisions []*types.Decision             `json:"updated_decisions,omitempty"`
-	Changes          []string                      `json:"changes"`
-	Status           string                        `json:"status"`
+	EvidenceID       string                       `json:"evidence_id"`
+	UpdatedBeliefs   []*types.ProbabilisticBelief `json:"updated_beliefs"`
+	UpdatedGraphs    []*types.CausalGraph         `json:"updated_graphs,omitempty"`
+	UpdatedDecisions []*types.Decision            `json:"updated_decisions,omitempty"`
+	Changes          []string                     `json:"changes"`
+	Status           string                       `json:"status"`
 }
 
 // ProcessEvidence assesses evidence and propagates updates across all systems

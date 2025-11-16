@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/processing"
@@ -26,25 +26,25 @@ func NewDualProcessHandler(executor *processing.DualProcessExecutor, store stora
 
 // DualProcessThinkRequest represents a dual-process thinking request
 type DualProcessThinkRequest struct {
-	Content      string                 `json:"content"`
-	Mode         string                 `json:"mode,omitempty"`
-	BranchID     string                 `json:"branch_id,omitempty"`
-	ForceSystem  string                 `json:"force_system,omitempty"` // "system1", "system2", or empty for auto
-	KeyPoints    []string               `json:"key_points,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	Content     string                 `json:"content"`
+	Mode        string                 `json:"mode,omitempty"`
+	BranchID    string                 `json:"branch_id,omitempty"`
+	ForceSystem string                 `json:"force_system,omitempty"` // "system1", "system2", or empty for auto
+	KeyPoints   []string               `json:"key_points,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // DualProcessThinkResponse represents the response
 type DualProcessThinkResponse struct {
-	ThoughtID        string                 `json:"thought_id"`
-	SystemUsed       string                 `json:"system_used"`       // "system1" or "system2"
-	Complexity       float64                `json:"complexity"`
-	Escalated        bool                   `json:"escalated"`
-	System1Time      string                 `json:"system1_time"`
-	System2Time      string                 `json:"system2_time,omitempty"`
-	Confidence       float64                `json:"confidence"`
-	Content          string                 `json:"content"`
-	Metadata         map[string]interface{} `json:"metadata"`
+	ThoughtID   string                 `json:"thought_id"`
+	SystemUsed  string                 `json:"system_used"` // "system1" or "system2"
+	Complexity  float64                `json:"complexity"`
+	Escalated   bool                   `json:"escalated"`
+	System1Time string                 `json:"system1_time"`
+	System2Time string                 `json:"system2_time,omitempty"`
+	Confidence  float64                `json:"confidence"`
+	Content     string                 `json:"content"`
+	Metadata    map[string]interface{} `json:"metadata"`
 }
 
 // HandleDualProcessThink handles dual-process thinking requests

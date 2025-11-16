@@ -12,9 +12,9 @@ import (
 
 // Synthesizer integrates insights from different reasoning modes
 type Synthesizer struct {
-	mu         sync.RWMutex
-	syntheses  map[string]*types.Synthesis
-	counter    int
+	mu        sync.RWMutex
+	syntheses map[string]*types.Synthesis
+	counter   int
 }
 
 // NewSynthesizer creates a new cross-mode synthesizer
@@ -26,11 +26,11 @@ func NewSynthesizer() *Synthesizer {
 
 // Input represents a piece of reasoning from a specific mode
 type Input struct {
-	ID          string
-	Mode        string // "causal", "temporal", "perspective", "probabilistic", etc.
-	Content     string
-	Confidence  float64
-	Metadata    map[string]interface{}
+	ID         string
+	Mode       string // "causal", "temporal", "perspective", "probabilistic", etc.
+	Content    string
+	Confidence float64
+	Metadata   map[string]interface{}
 }
 
 // SynthesizeInsights combines insights from multiple reasoning modes
@@ -167,7 +167,7 @@ func (s *Synthesizer) detectConflicts(inputs []*Input, context string) []string 
 	// Temporal conflicts (short-term vs long-term)
 	if temporal, hasTemporal := modes["temporal"]; hasTemporal {
 		if strings.Contains(strings.ToLower(temporal.Content), "tradeoff") ||
-		   strings.Contains(strings.ToLower(temporal.Content), "tension") {
+			strings.Contains(strings.ToLower(temporal.Content), "tension") {
 			conflicts = append(conflicts,
 				"Temporal analysis reveals inherent short-term vs long-term tradeoffs that require prioritization")
 		}
@@ -176,8 +176,8 @@ func (s *Synthesizer) detectConflicts(inputs []*Input, context string) []string 
 	// Perspective conflicts
 	if perspective, hasPerspective := modes["perspective"]; hasPerspective {
 		if strings.Contains(strings.ToLower(perspective.Content), "conflict") ||
-		   strings.Contains(strings.ToLower(perspective.Content), "disagreement") ||
-		   strings.Contains(strings.ToLower(perspective.Content), "opposing") {
+			strings.Contains(strings.ToLower(perspective.Content), "disagreement") ||
+			strings.Contains(strings.ToLower(perspective.Content), "opposing") {
 			conflicts = append(conflicts,
 				"Different stakeholder perspectives have conflicting priorities or concerns that must be balanced")
 		}
@@ -190,7 +190,7 @@ func (s *Synthesizer) detectConflicts(inputs []*Input, context string) []string 
 	}
 
 	minConfidence, maxConfidence := findMinMax(confidences)
-	if maxConfidence - minConfidence > 0.4 {
+	if maxConfidence-minConfidence > 0.4 {
 		conflicts = append(conflicts, fmt.Sprintf(
 			"Significant confidence variation across modes (%.2f to %.2f) suggests underlying uncertainty",
 			minConfidence, maxConfidence,
@@ -355,12 +355,12 @@ func (s *Synthesizer) DetectEmergentPatterns(inputs []*Input) ([]string, error) 
 	hasTemporal := false
 	for _, input := range inputs {
 		if input.Mode == "causal" && (strings.Contains(strings.ToLower(input.Content), "cycle") ||
-		   strings.Contains(strings.ToLower(input.Content), "feedback") ||
-		   strings.Contains(strings.ToLower(input.Content), "reinforcing")) {
+			strings.Contains(strings.ToLower(input.Content), "feedback") ||
+			strings.Contains(strings.ToLower(input.Content), "reinforcing")) {
 			hasCausal = true
 		}
 		if input.Mode == "temporal" && (strings.Contains(strings.ToLower(input.Content), "compound") ||
-		   strings.Contains(strings.ToLower(input.Content), "accumulate")) {
+			strings.Contains(strings.ToLower(input.Content), "accumulate")) {
 			hasTemporal = true
 		}
 	}
@@ -376,7 +376,7 @@ func (s *Synthesizer) DetectEmergentPatterns(inputs []*Input) ([]string, error) 
 			hasPerspective = true
 		}
 		if strings.Contains(strings.ToLower(input.Content), "incentive") ||
-		   strings.Contains(strings.ToLower(input.Content), "motivation") {
+			strings.Contains(strings.ToLower(input.Content), "motivation") {
 			hasIncentive = true
 		}
 	}
@@ -389,8 +389,8 @@ func (s *Synthesizer) DetectEmergentPatterns(inputs []*Input) ([]string, error) 
 	for _, input := range inputs {
 		contentLower := strings.ToLower(input.Content)
 		if strings.Contains(contentLower, "delay") ||
-		   strings.Contains(contentLower, "lag") ||
-		   strings.Contains(contentLower, "long-term") {
+			strings.Contains(contentLower, "lag") ||
+			strings.Contains(contentLower, "long-term") {
 			hasDelay = true
 			// Mark as having both causal and temporal if both keywords present
 			if input.Mode == "causal" || strings.Contains(contentLower, "cause") {

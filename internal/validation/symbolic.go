@@ -24,11 +24,11 @@ func NewSymbolicReasoner() *SymbolicReasoner {
 
 // Symbol represents a symbolic variable or constant
 type Symbol struct {
-	Name       string
-	Type       SymbolType
-	Domain     string // e.g., "integer", "boolean", "real"
-	Value      interface{}
-	Metadata   map[string]interface{}
+	Name     string
+	Type     SymbolType
+	Domain   string // e.g., "integer", "boolean", "real"
+	Value    interface{}
+	Metadata map[string]interface{}
 }
 
 // SymbolType categorizes symbols
@@ -55,23 +55,23 @@ type SymbolicConstraint struct {
 type ConstraintType string
 
 const (
-	ConstraintEquality   ConstraintType = "equality"     // x = y
-	ConstraintInequality ConstraintType = "inequality"   // x < y, x > y
-	ConstraintRange      ConstraintType = "range"        // x in [a, b]
-	ConstraintMembership ConstraintType = "membership"   // x in Set
+	ConstraintEquality    ConstraintType = "equality"    // x = y
+	ConstraintInequality  ConstraintType = "inequality"  // x < y, x > y
+	ConstraintRange       ConstraintType = "range"       // x in [a, b]
+	ConstraintMembership  ConstraintType = "membership"  // x in Set
 	ConstraintImplication ConstraintType = "implication" // A → B
 	ConstraintConjunction ConstraintType = "conjunction" // A ∧ B
 	ConstraintDisjunction ConstraintType = "disjunction" // A ∨ B
-	ConstraintNegation   ConstraintType = "negation"    // ¬A
+	ConstraintNegation    ConstraintType = "negation"    // ¬A
 )
 
 // SymbolicTheorem represents a theorem to be proved
 type SymbolicTheorem struct {
-	Name        string
-	Premises    []string
-	Conclusion  string
-	Proof       *TheoremProof
-	Status      TheoremStatus
+	Name       string
+	Premises   []string
+	Conclusion string
+	Proof      *TheoremProof
+	Status     TheoremStatus
 }
 
 // TheoremStatus indicates proof status
@@ -95,11 +95,11 @@ type TheoremProof struct {
 
 // ProofStep represents a single step in a proof
 type ProofStep struct {
-	StepNumber  int
-	Statement   string
+	StepNumber    int
+	Statement     string
 	Justification string
-	Rule        string
-	Dependencies []int // Step numbers this depends on
+	Rule          string
+	Dependencies  []int // Step numbers this depends on
 }
 
 // AddSymbol registers a symbolic variable or constant
@@ -445,9 +445,9 @@ func (sr *SymbolicReasoner) statementsMatch(s1, s2 string) bool {
 // CheckConstraintConsistency checks if a set of constraints are mutually consistent
 func (sr *SymbolicReasoner) CheckConstraintConsistency(constraintIDs []string) (*ConsistencyResult, error) {
 	result := &ConsistencyResult{
-		IsConsistent:  true,
-		Conflicts:     make([]*ConstraintConflict, 0),
-		Explanation:   "All constraints are mutually consistent",
+		IsConsistent: true,
+		Conflicts:    make([]*ConstraintConflict, 0),
+		Explanation:  "All constraints are mutually consistent",
 	}
 
 	// Get constraints

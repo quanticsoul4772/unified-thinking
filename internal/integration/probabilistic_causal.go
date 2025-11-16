@@ -11,7 +11,7 @@ import (
 
 // ProbabilisticCausalIntegration manages feedback between Bayesian beliefs and causal graphs
 type ProbabilisticCausalIntegration struct {
-	probReasoner  *reasoning.ProbabilisticReasoner
+	probReasoner   *reasoning.ProbabilisticReasoner
 	causalReasoner *reasoning.CausalReasoner
 }
 
@@ -133,9 +133,9 @@ func (pci *ProbabilisticCausalIntegration) CreateFeedbackLoop(
 
 	for i := 0; i < iterations; i++ {
 		iteration := FeedbackIteration{
-			IterationNum:        i + 1,
-			BeliefPosterior:     currentBelief.Probability,
-			GraphComplexity:     pci.calculateGraphComplexity(currentGraph),
+			IterationNum:    i + 1,
+			BeliefPosterior: currentBelief.Probability,
+			GraphComplexity: pci.calculateGraphComplexity(currentGraph),
 		}
 
 		// Step 1: Update belief based on causal graph
@@ -175,21 +175,21 @@ func (pci *ProbabilisticCausalIntegration) CreateFeedbackLoop(
 
 // FeedbackResult contains the results of feedback loop
 type FeedbackResult struct {
-	Iterations          []FeedbackIteration       `json:"iterations"`
-	TotalIterations     int                       `json:"total_iterations"`
-	Converged           bool                      `json:"converged"`
-	ConvergenceIteration int                      `json:"convergence_iteration,omitempty"`
-	FinalBelief         *types.ProbabilisticBelief `json:"final_belief"`
-	FinalGraph          *types.CausalGraph         `json:"final_graph"`
+	Iterations           []FeedbackIteration        `json:"iterations"`
+	TotalIterations      int                        `json:"total_iterations"`
+	Converged            bool                       `json:"converged"`
+	ConvergenceIteration int                        `json:"convergence_iteration,omitempty"`
+	FinalBelief          *types.ProbabilisticBelief `json:"final_belief"`
+	FinalGraph           *types.CausalGraph         `json:"final_graph"`
 }
 
 // FeedbackIteration represents one iteration of the feedback loop
 type FeedbackIteration struct {
-	IterationNum    int     `json:"iteration_num"`
-	BeliefPosterior float64 `json:"belief_posterior"`
-	GraphComplexity float64 `json:"graph_complexity"`
-	BeliefUpdated   bool    `json:"belief_updated"`
-	GraphUpdated    bool    `json:"graph_updated"`
+	IterationNum     int     `json:"iteration_num"`
+	BeliefPosterior  float64 `json:"belief_posterior"`
+	GraphComplexity  float64 `json:"graph_complexity"`
+	BeliefUpdated    bool    `json:"belief_updated"`
+	GraphUpdated     bool    `json:"graph_updated"`
 	ConvergenceScore float64 `json:"convergence_score"`
 }
 
@@ -257,7 +257,7 @@ func (pci *ProbabilisticCausalIntegration) calculateConvergence(belief *types.Pr
 
 	graphComplexity := pci.calculateGraphComplexity(graph)
 	// Prefer moderate complexity (too simple or too complex = less converged)
-	complexityScore := 1.0 - (2.0 * abs(graphComplexity - 0.5))
+	complexityScore := 1.0 - (2.0 * abs(graphComplexity-0.5))
 
 	return (beliefStability + complexityScore) / 2.0
 }

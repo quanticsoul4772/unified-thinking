@@ -13,47 +13,47 @@ func TestBayesianAccuracy(t *testing.T) {
 	tests := []struct {
 		name          string
 		priorProb     float64
-		likelihood    float64   // P(E|H)
-		evidenceProb  float64   // P(E)
-		likelihoodNot float64   // P(E|¬H) - needed for correct calculation
-		expectedPost  float64   // Correct posterior P(H|E)
+		likelihood    float64 // P(E|H)
+		evidenceProb  float64 // P(E)
+		likelihoodNot float64 // P(E|¬H) - needed for correct calculation
+		expectedPost  float64 // Correct posterior P(H|E)
 		description   string
 	}{
 		{
-			name:         "Medical Test - Classic Bayes",
-			priorProb:    0.01,  // 1% have disease
-			likelihood:   0.99,  // 99% true positive rate
-			likelihoodNot: 0.05, // 5% false positive rate
-			evidenceProb: 0.0594,  // Calculated: 0.99*0.01 + 0.05*0.99 = 0.0594
-			expectedPost: 0.166, // Correct: (0.99*0.01) / 0.0594 ≈ 0.166
-			description:  "Rare disease with accurate test - posterior should be ~16.6%",
+			name:          "Medical Test - Classic Bayes",
+			priorProb:     0.01,   // 1% have disease
+			likelihood:    0.99,   // 99% true positive rate
+			likelihoodNot: 0.05,   // 5% false positive rate
+			evidenceProb:  0.0594, // Calculated: 0.99*0.01 + 0.05*0.99 = 0.0594
+			expectedPost:  0.166,  // Correct: (0.99*0.01) / 0.0594 ≈ 0.166
+			description:   "Rare disease with accurate test - posterior should be ~16.6%",
 		},
 		{
-			name:         "Fair Coin - No Update",
-			priorProb:    0.5,
-			likelihood:   0.5,   // Fair coin
+			name:          "Fair Coin - No Update",
+			priorProb:     0.5,
+			likelihood:    0.5, // Fair coin
 			likelihoodNot: 0.5,
-			evidenceProb: 0.5,
-			expectedPost: 0.5,   // Should stay 0.5
-			description:  "Uninformative evidence should not change belief",
+			evidenceProb:  0.5,
+			expectedPost:  0.5, // Should stay 0.5
+			description:   "Uninformative evidence should not change belief",
 		},
 		{
-			name:         "Strong Evidence",
-			priorProb:    0.3,
-			likelihood:   0.9,   // Strong positive evidence
-			likelihoodNot: 0.1,  // Weak evidence if not H
-			evidenceProb: 0.34,  // 0.9*0.3 + 0.1*0.7 = 0.34
-			expectedPost: 0.794, // (0.9*0.3) / 0.34 ≈ 0.794
-			description:  "Strong evidence should significantly increase belief",
+			name:          "Strong Evidence",
+			priorProb:     0.3,
+			likelihood:    0.9,   // Strong positive evidence
+			likelihoodNot: 0.1,   // Weak evidence if not H
+			evidenceProb:  0.34,  // 0.9*0.3 + 0.1*0.7 = 0.34
+			expectedPost:  0.794, // (0.9*0.3) / 0.34 ≈ 0.794
+			description:   "Strong evidence should significantly increase belief",
 		},
 		{
-			name:         "Monty Hall - Switch Door",
-			priorProb:    1.0/3.0,  // Initially 1/3 chance car behind chosen door
-			likelihood:   0.0,      // P(host shows goat | car behind chosen) = 0
-			likelihoodNot: 0.5,     // P(host shows goat | car elsewhere) = 1/2
-			evidenceProb: 1.0/3.0,  // P(host shows goat) = 1/3
-			expectedPost: 0.0,      // Should realize switching is better
-			description:  "Monty Hall problem - evidence changes probability",
+			name:          "Monty Hall - Switch Door",
+			priorProb:     1.0 / 3.0, // Initially 1/3 chance car behind chosen door
+			likelihood:    0.0,       // P(host shows goat | car behind chosen) = 0
+			likelihoodNot: 0.5,       // P(host shows goat | car elsewhere) = 1/2
+			evidenceProb:  1.0 / 3.0, // P(host shows goat) = 1/3
+			expectedPost:  0.0,       // Should realize switching is better
+			description:   "Monty Hall problem - evidence changes probability",
 		},
 	}
 

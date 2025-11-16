@@ -8,10 +8,10 @@ func TestFallacyDetector_DetectFormalFallacies(t *testing.T) {
 	fd := NewFallacyDetector()
 
 	tests := []struct {
-		name          string
-		content       string
-		expectedType  string
-		shouldDetect  bool
+		name         string
+		content      string
+		expectedType string
+		shouldDetect bool
 	}{
 		{
 			name:         "affirming consequent",
@@ -62,10 +62,10 @@ func TestFallacyDetector_DetectInformalFallacies(t *testing.T) {
 	fd := NewFallacyDetector()
 
 	tests := []struct {
-		name          string
-		content       string
-		expectedType  string
-		shouldDetect  bool
+		name         string
+		content      string
+		expectedType string
+		shouldDetect bool
 	}{
 		{
 			name:         "ad hominem",
@@ -131,10 +131,10 @@ func TestFallacyDetector_DetectStatisticalFallacies(t *testing.T) {
 	fd := NewFallacyDetector()
 
 	tests := []struct {
-		name          string
-		content       string
-		expectedType  string
-		shouldDetect  bool
+		name         string
+		content      string
+		expectedType string
+		shouldDetect bool
 	}{
 		{
 			name:         "post hoc - lucky socks",
@@ -164,7 +164,7 @@ func TestFallacyDetector_DetectStatisticalFallacies(t *testing.T) {
 			name:         "valid causal claim with mechanism",
 			content:      "The medication blocks the enzyme responsible for inflammation, which reduces pain.",
 			expectedType: "post_hoc_ergo_propter_hoc",
-			shouldDetect: false,  // This is valid - has causal mechanism
+			shouldDetect: false, // This is valid - has causal mechanism
 		},
 		{
 			name:         "base rate neglect",
@@ -269,9 +269,9 @@ func TestFallacyDetector_SentenceSimilarity(t *testing.T) {
 	fd := NewFallacyDetector()
 
 	tests := []struct {
-		s1              string
-		s2              string
-		minSimilarity   float64
+		s1            string
+		s2            string
+		minSimilarity float64
 	}{
 		{
 			s1:            "the quick brown fox jumps",

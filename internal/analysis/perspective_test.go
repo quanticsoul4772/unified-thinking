@@ -15,11 +15,11 @@ func TestAnalyzePerspectives(t *testing.T) {
 	pa := NewPerspectiveAnalyzer()
 
 	tests := []struct {
-		name              string
-		situation         string
-		stakeholderHints  []string
-		expectError       bool
-		minPerspectives   int
+		name             string
+		situation        string
+		stakeholderHints []string
+		expectError      bool
+		minPerspectives  int
 	}{
 		{
 			name:            "empty situation",
@@ -28,11 +28,11 @@ func TestAnalyzePerspectives(t *testing.T) {
 			minPerspectives: 0,
 		},
 		{
-			name:            "with stakeholder hints",
-			situation:       "We need to decide whether to implement a new feature that will improve user experience but increase server costs",
+			name:             "with stakeholder hints",
+			situation:        "We need to decide whether to implement a new feature that will improve user experience but increase server costs",
 			stakeholderHints: []string{"users", "management", "engineers"},
-			expectError:     false,
-			minPerspectives: 3,
+			expectError:      false,
+			minPerspectives:  3,
 		},
 		{
 			name:            "auto-detect stakeholders",
@@ -346,27 +346,27 @@ func TestPrioritiesConflict(t *testing.T) {
 	pa := NewPerspectiveAnalyzer()
 
 	tests := []struct {
-		name        string
-		priorities1 []string
-		priorities2 []string
+		name           string
+		priorities1    []string
+		priorities2    []string
 		expectConflict bool
 	}{
 		{
-			name:        "speed vs thoroughness",
-			priorities1: []string{"speed", "quick delivery"},
-			priorities2: []string{"thoroughness", "careful analysis"},
+			name:           "speed vs thoroughness",
+			priorities1:    []string{"speed", "quick delivery"},
+			priorities2:    []string{"thoroughness", "careful analysis"},
 			expectConflict: true,
 		},
 		{
-			name:        "cost vs quality",
-			priorities1: []string{"minimize cost", "budget savings"},
-			priorities2: []string{"high quality", "premium standards"},
+			name:           "cost vs quality",
+			priorities1:    []string{"minimize cost", "budget savings"},
+			priorities2:    []string{"high quality", "premium standards"},
 			expectConflict: true,
 		},
 		{
-			name:        "no conflict",
-			priorities1: []string{"customer satisfaction", "quality service"},
-			priorities2: []string{"user happiness", "excellent experience"},
+			name:           "no conflict",
+			priorities1:    []string{"customer satisfaction", "quality service"},
+			priorities2:    []string{"user happiness", "excellent experience"},
 			expectConflict: false,
 		},
 	}
@@ -386,27 +386,27 @@ func TestConcernsConflict(t *testing.T) {
 	pa := NewPerspectiveAnalyzer()
 
 	tests := []struct {
-		name        string
-		concerns1   []string
-		concerns2   []string
+		name           string
+		concerns1      []string
+		concerns2      []string
 		expectConflict bool
 	}{
 		{
-			name:        "privacy vs transparency",
-			concerns1:   []string{"data privacy", "confidentiality"},
-			concerns2:   []string{"full transparency", "open disclosure"},
+			name:           "privacy vs transparency",
+			concerns1:      []string{"data privacy", "confidentiality"},
+			concerns2:      []string{"full transparency", "open disclosure"},
 			expectConflict: true,
 		},
 		{
-			name:        "security vs accessibility",
-			concerns1:   []string{"maximum security", "strict controls"},
-			concerns2:   []string{"easy accessibility", "minimal barriers"},
+			name:           "security vs accessibility",
+			concerns1:      []string{"maximum security", "strict controls"},
+			concerns2:      []string{"easy accessibility", "minimal barriers"},
 			expectConflict: true,
 		},
 		{
-			name:        "no conflict",
-			concerns1:   []string{"user safety", "system reliability"},
-			concerns2:   []string{"data accuracy", "performance"},
+			name:           "no conflict",
+			concerns1:      []string{"user safety", "system reliability"},
+			concerns2:      []string{"data accuracy", "performance"},
 			expectConflict: false,
 		},
 	}

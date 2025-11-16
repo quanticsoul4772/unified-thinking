@@ -14,10 +14,10 @@ func TestHallucinationDetector_FastVerification(t *testing.T) {
 	detector := NewHallucinationDetector()
 
 	tests := []struct {
-		name               string
-		thought            *types.Thought
-		expectedRiskMin    float64
-		expectedRiskMax    float64
+		name                  string
+		thought               *types.Thought
+		expectedRiskMin       float64
+		expectedRiskMax       float64
 		expectRecommendations bool
 	}{
 		{
@@ -27,8 +27,8 @@ func TestHallucinationDetector_FastVerification(t *testing.T) {
 				Content:    "I'm not sure, but maybe this might possibly work.",
 				Confidence: 0.9,
 			},
-			expectedRiskMin:    0.3,
-			expectedRiskMax:    0.8,
+			expectedRiskMin:       0.3,
+			expectedRiskMax:       0.8,
 			expectRecommendations: true,
 		},
 		{
@@ -38,8 +38,8 @@ func TestHallucinationDetector_FastVerification(t *testing.T) {
 				Content:    "This definitely always works and must be true.",
 				Confidence: 0.3,
 			},
-			expectedRiskMin:    0.2,
-			expectedRiskMax:    0.7,
+			expectedRiskMin:       0.2,
+			expectedRiskMax:       0.7,
 			expectRecommendations: true,
 		},
 		{
@@ -49,8 +49,8 @@ func TestHallucinationDetector_FastVerification(t *testing.T) {
 				Content:    "PostgreSQL uses MVCC for transaction isolation.",
 				Confidence: 0.85,
 			},
-			expectedRiskMin:    0.0,
-			expectedRiskMax:    0.4,
+			expectedRiskMin:       0.0,
+			expectedRiskMax:       0.4,
 			expectRecommendations: false,
 		},
 		{
@@ -60,8 +60,8 @@ func TestHallucinationDetector_FastVerification(t *testing.T) {
 				Content:    "Smoking causes lung cancer. This leads to higher mortality rates.",
 				Confidence: 0.8,
 			},
-			expectedRiskMin:    0.0,
-			expectedRiskMax:    0.5,
+			expectedRiskMin:       0.0,
+			expectedRiskMax:       0.5,
 			expectRecommendations: false,
 		},
 	}
@@ -145,8 +145,8 @@ func TestHallucinationDetector_UncertaintyCategorization(t *testing.T) {
 	detector := NewHallucinationDetector()
 
 	tests := []struct {
-		uncertainty     float64
-		expectedType    UncertaintyType
+		uncertainty  float64
+		expectedType UncertaintyType
 	}{
 		{0.1, UncertaintyLow},
 		{0.25, UncertaintyLow},
@@ -210,10 +210,10 @@ func TestHallucinationDetector_ConfidenceMismatch(t *testing.T) {
 	detector := NewHallucinationDetector()
 
 	tests := []struct {
-		name              string
-		thought           *types.Thought
-		expectedMismatch  float64
-		tolerance         float64
+		name             string
+		thought          *types.Thought
+		expectedMismatch float64
+		tolerance        float64
 	}{
 		{
 			name: "high confidence with uncertainty",
@@ -287,7 +287,7 @@ func TestHallucinationDetector_Caching(t *testing.T) {
 	detector := NewHallucinationDetector()
 
 	report := &HallucinationReport{
-		ThoughtID:  "cache-test",
+		ThoughtID:   "cache-test",
 		OverallRisk: 0.5,
 		AnalyzedAt:  time.Now(),
 	}

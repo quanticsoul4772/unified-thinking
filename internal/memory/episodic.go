@@ -25,60 +25,60 @@ import (
 
 // ReasoningTrajectory represents a complete reasoning session from problem to solution
 type ReasoningTrajectory struct {
-	ID              string                 `json:"id"`
-	SessionID       string                 `json:"session_id"`
-	ProblemID       string                 `json:"problem_id"`
-	StartTime       time.Time              `json:"start_time"`
-	EndTime         time.Time              `json:"end_time"`
-	Duration        time.Duration          `json:"duration"`
-	Problem         *ProblemDescription    `json:"problem"`
-	Approach        *ApproachDescription   `json:"approach"`
-	Steps           []*ReasoningStep       `json:"steps"`
-	Outcome         *OutcomeDescription    `json:"outcome"`
-	Quality         *QualityMetrics        `json:"quality"`
-	Tags            []string               `json:"tags"`
-	Domain          string                 `json:"domain"`
-	Complexity      float64                `json:"complexity"`
-	SuccessScore    float64                `json:"success_score"`
-	Metadata        map[string]interface{} `json:"metadata"`
+	ID           string                 `json:"id"`
+	SessionID    string                 `json:"session_id"`
+	ProblemID    string                 `json:"problem_id"`
+	StartTime    time.Time              `json:"start_time"`
+	EndTime      time.Time              `json:"end_time"`
+	Duration     time.Duration          `json:"duration"`
+	Problem      *ProblemDescription    `json:"problem"`
+	Approach     *ApproachDescription   `json:"approach"`
+	Steps        []*ReasoningStep       `json:"steps"`
+	Outcome      *OutcomeDescription    `json:"outcome"`
+	Quality      *QualityMetrics        `json:"quality"`
+	Tags         []string               `json:"tags"`
+	Domain       string                 `json:"domain"`
+	Complexity   float64                `json:"complexity"`
+	SuccessScore float64                `json:"success_score"`
+	Metadata     map[string]interface{} `json:"metadata"`
 }
 
 // ProblemDescription describes the initial problem
 type ProblemDescription struct {
-	Description    string                 `json:"description"`
-	Context        string                 `json:"context"`
-	Goals          []string               `json:"goals"`
-	Constraints    []string               `json:"constraints"`
-	InitialState   map[string]interface{} `json:"initial_state"`
-	ProblemType    string                 `json:"problem_type"`
-	Complexity     float64                `json:"complexity"`
-	Domain         string                 `json:"domain"`
+	Description  string                 `json:"description"`
+	Context      string                 `json:"context"`
+	Goals        []string               `json:"goals"`
+	Constraints  []string               `json:"constraints"`
+	InitialState map[string]interface{} `json:"initial_state"`
+	ProblemType  string                 `json:"problem_type"`
+	Complexity   float64                `json:"complexity"`
+	Domain       string                 `json:"domain"`
 }
 
 // ApproachDescription describes the reasoning approach taken
 type ApproachDescription struct {
-	Strategy       string   `json:"strategy"`
-	ModesUsed      []string `json:"modes_used"`
-	ToolSequence   []string `json:"tool_sequence"`
-	KeyDecisions   []string `json:"key_decisions"`
-	Adaptations    []string `json:"adaptations"`
+	Strategy     string   `json:"strategy"`
+	ModesUsed    []string `json:"modes_used"`
+	ToolSequence []string `json:"tool_sequence"`
+	KeyDecisions []string `json:"key_decisions"`
+	Adaptations  []string `json:"adaptations"`
 }
 
 // ReasoningStep represents one step in the reasoning trajectory
 type ReasoningStep struct {
-	StepNumber     int                    `json:"step_number"`
-	Timestamp      time.Time              `json:"timestamp"`
-	Tool           string                 `json:"tool"`
-	Mode           string                 `json:"mode,omitempty"`
-	Input          map[string]interface{} `json:"input"`
-	Output         map[string]interface{} `json:"output"`
-	ThoughtID      string                 `json:"thought_id,omitempty"`
-	BranchID       string                 `json:"branch_id,omitempty"`
-	Confidence     float64                `json:"confidence"`
-	Duration       time.Duration          `json:"duration"`
-	Success        bool                   `json:"success"`
-	ErrorMessage   string                 `json:"error_message,omitempty"`
-	Insights       []string               `json:"insights,omitempty"`
+	StepNumber   int                    `json:"step_number"`
+	Timestamp    time.Time              `json:"timestamp"`
+	Tool         string                 `json:"tool"`
+	Mode         string                 `json:"mode,omitempty"`
+	Input        map[string]interface{} `json:"input"`
+	Output       map[string]interface{} `json:"output"`
+	ThoughtID    string                 `json:"thought_id,omitempty"`
+	BranchID     string                 `json:"branch_id,omitempty"`
+	Confidence   float64                `json:"confidence"`
+	Duration     time.Duration          `json:"duration"`
+	Success      bool                   `json:"success"`
+	ErrorMessage string                 `json:"error_message,omitempty"`
+	Insights     []string               `json:"insights,omitempty"`
 }
 
 // OutcomeDescription describes the final outcome
@@ -95,67 +95,67 @@ type OutcomeDescription struct {
 
 // ValidationResult represents a validation check
 type ValidationResult struct {
-	Type       string  `json:"type"`
-	Passed     bool    `json:"passed"`
-	Score      float64 `json:"score"`
-	Details    string  `json:"details"`
+	Type    string  `json:"type"`
+	Passed  bool    `json:"passed"`
+	Score   float64 `json:"score"`
+	Details string  `json:"details"`
 }
 
 // QualityMetrics tracks the quality of the reasoning process
 type QualityMetrics struct {
-	OverallQuality      float64 `json:"overall_quality"`
-	Efficiency          float64 `json:"efficiency"`           // Steps taken vs optimal
-	Coherence           float64 `json:"coherence"`            // Logical consistency
-	Completeness        float64 `json:"completeness"`         // Goal coverage
-	Innovation          float64 `json:"innovation"`           // Novel approaches used
-	Reliability         float64 `json:"reliability"`          // Confidence in result
-	BiasScore           float64 `json:"bias_score"`           // Detected biases
-	FallacyCount        int     `json:"fallacy_count"`        // Logical fallacies detected
-	ContradictionCount  int     `json:"contradiction_count"`  // Contradictions found
-	SelfEvalScore       float64 `json:"self_eval_score"`      // Metacognitive assessment
+	OverallQuality     float64 `json:"overall_quality"`
+	Efficiency         float64 `json:"efficiency"`          // Steps taken vs optimal
+	Coherence          float64 `json:"coherence"`           // Logical consistency
+	Completeness       float64 `json:"completeness"`        // Goal coverage
+	Innovation         float64 `json:"innovation"`          // Novel approaches used
+	Reliability        float64 `json:"reliability"`         // Confidence in result
+	BiasScore          float64 `json:"bias_score"`          // Detected biases
+	FallacyCount       int     `json:"fallacy_count"`       // Logical fallacies detected
+	ContradictionCount int     `json:"contradiction_count"` // Contradictions found
+	SelfEvalScore      float64 `json:"self_eval_score"`     // Metacognitive assessment
 }
 
 // TrajectoryPattern represents a learned pattern from multiple trajectories
 type TrajectoryPattern struct {
-	ID                string                 `json:"id"`
-	Name              string                 `json:"name"`
-	Description       string                 `json:"description"`
-	ProblemSignature  *ProblemSignature      `json:"problem_signature"`
-	SuccessfulApproach *ApproachDescription  `json:"successful_approach"`
-	AverageQuality    float64                `json:"average_quality"`
-	SuccessRate       float64                `json:"success_rate"`
-	UsageCount        int                    `json:"usage_count"`
-	LastUsed          time.Time              `json:"last_used"`
-	ExampleTrajectories []string             `json:"example_trajectories"`
-	Tags              []string               `json:"tags"`
-	Metadata          map[string]interface{} `json:"metadata"`
+	ID                  string                 `json:"id"`
+	Name                string                 `json:"name"`
+	Description         string                 `json:"description"`
+	ProblemSignature    *ProblemSignature      `json:"problem_signature"`
+	SuccessfulApproach  *ApproachDescription   `json:"successful_approach"`
+	AverageQuality      float64                `json:"average_quality"`
+	SuccessRate         float64                `json:"success_rate"`
+	UsageCount          int                    `json:"usage_count"`
+	LastUsed            time.Time              `json:"last_used"`
+	ExampleTrajectories []string               `json:"example_trajectories"`
+	Tags                []string               `json:"tags"`
+	Metadata            map[string]interface{} `json:"metadata"`
 }
 
 // ProblemSignature is a fingerprint of a problem type for pattern matching
 type ProblemSignature struct {
-	Domain         string   `json:"domain"`
-	ProblemType    string   `json:"problem_type"`
-	ComplexityRange [2]float64 `json:"complexity_range"`
-	RequiredCapabilities []string `json:"required_capabilities"`
-	KeywordFingerprint   []string `json:"keyword_fingerprint"`
-	Hash                 string   `json:"hash"`
+	Domain               string     `json:"domain"`
+	ProblemType          string     `json:"problem_type"`
+	ComplexityRange      [2]float64 `json:"complexity_range"`
+	RequiredCapabilities []string   `json:"required_capabilities"`
+	KeywordFingerprint   []string   `json:"keyword_fingerprint"`
+	Hash                 string     `json:"hash"`
 }
 
 // RecommendationContext contains information for generating recommendations
 type RecommendationContext struct {
-	CurrentProblem     *ProblemDescription    `json:"current_problem"`
-	CurrentStep        int                    `json:"current_step"`
-	StepsSoFar         []*ReasoningStep       `json:"steps_so_far"`
-	CurrentQuality     *QualityMetrics        `json:"current_quality"`
-	SimilarTrajectories []*TrajectoryMatch    `json:"similar_trajectories"`
+	CurrentProblem      *ProblemDescription `json:"current_problem"`
+	CurrentStep         int                 `json:"current_step"`
+	StepsSoFar          []*ReasoningStep    `json:"steps_so_far"`
+	CurrentQuality      *QualityMetrics     `json:"current_quality"`
+	SimilarTrajectories []*TrajectoryMatch  `json:"similar_trajectories"`
 }
 
 // TrajectoryMatch represents a similar past trajectory
 type TrajectoryMatch struct {
-	Trajectory      *ReasoningTrajectory `json:"trajectory"`
-	SimilarityScore float64              `json:"similarity_score"`
-	RelevanceFactors []string            `json:"relevance_factors"`
-	Recommendation  string               `json:"recommendation"`
+	Trajectory       *ReasoningTrajectory `json:"trajectory"`
+	SimilarityScore  float64              `json:"similarity_score"`
+	RelevanceFactors []string             `json:"relevance_factors"`
+	Recommendation   string               `json:"recommendation"`
 }
 
 // Recommendation provides adaptive guidance based on episodic memory
@@ -172,13 +172,13 @@ type Recommendation struct {
 
 // EpisodicMemoryStore manages storage and retrieval of reasoning trajectories
 type EpisodicMemoryStore struct {
-	trajectories     map[string]*ReasoningTrajectory
-	patterns         map[string]*TrajectoryPattern
-	problemIndex     map[string][]string // problem_hash -> trajectory_ids
-	domainIndex      map[string][]string // domain -> trajectory_ids
-	tagIndex         map[string][]string // tag -> trajectory_ids
+	trajectories      map[string]*ReasoningTrajectory
+	patterns          map[string]*TrajectoryPattern
+	problemIndex      map[string][]string // problem_hash -> trajectory_ids
+	domainIndex       map[string][]string // domain -> trajectory_ids
+	tagIndex          map[string][]string // tag -> trajectory_ids
 	toolSequenceIndex map[string][]string // tool_sequence_hash -> trajectory_ids
-	mu               sync.RWMutex
+	mu                sync.RWMutex
 }
 
 // NewEpisodicMemoryStore creates a new episodic memory store
@@ -264,8 +264,8 @@ func (s *EpisodicMemoryStore) RetrieveSimilarTrajectories(ctx context.Context, p
 		similarity := calculateProblemSimilarity(problem, trajectory.Problem)
 		if similarity > 0.3 { // Minimum similarity threshold
 			match := &TrajectoryMatch{
-				Trajectory:      trajectory,
-				SimilarityScore: similarity,
+				Trajectory:       trajectory,
+				SimilarityScore:  similarity,
 				RelevanceFactors: identifyRelevanceFactors(problem, trajectory),
 			}
 			matches = append(matches, match)

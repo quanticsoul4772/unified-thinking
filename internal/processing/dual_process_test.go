@@ -56,7 +56,7 @@ func TestDualProcessExecutor_CalculateComplexity(t *testing.T) {
 		{
 			name: "high_complexity",
 			request: &ProcessingRequest{
-				Content: "Analyze and compare the tradeoffs between microservices and monolithic architectures. Evaluate multiple dimensions including scalability, complexity, deployment, testing, and team organization. Design an optimal approach that balances these factors.",
+				Content:   "Analyze and compare the tradeoffs between microservices and monolithic architectures. Evaluate multiple dimensions including scalability, complexity, deployment, testing, and team organization. Design an optimal approach that balances these factors.",
 				KeyPoints: []string{"microservices", "monolithic", "scalability", "complexity", "deployment", "testing"},
 			},
 			minScore: 0.7,
@@ -246,8 +246,8 @@ func TestDualProcessExecutor_ProcessThought_System2(t *testing.T) {
 
 	ctx := context.Background()
 	req := &ProcessingRequest{
-		Content: "Analyze the tradeoffs between different database architectures and design an optimal solution for a high-traffic e-commerce platform",
-		Mode:    types.ModeLinear,
+		Content:    "Analyze the tradeoffs between different database architectures and design an optimal solution for a high-traffic e-commerce platform",
+		Mode:       types.ModeLinear,
 		Confidence: 0.7,
 	}
 

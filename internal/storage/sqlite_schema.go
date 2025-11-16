@@ -156,13 +156,13 @@ func initializeSchema(db *sql.DB) error {
 // configureSQLite sets optimal pragmas for performance and safety
 func configureSQLite(db *sql.DB) error {
 	pragmas := []string{
-		"PRAGMA journal_mode = WAL",         // Write-Ahead Logging for concurrent reads
-		"PRAGMA synchronous = NORMAL",       // Balance safety vs performance
-		"PRAGMA cache_size = -64000",        // 64MB cache
-		"PRAGMA foreign_keys = ON",          // Enforce referential integrity
-		"PRAGMA temp_store = MEMORY",        // Keep temp tables in memory
-		"PRAGMA mmap_size = 268435456",      // 256MB memory-mapped I/O
-		"PRAGMA page_size = 8192",           // 8KB page size
+		"PRAGMA journal_mode = WAL",        // Write-Ahead Logging for concurrent reads
+		"PRAGMA synchronous = NORMAL",      // Balance safety vs performance
+		"PRAGMA cache_size = -64000",       // 64MB cache
+		"PRAGMA foreign_keys = ON",         // Enforce referential integrity
+		"PRAGMA temp_store = MEMORY",       // Keep temp tables in memory
+		"PRAGMA mmap_size = 268435456",     // 256MB memory-mapped I/O
+		"PRAGMA page_size = 8192",          // 8KB page size
 		"PRAGMA auto_vacuum = INCREMENTAL", // Incremental vacuum mode
 	}
 
@@ -174,4 +174,3 @@ func configureSQLite(db *sql.DB) error {
 
 	return nil
 }
-

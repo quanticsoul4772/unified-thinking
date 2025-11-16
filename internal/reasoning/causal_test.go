@@ -28,16 +28,16 @@ func TestBuildCausalGraph(t *testing.T) {
 		minLinks     int
 	}{
 		{
-			name:        "empty description",
-			description: "",
+			name:         "empty description",
+			description:  "",
 			observations: []string{"A causes B"},
-			expectError: true,
+			expectError:  true,
 		},
 		{
-			name:        "no observations",
-			description: "Test",
+			name:         "no observations",
+			description:  "Test",
 			observations: []string{},
-			expectError: true,
+			expectError:  true,
 		},
 		{
 			name:        "simple causal chain",

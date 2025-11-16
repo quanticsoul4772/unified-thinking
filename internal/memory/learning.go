@@ -11,13 +11,13 @@ import (
 
 // LearningEngine analyzes trajectories to identify successful patterns
 type LearningEngine struct {
-	store              *EpisodicMemoryStore
-	minTrajectories    int     // Minimum trajectories needed to form a pattern
-	minSuccessRate     float64 // Minimum success rate to consider a pattern
-	patternCache       map[string]*TrajectoryPattern
-	lastLearningRun    time.Time
-	learningInterval   time.Duration
-	mu                 sync.RWMutex
+	store            *EpisodicMemoryStore
+	minTrajectories  int     // Minimum trajectories needed to form a pattern
+	minSuccessRate   float64 // Minimum success rate to consider a pattern
+	patternCache     map[string]*TrajectoryPattern
+	lastLearningRun  time.Time
+	learningInterval time.Duration
+	mu               sync.RWMutex
 }
 
 // NewLearningEngine creates a new learning engine
@@ -415,7 +415,7 @@ func matchesSignature(sig1, sig2 *ProblemSignature) bool {
 // Helper functions
 
 func contains(text, substring string) bool {
-	return len(text) > 0 && len(substring) > 0 && 
+	return len(text) > 0 && len(substring) > 0 &&
 		containsHelper(text, substring)
 }
 

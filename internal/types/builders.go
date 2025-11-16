@@ -111,13 +111,13 @@ type BranchBuilder struct {
 func NewBranch() *BranchBuilder {
 	return &BranchBuilder{
 		branch: &Branch{
-			State:      StateActive,
-			Priority:   1.0,
-			Thoughts:   []*Thought{},
-			Insights:   []*Insight{},
-			CrossRefs:  []*CrossRef{},
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
+			State:     StateActive,
+			Priority:  1.0,
+			Thoughts:  []*Thought{},
+			Insights:  []*Insight{},
+			CrossRefs: []*CrossRef{},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		},
 	}
 }

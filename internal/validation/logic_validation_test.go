@@ -10,81 +10,81 @@ func TestLogicalReasoningAccuracy(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name       string
-		premises   []string
-		conclusion string
+		name        string
+		premises    []string
+		conclusion  string
 		shouldProve bool
 		description string
 	}{
 		// MODUS PONENS - Should be 100% accurate
 		{
-			name:       "Modus Ponens - Basic",
-			premises:   []string{"If it rains, the ground is wet", "It rains"},
-			conclusion: "The ground is wet",
+			name:        "Modus Ponens - Basic",
+			premises:    []string{"If it rains, the ground is wet", "It rains"},
+			conclusion:  "The ground is wet",
 			shouldProve: true,
 			description: "Classic modus ponens inference",
 		},
 		{
-			name:       "Modus Ponens - Formal",
-			premises:   []string{"P implies Q", "P"},
-			conclusion: "Q",
+			name:        "Modus Ponens - Formal",
+			premises:    []string{"P implies Q", "P"},
+			conclusion:  "Q",
 			shouldProve: true,
 			description: "Formal logic notation",
 		},
 
 		// MODUS TOLLENS - Should be 100% accurate
 		{
-			name:       "Modus Tollens - Basic",
-			premises:   []string{"If it rains, the ground is wet", "The ground is not wet"},
-			conclusion: "It does not rain",
+			name:        "Modus Tollens - Basic",
+			premises:    []string{"If it rains, the ground is wet", "The ground is not wet"},
+			conclusion:  "It does not rain",
 			shouldProve: true,
 			description: "Classic modus tollens inference",
 		},
 
 		// INVALID INFERENCES - Should detect as invalid
 		{
-			name:       "Affirming Consequent - Invalid",
-			premises:   []string{"If it rains, the ground is wet", "The ground is wet"},
-			conclusion: "It rains",
+			name:        "Affirming Consequent - Invalid",
+			premises:    []string{"If it rains, the ground is wet", "The ground is wet"},
+			conclusion:  "It rains",
 			shouldProve: false,
 			description: "Common fallacy - should NOT prove",
 		},
 		{
-			name:       "Denying Antecedent - Invalid",
-			premises:   []string{"If it rains, the ground is wet", "It does not rain"},
-			conclusion: "The ground is not wet",
+			name:        "Denying Antecedent - Invalid",
+			premises:    []string{"If it rains, the ground is wet", "It does not rain"},
+			conclusion:  "The ground is not wet",
 			shouldProve: false,
 			description: "Common fallacy - should NOT prove",
 		},
 
 		// SYLLOGISMS
 		{
-			name:       "Universal Instantiation",
-			premises:   []string{"All humans are mortal", "Socrates is human"},
-			conclusion: "Socrates is mortal",
+			name:        "Universal Instantiation",
+			premises:    []string{"All humans are mortal", "Socrates is human"},
+			conclusion:  "Socrates is mortal",
 			shouldProve: true,
 			description: "Classic syllogism",
 		},
 		{
-			name:       "Invalid Syllogism - Undistributed Middle",
-			premises:   []string{"All cats are mammals", "All dogs are mammals"},
-			conclusion: "All cats are dogs",
+			name:        "Invalid Syllogism - Undistributed Middle",
+			premises:    []string{"All cats are mammals", "All dogs are mammals"},
+			conclusion:  "All cats are dogs",
 			shouldProve: false,
 			description: "Invalid syllogism - should detect",
 		},
 
 		// COMPLEX CASES
 		{
-			name:       "Hypothetical Syllogism",
-			premises:   []string{"If P then Q", "If Q then R"},
-			conclusion: "If P then R",
+			name:        "Hypothetical Syllogism",
+			premises:    []string{"If P then Q", "If Q then R"},
+			conclusion:  "If P then R",
 			shouldProve: true,
 			description: "Chain of implications",
 		},
 		{
-			name:       "Disjunctive Syllogism",
-			premises:   []string{"P or Q", "Not P"},
-			conclusion: "Q",
+			name:        "Disjunctive Syllogism",
+			premises:    []string{"P or Q", "Not P"},
+			conclusion:  "Q",
 			shouldProve: true,
 			description: "Elimination reasoning",
 		},
@@ -127,63 +127,63 @@ func TestContradictionDetection(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		content     string
+		name             string
+		content          string
 		hasContradiction bool
-		description string
+		description      string
 	}{
 		// TRUE CONTRADICTIONS
 		{
-			name:        "Direct Contradiction - Explicit",
-			content:     "X is true and X is false",
+			name:             "Direct Contradiction - Explicit",
+			content:          "X is true and X is false",
 			hasContradiction: true,
-			description: "Explicit logical contradiction",
+			description:      "Explicit logical contradiction",
 		},
 		{
-			name:        "Semantic Contradiction",
-			content:     "The bachelor is married",
+			name:             "Semantic Contradiction",
+			content:          "The bachelor is married",
 			hasContradiction: true,
-			description: "Semantic contradiction (bachelor = unmarried man)",
+			description:      "Semantic contradiction (bachelor = unmarried man)",
 		},
 		{
-			name:        "Numeric Contradiction",
-			content:     "The temperature is above 100 degrees and below 50 degrees",
+			name:             "Numeric Contradiction",
+			content:          "The temperature is above 100 degrees and below 50 degrees",
 			hasContradiction: true,
-			description: "Mathematical impossibility",
+			description:      "Mathematical impossibility",
 		},
 
 		// FALSE POSITIVES TO AVOID
 		{
-			name:        "Color Contrast - Not Contradiction",
-			content:     "The cat is black and the dog is not white",
+			name:             "Color Contrast - Not Contradiction",
+			content:          "The cat is black and the dog is not white",
 			hasContradiction: false,
-			description: "Different subjects - should NOT flag as contradiction",
+			description:      "Different subjects - should NOT flag as contradiction",
 		},
 		{
-			name:        "Temporal Difference - Not Contradiction",
-			content:     "It was raining yesterday and it is not raining today",
+			name:             "Temporal Difference - Not Contradiction",
+			content:          "It was raining yesterday and it is not raining today",
 			hasContradiction: false,
-			description: "Different time frames - not contradictory",
+			description:      "Different time frames - not contradictory",
 		},
 		{
-			name:        "Probabilistic Statement - Not Contradiction",
-			content:     "It might rain and it might not rain",
+			name:             "Probabilistic Statement - Not Contradiction",
+			content:          "It might rain and it might not rain",
 			hasContradiction: false,
-			description: "Uncertainty, not contradiction",
+			description:      "Uncertainty, not contradiction",
 		},
 
 		// SUBTLE CONTRADICTIONS
 		{
-			name:        "Transitive Contradiction",
-			content:     "A is greater than B. B is greater than C. C is greater than A.",
+			name:             "Transitive Contradiction",
+			content:          "A is greater than B. B is greater than C. C is greater than A.",
 			hasContradiction: true,
-			description: "Transitive relation violation",
+			description:      "Transitive relation violation",
 		},
 		{
-			name:        "Modal Contradiction",
-			content:     "It is necessarily true that X and it is possibly false that X",
+			name:             "Modal Contradiction",
+			content:          "It is necessarily true that X and it is possibly false that X",
 			hasContradiction: true,
-			description: "Modal logic contradiction",
+			description:      "Modal logic contradiction",
 		},
 	}
 
@@ -217,8 +217,8 @@ func TestContradictionDetection(t *testing.T) {
 	}
 
 	// Calculate metrics
-	precision := float64(truePositives) / float64(truePositives + falsePositives)
-	recall := float64(truePositives) / float64(truePositives + falseNegatives)
+	precision := float64(truePositives) / float64(truePositives+falsePositives)
+	recall := float64(truePositives) / float64(truePositives+falseNegatives)
 	f1 := 2 * (precision * recall) / (precision + recall)
 
 	t.Logf("\n=== CONTRADICTION DETECTION METRICS ===")
@@ -243,44 +243,44 @@ func TestFormalLogicLimitations(t *testing.T) {
 	validator := NewLogicValidator()
 
 	knownLimitations := []struct {
-		name        string
-		premises    []string
-		conclusion  string
-		shouldWork  bool
+		name           string
+		premises       []string
+		conclusion     string
+		shouldWork     bool
 		currentlyWorks bool
-		improvement string
+		improvement    string
 	}{
 		{
-			name:        "First-Order Logic - Universal Quantifiers",
-			premises:    []string{"For all x, if x is human then x is mortal", "Socrates is human"},
-			conclusion:  "Socrates is mortal",
-			shouldWork:  true,
+			name:           "First-Order Logic - Universal Quantifiers",
+			premises:       []string{"For all x, if x is human then x is mortal", "Socrates is human"},
+			conclusion:     "Socrates is mortal",
+			shouldWork:     true,
 			currentlyWorks: false,
-			improvement: "Need FOL parser and quantifier handling",
+			improvement:    "Need FOL parser and quantifier handling",
 		},
 		{
-			name:        "Existential Quantifiers",
-			premises:    []string{"There exists an x such that P(x)"},
-			conclusion:  "Something has property P",
-			shouldWork:  true,
+			name:           "Existential Quantifiers",
+			premises:       []string{"There exists an x such that P(x)"},
+			conclusion:     "Something has property P",
+			shouldWork:     true,
 			currentlyWorks: false,
-			improvement: "Need existential quantifier support",
+			improvement:    "Need existential quantifier support",
 		},
 		{
-			name:        "Nested Quantifiers",
-			premises:    []string{"For all x, there exists y such that x loves y"},
-			conclusion:  "Everyone loves someone",
-			shouldWork:  true,
+			name:           "Nested Quantifiers",
+			premises:       []string{"For all x, there exists y such that x loves y"},
+			conclusion:     "Everyone loves someone",
+			shouldWork:     true,
 			currentlyWorks: false,
-			improvement: "Need nested quantifier handling",
+			improvement:    "Need nested quantifier handling",
 		},
 		{
-			name:        "Modal Logic",
-			premises:    []string{"It is necessary that P", "P implies Q"},
-			conclusion:  "It is necessary that Q",
-			shouldWork:  true,
+			name:           "Modal Logic",
+			premises:       []string{"It is necessary that P", "P implies Q"},
+			conclusion:     "It is necessary that Q",
+			shouldWork:     true,
 			currentlyWorks: false,
-			improvement: "Need modal logic operators (necessary, possible)",
+			improvement:    "Need modal logic operators (necessary, possible)",
 		},
 	}
 

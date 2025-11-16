@@ -17,8 +17,8 @@ import (
 type FallacyType string
 
 const (
-	FallacyFormal   FallacyType = "formal"
-	FallacyInformal FallacyType = "informal"
+	FallacyFormal      FallacyType = "formal"
+	FallacyInformal    FallacyType = "informal"
 	FallacyStatistical FallacyType = "statistical"
 )
 
@@ -442,7 +442,7 @@ func (fd *FallacyDetector) detectDenyingAntecedent(text string) bool {
 	if len(sentences) >= 2 {
 		middle := sentences[1]
 		if strings.Contains(middle, "not") || strings.Contains(middle, "n't") ||
-		   strings.Contains(middle, "isn't") || strings.Contains(middle, "doesn't") {
+			strings.Contains(middle, "isn't") || strings.Contains(middle, "doesn't") {
 			hasNegatedAntecedent = true
 		}
 	}
@@ -746,8 +746,8 @@ func (fd *FallacyDetector) detectPostHoc(text string) bool {
 	// Common post hoc patterns
 	commonPatterns := []string{
 		"after i", "after we", "after they", "after he", "after she", // Personal temporal claims
-		"since i", "since we", "since the",                           // Since + subject
-		"then it", "then we", "then the",                             // Sequence markers
+		"since i", "since we", "since the", // Since + subject
+		"then it", "then we", "then the", // Sequence markers
 	}
 
 	hasCommonPattern := false

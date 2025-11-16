@@ -31,7 +31,7 @@ type VerifyThoughtRequest struct {
 // VerifyThoughtResponse contains the verification results
 type VerifyThoughtResponse struct {
 	Report *validation.HallucinationReport `json:"report"`
-	Status string                           `json:"status"`
+	Status string                          `json:"status"`
 }
 
 // GetReportRequest requests a hallucination report

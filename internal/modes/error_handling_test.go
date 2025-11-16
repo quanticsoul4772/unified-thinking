@@ -225,8 +225,8 @@ func TestTreeMode_CrossRefToSelf(t *testing.T) {
 
 	// Try to create cross-ref to same branch
 	crossRefInput := ThoughtInput{
-		Content:    "Cross-ref thought",
-		BranchID:   result.BranchID,
+		Content:  "Cross-ref thought",
+		BranchID: result.BranchID,
 		CrossRefs: []CrossRefInput{
 			{
 				ToBranch: result.BranchID, // Self-reference

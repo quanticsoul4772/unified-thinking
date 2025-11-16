@@ -337,9 +337,9 @@ func TestDetectConflict_InequalityConflict_Variations(t *testing.T) {
 	sr.AddSymbol("x", SymbolVariable, "integer")
 
 	tests := []struct {
-		name  string
-		expr1 string
-		expr2 string
+		name           string
+		expr1          string
+		expr2          string
 		shouldConflict bool
 	}{
 		{"x > 10 and x < 5", "x > 10", "x < 5", true},

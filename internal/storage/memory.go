@@ -48,15 +48,15 @@ type MemoryStorage struct {
 	relationships map[string]*types.Relationship
 
 	// Search indices for O(1) word lookup (optimization for SearchThoughts)
-	contentIndex map[string][]string              // word -> []thoughtIDs
+	contentIndex map[string][]string             // word -> []thoughtIDs
 	modeIndex    map[types.ThinkingMode][]string // mode -> []thoughtIDs
 
 	// Ordered slices for deterministic pagination (sorted by timestamp, newest first)
 	thoughtsOrdered []*types.Thought
 	branchesOrdered []*types.Branch
 
-	activeBranchID   string
-	recentBranchIDs  []string // Stack of recently accessed branch IDs (max 10)
+	activeBranchID  string
+	recentBranchIDs []string // Stack of recently accessed branch IDs (max 10)
 
 	// Counters for ID generation
 	thoughtCounter      int

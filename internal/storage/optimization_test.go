@@ -14,11 +14,11 @@ func TestAppendThoughtToBranch(t *testing.T) {
 
 	// Create a branch
 	branch := &types.Branch{
-		ID:         "test-branch",
-		State:      types.StateActive,
-		Thoughts:   make([]*types.Thought, 0),
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		ID:        "test-branch",
+		State:     types.StateActive,
+		Thoughts:  make([]*types.Thought, 0),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	if err := store.StoreBranch(branch); err != nil {
 		t.Fatalf("StoreBranch() error = %v", err)

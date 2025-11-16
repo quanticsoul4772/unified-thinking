@@ -20,19 +20,19 @@ type SessionTracker struct {
 
 // ActiveSession represents an ongoing reasoning session
 type ActiveSession struct {
-	SessionID      string
-	ProblemID      string
-	StartTime      time.Time
-	Problem        *ProblemDescription
-	Steps          []*ReasoningStep
-	CurrentStep    int
-	ModesUsed      map[string]bool
-	ToolsUsed      map[string]int
-	BranchesUsed   map[string]bool
-	Domain         string
-	Tags           []string
-	Metadata       map[string]interface{}
-	mu             sync.Mutex
+	SessionID    string
+	ProblemID    string
+	StartTime    time.Time
+	Problem      *ProblemDescription
+	Steps        []*ReasoningStep
+	CurrentStep  int
+	ModesUsed    map[string]bool
+	ToolsUsed    map[string]int
+	BranchesUsed map[string]bool
+	Domain       string
+	Tags         []string
+	Metadata     map[string]interface{}
+	mu           sync.Mutex
 }
 
 // NewSessionTracker creates a new session tracker
@@ -81,7 +81,7 @@ func (t *SessionTracker) RecordStep(ctx context.Context, sessionID string, step 
 			Domain:      "unknown",
 		}
 		t.StartSession(ctx, sessionID, problem)
-		
+
 		t.mu.RLock()
 		session = t.activeSessions[sessionID]
 		t.mu.RUnlock()
@@ -306,12 +306,11 @@ func calculateQualityMetrics(session *ActiveSession, outcome *OutcomeDescription
 	}
 
 	// Calculate overall quality as weighted average
-	metrics.OverallQuality = (
-		metrics.Efficiency*0.2 +
-			metrics.Coherence*0.2 +
-			metrics.Completeness*0.2 +
-			metrics.Innovation*0.1 +
-			metrics.Reliability*0.3)
+	metrics.OverallQuality = (metrics.Efficiency*0.2 +
+		metrics.Coherence*0.2 +
+		metrics.Completeness*0.2 +
+		metrics.Innovation*0.1 +
+		metrics.Reliability*0.3)
 
 	return metrics
 }
@@ -361,10 +360,10 @@ func calculateCompleteness(session *ActiveSession, outcome *OutcomeDescription) 
 func calculateInnovation(session *ActiveSession) float64 {
 	// Check for use of advanced/creative tools
 	innovativeTools := map[string]bool{
-		"find-analogy":           true,
-		"generate-hypotheses":    true,
+		"find-analogy":             true,
+		"generate-hypotheses":      true,
 		"detect-emergent-patterns": true,
-		"think": false, // Base tool
+		"think":                    false, // Base tool
 	}
 
 	innovationCount := 0

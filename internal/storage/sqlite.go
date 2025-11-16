@@ -19,24 +19,24 @@ type SQLiteStorage struct {
 	db    *sql.DB
 	cache *MemoryStorage // Write-through cache for fast reads
 
-	mu               sync.RWMutex
-	activeBranchID   string
-	thoughtCounter      atomic.Int64
-	branchCounter       atomic.Int64
-	_insightCounter     atomic.Int64 // Reserved for future use
-	_validationCounter  atomic.Int64 // Reserved for future use
+	mu                   sync.RWMutex
+	activeBranchID       string
+	thoughtCounter       atomic.Int64
+	branchCounter        atomic.Int64
+	_insightCounter      atomic.Int64 // Reserved for future use
+	_validationCounter   atomic.Int64 // Reserved for future use
 	_relationshipCounter atomic.Int64 // Reserved for future use
 
 	// Prepared statements
-	stmtInsertThought  *sql.Stmt
-	stmtGetThought     *sql.Stmt
-	stmtSearchFTS      *sql.Stmt
-	stmtInsertBranch   *sql.Stmt
-	stmtGetBranch      *sql.Stmt
+	stmtInsertThought      *sql.Stmt
+	stmtGetThought         *sql.Stmt
+	stmtSearchFTS          *sql.Stmt
+	stmtInsertBranch       *sql.Stmt
+	stmtGetBranch          *sql.Stmt
 	stmtUpdateBranchAccess *sql.Stmt
-	stmtInsertInsight  *sql.Stmt
-	stmtInsertCrossRef *sql.Stmt
-	stmtInsertValidation *sql.Stmt
+	stmtInsertInsight      *sql.Stmt
+	stmtInsertCrossRef     *sql.Stmt
+	stmtInsertValidation   *sql.Stmt
 }
 
 // NewSQLiteStorage creates a new SQLite storage backend

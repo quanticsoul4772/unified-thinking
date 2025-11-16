@@ -243,16 +243,16 @@ func (ar *AnalogicalReasoner) semanticSimilarity(concept1, concept2 string) floa
 
 	// Concept relationship mapping (domain-specific knowledge)
 	semanticPairs := map[string][]string{
-		"evolution":    {"evolve", "evolving", "evolved"},
-		"selection":    {"select", "selected", "selecting"},
-		"adaptation":   {"adapt", "adapting", "adapted"},
-		"testing":      {"test", "tested", "tests"},
-		"refinement":   {"refine", "refined", "refining"},
-		"marketplace":  {"market", "markets"},
-		"species":      {"organism", "organisms"},
-		"ideas":        {"idea", "concepts", "thoughts"},
-		"natural":      {"nature", "organic"},
-		"biological":   {"biology", "organism"},
+		"evolution":   {"evolve", "evolving", "evolved"},
+		"selection":   {"select", "selected", "selecting"},
+		"adaptation":  {"adapt", "adapting", "adapted"},
+		"testing":     {"test", "tested", "tests"},
+		"refinement":  {"refine", "refined", "refining"},
+		"marketplace": {"market", "markets"},
+		"species":     {"organism", "organisms"},
+		"ideas":       {"idea", "concepts", "thoughts"},
+		"natural":     {"nature", "organic"},
+		"biological":  {"biology", "organism"},
 	}
 
 	// Check semantic pairs

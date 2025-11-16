@@ -227,8 +227,8 @@ func TestBacktrackingManager_GetCheckpointDiff(t *testing.T) {
 	_ = store.StoreBranch(branch)
 
 	// Record the changes
-	_ = 	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-1", thought1)
-	_ = 	bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-2", thought2)
+	_ = bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-1", thought1)
+	_ = bm.RecordChange("branch-1", DeltaAdd, EntityThought, "thought-2", thought2)
 
 	// Create second checkpoint
 	cp2, _ := bm.CreateCheckpoint(ctx, "branch-1", "cp2", "After changes")

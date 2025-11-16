@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/metacognition"
@@ -34,13 +34,13 @@ type DetectBlindSpotsRequest struct {
 
 // DetectBlindSpotsResponse represents the response
 type DetectBlindSpotsResponse struct {
-	BlindSpots                []*BlindSpotOutput `json:"blind_spots"`
-	MissingConsiderations     []string           `json:"missing_considerations"`
-	UnchallengedAssumptions   []string           `json:"unchallenged_assumptions"`
-	SuggestedQuestions        []string           `json:"suggested_questions"`
-	OverallRisk               float64            `json:"overall_risk"`
-	RiskLevel                 string             `json:"risk_level"`
-	Analysis                  string             `json:"analysis"`
+	BlindSpots              []*BlindSpotOutput `json:"blind_spots"`
+	MissingConsiderations   []string           `json:"missing_considerations"`
+	UnchallengedAssumptions []string           `json:"unchallenged_assumptions"`
+	SuggestedQuestions      []string           `json:"suggested_questions"`
+	OverallRisk             float64            `json:"overall_risk"`
+	RiskLevel               string             `json:"risk_level"`
+	Analysis                string             `json:"analysis"`
 }
 
 // BlindSpotOutput represents a blind spot

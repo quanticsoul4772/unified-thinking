@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/reasoning"
@@ -48,12 +48,12 @@ type RetrieveCasesResponse struct {
 
 // SimilarCaseOutput represents a similar case
 type SimilarCaseOutput struct {
-	CaseID      string                  `json:"case_id"`
-	Problem     *ProblemDescriptionInfo `json:"problem"`
+	CaseID      string                   `json:"case_id"`
+	Problem     *ProblemDescriptionInfo  `json:"problem"`
 	Solution    *SolutionDescriptionInfo `json:"solution"`
-	Similarity  float64                 `json:"similarity"`
-	SuccessRate float64                 `json:"success_rate"`
-	Domain      string                  `json:"domain"`
+	Similarity  float64                  `json:"similarity"`
+	SuccessRate float64                  `json:"success_rate"`
+	Domain      string                   `json:"domain"`
 }
 
 // ProblemDescriptionInfo contains problem info

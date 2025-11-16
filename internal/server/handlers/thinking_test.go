@@ -217,7 +217,7 @@ func TestThinkingHandler_HandleHistory(t *testing.T) {
 			wantMinLen: 0,
 		},
 		{
-			name: "default limit applied",
+			name:  "default limit applied",
 			input: HistoryRequest{
 				// No limit specified, should default to 100
 			},

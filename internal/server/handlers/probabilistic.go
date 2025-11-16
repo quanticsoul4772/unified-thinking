@@ -14,10 +14,10 @@ import (
 
 // ProbabilisticHandler handles probabilistic reasoning and evidence operations
 type ProbabilisticHandler struct {
-	storage                storage.Storage
-	probabilisticReasoner  *reasoning.ProbabilisticReasoner
-	evidenceAnalyzer       *analysis.EvidenceAnalyzer
-	contradictionDetector  *analysis.ContradictionDetector
+	storage               storage.Storage
+	probabilisticReasoner *reasoning.ProbabilisticReasoner
+	evidenceAnalyzer      *analysis.EvidenceAnalyzer
+	contradictionDetector *analysis.ContradictionDetector
 }
 
 // NewProbabilisticHandler creates a new probabilistic handler
@@ -41,15 +41,15 @@ func NewProbabilisticHandler(
 
 // ProbabilisticReasoningRequest represents a probabilistic reasoning request
 type ProbabilisticReasoningRequest struct {
-	Operation    string   `json:"operation"`              // "create", "update", "get", or "combine"
-	Statement    string   `json:"statement,omitempty"`    // For create operation
-	PriorProb    float64  `json:"prior_prob,omitempty"`   // For create operation
-	BeliefID     string   `json:"belief_id,omitempty"`    // For update/get operations
-	EvidenceID   string   `json:"evidence_id,omitempty"`  // For update operation
-	Likelihood   float64  `json:"likelihood,omitempty"`   // For update operation
+	Operation    string   `json:"operation"`               // "create", "update", "get", or "combine"
+	Statement    string   `json:"statement,omitempty"`     // For create operation
+	PriorProb    float64  `json:"prior_prob,omitempty"`    // For create operation
+	BeliefID     string   `json:"belief_id,omitempty"`     // For update/get operations
+	EvidenceID   string   `json:"evidence_id,omitempty"`   // For update operation
+	Likelihood   float64  `json:"likelihood,omitempty"`    // For update operation
 	EvidenceProb float64  `json:"evidence_prob,omitempty"` // For update operation
-	BeliefIDs    []string `json:"belief_ids,omitempty"`   // For combine operation
-	CombineOp    string   `json:"combine_op,omitempty"`   // "and" or "or" for combine
+	BeliefIDs    []string `json:"belief_ids,omitempty"`    // For combine operation
+	CombineOp    string   `json:"combine_op,omitempty"`    // "and" or "or" for combine
 }
 
 // ProbabilisticReasoningResponse represents a probabilistic reasoning response

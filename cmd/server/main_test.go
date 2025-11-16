@@ -19,25 +19,31 @@ type MockStorage struct {
 }
 
 // ThoughtRepository methods
-func (m *MockStorage) StoreThought(thought *types.Thought) error { return nil }
+func (m *MockStorage) StoreThought(thought *types.Thought) error    { return nil }
 func (m *MockStorage) GetThought(id string) (*types.Thought, error) { return nil, nil }
 func (m *MockStorage) SearchThoughts(query string, mode types.ThinkingMode, limit, offset int) []*types.Thought {
 	return nil
 }
 
 // BranchRepository methods
-func (m *MockStorage) StoreBranch(branch *types.Branch) error { return nil }
+func (m *MockStorage) StoreBranch(branch *types.Branch) error     { return nil }
 func (m *MockStorage) GetBranch(id string) (*types.Branch, error) { return nil, nil }
-func (m *MockStorage) ListBranches() []*types.Branch { return nil }
-func (m *MockStorage) GetActiveBranch() (*types.Branch, error) { return nil, nil }
-func (m *MockStorage) SetActiveBranch(branchID string) error { return nil }
-func (m *MockStorage) UpdateBranchAccess(branchID string) error { return nil }
-func (m *MockStorage) AppendThoughtToBranch(branchID string, thought *types.Thought) error { return nil }
-func (m *MockStorage) AppendInsightToBranch(branchID string, insight *types.Insight) error { return nil }
-func (m *MockStorage) AppendCrossRefToBranch(branchID string, crossRef *types.CrossRef) error { return nil }
-func (m *MockStorage) UpdateBranchPriority(branchID string, priority float64) error { return nil }
+func (m *MockStorage) ListBranches() []*types.Branch              { return nil }
+func (m *MockStorage) GetActiveBranch() (*types.Branch, error)    { return nil, nil }
+func (m *MockStorage) SetActiveBranch(branchID string) error      { return nil }
+func (m *MockStorage) UpdateBranchAccess(branchID string) error   { return nil }
+func (m *MockStorage) AppendThoughtToBranch(branchID string, thought *types.Thought) error {
+	return nil
+}
+func (m *MockStorage) AppendInsightToBranch(branchID string, insight *types.Insight) error {
+	return nil
+}
+func (m *MockStorage) AppendCrossRefToBranch(branchID string, crossRef *types.CrossRef) error {
+	return nil
+}
+func (m *MockStorage) UpdateBranchPriority(branchID string, priority float64) error     { return nil }
 func (m *MockStorage) UpdateBranchConfidence(branchID string, confidence float64) error { return nil }
-func (m *MockStorage) GetRecentBranches() ([]*types.Branch, error) { return nil, nil }
+func (m *MockStorage) GetRecentBranches() ([]*types.Branch, error)                      { return nil, nil }
 
 // InsightRepository methods
 func (m *MockStorage) StoreInsight(insight *types.Insight) error { return nil }

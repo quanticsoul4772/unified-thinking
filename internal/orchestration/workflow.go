@@ -16,8 +16,8 @@ import (
 type WorkflowType string
 
 const (
-	WorkflowSequential WorkflowType = "sequential" // Execute steps in order
-	WorkflowParallel   WorkflowType = "parallel"   // Execute steps concurrently
+	WorkflowSequential  WorkflowType = "sequential"  // Execute steps in order
+	WorkflowParallel    WorkflowType = "parallel"    // Execute steps concurrently
 	WorkflowConditional WorkflowType = "conditional" // Execute based on conditions
 )
 
@@ -35,22 +35,22 @@ type Workflow struct {
 
 // WorkflowStep represents a single step in a workflow
 type WorkflowStep struct {
-	ID          string                 `json:"id"`
-	Tool        string                 `json:"tool"`         // Tool name to execute
-	Input       map[string]interface{} `json:"input"`        // Tool input parameters
-	DependsOn   []string               `json:"depends_on,omitempty"` // Step IDs this depends on
-	Condition   *StepCondition         `json:"condition,omitempty"`  // Conditional execution
-	Transform   *OutputTransform       `json:"transform,omitempty"`  // Output transformation
-	StoreAs     string                 `json:"store_as,omitempty"`   // Store result in context
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID        string                 `json:"id"`
+	Tool      string                 `json:"tool"`                 // Tool name to execute
+	Input     map[string]interface{} `json:"input"`                // Tool input parameters
+	DependsOn []string               `json:"depends_on,omitempty"` // Step IDs this depends on
+	Condition *StepCondition         `json:"condition,omitempty"`  // Conditional execution
+	Transform *OutputTransform       `json:"transform,omitempty"`  // Output transformation
+	StoreAs   string                 `json:"store_as,omitempty"`   // Store result in context
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // StepCondition defines when a step should execute
 type StepCondition struct {
-	Type       string  `json:"type"`        // "confidence_threshold", "result_match", etc.
-	Field      string  `json:"field,omitempty"`
-	Operator   string  `json:"operator"`    // "gt", "lt", "eq", "contains", etc.
-	Value      interface{} `json:"value"`
+	Type     string      `json:"type"` // "confidence_threshold", "result_match", etc.
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator"` // "gt", "lt", "eq", "contains", etc.
+	Value    interface{} `json:"value"`
 }
 
 // OutputTransform defines how to transform step output

@@ -47,17 +47,17 @@ func TestReflectionLoop_RefineThought_HighQualityInitial(t *testing.T) {
 
 	// High quality thought should stop quickly
 	thought := &types.Thought{
-		ID:      "test-1",
-		Content: "PostgreSQL is a relational database management system. It implements ACID transactions through MVCC (Multi-Version Concurrency Control), which allows multiple transactions to proceed without blocking. This design provides excellent concurrency while maintaining data consistency. The system has been proven reliable in production environments for decades.",
-		Mode:    types.ModeLinear,
+		ID:         "test-1",
+		Content:    "PostgreSQL is a relational database management system. It implements ACID transactions through MVCC (Multi-Version Concurrency Control), which allows multiple transactions to proceed without blocking. This design provides excellent concurrency while maintaining data consistency. The system has been proven reliable in production environments for decades.",
+		Mode:       types.ModeLinear,
 		Confidence: 0.9,
 	}
 	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
-		MaxIterations:      5,
-		QualityThreshold:   0.65, // Lower threshold for testing
-		MinImprovement:     0.05,
+		MaxIterations:        5,
+		QualityThreshold:     0.65, // Lower threshold for testing
+		MinImprovement:       0.05,
 		ChallengeAssumptions: false,
 	}
 	ctx := context.Background()
@@ -82,17 +82,17 @@ func TestReflectionLoop_RefineThought_LowQualityWithFallacy(t *testing.T) {
 
 	// Low quality thought with ad hominem fallacy
 	thought := &types.Thought{
-		ID:      "test-2",
-		Content: "You can't trust John's argument about database design because he's not a good programmer.",
-		Mode:    types.ModeLinear,
+		ID:         "test-2",
+		Content:    "You can't trust John's argument about database design because he's not a good programmer.",
+		Mode:       types.ModeLinear,
 		Confidence: 0.5,
 	}
 	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
-		MaxIterations:      3,
-		QualityThreshold:   0.8,
-		MinImprovement:     0.02, // Lower threshold
+		MaxIterations:        3,
+		QualityThreshold:     0.8,
+		MinImprovement:       0.02, // Lower threshold
 		ChallengeAssumptions: true,
 	}
 	ctx := context.Background()
@@ -118,17 +118,17 @@ func TestReflectionLoop_RefineThought_MaxIterations(t *testing.T) {
 
 	// Mediocre thought that won't reach threshold
 	thought := &types.Thought{
-		ID:      "test-3",
-		Content: "Databases store data.",
-		Mode:    types.ModeLinear,
+		ID:         "test-3",
+		Content:    "Databases store data.",
+		Mode:       types.ModeLinear,
 		Confidence: 0.6,
 	}
 	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
-		MaxIterations:      2,
-		QualityThreshold:   0.95, // Very high, won't reach
-		MinImprovement:     0.0,  // No minimum improvement requirement
+		MaxIterations:        2,
+		QualityThreshold:     0.95, // Very high, won't reach
+		MinImprovement:       0.0,  // No minimum improvement requirement
 		ChallengeAssumptions: false,
 	}
 	ctx := context.Background()
@@ -279,17 +279,17 @@ func TestReflectionLoop_RefineThought_MinImprovement(t *testing.T) {
 
 	// Thought with moderate quality
 	thought := &types.Thought{
-		ID:      "test-8",
-		Content: "Databases provide ACID guarantees through transactions.",
-		Mode:    types.ModeLinear,
+		ID:         "test-8",
+		Content:    "Databases provide ACID guarantees through transactions.",
+		Mode:       types.ModeLinear,
 		Confidence: 0.7,
 	}
 	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
-		MaxIterations:      5,
-		QualityThreshold:   0.95, // High threshold
-		MinImprovement:     0.2,  // High minimum improvement
+		MaxIterations:        5,
+		QualityThreshold:     0.95, // High threshold
+		MinImprovement:       0.2,  // High minimum improvement
 		ChallengeAssumptions: false,
 	}
 	ctx := context.Background()
@@ -311,17 +311,17 @@ func TestReflectionLoop_RefineThought_ImprovementTracking(t *testing.T) {
 	loop := NewReflectionLoop(store, evaluator, biasDetector, fallacyDetector)
 
 	thought := &types.Thought{
-		ID:      "test-9",
-		Content: "SQL databases.",
-		Mode:    types.ModeLinear,
+		ID:         "test-9",
+		Content:    "SQL databases.",
+		Mode:       types.ModeLinear,
 		Confidence: 0.5,
 	}
 	_ = store.StoreThought(thought)
 
 	config := &ReflectionConfig{
-		MaxIterations:      3,
-		QualityThreshold:   0.85,
-		MinImprovement:     0.05,
+		MaxIterations:        3,
+		QualityThreshold:     0.85,
+		MinImprovement:       0.05,
 		ChallengeAssumptions: true,
 	}
 	ctx := context.Background()

@@ -14,10 +14,10 @@ import (
 // BacktrackingManager manages branch checkpoints and history
 type BacktrackingManager struct {
 	storage           storage.Storage
-	snapshots         map[string]*BranchSnapshot  // branchID -> latest snapshot
-	deltas            map[string][]*BranchDelta   // branchID -> deltas since last snapshot
-	checkpoints       map[string]*Checkpoint      // checkpointID -> checkpoint
-	checkpointCounter int                         // Counter for unique checkpoint IDs
+	snapshots         map[string]*BranchSnapshot // branchID -> latest snapshot
+	deltas            map[string][]*BranchDelta  // branchID -> deltas since last snapshot
+	checkpoints       map[string]*Checkpoint     // checkpointID -> checkpoint
+	checkpointCounter int                        // Counter for unique checkpoint IDs
 }
 
 // NewBacktrackingManager creates a new backtracking manager
@@ -32,13 +32,13 @@ func NewBacktrackingManager(store storage.Storage) *BacktrackingManager {
 
 // BranchSnapshot represents a full branch state at a point in time
 type BranchSnapshot struct {
-	ID             string
-	BranchID       string
-	Branch         *types.Branch // Deep copy of branch
-	CreatedAt      time.Time
-	ThoughtCount   int
-	InsightCount   int
-	CrossRefCount  int
+	ID            string
+	BranchID      string
+	Branch        *types.Branch // Deep copy of branch
+	CreatedAt     time.Time
+	ThoughtCount  int
+	InsightCount  int
+	CrossRefCount int
 }
 
 // BranchDelta represents a change to a branch

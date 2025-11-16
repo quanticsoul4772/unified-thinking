@@ -8,9 +8,9 @@ import (
 
 func TestNewStorage(t *testing.T) {
 	tests := []struct {
-		name    string
-		config  Config
-		wantErr bool
+		name     string
+		config   Config
+		wantErr  bool
 		wantType string
 	}{
 		{
@@ -18,7 +18,7 @@ func TestNewStorage(t *testing.T) {
 			config: Config{
 				Type: StorageTypeMemory,
 			},
-			wantErr: false,
+			wantErr:  false,
 			wantType: "*storage.MemoryStorage",
 		},
 		{
@@ -28,7 +28,7 @@ func TestNewStorage(t *testing.T) {
 				SQLitePath:    filepath.Join(t.TempDir(), "factory-test.db"),
 				SQLiteTimeout: 5000,
 			},
-			wantErr: false,
+			wantErr:  false,
 			wantType: "*storage.SQLiteStorage",
 		},
 		{
@@ -164,9 +164,9 @@ func TestNewStorageFromEnv(t *testing.T) {
 		{
 			name: "sqlite storage from env",
 			envVars: map[string]string{
-				"STORAGE_TYPE":    "sqlite",
-				"SQLITE_PATH":     filepath.Join(t.TempDir(), "env-test.db"),
-				"SQLITE_TIMEOUT":  "3000",
+				"STORAGE_TYPE":     "sqlite",
+				"SQLITE_PATH":      filepath.Join(t.TempDir(), "env-test.db"),
+				"SQLITE_TIMEOUT":   "3000",
 				"STORAGE_FALLBACK": "memory",
 			},
 			wantErr:  false,
@@ -260,8 +260,8 @@ func TestCloseStorageNil(t *testing.T) {
 func TestFactoryWithInvalidSQLitePath(t *testing.T) {
 	// Test that factory handles invalid SQLite paths correctly
 	config := Config{
-		Type:       StorageTypeSQLite,
-		SQLitePath: "",  // Empty path
+		Type:         StorageTypeSQLite,
+		SQLitePath:   "", // Empty path
 		FallbackType: StorageTypeMemory,
 	}
 

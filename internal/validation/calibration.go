@@ -18,10 +18,10 @@ type CalibrationTracker struct {
 
 // Prediction represents a confidence prediction for a thought
 type Prediction struct {
-	ThoughtID  string    `json:"thought_id"`
-	Confidence float64   `json:"confidence"` // 0-1
-	Mode       string    `json:"mode"`       // linear, tree, divergent
-	Timestamp  time.Time `json:"timestamp"`
+	ThoughtID  string                 `json:"thought_id"`
+	Confidence float64                `json:"confidence"` // 0-1
+	Mode       string                 `json:"mode"`       // linear, tree, divergent
+	Timestamp  time.Time              `json:"timestamp"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -50,28 +50,28 @@ type CalibrationBucket struct {
 	MaxConfidence float64 `json:"max_confidence"`
 	Count         int     `json:"count"`
 	CorrectCount  int     `json:"correct_count"`
-	Accuracy      float64 `json:"accuracy"` // actual proportion correct
+	Accuracy      float64 `json:"accuracy"`    // actual proportion correct
 	Calibration   float64 `json:"calibration"` // difference from expected
 }
 
 // CalibrationReport provides overall calibration metrics
 type CalibrationReport struct {
-	TotalPredictions int                  `json:"total_predictions"`
-	TotalOutcomes    int                  `json:"total_outcomes"`
-	Buckets          []CalibrationBucket  `json:"buckets"`
-	OverallAccuracy  float64              `json:"overall_accuracy"`
-	Calibration      float64              `json:"calibration"` // Expected Calibration Error (ECE)
-	Bias             CalibrationBias      `json:"bias"`
+	TotalPredictions int                         `json:"total_predictions"`
+	TotalOutcomes    int                         `json:"total_outcomes"`
+	Buckets          []CalibrationBucket         `json:"buckets"`
+	OverallAccuracy  float64                     `json:"overall_accuracy"`
+	Calibration      float64                     `json:"calibration"` // Expected Calibration Error (ECE)
+	Bias             CalibrationBias             `json:"bias"`
 	ByMode           map[string]*ModeCalibration `json:"by_mode"`
-	Recommendations  []string             `json:"recommendations"`
-	GeneratedAt      time.Time            `json:"generated_at"`
+	Recommendations  []string                    `json:"recommendations"`
+	GeneratedAt      time.Time                   `json:"generated_at"`
 }
 
 // CalibrationBias indicates systematic over/under confidence
 type CalibrationBias struct {
-	Type       BiasType `json:"type"`
-	Magnitude  float64  `json:"magnitude"` // 0-1, how severe
-	Description string  `json:"description"`
+	Type        BiasType `json:"type"`
+	Magnitude   float64  `json:"magnitude"` // 0-1, how severe
+	Description string   `json:"description"`
 }
 
 // BiasType categorizes calibration bias

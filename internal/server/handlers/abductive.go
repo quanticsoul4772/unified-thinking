@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/reasoning"

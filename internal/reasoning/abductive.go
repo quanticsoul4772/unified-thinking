@@ -38,20 +38,20 @@ type Observation struct {
 
 // Hypothesis represents a possible explanation
 type Hypothesis struct {
-	ID                 string
-	Description        string
-	Observations       []string  // IDs of observations this explains
-	ExplanatoryPower   float64   // How well it explains observations (0-1)
-	Parsimony          float64   // Simplicity score (0-1, higher = simpler)
-	PriorProbability   float64   // Prior plausibility (0-1)
-	PosteriorProbability float64 // Updated probability after evidence
-	Assumptions        []string  // Required assumptions
-	Predictions        []string  // Testable predictions
-	CompetingIDs       []string  // IDs of competing hypotheses
-	Status             HypothesisStatus
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	Metadata           map[string]interface{}
+	ID                   string
+	Description          string
+	Observations         []string // IDs of observations this explains
+	ExplanatoryPower     float64  // How well it explains observations (0-1)
+	Parsimony            float64  // Simplicity score (0-1, higher = simpler)
+	PriorProbability     float64  // Prior plausibility (0-1)
+	PosteriorProbability float64  // Updated probability after evidence
+	Assumptions          []string // Required assumptions
+	Predictions          []string // Testable predictions
+	CompetingIDs         []string // IDs of competing hypotheses
+	Status               HypothesisStatus
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	Metadata             map[string]interface{}
 }
 
 // HypothesisStatus represents the state of a hypothesis
@@ -67,24 +67,24 @@ const (
 
 // AbductiveInference represents the result of abductive reasoning
 type AbductiveInference struct {
-	ID                string
-	Observations      []*Observation
-	Hypotheses        []*Hypothesis
-	BestHypothesis    *Hypothesis
-	RankedHypotheses  []*Hypothesis // Sorted by posterior probability
-	InferenceMethod   string
-	Confidence        float64 // Overall confidence in the inference
-	Timestamp         time.Time
-	Metadata          map[string]interface{}
+	ID               string
+	Observations     []*Observation
+	Hypotheses       []*Hypothesis
+	BestHypothesis   *Hypothesis
+	RankedHypotheses []*Hypothesis // Sorted by posterior probability
+	InferenceMethod  string
+	Confidence       float64 // Overall confidence in the inference
+	Timestamp        time.Time
+	Metadata         map[string]interface{}
 }
 
 // GenerateHypothesesRequest contains parameters for hypothesis generation
 type GenerateHypothesesRequest struct {
-	Observations     []*Observation
-	MaxHypotheses    int     // Maximum number to generate
-	MinParsimony     float64 // Minimum simplicity threshold
-	RequireTestable  bool    // Whether hypotheses must be testable
-	Context          string
+	Observations    []*Observation
+	MaxHypotheses   int     // Maximum number to generate
+	MinParsimony    float64 // Minimum simplicity threshold
+	RequireTestable bool    // Whether hypotheses must be testable
+	Context         string
 }
 
 // EvaluateHypothesesRequest contains parameters for hypothesis evaluation
@@ -99,10 +99,10 @@ type EvaluateHypothesesRequest struct {
 type EvaluationMethod string
 
 const (
-	MethodBayesian    EvaluationMethod = "bayesian"     // Bayesian inference
-	MethodParsimony   EvaluationMethod = "parsimony"    // Occam's Razor
-	MethodExplanatory EvaluationMethod = "explanatory"  // Explanatory power
-	MethodCombined    EvaluationMethod = "combined"     // Weighted combination
+	MethodBayesian    EvaluationMethod = "bayesian"    // Bayesian inference
+	MethodParsimony   EvaluationMethod = "parsimony"   // Occam's Razor
+	MethodExplanatory EvaluationMethod = "explanatory" // Explanatory power
+	MethodCombined    EvaluationMethod = "combined"    // Weighted combination
 )
 
 // EvaluationWeights defines relative importance of evaluation criteria

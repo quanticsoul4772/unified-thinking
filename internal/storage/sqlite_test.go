@@ -25,10 +25,10 @@ func newTestSQLiteStorage(t *testing.T) (*SQLiteStorage, string) {
 
 func TestNewSQLiteStorage(t *testing.T) {
 	tests := []struct {
-		name      string
-		dbPath    string
-		timeout   int
-		wantErr   bool
+		name    string
+		dbPath  string
+		timeout int
+		wantErr bool
 	}{
 		{
 			name:    "create new database",
@@ -114,8 +114,8 @@ func TestSQLiteStoreAndGetThought(t *testing.T) {
 		{
 			name: "store thought with all fields",
 			thought: &types.Thought{
-				Content:              "Complex thought",
-				Mode:                 types.ModeTree,
+				Content: "Complex thought",
+				Mode:    types.ModeTree,
 				// Don't set BranchID to avoid foreign key constraint
 				Type:                 "analysis",
 				Confidence:           0.92,
@@ -254,12 +254,12 @@ func TestSQLitePersistenceAcrossRestarts(t *testing.T) {
 	}
 
 	branch := &types.Branch{
-		ID:         "branch-persist",
-		State:      types.StateActive,
-		Priority:   1.0,
-		Confidence: 0.85,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		ID:             "branch-persist",
+		State:          types.StateActive,
+		Priority:       1.0,
+		Confidence:     0.85,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 		LastAccessedAt: time.Now(),
 	}
 	err = storage1.StoreBranch(branch)

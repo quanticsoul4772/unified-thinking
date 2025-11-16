@@ -92,7 +92,7 @@ func SuggestAlternativeTool(toolName string, requestContent string) *ToolSuggest
 	// detect-fallacies vs detect-biases confusion
 	if toolName == "detect-fallacies" {
 		if contains(contentLower, "confirmation bias") || contains(contentLower, "anchoring") ||
-		   contains(contentLower, "availability heuristic") || contains(contentLower, "cognitive bias") {
+			contains(contentLower, "availability heuristic") || contains(contentLower, "cognitive bias") {
 			return &ToolSuggestion{
 				CurrentTool:   "detect-fallacies",
 				SuggestedTool: "detect-biases",
@@ -369,8 +369,6 @@ func ValidateSearchRequest(req *SearchRequest) error {
 
 	return nil
 }
-
-
 
 // ValidateExecuteWorkflowRequest validates an ExecuteWorkflowRequest
 func ValidateExecuteWorkflowRequest(req *ExecuteWorkflowRequest) error {

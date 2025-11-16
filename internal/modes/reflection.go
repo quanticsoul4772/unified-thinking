@@ -38,52 +38,52 @@ func NewReflectionLoop(
 
 // ReflectionConfig configures the reflection loop
 type ReflectionConfig struct {
-	MaxIterations      int     `json:"max_iterations"`       // Maximum refinement attempts
-	QualityThreshold   float64 `json:"quality_threshold"`    // Stop when quality >= this
-	MinImprovement     float64 `json:"min_improvement"`      // Minimum improvement to continue
-	ChallengeAssumptions bool  `json:"challenge_assumptions"` // Enable assumption challenging
+	MaxIterations        int     `json:"max_iterations"`        // Maximum refinement attempts
+	QualityThreshold     float64 `json:"quality_threshold"`     // Stop when quality >= this
+	MinImprovement       float64 `json:"min_improvement"`       // Minimum improvement to continue
+	ChallengeAssumptions bool    `json:"challenge_assumptions"` // Enable assumption challenging
 }
 
 // DefaultReflectionConfig returns sensible defaults
 func DefaultReflectionConfig() *ReflectionConfig {
 	return &ReflectionConfig{
-		MaxIterations:      5,
-		QualityThreshold:   0.8,
-		MinImprovement:     0.05,
+		MaxIterations:        5,
+		QualityThreshold:     0.8,
+		MinImprovement:       0.05,
 		ChallengeAssumptions: true,
 	}
 }
 
 // ReflectionIteration represents one refinement iteration
 type ReflectionIteration struct {
-	IterationNum int                      `json:"iteration_num"`
-	ThoughtID    string                   `json:"thought_id"`
-	Quality      *types.SelfEvaluation    `json:"quality"`
-	Critique     *ReflectionCritique      `json:"critique"`
-	Improvements []string                 `json:"improvements"`
-	Timestamp    time.Time                `json:"timestamp"`
+	IterationNum int                   `json:"iteration_num"`
+	ThoughtID    string                `json:"thought_id"`
+	Quality      *types.SelfEvaluation `json:"quality"`
+	Critique     *ReflectionCritique   `json:"critique"`
+	Improvements []string              `json:"improvements"`
+	Timestamp    time.Time             `json:"timestamp"`
 }
 
 // ReflectionCritique identifies issues to address
 type ReflectionCritique struct {
-	Biases            []*types.CognitiveBias        `json:"biases,omitempty"`
-	Fallacies         []*validation.DetectedFallacy `json:"fallacies,omitempty"`
-	QualityIssues     []string                      `json:"quality_issues"`
-	Recommendations   []string                      `json:"recommendations"`
-	ShouldRefine      bool                          `json:"should_refine"`
-	CritiqueSummary   string                        `json:"critique_summary"`
+	Biases          []*types.CognitiveBias        `json:"biases,omitempty"`
+	Fallacies       []*validation.DetectedFallacy `json:"fallacies,omitempty"`
+	QualityIssues   []string                      `json:"quality_issues"`
+	Recommendations []string                      `json:"recommendations"`
+	ShouldRefine    bool                          `json:"should_refine"`
+	CritiqueSummary string                        `json:"critique_summary"`
 }
 
 // ReflectionResult contains the final result and iteration history
 type ReflectionResult struct {
-	FinalThought     *types.Thought         `json:"final_thought"`
-	Iterations       []ReflectionIteration  `json:"iterations"`
-	TotalIterations  int                    `json:"total_iterations"`
-	InitialQuality   float64                `json:"initial_quality"`
-	FinalQuality     float64                `json:"final_quality"`
-	Improvement      float64                `json:"improvement"`
-	StopReason       string                 `json:"stop_reason"`
-	Success          bool                   `json:"success"`
+	FinalThought    *types.Thought        `json:"final_thought"`
+	Iterations      []ReflectionIteration `json:"iterations"`
+	TotalIterations int                   `json:"total_iterations"`
+	InitialQuality  float64               `json:"initial_quality"`
+	FinalQuality    float64               `json:"final_quality"`
+	Improvement     float64               `json:"improvement"`
+	StopReason      string                `json:"stop_reason"`
+	Success         bool                  `json:"success"`
 }
 
 // RefineThought performs iterative reflection and refinement
@@ -262,9 +262,9 @@ func (rl *ReflectionLoop) refineBasedOnCritique(
 		ParentID:   thought.ID,
 		KeyPoints:  thought.KeyPoints,
 		Metadata: map[string]interface{}{
-			"refinement_of":        thought.ID,
-			"critique":             critique.CritiqueSummary,
-			"iteration":            len(critique.QualityIssues),
+			"refinement_of":         thought.ID,
+			"critique":              critique.CritiqueSummary,
+			"iteration":             len(critique.QualityIssues),
 			"challenge_assumptions": config.ChallengeAssumptions,
 		},
 		Timestamp: time.Now(),

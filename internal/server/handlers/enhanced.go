@@ -377,16 +377,16 @@ func toJSONContent(data interface{}) []mcp.Content {
 
 // Validation constants
 const (
-	MaxContentLength     = 100000
-	MaxConstraints       = 50
-	MaxAnalogyIDLength   = 100
-	MaxArgumentIDLength  = 100
-	MaxGraphIDLength     = 100
-	MaxVariableIDLength  = 100
-	MaxSourceLength      = 1000
-	MaxContextLength     = 10000
-	MaxBranchIDLength    = 100
-	MaxQueryLength       = 1000
+	MaxContentLength    = 100000
+	MaxConstraints      = 50
+	MaxAnalogyIDLength  = 100
+	MaxArgumentIDLength = 100
+	MaxGraphIDLength    = 100
+	MaxVariableIDLength = 100
+	MaxSourceLength     = 1000
+	MaxContextLength    = 10000
+	MaxBranchIDLength   = 100
+	MaxQueryLength      = 1000
 )
 
 // ValidationError represents a validation error with helpful context

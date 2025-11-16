@@ -88,7 +88,7 @@ func TestDetectBlindSpots_Overconfidence(t *testing.T) {
 
 	req := &GapAnalysisRequest{
 		Content:    "This is the solution.", // Very short
-		Confidence: 0.95,                     // Very high confidence
+		Confidence: 0.95,                    // Very high confidence
 	}
 
 	result, err := detector.DetectBlindSpots(ctx, req)

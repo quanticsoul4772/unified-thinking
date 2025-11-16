@@ -40,9 +40,9 @@ func TestNewOrchestrator(t *testing.T) {
 // TestRegisterWorkflow tests workflow registration
 func TestRegisterWorkflow(t *testing.T) {
 	tests := []struct {
-		name      string
-		workflow  *Workflow
-		wantErr   bool
+		name        string
+		workflow    *Workflow
+		wantErr     bool
 		errContains string
 	}{
 		{
@@ -342,7 +342,7 @@ func TestUpdateContext(t *testing.T) {
 // TestWorkflowTypes tests different workflow types
 func TestWorkflowTypes(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		wfType WorkflowType
 	}{
 		{"sequential", WorkflowSequential},
@@ -374,10 +374,10 @@ func TestWorkflowTypes(t *testing.T) {
 // TestPredefinedWorkflows tests the predefined workflow templates
 func TestPredefinedWorkflows(t *testing.T) {
 	tests := []struct {
-		name         string
-		workflowID   string
-		wantSteps    int
-		wantType     WorkflowType
+		name       string
+		workflowID string
+		wantSteps  int
+		wantType   WorkflowType
 	}{
 		{
 			name:       "comprehensive-analysis",
@@ -574,8 +574,8 @@ func TestResolveTemplateValue(t *testing.T) {
 			expected:      42,
 		},
 		{
-			name:          "slice with templates resolved",
-			value:         []interface{}{"{{problem}}", "{{context}}", "regular"},
+			name:  "slice with templates resolved",
+			value: []interface{}{"{{problem}}", "{{context}}", "regular"},
 			workflowInput: map[string]interface{}{
 				"problem": "test problem",
 				"context": "test context",
@@ -584,10 +584,10 @@ func TestResolveTemplateValue(t *testing.T) {
 			expected:     []interface{}{"test problem", "test context", "regular"},
 		},
 		{
-			name:  "unresolved reference returns original",
-			value: "{{nonexistent}}",
-			workflowInput: make(map[string]interface{}),
-			reasoningCtx:  &ReasoningContext{Results: make(map[string]interface{})},
+			name:           "unresolved reference returns original",
+			value:          "{{nonexistent}}",
+			workflowInput:  make(map[string]interface{}),
+			reasoningCtx:   &ReasoningContext{Results: make(map[string]interface{})},
 			expectedString: "{{nonexistent}}",
 		},
 		{

@@ -10,16 +10,16 @@ import (
 
 // RetrospectiveAnalysis provides detailed analysis of a completed trajectory
 type RetrospectiveAnalysis struct {
-	TrajectoryID      string                   `json:"trajectory_id"`
-	SessionID         string                   `json:"session_id"`
-	AnalysisTimestamp time.Time                `json:"analysis_timestamp"`
-	Summary           *AnalysisSummary         `json:"summary"`
-	Strengths         []string                 `json:"strengths"`
-	Weaknesses        []string                 `json:"weaknesses"`
-	Improvements      []*ImprovementSuggestion `json:"improvements"`
-	LessonsLearned    []string                 `json:"lessons_learned"`
-	ComparativAnalysis *ComparativeAnalysis    `json:"comparative_analysis,omitempty"`
-	DetailedMetrics   *DetailedMetricsAnalysis `json:"detailed_metrics"`
+	TrajectoryID       string                   `json:"trajectory_id"`
+	SessionID          string                   `json:"session_id"`
+	AnalysisTimestamp  time.Time                `json:"analysis_timestamp"`
+	Summary            *AnalysisSummary         `json:"summary"`
+	Strengths          []string                 `json:"strengths"`
+	Weaknesses         []string                 `json:"weaknesses"`
+	Improvements       []*ImprovementSuggestion `json:"improvements"`
+	LessonsLearned     []string                 `json:"lessons_learned"`
+	ComparativAnalysis *ComparativeAnalysis     `json:"comparative_analysis,omitempty"`
+	DetailedMetrics    *DetailedMetricsAnalysis `json:"detailed_metrics"`
 }
 
 // AnalysisSummary provides high-level summary of the session
@@ -35,19 +35,19 @@ type AnalysisSummary struct {
 
 // ImprovementSuggestion provides specific actionable improvement
 type ImprovementSuggestion struct {
-	Category    string  `json:"category"`    // "efficiency", "quality", "approach", "tools"
-	Priority    float64 `json:"priority"`    // 0.0-1.0
-	Suggestion  string  `json:"suggestion"`
-	Rationale   string  `json:"rationale"`
-	ExpectedImpact string `json:"expected_impact"`
+	Category       string  `json:"category"` // "efficiency", "quality", "approach", "tools"
+	Priority       float64 `json:"priority"` // 0.0-1.0
+	Suggestion     string  `json:"suggestion"`
+	Rationale      string  `json:"rationale"`
+	ExpectedImpact string  `json:"expected_impact"`
 }
 
 // ComparativeAnalysis compares this trajectory to similar ones
 type ComparativeAnalysis struct {
-	SimilarTrajectories int     `json:"similar_trajectories_count"`
-	PercentileRank      float64 `json:"percentile_rank"` // 0-100, higher is better
-	BetterThan          int     `json:"better_than_count"`
-	WorseThan           int     `json:"worse_than_count"`
+	SimilarTrajectories int      `json:"similar_trajectories_count"`
+	PercentileRank      float64  `json:"percentile_rank"` // 0-100, higher is better
+	BetterThan          int      `json:"better_than_count"`
+	WorseThan           int      `json:"worse_than_count"`
 	KeyDifferences      []string `json:"key_differences"`
 }
 
@@ -267,10 +267,10 @@ func (r *RetrospectiveAnalyzer) generateImprovements(trajectory *ReasoningTrajec
 	// Efficiency improvements
 	if q.Efficiency < 0.7 {
 		improvements = append(improvements, &ImprovementSuggestion{
-			Category:   "efficiency",
-			Priority:   1.0 - q.Efficiency,
-			Suggestion: "Reduce unnecessary steps by planning the approach before executing",
-			Rationale:  fmt.Sprintf("Current efficiency: %.1f%%. Optimal is around 7-10 steps for most problems.", q.Efficiency*100),
+			Category:       "efficiency",
+			Priority:       1.0 - q.Efficiency,
+			Suggestion:     "Reduce unnecessary steps by planning the approach before executing",
+			Rationale:      fmt.Sprintf("Current efficiency: %.1f%%. Optimal is around 7-10 steps for most problems.", q.Efficiency*100),
 			ExpectedImpact: "Could reduce session time by 20-30%",
 		})
 	}
@@ -278,10 +278,10 @@ func (r *RetrospectiveAnalyzer) generateImprovements(trajectory *ReasoningTrajec
 	// Coherence improvements
 	if q.Coherence < 0.7 {
 		improvements = append(improvements, &ImprovementSuggestion{
-			Category:   "quality",
-			Priority:   1.0 - q.Coherence,
-			Suggestion: "Use 'validate' tool more frequently to check logical consistency",
-			Rationale:  fmt.Sprintf("Coherence score: %.1f%%. Regular validation helps maintain logical consistency.", q.Coherence*100),
+			Category:       "quality",
+			Priority:       1.0 - q.Coherence,
+			Suggestion:     "Use 'validate' tool more frequently to check logical consistency",
+			Rationale:      fmt.Sprintf("Coherence score: %.1f%%. Regular validation helps maintain logical consistency.", q.Coherence*100),
 			ExpectedImpact: "Improve logical consistency by 15-25%",
 		})
 	}
@@ -289,10 +289,10 @@ func (r *RetrospectiveAnalyzer) generateImprovements(trajectory *ReasoningTrajec
 	// Completeness improvements
 	if q.Completeness < 0.7 {
 		improvements = append(improvements, &ImprovementSuggestion{
-			Category:   "approach",
-			Priority:   1.0 - q.Completeness,
-			Suggestion: "Create explicit goal tracking and verify each goal before completing session",
-			Rationale:  fmt.Sprintf("Completeness: %.1f%%. Many goals were not achieved.", q.Completeness*100),
+			Category:       "approach",
+			Priority:       1.0 - q.Completeness,
+			Suggestion:     "Create explicit goal tracking and verify each goal before completing session",
+			Rationale:      fmt.Sprintf("Completeness: %.1f%%. Many goals were not achieved.", q.Completeness*100),
 			ExpectedImpact: "Achieve 90%+ of stated goals",
 		})
 	}
@@ -300,10 +300,10 @@ func (r *RetrospectiveAnalyzer) generateImprovements(trajectory *ReasoningTrajec
 	// Innovation improvements
 	if q.Innovation < 0.4 {
 		improvements = append(improvements, &ImprovementSuggestion{
-			Category:   "tools",
-			Priority:   0.5,
-			Suggestion: "Try using 'divergent' mode or 'find-analogy' for creative problem-solving",
-			Rationale:  fmt.Sprintf("Innovation score: %.1f%%. Consider more advanced reasoning tools.", q.Innovation*100),
+			Category:       "tools",
+			Priority:       0.5,
+			Suggestion:     "Try using 'divergent' mode or 'find-analogy' for creative problem-solving",
+			Rationale:      fmt.Sprintf("Innovation score: %.1f%%. Consider more advanced reasoning tools.", q.Innovation*100),
 			ExpectedImpact: "Discover novel solutions and approaches",
 		})
 	}
@@ -312,10 +312,10 @@ func (r *RetrospectiveAnalyzer) generateImprovements(trajectory *ReasoningTrajec
 	if trajectory.Approach != nil {
 		if trajectory.Approach.Strategy == "systematic-linear" && trajectory.SuccessScore < 0.6 {
 			improvements = append(improvements, &ImprovementSuggestion{
-				Category:   "approach",
-				Priority:   0.7,
-				Suggestion: "Try 'tree' mode for parallel exploration of multiple approaches",
-				Rationale:  "Linear approach didn't work well for this problem type",
+				Category:       "approach",
+				Priority:       0.7,
+				Suggestion:     "Try 'tree' mode for parallel exploration of multiple approaches",
+				Rationale:      "Linear approach didn't work well for this problem type",
 				ExpectedImpact: "Explore multiple solutions simultaneously",
 			})
 		}
@@ -340,25 +340,25 @@ func (r *RetrospectiveAnalyzer) extractLessons(trajectory *ReasoningTrajectory) 
 	// Success lessons
 	if trajectory.SuccessScore >= 0.7 {
 		if trajectory.Approach != nil && len(trajectory.Approach.ToolSequence) > 0 {
-			lessons = append(lessons, fmt.Sprintf("Tool sequence '%v' worked well for %s problems", 
+			lessons = append(lessons, fmt.Sprintf("Tool sequence '%v' worked well for %s problems",
 				trajectory.Approach.ToolSequence, trajectory.Domain))
 		}
-		
+
 		if trajectory.Approach != nil {
-			lessons = append(lessons, fmt.Sprintf("Strategy '%s' was effective for this problem type", 
+			lessons = append(lessons, fmt.Sprintf("Strategy '%s' was effective for this problem type",
 				trajectory.Approach.Strategy))
 		}
 	}
 
 	// Failure lessons
 	if trajectory.SuccessScore < 0.4 {
-		lessons = append(lessons, fmt.Sprintf("Approach failed - avoid similar strategy for %s domain", 
+		lessons = append(lessons, fmt.Sprintf("Approach failed - avoid similar strategy for %s domain",
 			trajectory.Domain))
 	}
 
 	// Unexpected outcomes
 	if len(trajectory.Outcome.UnexpectedOutcomes) > 0 {
-		lessons = append(lessons, fmt.Sprintf("Watch for unexpected outcomes: %v", 
+		lessons = append(lessons, fmt.Sprintf("Watch for unexpected outcomes: %v",
 			trajectory.Outcome.UnexpectedOutcomes))
 	}
 
@@ -432,10 +432,10 @@ func (r *RetrospectiveAnalyzer) identifyKeyDifferences(trajectory *ReasoningTraj
 	if trajectory.Approach != nil {
 		currentToolCount := len(trajectory.Approach.ToolSequence)
 		if currentToolCount > int(float64(avgToolCount)*1.3) {
-			differences = append(differences, fmt.Sprintf("Used significantly more tools (%d vs avg %d)", 
+			differences = append(differences, fmt.Sprintf("Used significantly more tools (%d vs avg %d)",
 				currentToolCount, avgToolCount))
 		} else if currentToolCount < int(float64(avgToolCount)*0.7) {
-			differences = append(differences, fmt.Sprintf("Used fewer tools (%d vs avg %d)", 
+			differences = append(differences, fmt.Sprintf("Used fewer tools (%d vs avg %d)",
 				currentToolCount, avgToolCount))
 		}
 	}
@@ -450,10 +450,10 @@ func (r *RetrospectiveAnalyzer) identifyKeyDifferences(trajectory *ReasoningTraj
 	}
 
 	if trajectory.SuccessScore > avgSuccess*1.2 {
-		differences = append(differences, fmt.Sprintf("Significantly more successful than average (%.0f%% vs %.0f%%)", 
+		differences = append(differences, fmt.Sprintf("Significantly more successful than average (%.0f%% vs %.0f%%)",
 			trajectory.SuccessScore*100, avgSuccess*100))
 	} else if trajectory.SuccessScore < avgSuccess*0.8 {
-		differences = append(differences, fmt.Sprintf("Less successful than average (%.0f%% vs %.0f%%)", 
+		differences = append(differences, fmt.Sprintf("Less successful than average (%.0f%% vs %.0f%%)",
 			trajectory.SuccessScore*100, avgSuccess*100))
 	}
 
@@ -480,9 +480,9 @@ func (r *RetrospectiveAnalyzer) analyzeMetrics(trajectory *ReasoningTrajectory) 
 // analyzeEfficiency provides efficiency metric analysis
 func (r *RetrospectiveAnalyzer) analyzeEfficiency(score float64, stepCount int) *MetricAnalysis {
 	assessment := r.scoreToAssessment(score)
-	
+
 	explanation := fmt.Sprintf("Used %d steps. Optimal is around 7-10 steps for most problems.", stepCount)
-	
+
 	suggestions := make([]string, 0)
 	if score < 0.7 {
 		suggestions = append(suggestions, "Plan the approach before executing")
@@ -501,10 +501,10 @@ func (r *RetrospectiveAnalyzer) analyzeEfficiency(score float64, stepCount int) 
 // analyzeCoherence provides coherence metric analysis
 func (r *RetrospectiveAnalyzer) analyzeCoherence(score float64, contradictions, fallacies int) *MetricAnalysis {
 	assessment := r.scoreToAssessment(score)
-	
-	explanation := fmt.Sprintf("Logical consistency score. Found %d contradictions and %d fallacies.", 
+
+	explanation := fmt.Sprintf("Logical consistency score. Found %d contradictions and %d fallacies.",
 		contradictions, fallacies)
-	
+
 	suggestions := make([]string, 0)
 	if score < 0.7 {
 		suggestions = append(suggestions, "Use 'validate' tool regularly")
@@ -523,7 +523,7 @@ func (r *RetrospectiveAnalyzer) analyzeCoherence(score float64, contradictions, 
 // analyzeCompleteness provides completeness metric analysis
 func (r *RetrospectiveAnalyzer) analyzeCompleteness(score float64, trajectory *ReasoningTrajectory) *MetricAnalysis {
 	assessment := r.scoreToAssessment(score)
-	
+
 	goalsAchieved := 0
 	goalsTotal := 0
 	if trajectory.Problem != nil {
@@ -532,10 +532,10 @@ func (r *RetrospectiveAnalyzer) analyzeCompleteness(score float64, trajectory *R
 	if trajectory.Outcome != nil {
 		goalsAchieved = len(trajectory.Outcome.GoalsAchieved)
 	}
-	
-	explanation := fmt.Sprintf("Achieved %d of %d goals (%.0f%%).", 
+
+	explanation := fmt.Sprintf("Achieved %d of %d goals (%.0f%%).",
 		goalsAchieved, goalsTotal, score*100)
-	
+
 	suggestions := make([]string, 0)
 	if score < 0.7 {
 		suggestions = append(suggestions, "Track goals explicitly throughout the session")
@@ -554,9 +554,9 @@ func (r *RetrospectiveAnalyzer) analyzeCompleteness(score float64, trajectory *R
 // analyzeInnovation provides innovation metric analysis
 func (r *RetrospectiveAnalyzer) analyzeInnovation(score float64, trajectory *ReasoningTrajectory) *MetricAnalysis {
 	assessment := r.scoreToAssessment(score)
-	
+
 	explanation := "Measures use of creative and advanced reasoning tools."
-	
+
 	suggestions := make([]string, 0)
 	if score < 0.5 {
 		suggestions = append(suggestions, "Try 'divergent' mode for creative thinking")
@@ -575,9 +575,9 @@ func (r *RetrospectiveAnalyzer) analyzeInnovation(score float64, trajectory *Rea
 // analyzeReliability provides reliability metric analysis
 func (r *RetrospectiveAnalyzer) analyzeReliability(score float64) *MetricAnalysis {
 	assessment := r.scoreToAssessment(score)
-	
+
 	explanation := fmt.Sprintf("Confidence in final result: %.0f%%", score*100)
-	
+
 	suggestions := make([]string, 0)
 	if score < 0.7 {
 		suggestions = append(suggestions, "Validate conclusions before finalizing")

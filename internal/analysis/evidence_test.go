@@ -79,10 +79,10 @@ func TestAggregateEvidence(t *testing.T) {
 	evidence3, _ := ea.AssessEvidence("Contradicting evidence", "Source", "claim-1", false)
 
 	tests := []struct {
-		name              string
-		evidences         []*types.Evidence
-		wantSupportCount  int
-		wantRefuteCount   int
+		name             string
+		evidences        []*types.Evidence
+		wantSupportCount int
+		wantRefuteCount  int
 	}{
 		{
 			name:             "no evidence",

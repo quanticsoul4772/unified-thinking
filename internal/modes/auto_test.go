@@ -40,9 +40,9 @@ func TestAutoMode_DetectMode(t *testing.T) {
 	auto := NewAutoMode(linear, tree, divergent)
 
 	tests := []struct {
-		name       string
-		input      ThoughtInput
-		wantMode   types.ThinkingMode
+		name     string
+		input    ThoughtInput
+		wantMode types.ThinkingMode
 	}{
 		{
 			name: "detect divergent by keyword creative",

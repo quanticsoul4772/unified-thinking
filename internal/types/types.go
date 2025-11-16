@@ -61,16 +61,16 @@ const (
 
 // Thought represents a single thought in the system
 type Thought struct {
-	ID          string                 `json:"id"`
-	Content     string                 `json:"content"`
-	Mode        ThinkingMode           `json:"mode"`
-	BranchID    string                 `json:"branch_id,omitempty"`
-	ParentID    string                 `json:"parent_id,omitempty"`
-	Type        string                 `json:"type"`
-	Confidence  float64                `json:"confidence"`
-	Timestamp   time.Time              `json:"timestamp"`
-	KeyPoints   []string               `json:"key_points,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID         string                 `json:"id"`
+	Content    string                 `json:"content"`
+	Mode       ThinkingMode           `json:"mode"`
+	BranchID   string                 `json:"branch_id,omitempty"`
+	ParentID   string                 `json:"parent_id,omitempty"`
+	Type       string                 `json:"type"`
+	Confidence float64                `json:"confidence"`
+	Timestamp  time.Time              `json:"timestamp"`
+	KeyPoints  []string               `json:"key_points,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 
 	// Flags
 	IsRebellion          bool `json:"is_rebellion"`
@@ -79,17 +79,17 @@ type Thought struct {
 
 // Branch represents a branch in tree-mode thinking
 type Branch struct {
-	ID             string         `json:"id"`
-	ParentBranchID string         `json:"parent_branch_id,omitempty"`
-	State          ThoughtState   `json:"state"`
-	Priority       float64        `json:"priority"`
-	Confidence     float64        `json:"confidence"`
-	Thoughts       []*Thought     `json:"thoughts"`
-	Insights       []*Insight     `json:"insights"`
-	CrossRefs      []*CrossRef    `json:"cross_refs"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	LastAccessedAt time.Time      `json:"last_accessed_at"`
+	ID             string       `json:"id"`
+	ParentBranchID string       `json:"parent_branch_id,omitempty"`
+	State          ThoughtState `json:"state"`
+	Priority       float64      `json:"priority"`
+	Confidence     float64      `json:"confidence"`
+	Thoughts       []*Thought   `json:"thoughts"`
+	Insights       []*Insight   `json:"insights"`
+	CrossRefs      []*CrossRef  `json:"cross_refs"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      time.Time    `json:"updated_at"`
+	LastAccessedAt time.Time    `json:"last_accessed_at"`
 }
 
 // Insight represents a derived insight
@@ -157,28 +157,28 @@ const (
 
 // Evidence represents a piece of evidence supporting or refuting a claim
 type Evidence struct {
-	ID             string                 `json:"id"`
-	Content        string                 `json:"content"`
-	Source         string                 `json:"source,omitempty"`
-	Quality        EvidenceQuality        `json:"quality"`
-	Reliability    float64                `json:"reliability"`     // 0.0-1.0
-	Relevance      float64                `json:"relevance"`       // 0.0-1.0
-	OverallScore   float64                `json:"overall_score"`   // Computed from quality, reliability, relevance
-	SupportsClaim  bool                   `json:"supports_claim"`  // true = supports, false = refutes
-	ClaimID        string                 `json:"claim_id"`
-	Metadata       map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt      time.Time              `json:"created_at"`
+	ID            string                 `json:"id"`
+	Content       string                 `json:"content"`
+	Source        string                 `json:"source,omitempty"`
+	Quality       EvidenceQuality        `json:"quality"`
+	Reliability   float64                `json:"reliability"`    // 0.0-1.0
+	Relevance     float64                `json:"relevance"`      // 0.0-1.0
+	OverallScore  float64                `json:"overall_score"`  // Computed from quality, reliability, relevance
+	SupportsClaim bool                   `json:"supports_claim"` // true = supports, false = refutes
+	ClaimID       string                 `json:"claim_id"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt     time.Time              `json:"created_at"`
 }
 
 // ProbabilisticBelief represents a belief with associated probability
 type ProbabilisticBelief struct {
-	ID           string                 `json:"id"`
-	Statement    string                 `json:"statement"`
-	Probability  float64                `json:"probability"`      // 0.0-1.0 (Bayesian probability)
-	PriorProb    float64                `json:"prior_prob"`       // Prior probability before evidence
-	Evidence     []string               `json:"evidence"`         // Evidence IDs supporting this belief
-	UpdatedAt    time.Time              `json:"updated_at"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	ID          string                 `json:"id"`
+	Statement   string                 `json:"statement"`
+	Probability float64                `json:"probability"` // 0.0-1.0 (Bayesian probability)
+	PriorProb   float64                `json:"prior_prob"`  // Prior probability before evidence
+	Evidence    []string               `json:"evidence"`    // Evidence IDs supporting this belief
+	UpdatedAt   time.Time              `json:"updated_at"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // Contradiction represents detected contradictions between thoughts
@@ -193,27 +193,27 @@ type Contradiction struct {
 
 // Perspective represents a stakeholder viewpoint
 type Perspective struct {
-	ID             string                 `json:"id"`
-	Stakeholder    string                 `json:"stakeholder"`     // Name or role of stakeholder
-	Viewpoint      string                 `json:"viewpoint"`       // Their perspective on the issue
-	Concerns       []string               `json:"concerns"`        // Key concerns
-	Priorities     []string               `json:"priorities"`      // What they prioritize
-	Constraints    []string               `json:"constraints"`     // Constraints they face
-	Confidence     float64                `json:"confidence"`      // Confidence in this perspective modeling
-	Metadata       map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt      time.Time              `json:"created_at"`
+	ID          string                 `json:"id"`
+	Stakeholder string                 `json:"stakeholder"` // Name or role of stakeholder
+	Viewpoint   string                 `json:"viewpoint"`   // Their perspective on the issue
+	Concerns    []string               `json:"concerns"`    // Key concerns
+	Priorities  []string               `json:"priorities"`  // What they prioritize
+	Constraints []string               `json:"constraints"` // Constraints they face
+	Confidence  float64                `json:"confidence"`  // Confidence in this perspective modeling
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
 }
 
 // TemporalAnalysis represents short-term vs long-term reasoning
 type TemporalAnalysis struct {
-	ID              string                 `json:"id"`
-	ShortTermView   string                 `json:"short_term_view"`    // Immediate implications
-	LongTermView    string                 `json:"long_term_view"`     // Long-term implications
-	TimeHorizon     string                 `json:"time_horizon"`       // "days", "months", "years"
-	Tradeoffs       []string               `json:"tradeoffs"`          // Short vs long term tradeoffs
-	Recommendation  string                 `json:"recommendation"`     // Which to prioritize and why
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt       time.Time              `json:"created_at"`
+	ID             string                 `json:"id"`
+	ShortTermView  string                 `json:"short_term_view"` // Immediate implications
+	LongTermView   string                 `json:"long_term_view"`  // Long-term implications
+	TimeHorizon    string                 `json:"time_horizon"`    // "days", "months", "years"
+	Tradeoffs      []string               `json:"tradeoffs"`       // Short vs long term tradeoffs
+	Recommendation string                 `json:"recommendation"`  // Which to prioritize and why
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
 }
 
 // Decision represents a structured decision with options and criteria
@@ -230,13 +230,13 @@ type Decision struct {
 
 // DecisionOption represents an option in a decision
 type DecisionOption struct {
-	ID          string               `json:"id"`
-	Name        string               `json:"name"`
-	Description string               `json:"description"`
-	Scores      map[string]float64   `json:"scores"`      // criterion_id -> score
-	Pros        []string             `json:"pros"`
-	Cons        []string             `json:"cons"`
-	TotalScore  float64              `json:"total_score"` // Weighted sum
+	ID          string             `json:"id"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Scores      map[string]float64 `json:"scores"` // criterion_id -> score
+	Pros        []string           `json:"pros"`
+	Cons        []string           `json:"cons"`
+	TotalScore  float64            `json:"total_score"` // Weighted sum
 }
 
 // DecisionCriterion represents a criterion for evaluating options
@@ -244,29 +244,29 @@ type DecisionCriterion struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
-	Weight      float64 `json:"weight"`      // Importance weight (0.0-1.0)
-	Maximize    bool    `json:"maximize"`    // true = higher is better, false = lower is better
+	Weight      float64 `json:"weight"`   // Importance weight (0.0-1.0)
+	Maximize    bool    `json:"maximize"` // true = higher is better, false = lower is better
 }
 
 // ProblemDecomposition represents breaking down a complex problem
 type ProblemDecomposition struct {
-	ID             string                 `json:"id"`
-	Problem        string                 `json:"problem"`
-	Subproblems    []*Subproblem          `json:"subproblems"`
-	Dependencies   []*Dependency          `json:"dependencies"`
-	SolutionPath   []string               `json:"solution_path"`   // Order to solve subproblems
-	Metadata       map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt      time.Time              `json:"created_at"`
+	ID           string                 `json:"id"`
+	Problem      string                 `json:"problem"`
+	Subproblems  []*Subproblem          `json:"subproblems"`
+	Dependencies []*Dependency          `json:"dependencies"`
+	SolutionPath []string               `json:"solution_path"` // Order to solve subproblems
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
 }
 
 // Subproblem represents a component of a larger problem
 type Subproblem struct {
-	ID          string   `json:"id"`
-	Description string   `json:"description"`
-	Complexity  string   `json:"complexity"`  // "low", "medium", "high"
-	Priority    string   `json:"priority"`    // "low", "medium", "high"
-	Status      string   `json:"status"`      // "pending", "in_progress", "solved"
-	Solution    string   `json:"solution,omitempty"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Complexity  string `json:"complexity"` // "low", "medium", "high"
+	Priority    string `json:"priority"`   // "low", "medium", "high"
+	Status      string `json:"status"`     // "pending", "in_progress", "solved"
+	Solution    string `json:"solution,omitempty"`
 }
 
 // Dependency represents a dependency between subproblems
@@ -278,14 +278,14 @@ type Dependency struct {
 
 // Synthesis represents cross-mode insight integration
 type Synthesis struct {
-	ID              string                 `json:"id"`
-	Sources         []string               `json:"sources"`         // Thought/Insight IDs from different modes
-	IntegratedView  string                 `json:"integrated_view"` // Synthesized conclusion
-	Synergies       []string               `json:"synergies"`       // How sources complement each other
-	Conflicts       []string               `json:"conflicts"`       // Conflicting aspects
-	Confidence      float64                `json:"confidence"`
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt       time.Time              `json:"created_at"`
+	ID             string                 `json:"id"`
+	Sources        []string               `json:"sources"`         // Thought/Insight IDs from different modes
+	IntegratedView string                 `json:"integrated_view"` // Synthesized conclusion
+	Synergies      []string               `json:"synergies"`       // How sources complement each other
+	Conflicts      []string               `json:"conflicts"`       // Conflicting aspects
+	Confidence     float64                `json:"confidence"`
+	Metadata       map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt      time.Time              `json:"created_at"`
 }
 
 // SensitivityAnalysis represents robustness testing of conclusions
@@ -301,22 +301,22 @@ type SensitivityAnalysis struct {
 
 // Variation represents a change in assumptions for sensitivity testing
 type Variation struct {
-	ID              string  `json:"id"`
+	ID               string  `json:"id"`
 	AssumptionChange string  `json:"assumption_change"`
-	Impact          string  `json:"impact"`           // Description of how conclusion changes
-	ImpactMagnitude float64 `json:"impact_magnitude"` // 0.0-1.0
+	Impact           string  `json:"impact"`           // Description of how conclusion changes
+	ImpactMagnitude  float64 `json:"impact_magnitude"` // 0.0-1.0
 }
 
 // Analogy represents cross-domain reasoning
 type Analogy struct {
-	ID              string                 `json:"id"`
-	SourceDomain    string                 `json:"source_domain"`
-	TargetDomain    string                 `json:"target_domain"`
-	Mapping         map[string]string      `json:"mapping"`         // source concept -> target concept
-	Insight         string                 `json:"insight"`
-	Strength        float64                `json:"strength"`        // 0.0-1.0
-	Metadata        map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt       time.Time              `json:"created_at"`
+	ID           string                 `json:"id"`
+	SourceDomain string                 `json:"source_domain"`
+	TargetDomain string                 `json:"target_domain"`
+	Mapping      map[string]string      `json:"mapping"` // source concept -> target concept
+	Insight      string                 `json:"insight"`
+	Strength     float64                `json:"strength"` // 0.0-1.0
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
 }
 
 // CausalGraph represents a causal model with variables and relationships
@@ -341,21 +341,21 @@ type CausalVariable struct {
 
 // CausalLink represents a causal relationship between variables
 type CausalLink struct {
-	ID          string                 `json:"id"`
-	From        string                 `json:"from"`        // Source variable ID
-	To          string                 `json:"to"`          // Target variable ID
-	Strength    float64                `json:"strength"`    // 0.0-1.0, strength of causal influence
-	Type        string                 `json:"type"`        // "positive", "negative", "nonlinear"
-	Confidence  float64                `json:"confidence"`  // 0.0-1.0, confidence in this link
-	Evidence    []string               `json:"evidence,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID         string                 `json:"id"`
+	From       string                 `json:"from"`       // Source variable ID
+	To         string                 `json:"to"`         // Target variable ID
+	Strength   float64                `json:"strength"`   // 0.0-1.0, strength of causal influence
+	Type       string                 `json:"type"`       // "positive", "negative", "nonlinear"
+	Confidence float64                `json:"confidence"` // 0.0-1.0, confidence in this link
+	Evidence   []string               `json:"evidence,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // CausalIntervention represents a hypothetical intervention and its effects
 type CausalIntervention struct {
 	ID                string                 `json:"id"`
 	GraphID           string                 `json:"graph_id"`
-	Variable          string                 `json:"variable"`        // Variable to intervene on
+	Variable          string                 `json:"variable"`          // Variable to intervene on
 	InterventionType  string                 `json:"intervention_type"` // "set", "increase", "decrease"
 	InterventionValue string                 `json:"intervention_value,omitempty"`
 	PredictedEffects  []*PredictedEffect     `json:"predicted_effects"`
@@ -366,49 +366,49 @@ type CausalIntervention struct {
 
 // PredictedEffect represents the predicted effect on a variable
 type PredictedEffect struct {
-	Variable     string  `json:"variable"`
-	Effect       string  `json:"effect"` // "increase", "decrease", "no change"
-	Magnitude    float64 `json:"magnitude,omitempty"` // Estimated magnitude (if quantifiable)
-	Probability  float64 `json:"probability"` // 0.0-1.0
-	Explanation  string  `json:"explanation"`
-	PathLength   int     `json:"path_length"` // Number of causal steps
+	Variable    string  `json:"variable"`
+	Effect      string  `json:"effect"`              // "increase", "decrease", "no change"
+	Magnitude   float64 `json:"magnitude,omitempty"` // Estimated magnitude (if quantifiable)
+	Probability float64 `json:"probability"`         // 0.0-1.0
+	Explanation string  `json:"explanation"`
+	PathLength  int     `json:"path_length"` // Number of causal steps
 }
 
 // Counterfactual represents a "what if" scenario
 type Counterfactual struct {
-	ID          string                 `json:"id"`
-	GraphID     string                 `json:"graph_id"`
-	Scenario    string                 `json:"scenario"` // Description of counterfactual
-	Changes     map[string]string      `json:"changes"` // Variable -> counterfactual value
-	Outcomes    map[string]string      `json:"outcomes"` // Variable -> predicted outcome
-	Plausibility float64               `json:"plausibility"` // 0.0-1.0
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time              `json:"created_at"`
+	ID           string                 `json:"id"`
+	GraphID      string                 `json:"graph_id"`
+	Scenario     string                 `json:"scenario"`     // Description of counterfactual
+	Changes      map[string]string      `json:"changes"`      // Variable -> counterfactual value
+	Outcomes     map[string]string      `json:"outcomes"`     // Variable -> predicted outcome
+	Plausibility float64                `json:"plausibility"` // 0.0-1.0
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
 }
 
 // SelfEvaluation represents metacognitive self-assessment
 type SelfEvaluation struct {
-	ID                  string                 `json:"id"`
-	ThoughtID           string                 `json:"thought_id,omitempty"`
-	BranchID            string                 `json:"branch_id,omitempty"`
-	QualityScore        float64                `json:"quality_score"`        // 0.0-1.0
-	CompletenessScore   float64                `json:"completeness_score"`   // 0.0-1.0
-	CoherenceScore      float64                `json:"coherence_score"`      // 0.0-1.0
-	Strengths           []string               `json:"strengths"`
-	Weaknesses          []string               `json:"weaknesses"`
-	ImprovementSuggestions []string            `json:"improvement_suggestions"`
-	Metadata            map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt           time.Time              `json:"created_at"`
+	ID                     string                 `json:"id"`
+	ThoughtID              string                 `json:"thought_id,omitempty"`
+	BranchID               string                 `json:"branch_id,omitempty"`
+	QualityScore           float64                `json:"quality_score"`      // 0.0-1.0
+	CompletenessScore      float64                `json:"completeness_score"` // 0.0-1.0
+	CoherenceScore         float64                `json:"coherence_score"`    // 0.0-1.0
+	Strengths              []string               `json:"strengths"`
+	Weaknesses             []string               `json:"weaknesses"`
+	ImprovementSuggestions []string               `json:"improvement_suggestions"`
+	Metadata               map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt              time.Time              `json:"created_at"`
 }
 
 // CognitiveBias represents detected cognitive biases
 type CognitiveBias struct {
 	ID          string                 `json:"id"`
-	BiasType    string                 `json:"bias_type"`    // e.g., "confirmation", "anchoring", "availability"
+	BiasType    string                 `json:"bias_type"` // e.g., "confirmation", "anchoring", "availability"
 	Description string                 `json:"description"`
-	DetectedIn  string                 `json:"detected_in"`  // Thought ID or Branch ID
-	Severity    string                 `json:"severity"`     // "low", "medium", "high"
-	Mitigation  string                 `json:"mitigation"`   // How to address this bias
+	DetectedIn  string                 `json:"detected_in"` // Thought ID or Branch ID
+	Severity    string                 `json:"severity"`    // "low", "medium", "high"
+	Mitigation  string                 `json:"mitigation"`  // How to address this bias
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	CreatedAt   time.Time              `json:"created_at"`
 }
@@ -460,7 +460,7 @@ type MemoryRelationExport struct {
 // ObsidianNoteExport provides ready-to-use format for Obsidian notes
 type ObsidianNoteExport struct {
 	Title      string            `json:"title"`
-	Content    string            `json:"content"`    // Markdown formatted
+	Content    string            `json:"content"` // Markdown formatted
 	Tags       []string          `json:"tags"`
 	Properties map[string]string `json:"properties"` // Frontmatter properties
 }

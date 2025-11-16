@@ -18,21 +18,21 @@ func TestEvaluateThought(t *testing.T) {
 	se := NewSelfEvaluator()
 
 	tests := []struct {
-		name               string
-		thought            *types.Thought
-		minQuality         float64
-		minCompleteness    float64
-		minCoherence       float64
+		name            string
+		thought         *types.Thought
+		minQuality      float64
+		minCompleteness float64
+		minCoherence    float64
 	}{
 		{
 			name: "high quality thought",
 			thought: &types.Thought{
-				ID:      "thought-1",
-				Content: "Based on the evidence from multiple studies and data analysis, we can therefore conclude that this approach is effective. However, we should also consider alternative explanations.",
-				Mode:    types.ModeLinear,
+				ID:         "thought-1",
+				Content:    "Based on the evidence from multiple studies and data analysis, we can therefore conclude that this approach is effective. However, we should also consider alternative explanations.",
+				Mode:       types.ModeLinear,
 				Confidence: 0.7,
-				KeyPoints: []string{"Evidence-based", "Multiple studies", "Alternative explanations"},
-				Timestamp: time.Now(),
+				KeyPoints:  []string{"Evidence-based", "Multiple studies", "Alternative explanations"},
+				Timestamp:  time.Now(),
 			},
 			minQuality:      0.7,
 			minCompleteness: 0.6,
@@ -41,12 +41,12 @@ func TestEvaluateThought(t *testing.T) {
 		{
 			name: "low quality thought",
 			thought: &types.Thought{
-				ID:      "thought-2",
-				Content: "Maybe it works",
-				Mode:    types.ModeLinear,
+				ID:         "thought-2",
+				Content:    "Maybe it works",
+				Mode:       types.ModeLinear,
 				Confidence: 0.9,
-				KeyPoints: []string{},
-				Timestamp: time.Now(),
+				KeyPoints:  []string{},
+				Timestamp:  time.Now(),
 			},
 			minQuality:      0.0,
 			minCompleteness: 0.0,
@@ -93,19 +93,19 @@ func TestEvaluateBranch(t *testing.T) {
 	se := NewSelfEvaluator()
 
 	branch := &types.Branch{
-		ID:       "branch-1",
-		State:    types.StateActive,
-		Priority: 0.8,
+		ID:         "branch-1",
+		State:      types.StateActive,
+		Priority:   0.8,
 		Confidence: 0.7,
 		Thoughts: []*types.Thought{
 			{
-				ID:      "thought-1",
-				Content: "First analysis with evidence and data",
+				ID:        "thought-1",
+				Content:   "First analysis with evidence and data",
 				KeyPoints: []string{"Evidence", "Data"},
 			},
 			{
-				ID:      "thought-2",
-				Content: "Second analysis building on the first",
+				ID:        "thought-2",
+				Content:   "Second analysis building on the first",
 				KeyPoints: []string{"Building"},
 			},
 		},

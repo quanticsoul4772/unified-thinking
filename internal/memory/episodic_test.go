@@ -8,31 +8,31 @@ import (
 
 func TestNewEpisodicMemoryStore(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	
+
 	if store == nil {
 		t.Fatal("NewEpisodicMemoryStore returned nil")
 	}
-	
+
 	if store.trajectories == nil {
 		t.Error("trajectories map not initialized")
 	}
-	
+
 	if store.patterns == nil {
 		t.Error("patterns map not initialized")
 	}
-	
+
 	if store.problemIndex == nil {
 		t.Error("problemIndex map not initialized")
 	}
-	
+
 	if store.domainIndex == nil {
 		t.Error("domainIndex map not initialized")
 	}
-	
+
 	if store.tagIndex == nil {
 		t.Error("tagIndex map not initialized")
 	}
-	
+
 	if store.toolSequenceIndex == nil {
 		t.Error("toolSequenceIndex map not initialized")
 	}
@@ -41,7 +41,7 @@ func TestNewEpisodicMemoryStore(t *testing.T) {
 func TestStoreTrajectory(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	ctx := context.Background()
-	
+
 	trajectory := &ReasoningTrajectory{
 		SessionID: "test_session_001",
 		ProblemID: "problem_001",
@@ -59,36 +59,36 @@ func TestStoreTrajectory(t *testing.T) {
 		},
 		SuccessScore: 0.85,
 	}
-	
+
 	err := store.StoreTrajectory(ctx, trajectory)
 	if err != nil {
 		t.Fatalf("StoreTrajectory failed: %v", err)
 	}
-	
+
 	// Verify trajectory was stored
 	if trajectory.ID == "" {
 		t.Error("Trajectory ID not generated")
 	}
-	
+
 	stored, exists := store.trajectories[trajectory.ID]
 	if !exists {
 		t.Fatal("Trajectory not found in store")
 	}
-	
+
 	if stored.SessionID != "test_session_001" {
 		t.Errorf("Expected session_id test_session_001, got %s", stored.SessionID)
 	}
-	
+
 	// Verify domain index
 	domainTrajectories, exists := store.domainIndex["software-engineering"]
 	if !exists {
 		t.Error("Domain index not updated")
 	}
-	
+
 	if len(domainTrajectories) != 1 {
 		t.Errorf("Expected 1 trajectory in domain index, got %d", len(domainTrajectories))
 	}
-	
+
 	// Verify tag index
 	for _, tag := range trajectory.Tags {
 		tagTrajectories, exists := store.tagIndex[tag]
@@ -107,35 +107,35 @@ func TestComputeProblemHash(t *testing.T) {
 		ProblemType: "debugging",
 		Description: "Fix memory leak",
 	}
-	
+
 	problem2 := &ProblemDescription{
 		Domain:      "software-engineering",
 		ProblemType: "debugging",
 		Description: "Fix memory leak",
 	}
-	
+
 	problem3 := &ProblemDescription{
 		Domain:      "science",
 		ProblemType: "debugging",
 		Description: "Fix memory leak",
 	}
-	
+
 	hash1 := ComputeProblemHash(problem1)
 	hash2 := ComputeProblemHash(problem2)
 	hash3 := ComputeProblemHash(problem3)
-	
+
 	if hash1 == "" {
 		t.Error("ComputeProblemHash returned empty string")
 	}
-	
+
 	if hash1 != hash2 {
 		t.Error("Same problems should have same hash")
 	}
-	
+
 	if hash1 == hash3 {
 		t.Error("Different problems should have different hash")
 	}
-	
+
 	if len(hash1) != 16 {
 		t.Errorf("Expected hash length 16, got %d", len(hash1))
 	}
@@ -196,20 +196,20 @@ func TestCalculateProblemSimilarity(t *testing.T) {
 			maxScore: 0.3,
 		},
 		{
-			name: "nil problems",
-			p1:   nil,
-			p2:   &ProblemDescription{Domain: "test"},
+			name:     "nil problems",
+			p1:       nil,
+			p2:       &ProblemDescription{Domain: "test"},
 			minScore: 0.0,
 			maxScore: 0.0,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			similarity := calculateProblemSimilarity(tt.p1, tt.p2)
-			
+
 			if similarity < tt.minScore || similarity > tt.maxScore {
-				t.Errorf("Expected similarity between %.2f and %.2f, got %.2f", 
+				t.Errorf("Expected similarity between %.2f and %.2f, got %.2f",
 					tt.minScore, tt.maxScore, similarity)
 			}
 		})
@@ -219,7 +219,7 @@ func TestCalculateProblemSimilarity(t *testing.T) {
 func TestRetrieveSimilarTrajectories(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	ctx := context.Background()
-	
+
 	// Store multiple trajectories
 	trajectories := []*ReasoningTrajectory{
 		{
@@ -256,14 +256,14 @@ func TestRetrieveSimilarTrajectories(t *testing.T) {
 			SuccessScore: 0.8,
 		},
 	}
-	
+
 	for _, traj := range trajectories {
 		err := store.StoreTrajectory(ctx, traj)
 		if err != nil {
 			t.Fatalf("Failed to store trajectory: %v", err)
 		}
 	}
-	
+
 	// Query for similar trajectories (using same domain and type for higher similarity)
 	queryProblem := &ProblemDescription{
 		Domain:      "software-engineering",
@@ -272,12 +272,12 @@ func TestRetrieveSimilarTrajectories(t *testing.T) {
 		Description: "Fix memory problem",
 		Goals:       []string{}, // Add goals for better matching
 	}
-	
+
 	matches, err := store.RetrieveSimilarTrajectories(ctx, queryProblem, 5)
 	if err != nil {
 		t.Fatalf("RetrieveSimilarTrajectories failed: %v", err)
 	}
-	
+
 	// Should find software-engineering debugging trajectories via domain index
 	// The domain index allows finding candidates even with different problem hashes
 	if len(matches) < 2 {
@@ -288,14 +288,14 @@ func TestRetrieveSimilarTrajectories(t *testing.T) {
 			t.Logf("Match %d: session=%s, similarity=%.2f", i+1, match.Trajectory.SessionID, match.SimilarityScore)
 		}
 	}
-	
+
 	// Check sorting (should be by similarity descending)
 	for i := 0; i < len(matches)-1; i++ {
 		if matches[i].SimilarityScore < matches[i+1].SimilarityScore {
 			t.Error("Matches not sorted by similarity (descending)")
 		}
 	}
-	
+
 	// Check similarity threshold (should be > 0.3)
 	for _, match := range matches {
 		if match.SimilarityScore <= 0.3 {
@@ -307,7 +307,7 @@ func TestRetrieveSimilarTrajectories(t *testing.T) {
 func TestGetRecommendations(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	ctx := context.Background()
-	
+
 	// Store successful trajectory
 	successTraj := &ReasoningTrajectory{
 		SessionID: "success_001",
@@ -322,7 +322,7 @@ func TestGetRecommendations(t *testing.T) {
 		},
 		SuccessScore: 0.85,
 	}
-	
+
 	// Store failed trajectory
 	failedTraj := &ReasoningTrajectory{
 		SessionID: "failed_001",
@@ -337,10 +337,10 @@ func TestGetRecommendations(t *testing.T) {
 		},
 		SuccessScore: 0.2,
 	}
-	
+
 	store.StoreTrajectory(ctx, successTraj)
 	store.StoreTrajectory(ctx, failedTraj)
-	
+
 	// Create recommendation context
 	recCtx := &RecommendationContext{
 		CurrentProblem: &ProblemDescription{
@@ -352,20 +352,20 @@ func TestGetRecommendations(t *testing.T) {
 			{Trajectory: failedTraj, SimilarityScore: 0.8},
 		},
 	}
-	
+
 	recommendations, err := store.GetRecommendations(ctx, recCtx)
 	if err != nil {
 		t.Fatalf("GetRecommendations failed: %v", err)
 	}
-	
+
 	if len(recommendations) == 0 {
 		t.Fatal("Expected recommendations, got none")
 	}
-	
+
 	// Should have both positive and warning recommendations
 	hasToolSequence := false
 	hasWarning := false
-	
+
 	for _, rec := range recommendations {
 		if rec.Type == "tool_sequence" {
 			hasToolSequence = true
@@ -377,15 +377,15 @@ func TestGetRecommendations(t *testing.T) {
 			hasWarning = true
 		}
 	}
-	
+
 	if !hasToolSequence {
 		t.Error("Expected tool_sequence recommendation from successful trajectory")
 	}
-	
+
 	if !hasWarning {
 		t.Error("Expected warning recommendation from failed trajectory")
 	}
-	
+
 	// Check sorting (by priority descending)
 	for i := 0; i < len(recommendations)-1; i++ {
 		if recommendations[i].Priority < recommendations[i+1].Priority {
@@ -426,11 +426,11 @@ func TestCalculateSetOverlap(t *testing.T) {
 			expected: 0.0,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			overlap := calculateSetOverlap(tt.set1, tt.set2)
-			
+
 			// Use tolerance for floating point comparison
 			tolerance := 0.01
 			if overlap < tt.expected-tolerance || overlap > tt.expected+tolerance {
@@ -443,7 +443,7 @@ func TestCalculateSetOverlap(t *testing.T) {
 func TestMultipleTrajectoryStorage(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	ctx := context.Background()
-	
+
 	// Store 10 trajectories with unique problem IDs
 	for i := 0; i < 10; i++ {
 		traj := &ReasoningTrajectory{
@@ -456,18 +456,18 @@ func TestMultipleTrajectoryStorage(t *testing.T) {
 				Description: fmt.Sprintf("Problem %d", i), // Make each problem unique
 			},
 		}
-		
+
 		err := store.StoreTrajectory(ctx, traj)
 		if err != nil {
 			t.Fatalf("Failed to store trajectory %d: %v", i, err)
 		}
 	}
-	
+
 	// Verify all stored
 	if len(store.trajectories) != 10 {
 		t.Errorf("Expected 10 trajectories, got %d", len(store.trajectories))
 	}
-	
+
 	// Verify domain index
 	domainTrajs := store.domainIndex["software-engineering"]
 	if len(domainTrajs) != 10 {
@@ -478,7 +478,7 @@ func TestMultipleTrajectoryStorage(t *testing.T) {
 func TestConcurrentAccess(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	ctx := context.Background()
-	
+
 	// Concurrent writes with unique data
 	done := make(chan bool, 10) // Buffered channel
 	for i := 0; i < 5; i++ {
@@ -496,17 +496,17 @@ func TestConcurrentAccess(t *testing.T) {
 			done <- true
 		}(i)
 	}
-	
+
 	// Wait for all goroutines
 	for i := 0; i < 5; i++ {
 		<-done
 	}
-	
+
 	// Verify all stored (should be thread-safe)
 	if len(store.trajectories) != 5 {
 		t.Errorf("Expected 5 trajectories after concurrent writes, got %d", len(store.trajectories))
 	}
-	
+
 	// Concurrent reads
 	for i := 0; i < 5; i++ {
 		go func() {
@@ -515,7 +515,7 @@ func TestConcurrentAccess(t *testing.T) {
 			done <- true
 		}()
 	}
-	
+
 	// Wait for all reads
 	for i := 0; i < 5; i++ {
 		<-done

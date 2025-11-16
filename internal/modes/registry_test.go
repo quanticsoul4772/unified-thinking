@@ -78,10 +78,10 @@ func TestRegistry_Get(t *testing.T) {
 	_ = registry.Register(linear)
 
 	tests := []struct {
-		name      string
-		modeName  types.ThinkingMode
-		wantErr   bool
-		wantName  types.ThinkingMode
+		name     string
+		modeName types.ThinkingMode
+		wantErr  bool
+		wantName types.ThinkingMode
 	}{
 		{
 			name:     "get existing mode",

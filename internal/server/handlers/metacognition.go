@@ -70,11 +70,11 @@ type DetectedIssue struct {
 
 // DetectBiasesResponse represents a bias/fallacy detection response
 type DetectBiasesResponse struct {
-	Biases    []*types.CognitiveBias       `json:"biases"`
+	Biases    []*types.CognitiveBias        `json:"biases"`
 	Fallacies []*validation.DetectedFallacy `json:"fallacies"`
-	Combined  []*DetectedIssue             `json:"combined"` // Unified list of all issues
-	Count     int                          `json:"count"`    // Total count
-	Status    string                       `json:"status"`
+	Combined  []*DetectedIssue              `json:"combined"` // Unified list of all issues
+	Count     int                           `json:"count"`    // Total count
+	Status    string                        `json:"status"`
 }
 
 // ============================================================================

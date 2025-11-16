@@ -159,9 +159,9 @@ func TestLogicValidator_Prove(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		premises    []string
-		conclusion  string
+		name         string
+		premises     []string
+		conclusion   string
 		wantProvable bool
 	}{
 		{
@@ -171,7 +171,7 @@ func TestLogicValidator_Prove(t *testing.T) {
 				"Socrates is a man",
 				"Socrates is mortal",
 			},
-			conclusion:  "Socrates is mortal",
+			conclusion:   "Socrates is mortal",
 			wantProvable: true,
 		},
 		{
@@ -179,7 +179,7 @@ func TestLogicValidator_Prove(t *testing.T) {
 			premises: []string{
 				"The sky is blue",
 			},
-			conclusion:  "The sky is blue today",
+			conclusion:   "The sky is blue today",
 			wantProvable: true,
 		},
 		{
@@ -188,19 +188,19 @@ func TestLogicValidator_Prove(t *testing.T) {
 				"All programmers write code",
 				"Alice is a programmer",
 			},
-			conclusion:  "Alice writes code",
+			conclusion:   "Alice writes code",
 			wantProvable: true,
 		},
 		{
-			name: "empty premises",
-			premises: []string{},
-			conclusion: "Some conclusion",
+			name:         "empty premises",
+			premises:     []string{},
+			conclusion:   "Some conclusion",
 			wantProvable: false,
 		},
 		{
-			name: "empty conclusion",
-			premises: []string{"Some premise"},
-			conclusion: "",
+			name:         "empty conclusion",
+			premises:     []string{"Some premise"},
+			conclusion:   "",
 			wantProvable: true, // simpleProof returns true if premises are non-empty
 		},
 	}
@@ -368,9 +368,9 @@ func TestLogicValidator_GetSyntaxIssues(t *testing.T) {
 		wantIssues int
 	}{
 		{"valid statement", "Valid statement here", 0},
-		{"empty statement", "", 1}, // Just reports empty (early return)
-		{"whitespace only", "   ", 1}, // Just reports empty after trim (early return)
-		{"single word", "Word", 1}, // Single word issue only
+		{"empty statement", "", 1},                 // Just reports empty (early return)
+		{"whitespace only", "   ", 1},              // Just reports empty after trim (early return)
+		{"single word", "Word", 1},                 // Single word issue only
 		{"single word with spaces", "  Word  ", 1}, // Single word issue only
 	}
 
@@ -396,33 +396,33 @@ func TestLogicValidator_GetValidationReason(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name    string
-		isValid bool
-		content string
+		name         string
+		isValid      bool
+		content      string
 		wantContains string
 	}{
 		{
-			name:    "valid thought",
-			isValid: true,
-			content: "Normal thought",
+			name:         "valid thought",
+			isValid:      true,
+			content:      "Normal thought",
 			wantContains: "passes",
 		},
 		{
-			name:    "always/never contradiction",
-			isValid: false,
-			content: "always true but never happens",
+			name:         "always/never contradiction",
+			isValid:      false,
+			content:      "always true but never happens",
 			wantContains: "always/never",
 		},
 		{
-			name:    "all/none contradiction",
-			isValid: false,
-			content: "all work but none function",
+			name:         "all/none contradiction",
+			isValid:      false,
+			content:      "all work but none function",
 			wantContains: "all/none",
 		},
 		{
-			name:    "generic invalid",
-			isValid: false,
-			content: "some other invalid content",
+			name:         "generic invalid",
+			isValid:      false,
+			content:      "some other invalid content",
 			wantContains: "inconsistency",
 		},
 	}
@@ -451,7 +451,6 @@ func TestLogicValidator_GetValidationReason(t *testing.T) {
 		})
 	}
 }
-
 
 func TestLogicValidator_ValidateThoughtWithTimestamp(t *testing.T) {
 	validator := NewLogicValidator()
@@ -527,51 +526,51 @@ func TestDetectContradiction_EdgeCases(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name           string
-		content        string
+		name              string
+		content           string
 		wantContradiction bool
 	}{
 		// Direct negation patterns
 		{
-			name:           "direct negation with 'and not'",
-			content:        "X and not X",
+			name:              "direct negation with 'and not'",
+			content:           "X and not X",
 			wantContradiction: true,
 		},
 		{
-			name:           "direct negation with 'but not'",
-			content:        "X but not X",
+			name:              "direct negation with 'but not'",
+			content:           "X but not X",
 			wantContradiction: true,
 		},
 		{
-			name:           "different propositions with 'and not'",
-			content:        "X and not Y",
+			name:              "different propositions with 'and not'",
+			content:           "X and not Y",
 			wantContradiction: false,
 		},
 		// Existential contradictions
 		{
-			name:           "exists and does not exist",
-			content:        "The entity exists and the entity does not exist",
+			name:              "exists and does not exist",
+			content:           "The entity exists and the entity does not exist",
 			wantContradiction: true,
 		},
 		{
-			name:           "only exists",
-			content:        "The entity exists",
+			name:              "only exists",
+			content:           "The entity exists",
 			wantContradiction: false,
 		},
 		{
-			name:           "only does not exist",
-			content:        "The entity does not exist",
+			name:              "only does not exist",
+			content:           "The entity does not exist",
 			wantContradiction: false,
 		},
 		// Edge cases that should NOT trigger
 		{
-			name:           "and not without matching parts",
-			content:        "A and not B",
+			name:              "and not without matching parts",
+			content:           "A and not B",
 			wantContradiction: false,
 		},
 		{
-			name:           "but not without matching parts",
-			content:        "A but not B",
+			name:              "but not without matching parts",
+			content:           "A but not B",
 			wantContradiction: false,
 		},
 	}
@@ -666,9 +665,9 @@ func TestModusPonens(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		premises    []string
-		conclusion  string
+		name         string
+		premises     []string
+		conclusion   string
 		wantProvable bool
 	}{
 		{
@@ -677,7 +676,7 @@ func TestModusPonens(t *testing.T) {
 				"P implies Q",
 				"P",
 			},
-			conclusion:  "Q",
+			conclusion:   "Q",
 			wantProvable: true,
 		},
 		{
@@ -686,7 +685,7 @@ func TestModusPonens(t *testing.T) {
 				"If P then Q",
 				"P is true",
 			},
-			conclusion:  "Q is true",
+			conclusion:   "Q is true",
 			wantProvable: true,
 		},
 		{
@@ -695,7 +694,7 @@ func TestModusPonens(t *testing.T) {
 				"P therefore Q",
 				"P",
 			},
-			conclusion:  "Q",
+			conclusion:   "Q",
 			wantProvable: true,
 		},
 		{
@@ -703,7 +702,7 @@ func TestModusPonens(t *testing.T) {
 			premises: []string{
 				"If P then Q",
 			},
-			conclusion:  "Q",
+			conclusion:   "Q",
 			wantProvable: true, // Direct derivation finds "Q" in premise
 		},
 		{
@@ -712,7 +711,7 @@ func TestModusPonens(t *testing.T) {
 				"If P then Q",
 				"P",
 			},
-			conclusion:  "R",
+			conclusion:   "R",
 			wantProvable: false, // R not in premises
 		},
 	}
@@ -734,9 +733,9 @@ func TestModusTollens(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		premises    []string
-		conclusion  string
+		name         string
+		premises     []string
+		conclusion   string
 		wantProvable bool
 	}{
 		{
@@ -745,7 +744,7 @@ func TestModusTollens(t *testing.T) {
 				"If P then Q",
 				"not Q",
 			},
-			conclusion:  "not P",
+			conclusion:   "not P",
 			wantProvable: false, // Implementation's string matching doesn't handle this well
 		},
 		{
@@ -754,7 +753,7 @@ func TestModusTollens(t *testing.T) {
 				"If raining then wet",
 				"no wet conditions",
 			},
-			conclusion:  "not raining",
+			conclusion:   "not raining",
 			wantProvable: false, // Implementation's string matching doesn't handle this well
 		},
 		{
@@ -762,7 +761,7 @@ func TestModusTollens(t *testing.T) {
 			premises: []string{
 				"If P then Q",
 			},
-			conclusion:  "not P",
+			conclusion:   "not P",
 			wantProvable: false,
 		},
 		{
@@ -771,7 +770,7 @@ func TestModusTollens(t *testing.T) {
 				"If P then Q",
 				"not Q",
 			},
-			conclusion:  "P",
+			conclusion:   "P",
 			wantProvable: true, // Direct derivation finds "P" in premise
 		},
 	}
@@ -793,9 +792,9 @@ func TestHypotheticalSyllogism(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		premises    []string
-		conclusion  string
+		name         string
+		premises     []string
+		conclusion   string
 		wantProvable bool
 	}{
 		{
@@ -804,7 +803,7 @@ func TestHypotheticalSyllogism(t *testing.T) {
 				"If P then Q",
 				"If Q then R",
 			},
-			conclusion:  "If P then R",
+			conclusion:   "If P then R",
 			wantProvable: true,
 		},
 		{
@@ -813,7 +812,7 @@ func TestHypotheticalSyllogism(t *testing.T) {
 				"A implies B",
 				"B implies C",
 			},
-			conclusion:  "A implies C",
+			conclusion:   "A implies C",
 			wantProvable: true,
 		},
 		{
@@ -822,7 +821,7 @@ func TestHypotheticalSyllogism(t *testing.T) {
 				"If P then Q",
 				"If R then S",
 			},
-			conclusion:  "If P then S",
+			conclusion:   "If P then S",
 			wantProvable: true, // Contains "if", "p", "s" from premises
 		},
 		{
@@ -831,7 +830,7 @@ func TestHypotheticalSyllogism(t *testing.T) {
 				"If P then Q",
 				"If Q then R",
 			},
-			conclusion:  "If Q then P",
+			conclusion:   "If Q then P",
 			wantProvable: true, // Contains "if", "q", "p" from premises
 		},
 	}
@@ -853,9 +852,9 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name        string
-		premises    []string
-		conclusion  string
+		name         string
+		premises     []string
+		conclusion   string
 		wantProvable bool
 	}{
 		{
@@ -864,7 +863,7 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 				"P or Q",
 				"not P",
 			},
-			conclusion:  "Q",
+			conclusion:   "Q",
 			wantProvable: true,
 		},
 		{
@@ -873,7 +872,7 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 				"P or Q",
 				"not Q",
 			},
-			conclusion:  "P",
+			conclusion:   "P",
 			wantProvable: true,
 		},
 		{
@@ -882,7 +881,7 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 				"raining or sunny",
 				"no sunny weather",
 			},
-			conclusion:  "raining",
+			conclusion:   "raining",
 			wantProvable: true,
 		},
 		{
@@ -890,7 +889,7 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 			premises: []string{
 				"P or Q",
 			},
-			conclusion:  "P",
+			conclusion:   "P",
 			wantProvable: true, // "P" is in premise
 		},
 		{
@@ -899,7 +898,7 @@ func TestDisjunctiveSyllogism(t *testing.T) {
 				"P or Q",
 				"not P",
 			},
-			conclusion:  "R",
+			conclusion:   "R",
 			wantProvable: true, // Direct derivation is very permissive
 		},
 	}
@@ -921,123 +920,123 @@ func TestSyntaxValidation_EdgeCases(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name          string
-		statement     string
-		expectIssues  []string
+		name         string
+		statement    string
+		expectIssues []string
 	}{
 		{
-			name:      "unbalanced parentheses - more open",
-			statement: "Test (statement (nested",
+			name:         "unbalanced parentheses - more open",
+			statement:    "Test (statement (nested",
 			expectIssues: []string{"Unbalanced parentheses"},
 		},
 		{
-			name:      "unbalanced parentheses - more close",
-			statement: "Test statement))",
+			name:         "unbalanced parentheses - more close",
+			statement:    "Test statement))",
 			expectIssues: []string{"Unbalanced parentheses"},
 		},
 		{
-			name:      "balanced brackets",
-			statement: "Test [statement] valid",
+			name:         "balanced brackets",
+			statement:    "Test [statement] valid",
 			expectIssues: []string{},
 		},
 		{
-			name:      "unbalanced brackets",
-			statement: "Test [statement",
+			name:         "unbalanced brackets",
+			statement:    "Test [statement",
 			expectIssues: []string{"Unbalanced parentheses"},
 		},
 		{
-			name:      "malformed logical operators - double and",
-			statement: "A and and B",
+			name:         "malformed logical operators - double and",
+			statement:    "A and and B",
 			expectIssues: []string{"Malformed logical operators"},
 		},
 		{
-			name:      "malformed logical operators - double or",
-			statement: "A or or B",
+			name:         "malformed logical operators - double or",
+			statement:    "A or or B",
 			expectIssues: []string{"Malformed logical operators"},
 		},
 		{
-			name:      "double not is actually valid in logic",
-			statement: "Not not A",
+			name:         "double not is actually valid in logic",
+			statement:    "Not not A",
 			expectIssues: []string{}, // "not not" at start doesn't match " not not " pattern
 		},
 		{
-			name:      "incomplete conditional - if without then",
-			statement: "If the sky is blue we are happy",
+			name:         "incomplete conditional - if without then",
+			statement:    "If the sky is blue we are happy",
 			expectIssues: []string{"Incomplete conditional"},
 		},
 		{
-			name:      "then without if but starts with capital",
-			statement: "Then we are happy",
+			name:         "then without if but starts with capital",
+			statement:    "Then we are happy",
 			expectIssues: []string{}, // Starts with "Then" which is capitalized, no " then " in middle
 		},
 		{
-			name:      "conditional X if Y - might be incomplete",
-			statement: "We are happy if sky is blue",
+			name:         "conditional X if Y - might be incomplete",
+			statement:    "We are happy if sky is blue",
 			expectIssues: []string{"Incomplete conditional"}, // "if" near end but > 10 chars from end
 		},
 		{
-			name:      "valid if-then",
-			statement: "If A then B",
+			name:         "valid if-then",
+			statement:    "If A then B",
 			expectIssues: []string{},
 		},
 		{
-			name:      "mismatched quotes - single",
-			statement: "Test 'statement without closing",
+			name:         "mismatched quotes - single",
+			statement:    "Test 'statement without closing",
 			expectIssues: []string{"Mismatched quotation marks"},
 		},
 		{
-			name:      "mismatched quotes - double",
-			statement: "Test \"statement without closing",
+			name:         "mismatched quotes - double",
+			statement:    "Test \"statement without closing",
 			expectIssues: []string{"Mismatched quotation marks"},
 		},
 		{
-			name:      "matched quotes",
-			statement: "Test \"statement\" with 'quotes'",
+			name:         "matched quotes",
+			statement:    "Test \"statement\" with 'quotes'",
 			expectIssues: []string{},
 		},
 		{
-			name:      "empty quantifier at end",
-			statement: "Some things are all",
+			name:         "empty quantifier at end",
+			statement:    "Some things are all",
 			expectIssues: []string{"Empty or incomplete quantifier"},
 		},
 		{
-			name:      "empty quantifier before operator",
-			statement: "All and nothing",
+			name:         "empty quantifier before operator",
+			statement:    "All and nothing",
 			expectIssues: []string{"Empty or incomplete quantifier"},
 		},
 		{
-			name:      "valid quantifier usage",
-			statement: "All programmers write code",
+			name:         "valid quantifier usage",
+			statement:    "All programmers write code",
 			expectIssues: []string{},
 		},
 		{
-			name:      "starts with quantifier lowercase 'all'",
-			statement: "all lowercase start",
+			name:         "starts with quantifier lowercase 'all'",
+			statement:    "all lowercase start",
 			expectIssues: []string{}, // "all" is a valid quantifier start
 		},
 		{
-			name:      "starts with valid capital",
-			statement: "All valid start",
+			name:         "starts with valid capital",
+			statement:    "All valid start",
 			expectIssues: []string{},
 		},
 		{
-			name:      "starts with logical symbol",
-			statement: "∀x P(x)",
+			name:         "starts with logical symbol",
+			statement:    "∀x P(x)",
 			expectIssues: []string{"Should start with a capital letter"}, // UTF-8 rune check doesn't recognize these
 		},
 		{
-			name:      "starts with number",
-			statement: "1. First statement",
+			name:         "starts with number",
+			statement:    "1. First statement",
 			expectIssues: []string{},
 		},
 		{
-			name:      "starts with parenthesis",
-			statement: "(P or Q) implies R",
+			name:         "starts with parenthesis",
+			statement:    "(P or Q) implies R",
 			expectIssues: []string{},
 		},
 		{
-			name:      "too short - under 3 chars",
-			statement: "AB",
+			name:         "too short - under 3 chars",
+			statement:    "AB",
 			expectIssues: []string{"too short"},
 		},
 	}
@@ -1073,8 +1072,8 @@ func TestHasBalancedParentheses(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name      string
-		statement string
+		name         string
+		statement    string
 		wantBalanced bool
 	}{
 		{"balanced round", "(test)", true},
@@ -1106,8 +1105,8 @@ func TestHasProperStart(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name      string
-		statement string
+		name       string
+		statement  string
 		wantProper bool
 	}{
 		{"capital letter", "Test", true},
@@ -1121,7 +1120,7 @@ func TestHasProperStart(t *testing.T) {
 		{"quantifier 'there'", "there exists", true},
 		{"logical symbol forall", "∀x", false}, // Implementation doesn't recognize UTF-8 logical symbols
 		{"logical symbol exists", "∃x", false}, // Implementation doesn't recognize UTF-8 logical symbols
-		{"logical symbol not", "¬P", false}, // Implementation doesn't recognize UTF-8 logical symbols
+		{"logical symbol not", "¬P", false},    // Implementation doesn't recognize UTF-8 logical symbols
 		{"open parenthesis", "(P or Q)", true},
 		{"open bracket", "[statement]", true},
 		{"number", "1. First", true},
@@ -1146,8 +1145,8 @@ func TestHasIncompleteConditional(t *testing.T) {
 	validator := NewLogicValidator()
 
 	tests := []struct {
-		name       string
-		statement  string
+		name           string
+		statement      string
 		wantIncomplete bool
 	}{
 		{"valid if-then", "If A then B", false},

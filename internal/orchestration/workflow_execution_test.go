@@ -11,12 +11,12 @@ import (
 // TestExecuteSequentialWorkflow tests sequential workflow execution
 func TestExecuteSequentialWorkflow(t *testing.T) {
 	tests := []struct {
-		name          string
-		workflow      *Workflow
-		input         map[string]interface{}
-		executor      ToolExecutor
-		wantErr       bool
-		wantSteps     int
+		name           string
+		workflow       *Workflow
+		input          map[string]interface{}
+		executor       ToolExecutor
+		wantErr        bool
+		wantSteps      int
 		validateResult func(*testing.T, *WorkflowResult)
 	}{
 		{
@@ -289,7 +289,7 @@ func TestExecuteParallelWorkflow(t *testing.T) {
 					{ID: "step3", Tool: "think"},
 				},
 			},
-			input: map[string]interface{}{},
+			input:   map[string]interface{}{},
 			wantErr: true,
 			validateResult: func(t *testing.T, r *WorkflowResult) {
 				if r.Status != "failed" {

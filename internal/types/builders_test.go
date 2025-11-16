@@ -49,7 +49,7 @@ func TestThoughtBuilder_Confidence(t *testing.T) {
 		want       float64
 	}{
 		{"positive confidence", 0.95, 0.95},
-		{"zero confidence", 0.0, 0.8}, // Should keep default
+		{"zero confidence", 0.0, 0.8},      // Should keep default
 		{"negative confidence", -0.5, 0.8}, // Should keep default
 	}
 
@@ -400,7 +400,7 @@ func TestInsightBuilder_ApplicabilityScore(t *testing.T) {
 		want  float64
 	}{
 		{"positive score", 0.95, 0.95},
-		{"zero score", 0.0, 0.8}, // Should keep default
+		{"zero score", 0.0, 0.8},      // Should keep default
 		{"negative score", -0.5, 0.8}, // Should keep default
 	}
 

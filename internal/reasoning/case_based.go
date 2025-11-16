@@ -16,10 +16,10 @@ import (
 
 // CaseBasedReasoner performs case-based reasoning (retrieve, reuse, revise, retain)
 type CaseBasedReasoner struct {
-	storage       storage.Storage
-	cases         map[string]*Case
-	caseIndex     *CaseIndex
-	analogical    *AnalogicalReasoner
+	storage    storage.Storage
+	cases      map[string]*Case
+	caseIndex  *CaseIndex
+	analogical *AnalogicalReasoner
 }
 
 // NewCaseBasedReasoner creates a new case-based reasoner
@@ -34,19 +34,19 @@ func NewCaseBasedReasoner(store storage.Storage) *CaseBasedReasoner {
 
 // Case represents a past problem-solution pair
 type Case struct {
-	ID              string
-	Problem         *ProblemDescription
-	Solution        *SolutionDescription
-	Outcome         *Outcome
-	Domain          string
-	Tags            []string
-	Applicability   float64   // How applicable this case is (0-1)
-	SuccessRate     float64   // Historical success rate (0-1)
-	UsageCount      int
-	LastUsed        time.Time
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	Metadata        map[string]interface{}
+	ID            string
+	Problem       *ProblemDescription
+	Solution      *SolutionDescription
+	Outcome       *Outcome
+	Domain        string
+	Tags          []string
+	Applicability float64 // How applicable this case is (0-1)
+	SuccessRate   float64 // Historical success rate (0-1)
+	UsageCount    int
+	LastUsed      time.Time
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Metadata      map[string]interface{}
 }
 
 // ProblemDescription describes the problem in a case
@@ -70,10 +70,10 @@ type SolutionDescription struct {
 
 // Outcome describes the result of applying a solution
 type Outcome struct {
-	Success      bool
-	Effectiveness float64 // 0-1 score
-	TimeToSolve   time.Duration
-	CostIncurred  float64
+	Success        bool
+	Effectiveness  float64 // 0-1 score
+	TimeToSolve    time.Duration
+	CostIncurred   float64
 	LessonsLearned []string
 	FailureReasons []string // If not successful
 }
@@ -109,10 +109,10 @@ type RetrieveRequest struct {
 type AdaptationStrategy string
 
 const (
-	AdaptDirect       AdaptationStrategy = "direct"        // Use solution as-is
-	AdaptSubstitute   AdaptationStrategy = "substitute"    // Replace specific elements
-	AdaptTransform    AdaptationStrategy = "transform"     // Transform solution structure
-	AdaptCombine      AdaptationStrategy = "combine"       // Combine multiple cases
+	AdaptDirect     AdaptationStrategy = "direct"     // Use solution as-is
+	AdaptSubstitute AdaptationStrategy = "substitute" // Replace specific elements
+	AdaptTransform  AdaptationStrategy = "transform"  // Transform solution structure
+	AdaptCombine    AdaptationStrategy = "combine"    // Combine multiple cases
 )
 
 // CBRCycle represents the 4Rs of case-based reasoning
@@ -125,10 +125,10 @@ type CBRCycle struct {
 
 // RetrievalResult contains retrieved cases and their similarities
 type RetrievalResult struct {
-	Cases       []*SimilarCase
-	Query       *ProblemDescription
-	Retrieved   int
-	TotalTime   time.Duration
+	Cases     []*SimilarCase
+	Query     *ProblemDescription
+	Retrieved int
+	TotalTime time.Duration
 }
 
 // SimilarCase is a case with its similarity score
@@ -222,10 +222,10 @@ func (cbr *CaseBasedReasoner) Retrieve(ctx context.Context, req *RetrieveRequest
 	}
 
 	return &RetrievalResult{
-		Cases:       similarCases,
-		Query:       req.Problem,
-		Retrieved:   len(similarCases),
-		TotalTime:   time.Since(startTime),
+		Cases:     similarCases,
+		Query:     req.Problem,
+		Retrieved: len(similarCases),
+		TotalTime: time.Since(startTime),
 	}, nil
 }
 
@@ -306,18 +306,18 @@ func (cbr *CaseBasedReasoner) Revise(ctx context.Context, reuseResult *ReuseResu
 // Retain stores a new case or updates an existing one (Step 4 of CBR cycle)
 func (cbr *CaseBasedReasoner) Retain(ctx context.Context, problem *ProblemDescription, solution *SolutionDescription, outcome *Outcome, domain string) (*Case, error) {
 	newCase := &Case{
-		ID:              fmt.Sprintf("case-%d", time.Now().UnixNano()),
-		Problem:         problem,
-		Solution:        solution,
-		Outcome:         outcome,
-		Domain:          domain,
-		Tags:            cbr.extractTags(problem),
-		Applicability:   0.8, // Default
-		SuccessRate:     0.0,
-		UsageCount:      0,
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
-		Metadata:        make(map[string]interface{}),
+		ID:            fmt.Sprintf("case-%d", time.Now().UnixNano()),
+		Problem:       problem,
+		Solution:      solution,
+		Outcome:       outcome,
+		Domain:        domain,
+		Tags:          cbr.extractTags(problem),
+		Applicability: 0.8, // Default
+		SuccessRate:   0.0,
+		UsageCount:    0,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+		Metadata:      make(map[string]interface{}),
 	}
 
 	// Calculate initial success rate

@@ -176,13 +176,13 @@ func TestAnalogicalReasoner_SemanticSimilarity(t *testing.T) {
 	ar := NewAnalogicalReasoner()
 
 	tests := []struct {
-		concept1    string
-		concept2    string
+		concept1      string
+		concept2      string
 		minSimilarity float64
 	}{
-		{"flow", "current", 0.0}, // No direct overlap
+		{"flow", "current", 0.0},             // No direct overlap
 		{"water flow", "water current", 0.3}, // Partial overlap
-		{"system process", "process", 0.4}, // Prefix match
+		{"system process", "process", 0.4},   // Prefix match
 	}
 
 	for _, tt := range tests {
