@@ -50,6 +50,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	// import "github.com/rs/zerolog" // or another structured logging library
+
+	// In main or initialization:
+	// logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+
+	// In handlers, passed via context or struct field:
+	// logger.Error().Err(err).Msg("Something went wrong")
 	"os"
 	"strconv"
 
