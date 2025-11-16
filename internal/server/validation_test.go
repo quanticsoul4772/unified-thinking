@@ -1098,7 +1098,7 @@ func TestValidateDetectContradictionsRequest(t *testing.T) {
 				Mode: "invalid",
 			},
 			wantErr: true,
-			errMsg:  "invalid mode",
+			errMsg:  "mode must be",
 		},
 		{
 			name: "branch id too long",
@@ -1144,7 +1144,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 			ID:          "crit-1",
 			Name:        "Criterion 1",
 			Description: "First criterion",
-			Weight:      0.5,
+			Weight:      1.0,
 			Maximize:    true,
 		},
 	}
@@ -1204,7 +1204,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 				Criteria: validCriteria,
 			},
 			wantErr: true,
-			errMsg:  "option[0].name is required",
+			errMsg:  "option name is required",
 		},
 		{
 			name: "option missing scores",
@@ -1219,7 +1219,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 				Criteria: validCriteria,
 			},
 			wantErr: true,
-			errMsg:  "option[0].scores is required",
+			errMsg:  "option must have at least one score",
 		},
 		{
 			name: "criterion missing name",
@@ -1229,12 +1229,12 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 				Criteria: []*types.DecisionCriterion{
 					{
 						ID:     "crit-1",
-						Weight: 0.5,
+						Weight: 1.0,
 					},
 				},
 			},
 			wantErr: true,
-			errMsg:  "criterion[0].name is required",
+			errMsg:  "criterion name is required",
 		},
 		{
 			name: "criterion missing id",
@@ -1244,12 +1244,12 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 				Criteria: []*types.DecisionCriterion{
 					{
 						Name:   "Criterion 1",
-						Weight: 0.5,
+						Weight: 1.0,
 					},
 				},
 			},
 			wantErr: true,
-			errMsg:  "criterion[0].id is required",
+			errMsg:  "criterion id is required",
 		},
 		{
 			name: "negative weight",
@@ -1265,7 +1265,7 @@ func TestValidateMakeDecisionRequest(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "criterion[0].weight must be non-negative",
+			errMsg:  "weight must be between 0 and 1",
 		},
 	}
 

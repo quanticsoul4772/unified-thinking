@@ -9,6 +9,7 @@ import (
 
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
+	"unified-thinking/internal/server/handlers"
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
@@ -525,7 +526,7 @@ func TestHandleDetectBiases_WithFallacies(t *testing.T) {
 	}
 
 	// Test detect-biases with thought ID
-	input := DetectBiasesRequest{
+	input := handlers.DetectBiasesRequest{
 		ThoughtID: "test-thought-1",
 	}
 
@@ -635,7 +636,7 @@ func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
 	}
 
 	// Test detect-biases with branch ID
-	input := DetectBiasesRequest{
+	input := handlers.DetectBiasesRequest{
 		BranchID: "test-branch-1",
 	}
 

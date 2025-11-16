@@ -88,6 +88,7 @@ type UnifiedServer struct {
 	// Phase 1: Handler delegates
 	probabilisticHandler   *handlers.ProbabilisticHandler
 	decisionHandler        *handlers.DecisionHandler
+	metacognitionHandler   *handlers.MetacognitionHandler
 	// Phase 2-3: Advanced reasoning modules
 	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
 	temporalReasoner       *reasoning.TemporalReasoner
@@ -150,6 +151,7 @@ func NewUnifiedServer(
 		// Phase 1: Initialize handler delegates
 		probabilisticHandler:   handlers.NewProbabilisticHandler(store, probabilisticReasoner, evidenceAnalyzer, contradictionDetector),
 		decisionHandler:        handlers.NewDecisionHandler(store, decisionMaker, problemDecomposer, sensitivityAnalyzer),
+		metacognitionHandler:   handlers.NewMetacognitionHandler(store, metacognition.NewSelfEvaluator(), metacognition.NewBiasDetector(), validation.NewFallacyDetector()),
 		// Phase 2-3: Initialize advanced reasoning modules
 		perspectiveAnalyzer:    analysis.NewPerspectiveAnalyzer(),
 		temporalReasoner:       reasoning.NewTemporalReasoner(),
@@ -1397,178 +1399,16 @@ func (s *UnifiedServer) handleSensitivityAnalysis(ctx context.Context, req *mcp.
 // Self-Evaluate Tool
 // ============================================================================
 
-type SelfEvaluateRequest struct {
-	ThoughtID string `json:"thought_id,omitempty"`
-	BranchID  string `json:"branch_id,omitempty"`
-}
-
-type SelfEvaluateResponse struct {
-	Evaluation *types.SelfEvaluation `json:"evaluation"`
-	Status     string                `json:"status"`
-}
-
-func (s *UnifiedServer) handleSelfEvaluate(ctx context.Context, req *mcp.CallToolRequest, input SelfEvaluateRequest) (*mcp.CallToolResult, *SelfEvaluateResponse, error) {
-	if err := ValidateSelfEvaluateRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	var evaluation *types.SelfEvaluation
-	var err error
-
-	if input.ThoughtID != "" {
-		thought, getErr := s.storage.GetThought(input.ThoughtID)
-		if getErr != nil {
-			return nil, nil, getErr
-		}
-		evaluation, err = s.selfEvaluator.EvaluateThought(thought)
-	} else if input.BranchID != "" {
-		branch, getErr := s.storage.GetBranch(input.BranchID)
-		if getErr != nil {
-			return nil, nil, getErr
-		}
-		evaluation, err = s.selfEvaluator.EvaluateBranch(branch)
-	} else {
-		return nil, nil, fmt.Errorf("either thought_id or branch_id must be provided")
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	response := &SelfEvaluateResponse{
-		Evaluation: evaluation,
-		Status:     "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleSelfEvaluate(ctx context.Context, req *mcp.CallToolRequest, input handlers.SelfEvaluateRequest) (*mcp.CallToolResult, *handlers.SelfEvaluateResponse, error) {
+	return s.metacognitionHandler.HandleSelfEvaluate(ctx, req, input)
 }
 
 // ============================================================================
 // Detect Biases Tool
 // ============================================================================
 
-type DetectBiasesRequest struct {
-	ThoughtID string `json:"thought_id,omitempty"`
-	BranchID  string `json:"branch_id,omitempty"`
-}
-
-// DetectedIssue represents either a bias or fallacy with a unified structure
-type DetectedIssue struct {
-	Type        string  `json:"type"`        // "bias" or "fallacy"
-	Name        string  `json:"name"`        // e.g., "confirmation_bias", "ad_hominem"
-	Category    string  `json:"category"`    // e.g., "cognitive", "formal", "informal"
-	Description string  `json:"description"` // What the issue is
-	Location    string  `json:"location"`    // Where it was found
-	Example     string  `json:"example"`     // The problematic content
-	Mitigation  string  `json:"mitigation"`  // How to fix/avoid it
-	Confidence  float64 `json:"confidence"`  // Detection confidence
-}
-
-type DetectBiasesResponse struct {
-	Biases    []*types.CognitiveBias       `json:"biases"`
-	Fallacies []*validation.DetectedFallacy `json:"fallacies"`
-	Combined  []*DetectedIssue             `json:"combined"` // Unified list of all issues
-	Count     int                          `json:"count"`    // Total count
-	Status    string                       `json:"status"`
-}
-
-func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToolRequest, input DetectBiasesRequest) (*mcp.CallToolResult, *DetectBiasesResponse, error) {
-	if err := ValidateDetectBiasesRequest(&input); err != nil {
-		return nil, nil, err
-	}
-
-	var biases []*types.CognitiveBias
-	var fallacies []*validation.DetectedFallacy
-	var content string
-	var err error
-
-	// Get the content to analyze
-	if input.ThoughtID != "" {
-		thought, getErr := s.storage.GetThought(input.ThoughtID)
-		if getErr != nil {
-			return nil, nil, getErr
-		}
-		content = thought.Content
-		biases, err = s.biasDetector.DetectBiases(thought)
-	} else if input.BranchID != "" {
-		branch, getErr := s.storage.GetBranch(input.BranchID)
-		if getErr != nil {
-			return nil, nil, getErr
-		}
-		// Combine all thoughts in the branch for analysis
-		for _, thought := range branch.Thoughts {
-			if thought != nil {
-				content += thought.Content + "\n"
-			}
-		}
-		biases, err = s.biasDetector.DetectBiasesInBranch(branch)
-	} else {
-		return nil, nil, fmt.Errorf("either thought_id or branch_id must be provided")
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Also detect fallacies in the content
-	// Check both formal and informal fallacies by default
-	fallacies = s.fallacyDetector.DetectFallacies(content, true, true)
-
-	// Create combined list of all issues
-	combined := make([]*DetectedIssue, 0, len(biases)+len(fallacies))
-
-	// Add biases to combined list
-	for _, bias := range biases {
-		// Extract severity as confidence score
-		confidenceScore := 0.5 // default
-		switch bias.Severity {
-		case "high":
-			confidenceScore = 0.9
-		case "medium":
-			confidenceScore = 0.6
-		case "low":
-			confidenceScore = 0.3
-		}
-
-		combined = append(combined, &DetectedIssue{
-			Type:        "bias",
-			Name:        bias.BiasType,
-			Category:    "cognitive",
-			Description: bias.Description,
-			Location:    bias.DetectedIn,
-			Example:     "", // CognitiveBias doesn't have Example field
-			Mitigation:  bias.Mitigation,
-			Confidence:  confidenceScore,
-		})
-	}
-
-	// Add fallacies to combined list
-	for _, fallacy := range fallacies {
-		combined = append(combined, &DetectedIssue{
-			Type:        "fallacy",
-			Name:        fallacy.Type,
-			Category:    string(fallacy.Category),
-			Description: fallacy.Explanation,
-			Location:    fallacy.Location,
-			Example:     fallacy.Example,
-			Mitigation:  fallacy.Correction,
-			Confidence:  fallacy.Confidence,
-		})
-	}
-
-	response := &DetectBiasesResponse{
-		Biases:    biases,
-		Fallacies: fallacies,
-		Combined:  combined,
-		Count:     len(combined),
-		Status:    "success",
-	}
-
-	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
-	}, response, nil
+func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToolRequest, input handlers.DetectBiasesRequest) (*mcp.CallToolResult, *handlers.DetectBiasesResponse, error) {
+	return s.metacognitionHandler.HandleDetectBiases(ctx, req, input)
 }
 
 // ========================================
@@ -2031,7 +1871,7 @@ func (s *UnifiedServer) SynthesizeInsights(ctx context.Context, req SynthesizeIn
 }
 
 // DetectBiases identifies cognitive biases
-func (s *UnifiedServer) DetectBiases(ctx context.Context, req DetectBiasesRequest) ([]*types.CognitiveBias, error) {
+func (s *UnifiedServer) DetectBiases(ctx context.Context, req handlers.DetectBiasesRequest) ([]*types.CognitiveBias, error) {
 	if req.ThoughtID != "" {
 		thought, err := s.storage.GetThought(req.ThoughtID)
 		if err != nil {
@@ -2054,7 +1894,7 @@ func (s *UnifiedServer) AssessEvidence(ctx context.Context, req handlers.AssessE
 }
 
 // SelfEvaluate performs metacognitive self-assessment
-func (s *UnifiedServer) SelfEvaluate(ctx context.Context, req SelfEvaluateRequest) (*types.SelfEvaluation, error) {
+func (s *UnifiedServer) SelfEvaluate(ctx context.Context, req handlers.SelfEvaluateRequest) (*types.SelfEvaluation, error) {
 	if req.ThoughtID != "" {
 		thought, err := s.storage.GetThought(req.ThoughtID)
 		if err != nil {

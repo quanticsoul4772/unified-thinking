@@ -371,47 +371,6 @@ func ValidateSearchRequest(req *SearchRequest) error {
 }
 
 
-// ValidateSelfEvaluateRequest validates a SelfEvaluateRequest
-func ValidateSelfEvaluateRequest(req *SelfEvaluateRequest) error {
-	if req.ThoughtID == "" && req.BranchID == "" {
-		return &ValidationError{"request", "either thought_id or branch_id must be provided"}
-	}
-
-	if req.ThoughtID != "" && req.BranchID != "" {
-		return &ValidationError{"request", "only one of thought_id or branch_id should be provided"}
-	}
-
-	if len(req.ThoughtID) > MaxBranchIDLength {
-		return &ValidationError{"thought_id", "thought_id too long"}
-	}
-
-	if len(req.BranchID) > MaxBranchIDLength {
-		return &ValidationError{"branch_id", "branch_id too long"}
-	}
-
-	return nil
-}
-
-// ValidateDetectBiasesRequest validates a DetectBiasesRequest
-func ValidateDetectBiasesRequest(req *DetectBiasesRequest) error {
-	if req.ThoughtID == "" && req.BranchID == "" {
-		return &ValidationError{"request", "either thought_id or branch_id must be provided. Example: {\"thought_id\": \"thought_123\"} or {\"branch_id\": \"branch_456\"}"}
-	}
-
-	if req.ThoughtID != "" && req.BranchID != "" {
-		return &ValidationError{"request", "only one of thought_id or branch_id should be provided, not both"}
-	}
-
-	if len(req.ThoughtID) > MaxBranchIDLength {
-		return &ValidationError{"thought_id", "thought_id too long"}
-	}
-
-	if len(req.BranchID) > MaxBranchIDLength {
-		return &ValidationError{"branch_id", "branch_id too long"}
-	}
-
-	return nil
-}
 
 // ValidateExecuteWorkflowRequest validates an ExecuteWorkflowRequest
 func ValidateExecuteWorkflowRequest(req *ExecuteWorkflowRequest) error {
