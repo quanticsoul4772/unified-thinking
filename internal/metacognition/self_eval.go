@@ -249,15 +249,39 @@ func (se *SelfEvaluator) assessBranchCoherence(branch *types.Branch) float64 {
 func (se *SelfEvaluator) identifyStrengths(thought *types.Thought, quality, completeness, coherence float64) []string {
 	strengths := make([]string, 0)
 
-	if quality > 0.7 {
+	// TIER 1: High quality (>=0.7)
+	if quality >= 0.7 {
 		strengths = append(strengths, "High-quality reasoning with evidence-based approach")
+	} else if quality >= 0.6 {
+		// TIER 2: Good quality (0.6-0.69)
+		strengths = append(strengths, "Good quality reasoning with logical structure")
+	} else if quality >= 0.5 {
+		// TIER 3: Acceptable quality (0.5-0.59)
+		strengths = append(strengths, "Basic reasoning structure present")
 	}
-	if completeness > 0.7 {
+
+	// TIER 1: Thorough completeness (>=0.7)
+	if completeness >= 0.7 {
 		strengths = append(strengths, "Thorough and comprehensive analysis")
+	} else if completeness >= 0.6 {
+		// TIER 2: Reasonably complete (0.6-0.69)
+		strengths = append(strengths, "Reasonably complete analysis")
+	} else if completeness >= 0.5 {
+		// TIER 3: Covers basics (0.5-0.59)
+		strengths = append(strengths, "Covers key aspects of the problem")
 	}
-	if coherence > 0.8 {
+
+	// TIER 1: Exceptional coherence (>=0.8)
+	if coherence >= 0.8 {
+		strengths = append(strengths, "Exceptionally clear and coherent structure")
+	} else if coherence >= 0.7 {
+		// TIER 2: Clear coherence (0.7-0.79)
 		strengths = append(strengths, "Clear and logically coherent structure")
+	} else if coherence >= 0.6 {
+		// TIER 3: Coherent with minor issues (0.6-0.69)
+		strengths = append(strengths, "Coherent with minor inconsistencies")
 	}
+
 	if thought.Confidence > 0.7 && quality > 0.7 {
 		strengths = append(strengths, "Well-justified confidence level")
 	}
@@ -272,15 +296,30 @@ func (se *SelfEvaluator) identifyStrengths(thought *types.Thought, quality, comp
 func (se *SelfEvaluator) identifyWeaknesses(thought *types.Thought, quality, completeness, coherence float64) []string {
 	weaknesses := make([]string, 0)
 
-	if quality < 0.5 {
-		weaknesses = append(weaknesses, "Reasoning lacks evidence or logical structure")
+	// TIER 1: Critical quality issues (<0.4)
+	if quality < 0.4 {
+		weaknesses = append(weaknesses, "Reasoning lacks evidence and logical structure")
+	} else if quality < 0.6 {
+		// TIER 2: Moderate quality issues (0.4-0.59)
+		weaknesses = append(weaknesses, "Could strengthen reasoning with more evidence")
 	}
-	if completeness < 0.5 {
+
+	// TIER 1: Critical completeness issues (<0.4)
+	if completeness < 0.4 {
 		weaknesses = append(weaknesses, "Analysis is incomplete or superficial")
+	} else if completeness < 0.6 {
+		// TIER 2: Moderate completeness issues (0.4-0.59)
+		weaknesses = append(weaknesses, "Could expand analysis to cover more dimensions")
 	}
-	if coherence < 0.6 {
-		weaknesses = append(weaknesses, "Logical coherence could be improved")
+
+	// TIER 1: Critical coherence issues (<0.5)
+	if coherence < 0.5 {
+		weaknesses = append(weaknesses, "Logical coherence needs significant improvement")
+	} else if coherence < 0.7 {
+		// TIER 2: Moderate coherence issues (0.5-0.69)
+		weaknesses = append(weaknesses, "Some inconsistencies in logical flow")
 	}
+
 	if thought.Confidence > 0.8 && quality < 0.6 {
 		weaknesses = append(weaknesses, "Confidence may be overestimated relative to reasoning quality")
 	}
