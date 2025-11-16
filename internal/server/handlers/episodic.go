@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/memory"
