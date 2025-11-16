@@ -1918,8 +1918,13 @@ func (s *UnifiedServer) handleGetCalibrationReport(ctx context.Context, req *mcp
 // handleDualProcessThink handles dual-process thinking
 func (s *UnifiedServer) handleDualProcessThink(ctx context.Context, req *mcp.CallToolRequest, input handlers.DualProcessThinkRequest) (*mcp.CallToolResult, *handlers.DualProcessThinkResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.dualProcessHandler.HandleDualProcessThink(ctx, params)
 	if err != nil {
@@ -1929,7 +1934,9 @@ func (s *UnifiedServer) handleDualProcessThink(ctx context.Context, req *mcp.Cal
 	var response handlers.DualProcessThinkResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -1939,8 +1946,13 @@ func (s *UnifiedServer) handleDualProcessThink(ctx context.Context, req *mcp.Cal
 // handleCreateCheckpoint creates a backtracking checkpoint
 func (s *UnifiedServer) handleCreateCheckpoint(ctx context.Context, req *mcp.CallToolRequest, input handlers.CreateCheckpointRequest) (*mcp.CallToolResult, *handlers.CreateCheckpointResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.backtrackingHandler.HandleCreateCheckpoint(ctx, params)
 	if err != nil {
@@ -1950,7 +1962,9 @@ func (s *UnifiedServer) handleCreateCheckpoint(ctx context.Context, req *mcp.Cal
 	var response handlers.CreateCheckpointResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -1960,8 +1974,13 @@ func (s *UnifiedServer) handleCreateCheckpoint(ctx context.Context, req *mcp.Cal
 // handleRestoreCheckpoint restores from a checkpoint
 func (s *UnifiedServer) handleRestoreCheckpoint(ctx context.Context, req *mcp.CallToolRequest, input handlers.RestoreCheckpointRequest) (*mcp.CallToolResult, *handlers.RestoreCheckpointResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.backtrackingHandler.HandleRestoreCheckpoint(ctx, params)
 	if err != nil {
@@ -1971,7 +1990,9 @@ func (s *UnifiedServer) handleRestoreCheckpoint(ctx context.Context, req *mcp.Ca
 	var response handlers.RestoreCheckpointResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -1981,8 +2002,13 @@ func (s *UnifiedServer) handleRestoreCheckpoint(ctx context.Context, req *mcp.Ca
 // handleListCheckpoints lists available checkpoints
 func (s *UnifiedServer) handleListCheckpoints(ctx context.Context, req *mcp.CallToolRequest, input handlers.ListCheckpointsRequest) (*mcp.CallToolResult, *handlers.ListCheckpointsResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.backtrackingHandler.HandleListCheckpoints(ctx, params)
 	if err != nil {
@@ -1992,7 +2018,9 @@ func (s *UnifiedServer) handleListCheckpoints(ctx context.Context, req *mcp.Call
 	var response handlers.ListCheckpointsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2002,8 +2030,13 @@ func (s *UnifiedServer) handleListCheckpoints(ctx context.Context, req *mcp.Call
 // handleGenerateHypotheses generates abductive hypotheses
 func (s *UnifiedServer) handleGenerateHypotheses(ctx context.Context, req *mcp.CallToolRequest, input handlers.GenerateHypothesesRequest) (*mcp.CallToolResult, *handlers.GenerateHypothesesResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.abductiveHandler.HandleGenerateHypotheses(ctx, params)
 	if err != nil {
@@ -2013,7 +2046,9 @@ func (s *UnifiedServer) handleGenerateHypotheses(ctx context.Context, req *mcp.C
 	var response handlers.GenerateHypothesesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2023,8 +2058,13 @@ func (s *UnifiedServer) handleGenerateHypotheses(ctx context.Context, req *mcp.C
 // handleEvaluateHypotheses evaluates and ranks hypotheses
 func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.CallToolRequest, input handlers.EvaluateHypothesesRequest) (*mcp.CallToolResult, *handlers.EvaluateHypothesesResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.abductiveHandler.HandleEvaluateHypotheses(ctx, params)
 	if err != nil {
@@ -2034,7 +2074,9 @@ func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.C
 	var response handlers.EvaluateHypothesesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2044,8 +2086,13 @@ func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.C
 // handleRetrieveCases retrieves similar cases using CBR
 func (s *UnifiedServer) handleRetrieveCases(ctx context.Context, req *mcp.CallToolRequest, input handlers.RetrieveCasesRequest) (*mcp.CallToolResult, *handlers.RetrieveCasesResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.caseBasedHandler.HandleRetrieveCases(ctx, params)
 	if err != nil {
@@ -2055,7 +2102,9 @@ func (s *UnifiedServer) handleRetrieveCases(ctx context.Context, req *mcp.CallTo
 	var response handlers.RetrieveCasesResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2065,8 +2114,13 @@ func (s *UnifiedServer) handleRetrieveCases(ctx context.Context, req *mcp.CallTo
 // handlePerformCBRCycle performs full CBR cycle
 func (s *UnifiedServer) handlePerformCBRCycle(ctx context.Context, req *mcp.CallToolRequest, input handlers.PerformCBRCycleRequest) (*mcp.CallToolResult, *handlers.PerformCBRCycleResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.caseBasedHandler.HandlePerformCBRCycle(ctx, params)
 	if err != nil {
@@ -2076,7 +2130,9 @@ func (s *UnifiedServer) handlePerformCBRCycle(ctx context.Context, req *mcp.Call
 	var response handlers.PerformCBRCycleResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2086,8 +2142,13 @@ func (s *UnifiedServer) handlePerformCBRCycle(ctx context.Context, req *mcp.Call
 // handleDetectBlindSpots detects unknown unknowns and blind spots
 func (s *UnifiedServer) handleDetectBlindSpots(ctx context.Context, req *mcp.CallToolRequest, input handlers.DetectBlindSpotsRequest) (*mcp.CallToolResult, *handlers.DetectBlindSpotsResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.unknownUnknownsHandler.HandleDetectBlindSpots(ctx, params)
 	if err != nil {
@@ -2097,7 +2158,9 @@ func (s *UnifiedServer) handleDetectBlindSpots(ctx context.Context, req *mcp.Cal
 	var response handlers.DetectBlindSpotsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2107,8 +2170,13 @@ func (s *UnifiedServer) handleDetectBlindSpots(ctx context.Context, req *mcp.Cal
 // handleProveTheorem attempts to prove a theorem symbolically
 func (s *UnifiedServer) handleProveTheorem(ctx context.Context, req *mcp.CallToolRequest, input handlers.ProveTheoremRequest) (*mcp.CallToolResult, *handlers.ProveTheoremResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.symbolicHandler.HandleProveTheorem(ctx, params)
 	if err != nil {
@@ -2118,7 +2186,9 @@ func (s *UnifiedServer) handleProveTheorem(ctx context.Context, req *mcp.CallToo
 	var response handlers.ProveTheoremResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 
@@ -2128,8 +2198,13 @@ func (s *UnifiedServer) handleProveTheorem(ctx context.Context, req *mcp.CallToo
 // handleCheckConstraints checks constraint consistency
 func (s *UnifiedServer) handleCheckConstraints(ctx context.Context, req *mcp.CallToolRequest, input handlers.CheckConstraintsRequest) (*mcp.CallToolResult, *handlers.CheckConstraintsResponse, error) {
 	params := make(map[string]interface{})
-	data, _ := json.Marshal(input)
-	json.Unmarshal(data, &params)
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+	}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+	}
 
 	result, err := s.symbolicHandler.HandleCheckConstraints(ctx, params)
 	if err != nil {
@@ -2139,7 +2214,9 @@ func (s *UnifiedServer) handleCheckConstraints(ctx context.Context, req *mcp.Cal
 	var response handlers.CheckConstraintsResponse
 	if len(result.Content) > 0 {
 		if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-			json.Unmarshal([]byte(textContent.Text), &response)
+			if err := json.Unmarshal([]byte(textContent.Text), &response); err != nil {
+				log.Printf("Warning: failed to unmarshal response: %v", err)
+			}
 		}
 	}
 

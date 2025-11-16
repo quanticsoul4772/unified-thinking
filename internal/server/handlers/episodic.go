@@ -474,8 +474,13 @@ recognize successful patterns, and provide adaptive recommendations.
 }`,
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input StartSessionRequest) (*mcp.CallToolResult, *StartSessionResponse, error) {
 		var params map[string]interface{}
-		paramsBytes, _ := json.Marshal(input)
-		json.Unmarshal(paramsBytes, &params)
+		paramsBytes, err := json.Marshal(input)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+		}
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+		}
 
 		result, err := handler.HandleStartSession(ctx, params)
 		if err != nil {
@@ -488,7 +493,9 @@ recognize successful patterns, and provide adaptive recommendations.
 		}
 		if len(result.Content) > 0 {
 			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				json.Unmarshal([]byte(textContent.Text), response)
+				if err := json.Unmarshal([]byte(textContent.Text), response); err != nil {
+					log.Printf("Warning: failed to unmarshal response: %v", err)
+				}
 			}
 		}
 		return result, response, nil
@@ -535,8 +542,13 @@ The system learns which approaches work best for different problem types.
 }`,
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input CompleteSessionRequest) (*mcp.CallToolResult, *CompleteSessionResponse, error) {
 		var params map[string]interface{}
-		paramsBytes, _ := json.Marshal(input)
-		json.Unmarshal(paramsBytes, &params)
+		paramsBytes, err := json.Marshal(input)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+		}
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+		}
 
 		result, err := handler.HandleCompleteSession(ctx, params)
 		if err != nil {
@@ -588,8 +600,13 @@ successful reasoning sessions. Includes learned patterns and historical success 
 }`,
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input GetRecommendationsRequest) (*mcp.CallToolResult, *GetRecommendationsResponse, error) {
 		var params map[string]interface{}
-		paramsBytes, _ := json.Marshal(input)
-		json.Unmarshal(paramsBytes, &params)
+		paramsBytes, err := json.Marshal(input)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+		}
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+		}
 
 		result, err := handler.HandleGetRecommendations(ctx, params)
 		if err != nil {
@@ -603,7 +620,9 @@ successful reasoning sessions. Includes learned patterns and historical success 
 		}
 		if len(result.Content) > 0 {
 			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				json.Unmarshal([]byte(textContent.Text), response)
+				if err := json.Unmarshal([]byte(textContent.Text), response); err != nil {
+					log.Printf("Warning: failed to unmarshal response: %v", err)
+				}
 			}
 		}
 		return result, response, nil
@@ -650,8 +669,13 @@ understanding what worked in the past and learning from both successes and failu
 }`,
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input SearchTrajectoriesRequest) (*mcp.CallToolResult, *SearchTrajectoriesResponse, error) {
 		var params map[string]interface{}
-		paramsBytes, _ := json.Marshal(input)
-		json.Unmarshal(paramsBytes, &params)
+		paramsBytes, err := json.Marshal(input)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+		}
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+		}
 
 		result, err := handler.HandleSearchTrajectories(ctx, params)
 		if err != nil {
@@ -664,7 +688,9 @@ understanding what worked in the past and learning from both successes and failu
 		}
 		if len(result.Content) > 0 {
 			if textContent, ok := result.Content[0].(*mcp.TextContent); ok {
-				json.Unmarshal([]byte(textContent.Text), response)
+				if err := json.Unmarshal([]byte(textContent.Text), response); err != nil {
+					log.Printf("Warning: failed to unmarshal response: %v", err)
+				}
 			}
 		}
 		return result, response, nil
@@ -722,8 +748,13 @@ improvements, lessons learned, and comparative analysis against similar past ses
 - Detailed metric breakdowns with actionable next steps`,
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input AnalyzeTrajectoryRequest) (*mcp.CallToolResult, *memory.RetrospectiveAnalysis, error) {
 		var params map[string]interface{}
-		paramsBytes, _ := json.Marshal(input)
-		json.Unmarshal(paramsBytes, &params)
+		paramsBytes, err := json.Marshal(input)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to marshal input: %w", err)
+		}
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal params: %w", err)
+		}
 
 		result, err := handler.HandleAnalyzeTrajectory(ctx, params)
 		if err != nil {
