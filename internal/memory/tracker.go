@@ -14,7 +14,6 @@ import (
 // SessionTracker tracks active reasoning sessions and builds trajectories
 type SessionTracker struct {
 	activeSessions map[string]*ActiveSession
-	completedQueue chan *ReasoningTrajectory
 	store          *EpisodicMemoryStore
 	mu             sync.RWMutex
 }
@@ -40,7 +39,6 @@ type ActiveSession struct {
 func NewSessionTracker(store *EpisodicMemoryStore) *SessionTracker {
 	return &SessionTracker{
 		activeSessions: make(map[string]*ActiveSession),
-		completedQueue: make(chan *ReasoningTrajectory, 100),
 		store:          store,
 	}
 }
