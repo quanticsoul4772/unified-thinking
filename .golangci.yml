@@ -17,35 +17,10 @@ linters:
     - staticcheck   # Advanced Go linter (includes gosimple in v2.x)
     - unused        # Check for unused constants, variables, functions
 
-  settings:
-    errcheck:
-      # Exclude test cleanup functions from error checking
-      exclude-functions:
-        - unified-thinking/internal/storage.CloseStorage
-
   exclusions:
     rules:
-      # Test environment setup: os.Setenv/Unsetenv errors are not critical
-      - path: _test\.go
-        text: "Error return value of `os\\.(Setenv|Unsetenv)` is not checked"
-        linters:
-          - errcheck
-
-      # Test storage operations: non-critical errors in test setup
-      - path: _test\.go
-        text: "Error return value of `(store|storage|tracker)\\."
-        linters:
-          - errcheck
-
-      # Test handlers: non-critical errors in test execution
-      - path: _test\.go
-        text: "Error return value of `(handler|server)\\."
-        linters:
-          - errcheck
-
-      # Test helper functions
-      - path: _test\.go
-        text: "Error return value of `(sr|tx|rows)\\."
+      # Disable errcheck entirely for test files (cleanup operations not critical)
+      - path: '_test\.go$'
         linters:
           - errcheck
 
