@@ -1,6 +1,39 @@
-# unified thinking server
+# Unified Thinking Server
 
-a model context protocol (mcp) server that consolidates multiple cognitive thinking patterns into a single, efficient go-based implementation.
+<p align="center">
+  <strong>A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single, efficient Go-based implementation.</strong>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#license">License</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.23%2B-00ADD8?style=flat&logo=go" alt="Go Version">
+  <img src="https://img.shields.io/badge/Coverage-73.9%25-green?style=flat" alt="Coverage">
+  <img src="https://img.shields.io/badge/Tests-757%20passing-brightgreen?style=flat" alt="Tests">
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat" alt="License">
+  <img src="https://img.shields.io/badge/Tools-63-orange?style=flat" alt="Tools">
+</p>
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/quanticsoul4772/unified-thinking.git
+cd unified-thinking
+
+# Build the server
+make build
+
+# Configure Claude Desktop (see Installation section)
+# Restart Claude Desktop to load the server
+```
 
 ## features
 
@@ -527,6 +560,41 @@ make benchmark
 - graceful fallback handling
 - resource limits to prevent dos
 
-## license
+## 🤝 Contributing
 
-mit license
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+- Check our [Code of Conduct](CODE_OF_CONDUCT.md)
+- Read the [Contributing Guide](CONTRIBUTING.md)
+- Submit issues using our [templates](.github/ISSUE_TEMPLATE)
+- Follow our PR [template](.github/pull_request_template.md)
+
+### Contributors
+
+Thanks to all the people who have contributed to this project!
+
+## 🔒 Security
+
+For security issues, please refer to our [Security Policy](SECURITY.md). Do not report security vulnerabilities through public GitHub issues.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with the [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk)
+- Inspired by cognitive science and reasoning frameworks
+- Special thanks to the Claude and Anthropic teams for the MCP protocol
+
+## 📮 Support
+
+- 📧 Email: [Your contact email]
+- 🐛 Issues: [GitHub Issues](https://github.com/quanticsoul4772/unified-thinking/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/quanticsoul4772/unified-thinking/discussions)
+
+---
+
+<p align="center">
+  Made with ❤️ for better AI reasoning
+</p>
