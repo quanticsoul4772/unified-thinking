@@ -328,7 +328,7 @@ func TestTemporalHandlerIntegration(t *testing.T) {
 		// First analyze perspectives
 		perspReq := &mcp.CallToolRequest{}
 		perspInput := AnalyzePerspectivesRequest{
-			Situation: "Major architectural refactoring",
+			Situation:        "Major architectural refactoring",
 			StakeholderHints: []string{"developers", "management", "users"},
 		}
 
@@ -340,7 +340,7 @@ func TestTemporalHandlerIntegration(t *testing.T) {
 		// Then analyze temporal aspects
 		tempReq := &mcp.CallToolRequest{}
 		tempInput := AnalyzeTemporalRequest{
-			Situation: "Major architectural refactoring",
+			Situation:   "Major architectural refactoring",
 			TimeHorizon: "months",
 		}
 

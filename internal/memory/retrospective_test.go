@@ -636,10 +636,10 @@ func TestRetrospectiveAnalyzer_StrategicInsights(t *testing.T) {
 func containsStr(s, substr string) bool {
 	return len(s) > 0 && len(substr) > 0 &&
 		(s == substr ||
-		 (len(s) > len(substr) &&
-		  (s[:len(substr)] == substr ||
-		   s[len(s)-len(substr):] == substr ||
-		   findSubstring(s, substr))))
+			(len(s) > len(substr) &&
+				(s[:len(substr)] == substr ||
+					s[len(s)-len(substr):] == substr ||
+					findSubstring(s, substr))))
 }
 
 func findSubstring(s, substr string) bool {

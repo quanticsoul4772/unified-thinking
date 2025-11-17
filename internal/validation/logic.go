@@ -839,6 +839,7 @@ func (v *LogicValidator) tryDirectDerivation(premises []string, conclusion strin
 
 // extractAtomicPropositions extracts atomic propositions from a logical statement
 // Reserved for future use in advanced logical decomposition
+//
 //nolint:unused // Reserved for future use
 func _extractAtomicPropositions(statement string) []string {
 	// Remove logical operators to get atoms

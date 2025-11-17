@@ -47,8 +47,9 @@ func NewEvidencePipeline(
 	}
 }
 
-//nolint:unused // Reserved for future use
 // PipelineResult contains the results of evidence propagation
+//
+//nolint:unused // Reserved for future use
 type PipelineResult struct {
 	EvidenceID       string                       `json:"evidence_id"`
 	UpdatedBeliefs   []*types.ProbabilisticBelief `json:"updated_beliefs"`
@@ -290,6 +291,7 @@ func (ep *EvidencePipeline) calculateStrengthAdjustment(evidence *types.Evidence
 
 // calculateScoreAdjustment determines how much to adjust decision scores
 // Reserved for future decision re-evaluation implementation
+//
 //nolint:unused // Reserved for future use
 func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) float64 {
 	// Adjustment proportional to evidence quality
@@ -298,6 +300,7 @@ func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) 
 
 // evidenceRelatesToOption checks if evidence relates to a decision option
 // Reserved for future decision re-evaluation implementation
+//
 //nolint:unused // Reserved for future use
 func (ep *EvidencePipeline) _evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
 	// Simple heuristic: check if evidence content mentions option name

@@ -334,7 +334,7 @@ func TestBranchHandler_BranchLifecycle(t *testing.T) {
 	_ = store.StoreBranch(branch)
 
 	// List should show it
-	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})  //nolint:errcheck // Test cleanup
+	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{}) //nolint:errcheck // Test cleanup
 	if listResp.Count == 0 {
 		t.Error("Expected at least 1 branch")
 	}

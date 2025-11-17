@@ -24,8 +24,8 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/integration/` - Cross-mode synthesis, emergent pattern detection, probabilistic-causal integration
 - `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
 - `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, and adaptive recommendations
-- `internal/server/` - MCP server implementation with 62 registered tools
-- `internal/server/handlers/` - 16 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, dual_process, hallucination, helpers, metadata, symbolic, unknown_unknowns, episodic)
+- `internal/server/` - MCP server implementation with 63 registered tools
+- `internal/server/handlers/` - 21 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, causal, decision, dual_process, episodic, hallucination, helpers, metacognition, metadata, probabilistic, symbolic, temporal, unknown_unknowns)
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -106,7 +106,7 @@ make benchmark
 make test-all
 ```
 
-**Test Coverage**: The project maintains high test coverage (>70% overall, >94% for validation package) across all major components including storage, modes, reasoning, analysis, and metacognition modules.
+**Test Coverage**: The project maintains high test coverage (73.9% overall with 757 tests) across all major components. Key packages have excellent coverage: types (100%), metrics (100%), analysis (89.3%), validation (88.8%), orchestration (87.7%), metacognition (87.2%).
 
 ### Linting
 ```bash
@@ -542,7 +542,29 @@ When Claude Desktop starts, it will:
 24. `internal/orchestration/workflow.go` - Workflow orchestration system
 25. `internal/orchestration/interface.go` - ToolExecutor abstraction for workflow steps
 
-## Recent Fixes (November 2024)
+## Recent Updates
+
+### Code Quality Improvements
+
+**Refactoring (Commits 5807e7b, e2a241d)**
+- Attempted modularization of monolithic server.go (2,225 lines)
+- Created tools.go with centralized tool definitions (800 lines)
+- Discovered Go type system limitation: mcp.AddTool requires compile-time type info, preventing dynamic registration
+- Removed unsuccessful refactoring experiments to maintain clean codebase
+
+**Test Coverage Improvements (Commits 7ebdf3b, d2a9280)**
+- Memory module coverage: 35.3% → 67.8% (+32.5 percentage points)
+- Handler module coverage: 43.0% → 47.2% (+4.2 percentage points)
+- Added comprehensive tests for temporal and causal handlers
+- Fixed test API mismatches and compilation errors
+
+**Code Formatting & Linting (Latest cleanup)**
+- Applied gofmt -s to entire codebase (23 files formatted)
+- Resolved all golangci-lint v2.x compatibility issues
+- Removed unused functions and imports
+- Maintained clean, consistent code style throughout
+
+## Recent Fixes
 
 ### Episodic Memory Fixes (Commit e7cc5c7)
 

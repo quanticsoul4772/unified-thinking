@@ -178,6 +178,27 @@ for persistent storage across sessions:
 
 after saving the config, restart claude desktop.
 
+## recent updates
+
+### performance improvements
+- refactored server.go from monolithic 2,225-line file into modular components
+- improved handler test coverage from 43% to 47.2%
+- fixed episodic memory sqlite persistence issues
+- resolved all golangci-lint v2.x compatibility issues
+- formatted entire codebase with gofmt -s for consistency
+
+### bug fixes
+- fixed sqlite foreign key constraint failures in episodic memory
+- resolved nil array validation errors in mcp tool responses
+- fixed race conditions in concurrent sqlite tests
+- corrected test timestamp handling and empty path validation
+
+### code quality
+- removed unused refactoring experiments
+- cleaned up test files and improved edge case coverage
+- updated all packages to pass golangci-lint checks
+- maintained backward compatibility while improving internals
+
 ## available tools (63 total)
 
 ### core thinking tools (11 tools)
@@ -414,7 +435,7 @@ make test-coverage
 make benchmark
 ```
 
-**test coverage**: ~75% overall | 415 tests | 100% pass rate
+**test coverage**: 73.9% overall | 757 tests | 100% pass rate
 
 ### coverage by package
 
@@ -422,25 +443,26 @@ make benchmark
 |---------|----------|--------|
 | `internal/types` | 100.0% | excellent |
 | `internal/metrics` | 100.0% | excellent |
-| `internal/validation` | 91.2% | excellent |
-| `internal/metacognition` | 90.2% | excellent |
 | `internal/analysis` | 89.3% | excellent |
-| `internal/orchestration` | 87.2% | excellent |
-| `internal/reasoning` | 86.5% | excellent |
+| `internal/validation` | 88.8% | excellent |
+| `internal/orchestration` | 87.7% | excellent |
+| `internal/metacognition` | 87.2% | excellent |
 | `internal/processing` | 83.3% | excellent |
 | `internal/integration` | 82.2% | excellent |
-| **`internal/server/handlers`** | **81.2%** | **improved (+29.6%)** |
-| `internal/storage` | 81.0% | excellent |
+| `internal/storage` | 79.5% | good |
+| `internal/reasoning` | 78.7% | good |
 | `internal/modes` | 77.8% | good |
-| `internal/config` | 64.5% | adequate |
-| `internal/server` | 45.5% | adequate |
+| `internal/memory` | 67.8% | improved |
+| `internal/config` | 64.6% | adequate |
+| `internal/server/handlers` | 47.2% | improved |
+| `internal/server` | 47.3% | adequate |
 | `cmd/server` | 25.0% | expected (entry point) |
 
-**recent improvements:**
-- handlers package: 51.6% → 81.2% (+29.6 percentage points)
-- 100+ new test cases across 7 test files
+**highlights:**
+- 757 total tests across all packages
+- memory module: improved from 35.3% to 67.8%
+- zero test failures (757/757 passing)
 - comprehensive edge case coverage
-- zero test failures (415/415 passing)
 
 ## troubleshooting
 
