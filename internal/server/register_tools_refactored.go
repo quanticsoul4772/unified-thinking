@@ -2,8 +2,6 @@
 package server
 
 import (
-	"os"
-
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/server/handlers"
 )
@@ -50,9 +48,4 @@ func (s *UnifiedServer) RegisterToolsRefactored(mcpServer *mcp.Server) {
 
 	// Episodic memory tools are already registered above through toolHandlers
 	// They don't have a separate RegisterTools method
-}
-
-// debugMode checks if debug mode is enabled
-func debugMode() bool {
-	return os.Getenv("DEBUG") == "true"
 }
