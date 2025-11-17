@@ -2,6 +2,8 @@
 # Documentation: https://golangci-lint.run/usage/configuration/
 # Compatible with golangci-lint v2.6.2+
 
+version: 2
+
 run:
   timeout: 5m
   tests: true
