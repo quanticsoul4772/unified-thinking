@@ -50,3 +50,8 @@ coverage.out
 
 # Documentation fixes (temporary)
 docs/fixes/
+
+# Security scan reports
+gosec-report*.json
+gosec*.json
+*-security-report.json
