@@ -44,6 +44,11 @@ type SQLiteStorage struct {
 
 // NewSQLiteStorage creates a new SQLite storage backend
 func NewSQLiteStorage(dbPath string, timeoutMs int) (*SQLiteStorage, error) {
+	// Validate path
+	if dbPath == "" {
+		return nil, fmt.Errorf("database path cannot be empty")
+	}
+
 	// Build DSN with pragmas
 	dsn := dbPath + fmt.Sprintf("?_busy_timeout=%d", timeoutMs)
 

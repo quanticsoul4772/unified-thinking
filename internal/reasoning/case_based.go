@@ -156,12 +156,14 @@ type RevisionResult struct {
 
 // StoreCase adds a new case to the library
 func (cbr *CaseBasedReasoner) StoreCase(ctx context.Context, c *Case) error {
+	now := time.Now()
+
 	if c.ID == "" {
-		c.ID = fmt.Sprintf("case-%d", time.Now().UnixNano())
+		c.ID = fmt.Sprintf("case-%d", now.UnixNano())
 	}
 
-	c.CreatedAt = time.Now()
-	c.UpdatedAt = time.Now()
+	c.CreatedAt = now
+	c.UpdatedAt = now
 
 	// Index the case
 	cbr.caseIndex.indexCase(c)
