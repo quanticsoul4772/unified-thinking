@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 	"unified-thinking/internal/types"
@@ -726,7 +727,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 		numGoroutines := 5
 
 		wg.Add(numGoroutines)
-		errorCount := 0
+		var errorCount int32 // Use atomic operations
 		for i := 0; i < numGoroutines; i++ {
 			go func(id int) {
 				defer wg.Done()
@@ -740,7 +741,7 @@ func TestSQLiteConcurrentAccess(t *testing.T) {
 				err := storage.StoreThought(thought)
 				if err != nil {
 					// SQLite may have some lock contention, that's expected
-					errorCount++
+					atomic.AddInt32(&errorCount, 1)
 				}
 			}(i)
 		}
