@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Go-1.23%2B-00ADD8?style=flat&logo=go" alt="Go Version">
+  <img src="https://img.shields.io/badge/Go-1.24%2B-00ADD8?style=flat&logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/Coverage-73.9%25-green?style=flat" alt="Coverage">
   <img src="https://img.shields.io/badge/Tests-757%20passing-brightgreen?style=flat" alt="Tests">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat" alt="License">
@@ -134,7 +134,7 @@ the server includes 63 specialized tools across 13 major categories:
 
 ### prerequisites
 
-- go 1.23 or higher
+- go 1.24 or higher
 - git
 
 ### build

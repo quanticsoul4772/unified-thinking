@@ -45,7 +45,7 @@ Please follow these steps to have your contribution considered:
 ### Setting Up Your Development Environment
 
 1. **Prerequisites**
-   - Go 1.23 or higher
+   - Go 1.24 or higher
    - Git
    - Make (optional but recommended)
 

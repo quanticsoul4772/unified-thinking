@@ -596,7 +596,7 @@ When Claude Desktop starts, it will:
 
 ## Technical Constraints
 
-- Go 1.23+ required
+- Go 1.24+ required
 - Windows primary target (Makefile uses Windows commands by default)
 - MCP SDK v0.8.0 - uses `mcp.AddTool()` and `transport.Run()` patterns
 - Storage: In-memory (default) or SQLite (optional)
