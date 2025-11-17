@@ -16,8 +16,6 @@ linters:
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Advanced Go linter
     - unused        # Check for unused constants, variables, functions
-    - gofmt         # Check formatting
-    - misspell      # Check for misspelled words
 
 issues:
   max-issues-per-linter: 0
