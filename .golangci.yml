@@ -17,30 +17,19 @@ linters:
     - staticcheck   # Advanced Go linter (includes gosimple in v2.x)
     - unused        # Check for unused constants, variables, functions
 
-  settings:
-    errcheck:
-      # Exclude test cleanup functions from error checking
-      exclude-functions:
-        - (*database/sql.DB).Close
-        - (*database/sql.Rows).Close
-        - (*os.File).Close
-        - CloseStorage  # Test cleanup function
+linters-settings:
+  errcheck:
+    # Exclude test cleanup functions from error checking
+    exclude-functions:
+      - unified-thinking/internal/storage.CloseStorage
 
-  # Exclude test cleanup patterns from errcheck
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  # Exclude test cleanup patterns from errcheck (using linters.exclusions per v2.x schema)
   exclusions:
     rules:
-      # Test cleanup: defer Close() calls are not critical
-      - path: _test\.go
-        text: "Error return value of.*Close.*is not checked"
-        linters:
-          - errcheck
-
-      # Test cleanup: CloseStorage() calls are not critical
-      - path: _test\.go
-        text: "CloseStorage"
-        linters:
-          - errcheck
-
       # Test environment setup: os.Setenv/Unsetenv errors are not critical
       - path: _test\.go
         text: "Error return value of `os\\.(Setenv|Unsetenv)` is not checked"
@@ -64,7 +53,3 @@ linters:
         text: "Error return value of `(sr|tx|rows)\\."
         linters:
           - errcheck
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
