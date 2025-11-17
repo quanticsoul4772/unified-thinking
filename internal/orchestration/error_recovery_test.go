@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
 
 // MockFailingExecutor implements ToolExecutor with configurable failures
 type MockFailingExecutor struct {
+	mu               sync.Mutex
 	failOnExecute    bool
 	executionCount   int
 	lastExecutedTool string
@@ -17,8 +19,12 @@ type MockFailingExecutor struct {
 }
 
 func (m *MockFailingExecutor) ExecuteTool(ctx context.Context, toolName string, input map[string]interface{}) (interface{}, error) {
+	m.mu.Lock()
 	m.executionCount++
 	m.lastExecutedTool = toolName
+	failOnExecute := m.failOnExecute
+	slowExecution := m.slowExecution
+	m.mu.Unlock()
 
 	// Check for context cancellation first
 	select {
@@ -28,7 +34,7 @@ func (m *MockFailingExecutor) ExecuteTool(ctx context.Context, toolName string, 
 	}
 
 	// Simulate slow execution if configured
-	if m.slowExecution {
+	if slowExecution {
 		// Wait a bit to allow timeout to trigger
 		select {
 		case <-time.After(10 * time.Millisecond):
@@ -37,7 +43,7 @@ func (m *MockFailingExecutor) ExecuteTool(ctx context.Context, toolName string, 
 		}
 	}
 
-	if m.failOnExecute {
+	if failOnExecute {
 		return nil, errors.New("tool execution failed")
 	}
 
@@ -46,6 +52,20 @@ func (m *MockFailingExecutor) ExecuteTool(ctx context.Context, toolName string, 
 		"result": "success",
 		"tool":   toolName,
 	}, nil
+}
+
+// GetExecutionCount returns the execution count safely
+func (m *MockFailingExecutor) GetExecutionCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.executionCount
+}
+
+// ResetExecutionCount resets the execution count safely
+func (m *MockFailingExecutor) ResetExecutionCount() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.executionCount = 0
 }
 
 func TestOrchestrator_ErrorRecovery_WorkflowExecutionFailures(t *testing.T) {
@@ -82,8 +102,10 @@ func TestOrchestrator_ErrorRecovery_WorkflowExecutionFailures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset executor state
+			executor.mu.Lock()
 			executor.failOnExecute = false
-			executor.executionCount = 0
+			executor.mu.Unlock()
+			executor.ResetExecutionCount()
 
 			// Configure failure mode
 			if tt.setupFail != nil {
@@ -391,7 +413,9 @@ func TestOrchestrator_ErrorRecovery_Cancellation(t *testing.T) {
 
 	t.Run("context cancellation", func(t *testing.T) {
 		// Configure executor to be slow so cancellation can be tested
+		executor.mu.Lock()
 		executor.slowExecution = true
+		executor.mu.Unlock()
 
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -416,7 +440,9 @@ func TestOrchestrator_ErrorRecovery_Cancellation(t *testing.T) {
 		}
 
 		// Reset slow execution
+		executor.mu.Lock()
 		executor.slowExecution = false
+		executor.mu.Unlock()
 	})
 }
 
@@ -457,7 +483,9 @@ func TestOrchestrator_ErrorRecovery_PartialFailures(t *testing.T) {
 
 	t.Run("partial workflow failure", func(t *testing.T) {
 		// Configure executor to fail on specific tool
+		executor.mu.Lock()
 		executor.failOnExecute = true
+		executor.mu.Unlock()
 
 		ctx := context.Background()
 
@@ -474,12 +502,14 @@ func TestOrchestrator_ErrorRecovery_PartialFailures(t *testing.T) {
 		}
 
 		// Check that some executions were attempted
-		if executor.executionCount == 0 {
+		if executor.GetExecutionCount() == 0 {
 			t.Error("Expected some tool executions to be attempted")
 		}
 
 		// Reset failure
+		executor.mu.Lock()
 		executor.failOnExecute = false
+		executor.mu.Unlock()
 	})
 }
 
@@ -528,11 +558,13 @@ func TestOrchestrator_ErrorRecovery_TimeoutHandling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Configure executor to be slow for timeout tests
+			executor.mu.Lock()
 			if tt.timeout > 0 && tt.timeout < 5*time.Millisecond {
 				executor.slowExecution = true
 			} else {
 				executor.slowExecution = false
 			}
+			executor.mu.Unlock()
 
 			ctx, cancel := context.WithTimeout(context.Background(), tt.timeout)
 			defer cancel()
@@ -558,7 +590,9 @@ func TestOrchestrator_ErrorRecovery_TimeoutHandling(t *testing.T) {
 			}
 
 			// Reset slow execution
+			executor.mu.Lock()
 			executor.slowExecution = false
+			executor.mu.Unlock()
 		})
 	}
 }

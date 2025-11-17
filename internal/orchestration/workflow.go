@@ -299,13 +299,17 @@ func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, 
 		go func(s *WorkflowStep) {
 			defer wg.Done()
 
-			// Check condition if present
-			if s.Condition != nil && !o.evaluateCondition(s.Condition, reasoningCtx) {
+			// Check condition if present (needs mutex for reading reasoningCtx)
+			resultMu.Lock()
+			shouldExecute := s.Condition == nil || o.evaluateCondition(s.Condition, reasoningCtx)
+			resultMu.Unlock()
+
+			if !shouldExecute {
 				return
 			}
 
-			// Execute step
-			stepResult, err := o.executeStep(ctx, s, input, reasoningCtx)
+			// Execute step (passing mutex for reasoningCtx protection)
+			stepResult, err := o.executeStepWithLock(ctx, s, input, reasoningCtx, &resultMu)
 			if err != nil {
 				errors <- fmt.Errorf("step %s failed: %w", s.ID, err)
 				return
@@ -405,6 +409,11 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 
 // executeStep executes a single workflow step using the tool executor
 func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, input map[string]interface{}, reasoningCtx *ReasoningContext) (interface{}, error) {
+	return o.executeStepWithLock(ctx, step, input, reasoningCtx, nil)
+}
+
+// executeStepWithLock executes a single workflow step with optional mutex protection for reasoningCtx
+func (o *Orchestrator) executeStepWithLock(ctx context.Context, step *WorkflowStep, input map[string]interface{}, reasoningCtx *ReasoningContext, mu *sync.Mutex) (interface{}, error) {
 	// Check if executor is available
 	if o.executor == nil {
 		return nil, fmt.Errorf("no tool executor configured for orchestrator")
@@ -418,11 +427,17 @@ func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, inpu
 		toolInput[k] = v
 	}
 
-	// Override with step-specific input
+	// Override with step-specific input (may need to read reasoningCtx)
+	if mu != nil {
+		mu.Lock()
+	}
 	for k, v := range step.Input {
 		// Resolve template references (supports both {{variable}} and $variable syntax)
 		resolvedValue := o.resolveTemplateValue(v, input, reasoningCtx)
 		toolInput[k] = resolvedValue
+	}
+	if mu != nil {
+		mu.Unlock()
 	}
 
 	// Execute the tool
@@ -436,7 +451,12 @@ func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, inpu
 		result = applyTransform(result, step.Transform)
 	}
 
-	// Update context with tool-specific results
+	// Update context with tool-specific results (needs mutex protection in parallel execution)
+	if mu != nil {
+		mu.Lock()
+		defer mu.Unlock()
+	}
+
 	switch step.Tool {
 	case "think":
 		if thoughtResult, ok := result.(map[string]interface{}); ok {
