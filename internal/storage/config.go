@@ -2,6 +2,7 @@
 package storage
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"

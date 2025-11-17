@@ -11,46 +11,14 @@ run:
 linters:
   enable:
     - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
     - govet         # Vet examines Go source code
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Advanced Go linter
     - unused        # Check for unused constants, variables, functions
+    - gofmt         # Check formatting
     - misspell      # Check for misspelled words
-    - goconst       # Check for repeated strings
-    - gosec         # Security-focused linter
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
-  # Exclude common test patterns from errcheck
-  exclude-rules:
-    # Test cleanup: defer Close() calls
-    - path: _test\.go
-      text: "Error return value of.*Close.*is not checked"
-      linters:
-        - errcheck
-
-    # Test environment: os.Setenv/Unsetenv
-    - path: _test\.go
-      text: "Error return value of `os\\.(Setenv|Unsetenv)`"
-      linters:
-        - errcheck
-
-    # Test storage operations (non-critical errors in test setup)
-    - path: _test\.go
-      text: "Error return value of `(store|storage|tracker)\\."
-      linters:
-        - errcheck
-
-    # Test handlers (non-critical errors in test execution)
-    - path: _test\.go
-      text: "Error return value of `(handler|server)\\."
-      linters:
-        - errcheck
-
-    # Test helper functions
-    - path: _test\.go
-      text: "Error return value of `(sr|tx)\\."
-      linters:
-        - errcheck

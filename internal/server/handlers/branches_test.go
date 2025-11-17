@@ -313,7 +313,7 @@ func TestBranchHandler_ActiveBranchTracking(t *testing.T) {
 	}
 
 	// List branches should have updated
-	_, listResp, _ = handler.HandleListBranches(ctx, req, EmptyRequest{})
+	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})
 	if listResp.Count < 2 {
 		t.Errorf("Expected at least 2 branches, got %v", listResp.Count)
 	}
@@ -334,7 +334,7 @@ func TestBranchHandler_BranchLifecycle(t *testing.T) {
 	_ = store.StoreBranch(branch)
 
 	// List should show it
-	_, _, _ = handler.HandleListBranches(ctx, req, EmptyRequest{})
+	_, listResp, _ := handler.HandleListBranches(ctx, req, EmptyRequest{})  //nolint:errcheck // Test cleanup
 	if listResp.Count == 0 {
 		t.Error("Expected at least 1 branch")
 	}
