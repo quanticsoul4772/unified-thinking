@@ -2,7 +2,7 @@
 # Documentation: https://golangci-lint.run/usage/configuration/
 # Compatible with golangci-lint v2.6.2+
 
-version: 2
+version: "2"
 
 run:
   timeout: 5m
@@ -18,38 +18,39 @@ linters:
     - staticcheck   # Advanced Go linter
     - unused        # Check for unused constants, variables, functions
 
+  # Exclude test cleanup patterns from errcheck
+  exclusions:
+    rules:
+      # Test cleanup: defer Close() calls are not critical
+      - path: _test\.go
+        text: "Error return value of.*Close.*is not checked"
+        linters:
+          - errcheck
+
+      # Test environment setup: os.Setenv/Unsetenv errors are not critical
+      - path: _test\.go
+        text: "Error return value of `os\\.(Setenv|Unsetenv)` is not checked"
+        linters:
+          - errcheck
+
+      # Test storage operations: non-critical errors in test setup
+      - path: _test\.go
+        text: "Error return value of `(store|storage|tracker)\\."
+        linters:
+          - errcheck
+
+      # Test handlers: non-critical errors in test execution
+      - path: _test\.go
+        text: "Error return value of `(handler|server)\\."
+        linters:
+          - errcheck
+
+      # Test helper functions
+      - path: _test\.go
+        text: "Error return value of `(sr|tx|rows)\\."
+        linters:
+          - errcheck
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-
-  # Exclude test cleanup patterns from errcheck
-  exclude-rules:
-    # Test cleanup: defer Close() calls are not critical
-    - path: _test\.go
-      text: "Error return value of.*Close.*is not checked"
-      linters:
-        - errcheck
-
-    # Test environment setup: os.Setenv/Unsetenv errors are not critical
-    - path: _test\.go
-      text: "Error return value of `os\\.(Setenv|Unsetenv)` is not checked"
-      linters:
-        - errcheck
-
-    # Test storage operations: non-critical errors in test setup
-    - path: _test\.go
-      text: "Error return value of `(store|storage|tracker)\\."
-      linters:
-        - errcheck
-
-    # Test handlers: non-critical errors in test execution
-    - path: _test\.go
-      text: "Error return value of `(handler|server)\\."
-      linters:
-        - errcheck
-
-    # Test helper functions
-    - path: _test\.go
-      text: "Error return value of `(sr|tx|rows)\\."
-      linters:
-        - errcheck
