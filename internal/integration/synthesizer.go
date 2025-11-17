@@ -418,6 +418,7 @@ func (s *Synthesizer) DetectEmergentPatterns(inputs []*Input) ([]string, error) 
 		}
 		if input.Mode == "causal" || strings.Contains(strings.ToLower(input.Content), "causal") {
 			hasCausal = true
+			_ = hasCausal // Will be used in future uncertainty-causal integration enhancements
 		}
 	}
 	if hasProb && hasUncertainty {

@@ -499,18 +499,20 @@ func (cr *CausalReasoner) traceDownstreamEffects(graph *types.CausalGraph, start
 
 // determineEffectDirection determines the direction of effect
 func (cr *CausalReasoner) determineEffectDirection(interventionType, linkType string) string {
-	if interventionType == "increase" {
+	switch interventionType {
+	case "increase":
 		if linkType == "positive" {
 			return "increase"
 		}
 		return "decrease"
-	} else if interventionType == "decrease" {
+	case "decrease":
 		if linkType == "positive" {
 			return "decrease"
 		}
 		return "increase"
+	default:
+		return "change"
 	}
-	return "change"
 }
 
 // calculateInterventionConfidence calculates overall intervention confidence

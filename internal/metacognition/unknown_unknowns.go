@@ -490,13 +490,15 @@ func (uud *UnknownUnknownsDetector) detectSelfReferentialOverconfidence(req *Gap
 	}
 
 	// Calculate severity based on strength of claim
-	severity := 0.7
+	var severity float64
 	if hasAbsoluteClaim && hasNoHedges {
 		severity = 0.95 // Both absolute claim and no hedging
 	} else if hasAbsoluteClaim {
 		severity = 0.85 // Absolute claim but has some hedging
-	} else {
+	} else if !hasNoHedges {
 		severity = 0.75 // No hedging but not absolute
+	} else {
+		severity = 0.7 // Default case
 	}
 
 	return &BlindSpot{
