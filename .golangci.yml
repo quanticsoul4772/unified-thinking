@@ -12,10 +12,9 @@ run:
 linters:
   enable:
     - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
     - govet         # Vet examines Go source code
     - ineffassign   # Detect ineffectual assignments
-    - staticcheck   # Advanced Go linter
+    - staticcheck   # Advanced Go linter (includes gosimple in v2.x)
     - unused        # Check for unused constants, variables, functions
 
   # Exclude test cleanup patterns from errcheck
