@@ -2,9 +2,7 @@
 package server
 
 import (
-	"os"
-
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	// Registry is for internal use, doesn't directly use MCP
 )
 
 // ToolRegistry maps tool names to their handler functions
@@ -30,8 +28,10 @@ func (r *ToolRegistry) Get(name string) (interface{}, bool) {
 	return handler, ok
 }
 
-// RegisterAllTools registers all tool handlers with the MCP server
-func (s *UnifiedServer) RegisterAllTools(mcpServer *mcp.Server) {
+// BuildToolRegistry creates a registry of tool handlers for reference
+// NOTE: This cannot be used with mcp.AddTool directly due to Go's type system
+// The actual registration must be done with type-specific handlers
+func (s *UnifiedServer) BuildToolRegistry() *ToolRegistry {
 	// Create registry for handler lookup
 	registry := NewToolRegistry()
 
@@ -117,43 +117,20 @@ func (s *UnifiedServer) RegisterAllTools(mcpServer *mcp.Server) {
 	registry.Register("prove-theorem", s.handleProveTheorem)
 	registry.Register("check-constraints", s.handleCheckConstraints)
 
-	// Register enhanced handlers (delegated to enhanced handler)
-	if s.enhancedHandler != nil {
-		registry.Register("find-analogy", s.enhancedHandler.HandleFindAnalogy)
-		registry.Register("apply-analogy", s.enhancedHandler.HandleApplyAnalogy)
-		registry.Register("decompose-argument", s.enhancedHandler.HandleDecomposeArgument)
-		registry.Register("generate-counter-arguments", s.enhancedHandler.HandleGenerateCounterArguments)
-		registry.Register("detect-fallacies", s.enhancedHandler.HandleDetectFallacies)
-		registry.Register("process-evidence-pipeline", s.enhancedHandler.HandleProcessEvidencePipeline)
-		registry.Register("analyze-temporal-causal-effects", s.enhancedHandler.HandleAnalyzeTemporalCausalEffects)
-		registry.Register("analyze-decision-timing", s.enhancedHandler.HandleAnalyzeDecisionTiming)
-	}
+	// Enhanced handlers are registered separately via RegisterEnhancedTools
+	// They have different signatures and are handled differently
 
 	// Register episodic memory handlers (delegated to episodic handler)
-	if s.episodicHandler != nil {
-		registry.Register("start-reasoning-session", s.episodicHandler.HandleStartSession)
-		registry.Register("complete-reasoning-session", s.episodicHandler.HandleCompleteSession)
-		registry.Register("get-recommendations", s.episodicHandler.HandleGetRecommendations)
-		registry.Register("search-trajectories", s.episodicHandler.HandleSearchTrajectories)
-		registry.Register("analyze-trajectory", s.episodicHandler.HandleAnalyzeTrajectory)
+	if s.episodicMemoryHandler != nil {
+		registry.Register("start-reasoning-session", s.episodicMemoryHandler.HandleStartSession)
+		registry.Register("complete-reasoning-session", s.episodicMemoryHandler.HandleCompleteSession)
+		registry.Register("get-recommendations", s.episodicMemoryHandler.HandleGetRecommendations)
+		registry.Register("search-trajectories", s.episodicMemoryHandler.HandleSearchTrajectories)
+		registry.Register("analyze-trajectory", s.episodicMemoryHandler.HandleAnalyzeTrajectory)
 	}
 
-	// Register all tools with MCP server using definitions from tools.go
-	for _, tool := range ToolDefinitions {
-		handler, exists := registry.Get(tool.Name)
-		if exists {
-			toolCopy := tool // Create a copy to avoid closure issues
-			mcp.AddTool(mcpServer, &toolCopy, handler)
-		} else {
-			// Log warning about missing handler
-			if debugMode() {
-				println("WARNING: No handler found for tool:", tool.Name)
-			}
-		}
-	}
+	// Return the registry for reference
+	// Actual tool registration must be done separately with type-specific handlers
+	return registry
 }
 
-// Helper function to check debug mode
-func debugMode() bool {
-	return os.Getenv("DEBUG") == "true"
-}

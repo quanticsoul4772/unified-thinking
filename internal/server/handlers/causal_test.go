@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewCausalHandler(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	assert.NotNil(t, handler)
@@ -19,7 +19,7 @@ func TestNewCausalHandler(t *testing.T) {
 }
 
 func TestHandleBuildCausalGraph(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	ctx := context.Background()
@@ -79,12 +79,11 @@ func TestHandleBuildCausalGraph(t *testing.T) {
 				Description:  "Empty model",
 				Observations: []string{},
 			},
-			wantErr: false,
+			wantErr: true,
 			validate: func(t *testing.T, result *mcp.CallToolResult, resp *BuildCausalGraphResponse, err error) {
-				// Should work with empty observations but produce empty graph
-				require.NoError(t, err)
-				require.NotNil(t, resp)
-				assert.Equal(t, "success", resp.Status)
+				// Should return an error for empty observations
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "at least one observation is required")
 			},
 		},
 	}
@@ -107,7 +106,7 @@ func TestHandleBuildCausalGraph(t *testing.T) {
 }
 
 func TestHandleSimulateIntervention(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	ctx := context.Background()
@@ -195,7 +194,7 @@ func TestHandleSimulateIntervention(t *testing.T) {
 }
 
 func TestHandleGenerateCounterfactual(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	ctx := context.Background()
@@ -276,7 +275,7 @@ func TestHandleGenerateCounterfactual(t *testing.T) {
 }
 
 func TestHandleAnalyzeCorrelationVsCausation(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	ctx := context.Background()
@@ -333,7 +332,7 @@ func TestHandleAnalyzeCorrelationVsCausation(t *testing.T) {
 }
 
 func TestHandleGetCausalGraph(t *testing.T) {
-	causalReasoner := &reasoning.CausalReasoner{}
+	causalReasoner := reasoning.NewCausalReasoner()
 	handler := NewCausalHandler(causalReasoner)
 
 	ctx := context.Background()
