@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 3 // Updated for context signatures support
+const schemaVersion = 4 // Updated to remove foreign key constraint from context signatures
 
 // Schema defines the complete database schema
 const schema = `
@@ -113,6 +113,7 @@ CREATE INDEX IF NOT EXISTS idx_embeddings_problem ON embeddings(problem_id);
 CREATE INDEX IF NOT EXISTS idx_embeddings_created ON embeddings(created_at DESC);
 
 -- Context signatures table for cross-session bridging
+-- Note: No foreign key to trajectories table since episodic memory is in-memory
 CREATE TABLE IF NOT EXISTS context_signatures (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     trajectory_id TEXT NOT NULL,
@@ -122,8 +123,7 @@ CREATE TABLE IF NOT EXISTS context_signatures (
     key_concepts TEXT,      -- JSON array
     tool_sequence TEXT,     -- JSON array
     complexity REAL,
-    created_at INTEGER DEFAULT (strftime('%s', 'now')),
-    FOREIGN KEY (trajectory_id) REFERENCES trajectories(id) ON DELETE CASCADE
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
 -- Indexes for context signature lookups
@@ -229,6 +229,7 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 	if fromVersion < 3 && toVersion >= 3 {
 		migration := `
 		-- Context signatures table for cross-session bridging (v3)
+		-- Note: This version had a foreign key that caused issues
 		CREATE TABLE IF NOT EXISTS context_signatures (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			trajectory_id TEXT NOT NULL,
@@ -238,8 +239,7 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 			key_concepts TEXT,
 			tool_sequence TEXT,
 			complexity REAL,
-			created_at INTEGER DEFAULT (strftime('%s', 'now')),
-			FOREIGN KEY (trajectory_id) REFERENCES trajectories(id) ON DELETE CASCADE
+			created_at INTEGER DEFAULT (strftime('%s', 'now'))
 		);
 
 		CREATE INDEX IF NOT EXISTS idx_context_domain ON context_signatures(domain);
@@ -249,6 +249,47 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v2->v3 migration: %w", err)
+		}
+	}
+
+	// Migration from v3 to v4: Remove foreign key constraint from context_signatures
+	// The foreign key referenced trajectories(id) but episodic memory stores trajectories in-memory
+	if fromVersion < 4 && toVersion >= 4 {
+		migration := `
+		-- Recreate context_signatures without foreign key constraint
+		-- SQLite doesn't support ALTER TABLE DROP CONSTRAINT, so we recreate
+		CREATE TABLE IF NOT EXISTS context_signatures_new (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			trajectory_id TEXT NOT NULL,
+			fingerprint TEXT NOT NULL,
+			fingerprint_prefix TEXT NOT NULL,
+			domain TEXT,
+			key_concepts TEXT,
+			tool_sequence TEXT,
+			complexity REAL,
+			created_at INTEGER DEFAULT (strftime('%s', 'now'))
+		);
+
+		-- Copy existing data if any
+		INSERT OR IGNORE INTO context_signatures_new
+			SELECT id, trajectory_id, fingerprint, fingerprint_prefix, domain,
+			       key_concepts, tool_sequence, complexity, created_at
+			FROM context_signatures;
+
+		-- Drop old table and indexes
+		DROP TABLE IF EXISTS context_signatures;
+
+		-- Rename new table
+		ALTER TABLE context_signatures_new RENAME TO context_signatures;
+
+		-- Recreate indexes
+		CREATE INDEX IF NOT EXISTS idx_context_domain ON context_signatures(domain);
+		CREATE INDEX IF NOT EXISTS idx_context_prefix ON context_signatures(fingerprint_prefix);
+		CREATE INDEX IF NOT EXISTS idx_context_trajectory ON context_signatures(trajectory_id);
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v3->v4 migration: %w", err)
 		}
 	}
 
