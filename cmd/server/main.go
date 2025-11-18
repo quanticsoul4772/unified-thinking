@@ -55,12 +55,11 @@ func main() {
 	validator := validation.NewLogicValidator()
 	log.Println("Initialized logic validator")
 
-	// Initialize context bridge (disabled by default, enable via CONTEXT_BRIDGE_ENABLED=true)
+	// Initialize context bridge (always enabled when SQLite storage is available)
 	bridgeConfig := contextbridge.ConfigFromEnv()
 	var bridge *contextbridge.ContextBridge
-	if bridgeConfig.Enabled {
-		// Get SQLite storage for context bridge (if available)
-		if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
+	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
+		if bridgeConfig.Enabled {
 			adapter := contextbridge.NewStorageAdapter(sqliteStore)
 			extractor := contextbridge.NewSimpleExtractor()
 			similarity := contextbridge.NewDefaultSimilarity()
@@ -68,10 +67,10 @@ func main() {
 			bridge = contextbridge.New(bridgeConfig, matcher, extractor)
 			log.Println("Initialized context bridge with SQLite storage")
 		} else {
-			log.Println("Context bridge requires SQLite storage, skipping initialization")
+			log.Println("Context bridge disabled via CONTEXT_BRIDGE_DISABLED=true")
 		}
 	} else {
-		log.Println("Context bridge disabled (set CONTEXT_BRIDGE_ENABLED=true to enable)")
+		log.Println("Context bridge requires SQLite storage (using in-memory storage)")
 	}
 
 	// Create unified server (without orchestrator initially)

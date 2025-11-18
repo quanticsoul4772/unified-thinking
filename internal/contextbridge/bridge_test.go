@@ -496,8 +496,8 @@ func TestConfig_FromEnv(t *testing.T) {
 	// Test with defaults
 	config := DefaultConfig()
 
-	if config.Enabled {
-		t.Error("Expected Enabled to be false by default")
+	if !config.Enabled {
+		t.Error("Expected Enabled to be true by default")
 	}
 	if config.MinSimilarity != 0.7 {
 		t.Errorf("Expected MinSimilarity 0.7, got %v", config.MinSimilarity)

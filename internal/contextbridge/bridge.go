@@ -2,6 +2,7 @@ package contextbridge
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 )
@@ -45,8 +46,12 @@ func (cb *ContextBridge) EnrichResponse(
 
 	// Extract signature
 	sig, err := ExtractSignature(toolName, params, cb.extractor)
-	if err != nil || sig == nil {
-		return result, nil // Don't fail on enrichment errors
+	if err != nil {
+		return nil, fmt.Errorf("signature extraction failed: %w", err)
+	}
+	if sig == nil {
+		// No extractable content - return result as-is (not an error)
+		return result, nil
 	}
 
 	// Check cache
@@ -62,16 +67,14 @@ func (cb *ContextBridge) EnrichResponse(
 	// Check if we've exceeded timeout
 	if time.Now().After(deadline) {
 		cb.metrics.RecordTimeout()
-		log.Printf("[WARN] Context bridge timeout before matching for tool %s", toolName)
-		return result, nil
+		return nil, fmt.Errorf("context bridge timeout exceeded (%v) for tool %s", cb.config.Timeout, toolName)
 	}
 
 	// Find matches
 	matches, err := cb.matcher.FindMatches(sig, cb.config.MinSimilarity, cb.config.MaxMatches)
 	if err != nil {
 		cb.metrics.RecordError()
-		log.Printf("[ERROR] Context matching failed: %v", err)
-		return result, nil
+		return nil, fmt.Errorf("context matching failed: %w", err)
 	}
 
 	// Record metrics

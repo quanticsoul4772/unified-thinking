@@ -17,10 +17,10 @@ type Config struct {
 	Timeout       time.Duration
 }
 
-// DefaultConfig returns the default configuration with feature flag disabled
+// DefaultConfig returns the default configuration - always enabled
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:       false, // Feature flag - off by default
+		Enabled:       true, // Always enabled by default
 		MinSimilarity: 0.7,
 		MaxMatches:    3,
 		EnabledTools: []string{
@@ -40,9 +40,9 @@ func DefaultConfig() *Config {
 func ConfigFromEnv() *Config {
 	config := DefaultConfig()
 
-	// Feature flag
-	if enabled := os.Getenv("CONTEXT_BRIDGE_ENABLED"); enabled == "true" || enabled == "1" {
-		config.Enabled = true
+	// Emergency disable flag (for rollback scenarios only)
+	if disabled := os.Getenv("CONTEXT_BRIDGE_DISABLED"); disabled == "true" || disabled == "1" {
+		config.Enabled = false
 	}
 
 	// Min similarity threshold
