@@ -738,6 +738,31 @@ When Claude Desktop starts, it will:
 - **Files Modified**: `internal/server/server.go`
 - **Impact**: Consistent logging format, all debug output goes through log system
 
+### Decision Storage Implementation
+
+**Feature**: In-memory storage for decisions enabling retrieval and re-evaluation
+- **Problem**: Evidence pipeline couldn't update decisions because `DecisionMaker` had no storage
+- **Implementation**:
+  - Added `decisions map[string]*types.Decision` to `DecisionMaker` struct
+  - `CreateDecision` now stores decisions for future retrieval
+  - Added `GetDecision(decisionID)` - retrieve decision by ID
+  - Added `ListDecisions()` - list all stored decisions
+  - Added `RecalculateDecision(decisionID, scoreAdjustments)` - re-evaluate with new evidence
+  - Added `DeleteDecision(decisionID)` - remove decision from storage
+- **Files Modified**: `internal/reasoning/decision.go`, `internal/integration/evidence_pipeline.go`
+- **Impact**: Evidence pipeline can now update decisions when new evidence arrives
+
+### Code Cleanup
+
+**gofmt Simplifications**
+- Applied `gofmt -s` to remove unnecessary blank lines
+- **Files Modified**: `internal/integration/evidence_pipeline.go`
+
+**nolint Directive Cleanup**
+- Removed `//nolint:unused` from `PipelineResult` struct (now actively used)
+- **Files Modified**: `internal/integration/evidence_pipeline.go`
+- **Impact**: Cleaner code with accurate lint directives
+
 ## Technical Constraints
 
 - Go 1.24+ required

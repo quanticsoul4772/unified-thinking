@@ -307,7 +307,7 @@ after saving the config, restart claude desktop.
 
 ### decision & problem-solving tools (3 tools)
 
-16. **make-decision** - multi-criteria decision analysis
+16. **make-decision** - multi-criteria decision analysis with persistent storage
     ```json
     {
       "question": "which option should we choose?",
@@ -315,6 +315,7 @@ after saving the config, restart claude desktop.
       "criteria": [{"name": "cost", "weight": 0.6, "maximize": false}]
     }
     ```
+    decisions are stored and can be re-evaluated when new evidence arrives via `process-evidence-pipeline`
 
 17. **decompose-problem** - break down complex problems
 18. **verify-thought** - verify thought validity and structure

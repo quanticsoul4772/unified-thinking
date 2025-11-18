@@ -196,12 +196,6 @@ func (r *BackfillRunner) processSignature(ctx context.Context, sig *SignatureFor
 	log.Printf("[OK] Trajectory %s: updated with %d-dim embedding", sig.TrajectoryID, len(embedding))
 }
 
-// BackfillStorageAdapter adapts storage.SQLiteStorage to BackfillStorage interface
-type BackfillStorageAdapter struct {
-	listFunc   func(limit int) (interface{}, error)
-	updateFunc func(trajectoryID string, embedding []float32) error
-}
-
 // NewBackfillStorageAdapter creates an adapter from function callbacks
 // This avoids import cycles between embeddings and storage packages
 func NewBackfillStorageAdapter(

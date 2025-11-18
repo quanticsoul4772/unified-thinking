@@ -18,7 +18,7 @@ import (
 type EvidencePipeline struct {
 	probabilisticReasoner *reasoning.ProbabilisticReasoner
 	causalReasoner        *reasoning.CausalReasoner
-	_decisionMaker        *reasoning.DecisionMaker // Reserved for future decision re-evaluation
+	decisionMaker         *reasoning.DecisionMaker
 	evidenceAnalyzer      *analysis.EvidenceAnalyzer
 
 	// Track relationships
@@ -39,7 +39,7 @@ func NewEvidencePipeline(
 	return &EvidencePipeline{
 		probabilisticReasoner: probReasoner,
 		causalReasoner:        causalReasoner,
-		_decisionMaker:        decisionMaker,
+		decisionMaker:         decisionMaker,
 		evidenceAnalyzer:      evidenceAnalyzer,
 		evidenceToBeliefs:     make(map[string][]string),
 		evidenceToCausal:      make(map[string][]string),
@@ -48,8 +48,6 @@ func NewEvidencePipeline(
 }
 
 // PipelineResult contains the results of evidence propagation
-//
-//nolint:unused // Reserved for future use
 type PipelineResult struct {
 	EvidenceID       string                       `json:"evidence_id"`
 	UpdatedBeliefs   []*types.ProbabilisticBelief `json:"updated_beliefs"`
@@ -264,11 +262,81 @@ func (ep *EvidencePipeline) updateDecisions(evidence *types.Evidence) ([]*types.
 		return []*types.Decision{}, nil
 	}
 
-	// Note: Decision re-evaluation would require storing decisions
-	// For now, return empty list as decisions are created on-demand
-	// TODO: Add decision storage and retrieval to DecisionMaker
+	if ep.decisionMaker == nil {
+		return []*types.Decision{}, nil
+	}
 
-	return []*types.Decision{}, nil
+	updatedDecisions := []*types.Decision{}
+
+	for _, decisionID := range decisionIDs {
+		decision, err := ep.decisionMaker.GetDecision(decisionID)
+		if err != nil {
+			continue
+		}
+
+		// Calculate score adjustments based on evidence
+		scoreAdjustments := ep.calculateDecisionScoreAdjustments(evidence, decision)
+		if len(scoreAdjustments) == 0 {
+			continue
+		}
+
+		// Recalculate the decision with adjusted scores
+		updatedDecision, err := ep.decisionMaker.RecalculateDecision(decisionID, scoreAdjustments)
+		if err != nil {
+			continue
+		}
+
+		updatedDecisions = append(updatedDecisions, updatedDecision)
+	}
+
+	return updatedDecisions, nil
+}
+
+// calculateDecisionScoreAdjustments determines how evidence affects decision option scores
+func (ep *EvidencePipeline) calculateDecisionScoreAdjustments(evidence *types.Evidence, decision *types.Decision) map[string]map[string]float64 {
+	adjustments := make(map[string]map[string]float64)
+
+	// Calculate base adjustment from evidence quality
+	baseAdjustment := ep.calculateScoreAdjustment(evidence)
+
+	for _, option := range decision.Options {
+		// Check if evidence relates to this option
+		if ep.evidenceRelatesToOption(evidence, option) {
+			optionAdjustments := make(map[string]float64)
+
+			// Apply adjustment to all criteria scores for this option
+			for criterionID := range option.Scores {
+				if evidence.SupportsClaim {
+					optionAdjustments[criterionID] = baseAdjustment
+				} else {
+					optionAdjustments[criterionID] = -baseAdjustment
+				}
+			}
+
+			if len(optionAdjustments) > 0 {
+				adjustments[option.ID] = optionAdjustments
+			}
+		}
+	}
+
+	return adjustments
+}
+
+// calculateScoreAdjustment determines how much to adjust decision scores
+func (ep *EvidencePipeline) calculateScoreAdjustment(evidence *types.Evidence) float64 {
+	// Adjustment proportional to evidence quality
+	return evidence.OverallScore * 0.15 // Max adjustment of 0.15
+}
+
+// evidenceRelatesToOption checks if evidence relates to a decision option
+func (ep *EvidencePipeline) evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
+	// Simple heuristic: check if evidence content mentions option name
+	// In production, this would use more sophisticated matching
+	contentLower := toLower(evidence.Content)
+	optionLower := toLower(option.Name)
+	descLower := toLower(option.Description)
+
+	return contains(contentLower, optionLower) || contains(contentLower, descLower)
 }
 
 // calculateLikelihood determines likelihood P(E|H) based on evidence quality
@@ -287,29 +355,6 @@ func (ep *EvidencePipeline) calculateLikelihood(evidence *types.Evidence) float6
 func (ep *EvidencePipeline) calculateStrengthAdjustment(evidence *types.Evidence) float64 {
 	// Adjustment proportional to evidence quality
 	return evidence.OverallScore * 0.1 // Max adjustment of 0.1
-}
-
-// calculateScoreAdjustment determines how much to adjust decision scores
-// Reserved for future decision re-evaluation implementation
-//
-//nolint:unused // Reserved for future use
-func (ep *EvidencePipeline) _calculateScoreAdjustment(evidence *types.Evidence) float64 {
-	// Adjustment proportional to evidence quality
-	return evidence.OverallScore * 0.15 // Max adjustment of 0.15
-}
-
-// evidenceRelatesToOption checks if evidence relates to a decision option
-// Reserved for future decision re-evaluation implementation
-//
-//nolint:unused // Reserved for future use
-func (ep *EvidencePipeline) _evidenceRelatesToOption(evidence *types.Evidence, option *types.DecisionOption) bool {
-	// Simple heuristic: check if evidence content mentions option name
-	// In production, this would use more sophisticated matching
-	contentLower := toLower(evidence.Content)
-	optionLower := toLower(option.Name)
-	descLower := toLower(option.Description)
-
-	return contains(contentLower, optionLower) || contains(contentLower, descLower)
 }
 
 // GetEvidenceImpact returns all systems affected by an evidence piece
@@ -350,7 +395,6 @@ func max(a, b float64) float64 {
 	return b
 }
 
-//nolint:unused // Reserved for future use
 func toLower(s string) string {
 	result := make([]byte, len(s))
 	for i := 0; i < len(s); i++ {
@@ -364,7 +408,6 @@ func toLower(s string) string {
 	return string(result)
 }
 
-//nolint:unused // Reserved for future use
 func contains(s, substr string) bool {
 	if len(substr) == 0 {
 		return true

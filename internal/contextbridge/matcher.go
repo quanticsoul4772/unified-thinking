@@ -1,6 +1,7 @@
 package contextbridge
 
 import (
+	"fmt"
 	"log"
 	"sort"
 )
@@ -32,6 +33,14 @@ func (m *Matcher) FindMatches(sig *Signature, minSimilarity float64, maxMatches 
 		return nil, nil
 	}
 
+	// Validate matcher dependencies
+	if m.storage == nil {
+		return nil, fmt.Errorf("matcher storage is nil")
+	}
+	if m.similarity == nil {
+		return nil, fmt.Errorf("matcher similarity calculator is nil")
+	}
+
 	// Get candidates with signatures in single query (avoids N+1)
 	prefix := ""
 	if len(sig.Fingerprint) >= 8 {
@@ -41,14 +50,15 @@ func (m *Matcher) FindMatches(sig *Signature, minSimilarity float64, maxMatches 
 	// Single query returns candidates WITH their signatures
 	candidates, err := m.storage.FindCandidatesWithSignatures(sig.Domain, prefix, 50)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find candidates: %w", err)
 	}
 	log.Printf("[DEBUG] Matcher retrieved %d candidates from storage", len(candidates))
 
 	// Calculate similarity for each candidate - no additional queries needed
-	matches := make([]*Match, 0)
+	// Pre-allocate with reasonable capacity to reduce allocations
+	matches := make([]*Match, 0, min(len(candidates), maxMatches))
 	for _, candidate := range candidates {
-		if candidate.Signature == nil {
+		if candidate == nil || candidate.Signature == nil {
 			continue
 		}
 

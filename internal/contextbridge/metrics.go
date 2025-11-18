@@ -57,7 +57,7 @@ func (m *Metrics) calculatePercentile(p float64) int64 {
 	m.latencyMu.Lock()
 	defer m.latencyMu.Unlock()
 
-	if m.latencyBuffer == nil || len(m.latencyBuffer) == 0 {
+	if len(m.latencyBuffer) == 0 {
 		return 0
 	}
 

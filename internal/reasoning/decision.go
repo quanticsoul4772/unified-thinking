@@ -10,13 +10,16 @@ import (
 
 // DecisionMaker provides structured decision-making frameworks
 type DecisionMaker struct {
-	mu      sync.RWMutex
-	counter int
+	mu        sync.RWMutex
+	counter   int
+	decisions map[string]*types.Decision // Storage for created decisions
 }
 
 // NewDecisionMaker creates a new decision maker
 func NewDecisionMaker() *DecisionMaker {
-	return &DecisionMaker{}
+	return &DecisionMaker{
+		decisions: make(map[string]*types.Decision),
+	}
 }
 
 // CreateDecision creates a structured decision framework
@@ -84,7 +87,125 @@ func (dm *DecisionMaker) CreateDecision(question string, options []*types.Decisi
 		CreatedAt:      time.Now(),
 	}
 
+	// Store the decision for future retrieval and re-evaluation
+	dm.decisions[decision.ID] = decision
+
 	return decision, nil
+}
+
+// GetDecision retrieves a decision by ID
+func (dm *DecisionMaker) GetDecision(decisionID string) (*types.Decision, error) {
+	dm.mu.RLock()
+	defer dm.mu.RUnlock()
+
+	decision, exists := dm.decisions[decisionID]
+	if !exists {
+		return nil, fmt.Errorf("decision not found: %s", decisionID)
+	}
+
+	return decision, nil
+}
+
+// ListDecisions returns all stored decisions
+func (dm *DecisionMaker) ListDecisions() []*types.Decision {
+	dm.mu.RLock()
+	defer dm.mu.RUnlock()
+
+	decisions := make([]*types.Decision, 0, len(dm.decisions))
+	for _, d := range dm.decisions {
+		decisions = append(decisions, d)
+	}
+
+	return decisions
+}
+
+// RecalculateDecision re-evaluates a decision with updated scores
+// This is useful when new evidence affects option scores
+func (dm *DecisionMaker) RecalculateDecision(decisionID string, scoreAdjustments map[string]map[string]float64) (*types.Decision, error) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	decision, exists := dm.decisions[decisionID]
+	if !exists {
+		return nil, fmt.Errorf("decision not found: %s", decisionID)
+	}
+
+	// Apply score adjustments to options
+	// scoreAdjustments: map[optionID]map[criterionID]adjustment
+	for optionID, criterionAdjustments := range scoreAdjustments {
+		for _, option := range decision.Options {
+			if option.ID == optionID {
+				for criterionID, adjustment := range criterionAdjustments {
+					if score, exists := option.Scores[criterionID]; exists {
+						// Adjust score and clamp to [0, 1]
+						newScore := score + adjustment
+						if newScore > 1.0 {
+							newScore = 1.0
+						}
+						if newScore < 0.0 {
+							newScore = 0.0
+						}
+						option.Scores[criterionID] = newScore
+					}
+				}
+				break
+			}
+		}
+	}
+
+	// Recalculate total scores for all options
+	for _, option := range decision.Options {
+		totalScore := 0.0
+		for _, criterion := range decision.Criteria {
+			score, exists := option.Scores[criterion.ID]
+			if exists {
+				if criterion.Maximize {
+					totalScore += score * criterion.Weight
+				} else {
+					totalScore += (1.0 - score) * criterion.Weight
+				}
+			}
+		}
+		option.TotalScore = totalScore
+	}
+
+	// Find new best option
+	bestOption := decision.Options[0]
+	for _, option := range decision.Options {
+		if option.TotalScore > bestOption.TotalScore {
+			bestOption = option
+		}
+	}
+
+	// Update recommendation and confidence
+	decision.Recommendation = fmt.Sprintf("Recommended option: %s (score: %.2f)", bestOption.Name, bestOption.TotalScore)
+	decision.Confidence = dm.calculateDecisionConfidence(decision.Options, bestOption)
+
+	// Add metadata about recalculation
+	if decision.Metadata == nil {
+		decision.Metadata = make(map[string]interface{})
+	}
+	decision.Metadata["last_recalculated"] = time.Now()
+	recalcCount := 0
+	if count, ok := decision.Metadata["recalculation_count"].(int); ok {
+		recalcCount = count
+	}
+	decision.Metadata["recalculation_count"] = recalcCount + 1
+
+	return decision, nil
+}
+
+// DeleteDecision removes a decision from storage
+func (dm *DecisionMaker) DeleteDecision(decisionID string) error {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	if _, exists := dm.decisions[decisionID]; !exists {
+		return fmt.Errorf("decision not found: %s", decisionID)
+	}
+
+	delete(dm.decisions, decisionID)
+	return nil
 }
 
 // calculateDecisionConfidence estimates confidence based on score separation
