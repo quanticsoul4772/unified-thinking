@@ -1062,7 +1062,10 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 		if input.BranchID != "" {
 			params["branch_id"] = input.BranchID
 		}
-		enriched, _ := s.contextBridge.EnrichResponse(ctx, "think", params, response)
+		enriched, err := s.contextBridge.EnrichResponse(ctx, "think", params, response)
+		if err != nil {
+			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
+		}
 		if enriched != nil {
 			finalResponse = enriched
 		}
@@ -1476,7 +1479,10 @@ func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToo
 		params := map[string]interface{}{
 			"content": input.Question,
 		}
-		enriched, _ := s.contextBridge.EnrichResponse(ctx, "make-decision", params, response)
+		enriched, err := s.contextBridge.EnrichResponse(ctx, "make-decision", params, response)
+		if err != nil {
+			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
+		}
 		if enriched != nil {
 			return &mcp.CallToolResult{
 				Content: toJSONContent(enriched),
@@ -1502,7 +1508,10 @@ func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.Cal
 		params := map[string]interface{}{
 			"problem": input.Problem,
 		}
-		enriched, _ := s.contextBridge.EnrichResponse(ctx, "decompose-problem", params, response)
+		enriched, err := s.contextBridge.EnrichResponse(ctx, "decompose-problem", params, response)
+		if err != nil {
+			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
+		}
 		if enriched != nil {
 			return &mcp.CallToolResult{
 				Content: toJSONContent(enriched),
@@ -1554,7 +1563,10 @@ func (s *UnifiedServer) handleAnalyzePerspectives(ctx context.Context, req *mcp.
 		params := map[string]interface{}{
 			"situation": input.Situation,
 		}
-		enriched, _ := s.contextBridge.EnrichResponse(ctx, "analyze-perspectives", params, response)
+		enriched, err := s.contextBridge.EnrichResponse(ctx, "analyze-perspectives", params, response)
+		if err != nil {
+			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
+		}
 		if enriched != nil {
 			return &mcp.CallToolResult{
 				Content: toJSONContent(enriched),
@@ -1590,7 +1602,10 @@ func (s *UnifiedServer) handleBuildCausalGraph(ctx context.Context, req *mcp.Cal
 		params := map[string]interface{}{
 			"description": input.Description,
 		}
-		enriched, _ := s.contextBridge.EnrichResponse(ctx, "build-causal-graph", params, response)
+		enriched, err := s.contextBridge.EnrichResponse(ctx, "build-causal-graph", params, response)
+		if err != nil {
+			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
+		}
 		if enriched != nil {
 			return &mcp.CallToolResult{
 				Content: toJSONContent(enriched),
