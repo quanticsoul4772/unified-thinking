@@ -1062,13 +1062,20 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 		if input.BranchID != "" {
 			params["branch_id"] = input.BranchID
 		}
+		log.Printf("[DEBUG] Context bridge enrichment starting for think tool")
 		enriched, err := s.contextBridge.EnrichResponse(ctx, "think", params, response)
 		if err != nil {
+			log.Printf("[ERROR] Context bridge enrichment failed: %v", err)
 			return nil, nil, fmt.Errorf("context bridge enrichment failed: %w", err)
 		}
 		if enriched != nil {
+			log.Printf("[DEBUG] Context bridge enrichment succeeded, response enriched")
 			finalResponse = enriched
+		} else {
+			log.Printf("[DEBUG] Context bridge returned nil (no matches or not enabled)")
 		}
+	} else {
+		log.Printf("[DEBUG] Context bridge is nil, skipping enrichment")
 	}
 
 	return &mcp.CallToolResult{
