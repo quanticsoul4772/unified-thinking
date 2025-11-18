@@ -535,7 +535,59 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `CONTEXT_BRIDGE_CACHE_TTL`: Cache TTL (default: 15m)
 - `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: 2s)
 
-Note: When `VOYAGE_API_KEY` is set, the context bridge uses semantic embeddings for similarity matching instead of concept-based Jaccard similarity. This enables matching between semantically similar but lexically different problems (e.g., "database queries running slowly" matches "SQL performance optimization needed").
+**Hybrid Similarity Mode**: When `VOYAGE_API_KEY` is set, the context bridge uses a hybrid similarity algorithm:
+- 70% weight: Cosine similarity on Voyage AI embeddings (voyage-3-lite, 512 dimensions)
+- 30% weight: Jaccard similarity on extracted concepts
+
+This enables matching between semantically similar but lexically different problems (e.g., "database queries running slowly" matches "SQL performance optimization needed").
+
+**Graceful Degradation**: The context bridge never blocks or errors the primary tool response:
+- If embedding generation times out (500ms sub-timeout), falls back to concept-only similarity
+- If overall enrichment times out (2s), returns degraded response with status
+- All failures are logged and metriced for observability
+
+**Response Formats**:
+
+Normal response with matches:
+```json
+{
+  "result": { ... },
+  "context_bridge": {
+    "version": "1.0",
+    "matches": [...],
+    "recommendation": "Similar past reasoning had high success rates.",
+    "similarity_mode": "semantic_embedding"
+  }
+}
+```
+
+Response when embedding fails (uses concept similarity):
+```json
+{
+  "result": { ... },
+  "context_bridge": {
+    "version": "1.0",
+    "matches": [...],
+    "embedding_status": "failed",
+    "embedding_error": "context deadline exceeded",
+    "similarity_mode": "concept_only"
+  }
+}
+```
+
+Response when timeout occurs:
+```json
+{
+  "result": { ... },
+  "context_bridge": {
+    "version": "1.0",
+    "status": "degraded",
+    "reason": "timeout",
+    "detail": "Context bridge timeout exceeded (2s)",
+    "matches": []
+  }
+}
+```
 
 ### Auto-Validation Feature
 When a thought is processed with confidence below the threshold (default 0.5):

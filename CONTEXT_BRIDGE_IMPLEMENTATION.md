@@ -6,7 +6,23 @@ Add automatic context retrieval to unified-thinking MCP server. When Claude uses
 
 ## Approach
 
-Hybrid implementation: simple similarity matching with architecture that supports future ML upgrades.
+Hybrid implementation combining semantic embeddings (Voyage AI) with concept-based similarity. When VOYAGE_API_KEY is set, uses cosine similarity on embeddings (70% weight) combined with Jaccard similarity on concepts (30% weight). Falls back to concept-only matching when embeddings unavailable.
+
+## Implementation Status
+
+**Completed:**
+- Core context bridge with signature extraction, matching, and enrichment
+- SQLite storage with schema migrations (v1-v5)
+- LRU caching for recent signatures
+- Metrics collection and exposure
+- Semantic embeddings integration (Voyage AI)
+- Graceful degradation with visible status in responses
+- Hybrid similarity mode (embedding + concept)
+
+**Not implemented:**
+- Backfill utility for existing trajectories
+- Gradual rollout (percentage-based feature flag)
+- Alert thresholds and notifications
 
 ## Critical Constraints
 
@@ -34,19 +50,47 @@ Hybrid implementation: simple similarity matching with architecture that support
 | ID | Failure Mode | Behavior | Logging | Metrics | Recovery |
 |----|--------------|----------|---------|---------|----------|
 | EHR-1 | Storage failure | Return original response (no enrichment) | ERROR with trajectory count | `error_count` | Automatic on next request |
-| EHR-2 | Timeout > 100ms | Skip enrichment, return original | WARN with elapsed time | `timeout_count` | Automatic on next request |
-| EHR-3 | Invalid signature | Skip without error | WARN with reason | `invalid_signature_count` | N/A |
-| EHR-4 | Cache overflow | Evict LRU entries | DEBUG | `cache_eviction_count` | Automatic |
-| EHR-5 | Backfill failure | Log for manual review, continue | ERROR per trajectory | `backfill_failure_count` | Manual retry |
+| EHR-2 | Timeout > 2s | Return degraded response with status | WARN with elapsed time | `timeout_count` | Automatic on next request |
+| EHR-3 | Embedding timeout (500ms) | Continue with concept-only similarity | WARN with error | n/a | Automatic |
+| EHR-4 | Invalid signature | Skip without error | WARN with reason | n/a | N/A |
+| EHR-5 | Cache overflow | Evict LRU entries | DEBUG | n/a | Automatic |
 
 ### Degradation Strategy
 
 **Principle**: Context enrichment is non-critical. Failures must never block or degrade the primary tool response.
 
-1. **Silent degradation**: Return original response on any enrichment failure
-2. **Visibility**: All failures logged and metriced for observability
+1. **Visible degradation**: Return response with `context_bridge.status = "degraded"` and reason
+2. **Embedding fallback**: If embedding generation fails, continue with concept-only similarity
 3. **No cascading**: Enrichment failures don't affect subsequent requests
 4. **Health indicator**: Metrics endpoint exposes degradation state
+
+**Response format when degraded:**
+```json
+{
+  "result": { ... },
+  "context_bridge": {
+    "version": "1.0",
+    "status": "degraded",
+    "reason": "timeout",
+    "detail": "Context bridge timeout exceeded (2s)",
+    "matches": []
+  }
+}
+```
+
+**Response format when embedding fails but matching succeeds:**
+```json
+{
+  "result": { ... },
+  "context_bridge": {
+    "version": "1.0",
+    "matches": [...],
+    "embedding_status": "failed",
+    "embedding_error": "context deadline exceeded",
+    "similarity_mode": "concept_only"
+  }
+}
+```
 
 ### Alert Thresholds
 
@@ -171,20 +215,34 @@ server/
 
 ### Design Decisions
 
-**Similarity Algorithm**: Multi-factor weighted scoring
+**Similarity Algorithm**: Hybrid embedding + concept scoring
+
+When VOYAGE_API_KEY is set (semantic mode):
+- Embedding cosine similarity (weight: 0.7)
+- Concept Jaccard similarity (weight: 0.3)
+
+When no API key (concept-only mode):
 - Concept overlap: Jaccard similarity (weight: 0.5)
 - Domain match: binary (weight: 0.2)
 - Tool sequence: overlap ratio (weight: 0.2)
 - Complexity: distance metric (weight: 0.1)
 
-**Performance Strategy**: 
+**Embedding Configuration**:
+- Provider: Voyage AI
+- Model: voyage-3-lite (512 dimensions)
+- Storage: SQLite BLOB column (serialized float32)
+- Sub-timeout: 500ms for embedding generation
+
+**Performance Strategy**:
 - Index on domain and fingerprint prefix
 - Limit candidates to 50 before similarity calculation
 - Cache recent signature lookups (LRU, 100 entries)
+- Share embedder instance between auto mode and context bridge
 
 **Extensibility Points**:
-- Interface for similarity calculation (swap in embeddings later)
-- Interface for concept extraction (swap in NLP later)
+- SimilarityCalculator interface for swappable algorithms
+- ConceptExtractor interface for swappable NLP
+- Embedder interface for swappable embedding providers
 
 ## Implementation Phases
 
@@ -195,6 +253,7 @@ server/
 File: `server/internal/storage/migrations/006_context_signatures.sql`
 
 ```sql
+-- Note: No foreign key on trajectory_id since episodic memory stores trajectories in-memory
 CREATE TABLE IF NOT EXISTS context_signatures (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     trajectory_id TEXT NOT NULL,
@@ -204,8 +263,8 @@ CREATE TABLE IF NOT EXISTS context_signatures (
     key_concepts TEXT,      -- JSON array
     tool_sequence TEXT,     -- JSON array
     complexity REAL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (trajectory_id) REFERENCES trajectories(id) ON DELETE CASCADE
+    embedding BLOB,         -- Semantic embedding (serialized float32 vector)
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
 CREATE INDEX idx_context_domain ON context_signatures(domain);
@@ -366,11 +425,12 @@ import (
 )
 
 type Signature struct {
-    Fingerprint  string   `json:"fingerprint"`
-    Domain       string   `json:"domain"`
-    KeyConcepts  []string `json:"key_concepts"`
-    ToolSequence []string `json:"tool_sequence"`
-    Complexity   float64  `json:"complexity"`
+    Fingerprint  string    `json:"fingerprint"`
+    Domain       string    `json:"domain"`
+    KeyConcepts  []string  `json:"key_concepts"`
+    ToolSequence []string  `json:"tool_sequence"`
+    Complexity   float64   `json:"complexity"`
+    Embedding    []float32 `json:"embedding,omitempty"` // Semantic embedding for similarity
 }
 
 // ConceptExtractor interface for swappable extraction strategies
@@ -1198,10 +1258,15 @@ After 1 week of deployment:
 
 ## Future Work
 
-Phase 2 improvements (not in this plan):
+**Completed in current implementation:**
+- ~~Replace Jaccard similarity with embedding-based semantic similarity~~ (done - hybrid mode with Voyage AI)
+
+**Remaining improvements:**
 1. Replace SimpleExtractor with NLP-based concept extraction
-2. Replace Jaccard similarity with embedding-based semantic similarity
-3. Add vector database for efficient similarity search at scale
-4. Track engagement (which matches Claude reads) to improve ranking
-5. Add temporal decay (recent trajectories weighted higher)
-6. Support cross-domain transfer learning
+2. Add vector database for efficient similarity search at scale (current SQLite approach may not scale beyond 10k signatures)
+3. Track engagement (which matches Claude reads) to improve ranking
+4. Add temporal decay (recent trajectories weighted higher)
+5. Support cross-domain transfer learning
+6. Implement backfill utility for existing trajectories
+7. Add async embedding generation to reduce latency
+8. Implement rate limiting for embedding API calls
