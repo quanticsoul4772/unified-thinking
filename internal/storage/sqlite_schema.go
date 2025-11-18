@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 2  // Updated for embeddings support
+const schemaVersion = 3 // Updated for context signatures support
 
 // Schema defines the complete database schema
 const schema = `
@@ -112,6 +112,25 @@ CREATE TABLE IF NOT EXISTS embeddings (
 CREATE INDEX IF NOT EXISTS idx_embeddings_problem ON embeddings(problem_id);
 CREATE INDEX IF NOT EXISTS idx_embeddings_created ON embeddings(created_at DESC);
 
+-- Context signatures table for cross-session bridging
+CREATE TABLE IF NOT EXISTS context_signatures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trajectory_id TEXT NOT NULL,
+    fingerprint TEXT NOT NULL,
+    fingerprint_prefix TEXT NOT NULL,  -- First 8 chars for indexing
+    domain TEXT,
+    key_concepts TEXT,      -- JSON array
+    tool_sequence TEXT,     -- JSON array
+    complexity REAL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (trajectory_id) REFERENCES trajectories(id) ON DELETE CASCADE
+);
+
+-- Indexes for context signature lookups
+CREATE INDEX IF NOT EXISTS idx_context_domain ON context_signatures(domain);
+CREATE INDEX IF NOT EXISTS idx_context_prefix ON context_signatures(fingerprint_prefix);
+CREATE INDEX IF NOT EXISTS idx_context_trajectory ON context_signatures(trajectory_id);
+
 -- Full-text search index for thought content
 CREATE VIRTUAL TABLE IF NOT EXISTS thoughts_fts USING fts5(
     id UNINDEXED,
@@ -203,6 +222,33 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v1->v2 migration: %w", err)
+		}
+	}
+
+	// Migration from v2 to v3: Add context signatures table
+	if fromVersion < 3 && toVersion >= 3 {
+		migration := `
+		-- Context signatures table for cross-session bridging (v3)
+		CREATE TABLE IF NOT EXISTS context_signatures (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			trajectory_id TEXT NOT NULL,
+			fingerprint TEXT NOT NULL,
+			fingerprint_prefix TEXT NOT NULL,
+			domain TEXT,
+			key_concepts TEXT,
+			tool_sequence TEXT,
+			complexity REAL,
+			created_at INTEGER DEFAULT (strftime('%s', 'now')),
+			FOREIGN KEY (trajectory_id) REFERENCES trajectories(id) ON DELETE CASCADE
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_context_domain ON context_signatures(domain);
+		CREATE INDEX IF NOT EXISTS idx_context_prefix ON context_signatures(fingerprint_prefix);
+		CREATE INDEX IF NOT EXISTS idx_context_trajectory ON context_signatures(trajectory_id);
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v2->v3 migration: %w", err)
 		}
 	}
 

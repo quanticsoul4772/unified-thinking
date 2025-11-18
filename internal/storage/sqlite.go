@@ -1134,6 +1134,172 @@ func (s *SQLiteStorage) GetAllEmbeddings() (map[string][]float32, error) {
 	return embeddings, nil
 }
 
+// ContextSignature represents a stored context signature
+type ContextSignature struct {
+	TrajectoryID string
+	Fingerprint  string
+	Domain       string
+	KeyConcepts  []string
+	ToolSequence []string
+	Complexity   float64
+}
+
+// CandidateWithSignature combines trajectory metadata with its signature
+type CandidateWithSignature struct {
+	TrajectoryID string
+	SessionID    string
+	Description  string
+	SuccessScore float64
+	QualityScore float64
+	Signature    *ContextSignature
+}
+
+// StoreContextSignature stores a context signature for a trajectory
+func (s *SQLiteStorage) StoreContextSignature(trajectoryID string, sig *ContextSignature) error {
+	concepts, _ := json.Marshal(sig.KeyConcepts)
+	tools, _ := json.Marshal(sig.ToolSequence)
+
+	prefix := ""
+	if len(sig.Fingerprint) >= 8 {
+		prefix = sig.Fingerprint[:8]
+	}
+
+	_, err := s.db.Exec(`
+		INSERT INTO context_signatures
+		(trajectory_id, fingerprint, fingerprint_prefix, domain, key_concepts, tool_sequence, complexity)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, trajectoryID, sig.Fingerprint, prefix, sig.Domain, concepts, tools, sig.Complexity)
+
+	if err != nil {
+		return fmt.Errorf("failed to store context signature: %w", err)
+	}
+
+	return nil
+}
+
+// FindCandidatesWithSignatures returns candidates with their signatures in a single query
+func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintPrefix string, limit int) ([]*CandidateWithSignature, error) {
+	// Note: This query references a 'trajectories' table that should exist in episodic memory
+	// For now, we'll use a simpler query that just returns signatures
+	query := `
+		SELECT
+			cs.trajectory_id,
+			cs.fingerprint,
+			cs.domain,
+			cs.key_concepts,
+			cs.tool_sequence,
+			cs.complexity
+		FROM context_signatures cs
+		WHERE (cs.domain = ? OR cs.fingerprint_prefix = ?)
+		ORDER BY cs.created_at DESC
+		LIMIT ?
+	`
+
+	rows, err := s.db.Query(query, domain, fingerprintPrefix, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query candidates: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var candidates []*CandidateWithSignature
+	for rows.Next() {
+		var trajectoryID, fingerprint string
+		var domainVal sql.NullString
+		var conceptsJSON, toolsJSON string
+		var complexity float64
+
+		err := rows.Scan(
+			&trajectoryID,
+			&fingerprint,
+			&domainVal,
+			&conceptsJSON,
+			&toolsJSON,
+			&complexity,
+		)
+		if err != nil {
+			log.Printf("Warning: failed to scan candidate: %v", err)
+			continue
+		}
+
+		sig := &ContextSignature{
+			TrajectoryID: trajectoryID,
+			Fingerprint:  fingerprint,
+			Complexity:   complexity,
+		}
+
+		if domainVal.Valid {
+			sig.Domain = domainVal.String
+		}
+
+		// Parse JSON arrays
+		if conceptsJSON != "" {
+			if err := json.Unmarshal([]byte(conceptsJSON), &sig.KeyConcepts); err != nil {
+				sig.KeyConcepts = []string{}
+			}
+		}
+		if toolsJSON != "" {
+			if err := json.Unmarshal([]byte(toolsJSON), &sig.ToolSequence); err != nil {
+				sig.ToolSequence = []string{}
+			}
+		}
+
+		candidates = append(candidates, &CandidateWithSignature{
+			TrajectoryID: trajectoryID,
+			SessionID:    "", // Will be filled from trajectory data
+			Description:  "", // Will be filled from trajectory data
+			SuccessScore: 0,  // Will be filled from trajectory data
+			QualityScore: 0,  // Will be filled from trajectory data
+			Signature:    sig,
+		})
+	}
+
+	return candidates, rows.Err()
+}
+
+// GetContextSignature retrieves a context signature for a trajectory
+func (s *SQLiteStorage) GetContextSignature(trajectoryID string) (*ContextSignature, error) {
+	var fingerprint string
+	var domainVal sql.NullString
+	var conceptsJSON, toolsJSON string
+	var complexity float64
+
+	err := s.db.QueryRow(`
+		SELECT fingerprint, domain, key_concepts, tool_sequence, complexity
+		FROM context_signatures
+		WHERE trajectory_id = ?
+	`, trajectoryID).Scan(&fingerprint, &domainVal, &conceptsJSON, &toolsJSON, &complexity)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get context signature: %w", err)
+	}
+
+	sig := &ContextSignature{
+		TrajectoryID: trajectoryID,
+		Fingerprint:  fingerprint,
+		Complexity:   complexity,
+	}
+
+	if domainVal.Valid {
+		sig.Domain = domainVal.String
+	}
+
+	if conceptsJSON != "" {
+		if err := json.Unmarshal([]byte(conceptsJSON), &sig.KeyConcepts); err != nil {
+			sig.KeyConcepts = []string{}
+		}
+	}
+	if toolsJSON != "" {
+		if err := json.Unmarshal([]byte(toolsJSON), &sig.ToolSequence); err != nil {
+			sig.ToolSequence = []string{}
+		}
+	}
+
+	return sig, nil
+}
+
 // Close releases database resources
 func (s *SQLiteStorage) Close() error {
 	// Close prepared statements (ignore errors in cleanup)
