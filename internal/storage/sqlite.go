@@ -1108,7 +1108,7 @@ func (s *SQLiteStorage) GetAllEmbeddings() (map[string][]float32, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query embeddings: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	embeddings := make(map[string][]float32)
 

@@ -134,7 +134,7 @@ func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Cont
 	}
 
 	// Ensure problem has embedding
-	if problem.Embedding == nil || len(problem.Embedding) == 0 {
+	if len(problem.Embedding) == 0 {
 		if err := ei.GenerateAndStoreEmbedding(ctx, problem); err != nil {
 			return nil, fmt.Errorf("failed to generate embedding for query: %w", err)
 		}
@@ -148,7 +148,7 @@ func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Cont
 
 	// 2. Get vector search results (if embeddings available)
 	var vectorResults []*TrajectoryMatch
-	if problem.Embedding != nil && len(problem.Embedding) > 0 {
+	if len(problem.Embedding) > 0 {
 		vectorResults = ei.vectorSearch(ctx, problem, limit*2)
 	}
 
@@ -332,19 +332,4 @@ func (ei *EmbeddingIntegration) problemToText(p *ProblemDescription) string {
 	}
 
 	return text
-}
-
-// generateRecommendation creates a recommendation string from a trajectory
-func generateRecommendation(trajectory *ReasoningTrajectory) string {
-	strategy := "unknown"
-	if trajectory.Approach != nil && trajectory.Approach.Strategy != "" {
-		strategy = trajectory.Approach.Strategy
-	}
-
-	if trajectory.SuccessScore > 0.8 {
-		return fmt.Sprintf("High success approach: %s", strategy)
-	} else if trajectory.SuccessScore > 0.5 {
-		return fmt.Sprintf("Moderate success approach: %s (consider improvements)", strategy)
-	}
-	return fmt.Sprintf("Learn from past attempt: %s", strategy)
 }

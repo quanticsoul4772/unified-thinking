@@ -167,7 +167,7 @@ func (e *VoyageEmbedder) embedBatchOnce(ctx context.Context, texts []string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request (timeout or network error): %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
@@ -177,7 +177,7 @@ func (e *VoyageEmbedder) embedBatchOnce(ctx context.Context, texts []string) ([]
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Voyage API error (status %d): %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("voyage API error (status %d): %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response
