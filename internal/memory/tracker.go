@@ -202,9 +202,13 @@ func (t *SessionTracker) CompleteSession(ctx context.Context, sessionID string, 
 
 	// Store in episodic memory
 	if t.store != nil {
+		log.Printf("[DEBUG] Storing trajectory %s in episodic memory", trajectory.ID)
 		if err := t.store.StoreTrajectory(ctx, trajectory); err != nil {
-			log.Printf("Warning: failed to store trajectory: %v", err)
+			return nil, fmt.Errorf("failed to store trajectory: %w", err)
 		}
+		log.Printf("[DEBUG] Successfully stored trajectory %s", trajectory.ID)
+	} else {
+		log.Printf("[WARN] No episodic memory store configured, trajectory not persisted")
 	}
 
 	return trajectory, nil

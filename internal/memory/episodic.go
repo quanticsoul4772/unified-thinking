@@ -251,9 +251,13 @@ func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *R
 
 	// Generate and store context signature if we have integration
 	if s.signatureIntegration != nil {
+		log.Printf("[DEBUG] Generating context signature for trajectory %s", trajectory.ID)
 		if err := s.signatureIntegration.GenerateAndStoreSignature(trajectory); err != nil {
 			return fmt.Errorf("failed to store context signature for trajectory %s: %w", trajectory.ID, err)
 		}
+		log.Printf("[DEBUG] Context signature stored for trajectory %s", trajectory.ID)
+	} else {
+		log.Printf("[DEBUG] No signature integration configured for trajectory %s", trajectory.ID)
 	}
 
 	return nil
