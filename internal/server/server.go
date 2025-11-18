@@ -1044,8 +1044,24 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 		}
 	}
 
+	// Enrich response with context bridge (if enabled)
+	var finalResponse interface{} = response
+	if s.contextBridge != nil {
+		params := map[string]interface{}{
+			"content": input.Content,
+			"mode":    input.Mode,
+		}
+		if input.BranchID != "" {
+			params["branch_id"] = input.BranchID
+		}
+		enriched, _ := s.contextBridge.EnrichResponse(ctx, "think", params, response)
+		if enriched != nil {
+			finalResponse = enriched
+		}
+	}
+
 	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
+		Content: toJSONContent(finalResponse),
 	}, response, nil
 }
 
@@ -1442,7 +1458,25 @@ func (s *UnifiedServer) handleDetectContradictions(ctx context.Context, req *mcp
 // ============================================================================
 
 func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToolRequest, input handlers.MakeDecisionRequest) (*mcp.CallToolResult, *handlers.MakeDecisionResponse, error) {
-	return s.decisionHandler.HandleMakeDecision(ctx, req, input)
+	result, response, err := s.decisionHandler.HandleMakeDecision(ctx, req, input)
+	if err != nil || result == nil {
+		return result, response, err
+	}
+
+	// Enrich response with context bridge (if enabled)
+	if s.contextBridge != nil {
+		params := map[string]interface{}{
+			"content": input.Question,
+		}
+		enriched, _ := s.contextBridge.EnrichResponse(ctx, "make-decision", params, response)
+		if enriched != nil {
+			return &mcp.CallToolResult{
+				Content: toJSONContent(enriched),
+			}, response, nil
+		}
+	}
+
+	return result, response, err
 }
 
 // ============================================================================
@@ -1450,7 +1484,25 @@ func (s *UnifiedServer) handleMakeDecision(ctx context.Context, req *mcp.CallToo
 // ============================================================================
 
 func (s *UnifiedServer) handleDecomposeProblem(ctx context.Context, req *mcp.CallToolRequest, input handlers.DecomposeProblemRequest) (*mcp.CallToolResult, *handlers.DecomposeProblemResponse, error) {
-	return s.decisionHandler.HandleDecomposeProblem(ctx, req, input)
+	result, response, err := s.decisionHandler.HandleDecomposeProblem(ctx, req, input)
+	if err != nil || result == nil {
+		return result, response, err
+	}
+
+	// Enrich response with context bridge (if enabled)
+	if s.contextBridge != nil {
+		params := map[string]interface{}{
+			"problem": input.Problem,
+		}
+		enriched, _ := s.contextBridge.EnrichResponse(ctx, "decompose-problem", params, response)
+		if enriched != nil {
+			return &mcp.CallToolResult{
+				Content: toJSONContent(enriched),
+			}, response, nil
+		}
+	}
+
+	return result, response, err
 }
 
 // ============================================================================
@@ -1484,7 +1536,25 @@ func (s *UnifiedServer) handleDetectBiases(ctx context.Context, req *mcp.CallToo
 // Phase 2: Temporal Analysis - Delegated to handlers.TemporalHandler
 
 func (s *UnifiedServer) handleAnalyzePerspectives(ctx context.Context, req *mcp.CallToolRequest, input handlers.AnalyzePerspectivesRequest) (*mcp.CallToolResult, *handlers.AnalyzePerspectivesResponse, error) {
-	return s.temporalHandler.HandleAnalyzePerspectives(ctx, req, input)
+	result, response, err := s.temporalHandler.HandleAnalyzePerspectives(ctx, req, input)
+	if err != nil || result == nil {
+		return result, response, err
+	}
+
+	// Enrich response with context bridge (if enabled)
+	if s.contextBridge != nil {
+		params := map[string]interface{}{
+			"situation": input.Situation,
+		}
+		enriched, _ := s.contextBridge.EnrichResponse(ctx, "analyze-perspectives", params, response)
+		if enriched != nil {
+			return &mcp.CallToolResult{
+				Content: toJSONContent(enriched),
+			}, response, nil
+		}
+	}
+
+	return result, response, err
 }
 
 func (s *UnifiedServer) handleAnalyzeTemporal(ctx context.Context, req *mcp.CallToolRequest, input handlers.AnalyzeTemporalRequest) (*mcp.CallToolResult, *handlers.AnalyzeTemporalResponse, error) {
@@ -1502,7 +1572,25 @@ func (s *UnifiedServer) handleIdentifyOptimalTiming(ctx context.Context, req *mc
 // Phase 3: Causal Reasoning - Delegated to handlers.CausalHandler
 
 func (s *UnifiedServer) handleBuildCausalGraph(ctx context.Context, req *mcp.CallToolRequest, input handlers.BuildCausalGraphRequest) (*mcp.CallToolResult, *handlers.BuildCausalGraphResponse, error) {
-	return s.causalHandler.HandleBuildCausalGraph(ctx, req, input)
+	result, response, err := s.causalHandler.HandleBuildCausalGraph(ctx, req, input)
+	if err != nil || result == nil {
+		return result, response, err
+	}
+
+	// Enrich response with context bridge (if enabled)
+	if s.contextBridge != nil {
+		params := map[string]interface{}{
+			"description": input.Description,
+		}
+		enriched, _ := s.contextBridge.EnrichResponse(ctx, "build-causal-graph", params, response)
+		if enriched != nil {
+			return &mcp.CallToolResult{
+				Content: toJSONContent(enriched),
+			}, response, nil
+		}
+	}
+
+	return result, response, err
 }
 
 func (s *UnifiedServer) handleSimulateIntervention(ctx context.Context, req *mcp.CallToolRequest, input handlers.SimulateInterventionRequest) (*mcp.CallToolResult, *handlers.SimulateInterventionResponse, error) {
