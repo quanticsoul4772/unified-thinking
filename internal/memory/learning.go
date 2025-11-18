@@ -194,6 +194,7 @@ func findCommonApproach(trajectories []*ReasoningTrajectory) *ApproachDescriptio
 		ModesUsed:    commonModes,
 		ToolSequence: commonTools,
 		KeyDecisions: []string{"Pattern derived from successful trajectories"},
+		Adaptations:  []string{}, // Initialize as empty array, not nil
 	}
 }
 

@@ -23,7 +23,8 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/metacognition/` - Self-evaluation, cognitive bias detection, unknown unknowns identification
 - `internal/integration/` - Cross-mode synthesis, emergent pattern detection, probabilistic-causal integration
 - `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
-- `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, and adaptive recommendations
+- `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, adaptive recommendations, and semantic embeddings integration
+- `internal/embeddings/` - Semantic embeddings for episodic memory using Voyage AI (voyage-3-lite model, 512 dimensions)
 - `internal/server/` - MCP server implementation with 63 registered tools
 - `internal/server/handlers/` - 21 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, causal, decision, dual_process, episodic, hallucination, helpers, metacognition, metadata, probabilistic, symbolic, temporal, unknown_unknowns)
 
@@ -469,6 +470,33 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 }
 ```
 
+### With Semantic Embeddings (Recommended)
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\Development\\Projects\\MCP\\project-root\\mcp-servers\\unified-thinking\\bin\\unified-thinking.exe",
+      "transport": "stdio",
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
+        "STORAGE_FALLBACK": "memory",
+        "EMBEDDINGS_ENABLED": "true",
+        "EMBEDDINGS_PROVIDER": "voyage",
+        "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "VOYAGE_API_KEY": "your-voyage-api-key",
+        "EMBEDDINGS_HYBRID_SEARCH": "true",
+        "EMBEDDINGS_RRF_K": "60",
+        "EMBEDDINGS_MIN_SIMILARITY": "0.5",
+        "EMBEDDINGS_CACHE_ENABLED": "true",
+        "EMBEDDINGS_CACHE_TTL": "24h"
+      }
+    }
+  }
+}
+```
+
 **Environment Variables**:
 - `STORAGE_TYPE`: `memory` (default) or `sqlite`
 - `SQLITE_PATH`: Path to SQLite database file (created if not exists)
@@ -476,6 +504,17 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `STORAGE_FALLBACK`: Fallback storage type if primary fails (default: none)
 - `DEBUG`: Enable debug logging (`true` or `false`)
 - `AUTO_VALIDATION_THRESHOLD`: Confidence threshold below which auto-validation triggers (default: 0.5, range: 0.0-1.0)
+
+**Embeddings Environment Variables** (for semantic search in episodic memory):
+- `EMBEDDINGS_ENABLED`: Enable semantic embeddings (`true` or `false`, default: false)
+- `EMBEDDINGS_PROVIDER`: Embedding provider (`voyage` supported)
+- `EMBEDDINGS_MODEL`: Model to use (`voyage-3-lite` (512d), `voyage-3` (1024d), `voyage-3-large` (2048d))
+- `VOYAGE_API_KEY`: Your Voyage AI API key (get from https://dashboard.voyageai.com/)
+- `EMBEDDINGS_HYBRID_SEARCH`: Combine semantic + structured search (`true` or `false`)
+- `EMBEDDINGS_RRF_K`: RRF fusion parameter (default: 60)
+- `EMBEDDINGS_MIN_SIMILARITY`: Minimum cosine similarity threshold (default: 0.5)
+- `EMBEDDINGS_CACHE_ENABLED`: Cache embeddings (`true` or `false`)
+- `EMBEDDINGS_CACHE_TTL`: Cache time-to-live (e.g., `24h`, `1h`)
 
 ### Auto-Validation Feature
 When a thought is processed with confidence below the threshold (default 0.5):

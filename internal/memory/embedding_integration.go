@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"time"
 
 	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/storage"
@@ -20,6 +21,14 @@ type EmbeddingIntegration struct {
 	cache       *embeddings.EmbeddingCache
 }
 
+// GetProvider returns the embedding provider name
+func (ei *EmbeddingIntegration) GetProvider() string {
+	if ei.embedder != nil {
+		return ei.embedder.Provider()
+	}
+	return "none"
+}
+
 // NewEmbeddingIntegration creates a new embedding integration
 func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQLiteStorage) (*EmbeddingIntegration, error) {
 	// Get configuration from environment
@@ -27,11 +36,7 @@ func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQ
 
 	if !config.Enabled {
 		log.Println("Embeddings disabled, using hash-based search only")
-		return &EmbeddingIntegration{
-			store: store,
-			sqliteStore: sqliteStore,
-			config: config,
-		}, nil
+		return nil, nil // Return nil when disabled, don't create a broken integration
 	}
 
 	// Create embedder
@@ -72,12 +77,23 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 	// Generate embedding text
 	text := ei.problemToText(problem)
 
+	// Use a background context with timeout to ensure embedding completes
+	// even if the original request context is cancelled
+	embedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Generate embedding
-	embedding, err := ei.embedder.Embed(ctx, text)
+	log.Printf("Generating embedding for problem (text length: %d)", len(text))
+	embedding, err := ei.embedder.Embed(embedCtx, text)
 	if err != nil {
-		log.Printf("Warning: failed to generate embedding: %v", err)
+		log.Printf("ERROR: failed to generate embedding: %v", err)
 		return nil // Don't fail the whole operation
 	}
+	if len(embedding) == 0 {
+		log.Printf("ERROR: embedding returned empty array")
+		return nil
+	}
+	log.Printf("Successfully generated embedding (dimension: %d)", len(embedding))
 
 	// Store embedding in problem (for in-memory usage)
 	problem.Embedding = embedding
@@ -109,9 +125,9 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 
 // RetrieveSimilarWithHybridSearch performs hybrid search combining structured and semantic search
 func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Context, problem *ProblemDescription, limit int) ([]*TrajectoryMatch, error) {
-	// If embeddings disabled, fall back to structured search
+	// If embeddings disabled, fall back to hash-based search
 	if !ei.config.Enabled || ei.embedder == nil {
-		return ei.store.RetrieveSimilarTrajectories(ctx, problem, limit)
+		return ei.store.RetrieveSimilarHashBased(problem, limit)
 	}
 
 	// Ensure problem has embedding
@@ -119,13 +135,13 @@ func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Cont
 		// Try to generate embedding for the query
 		if err := ei.GenerateAndStoreEmbedding(ctx, problem); err != nil {
 			log.Printf("Warning: failed to generate embedding for query: %v", err)
-			// Fall back to structured search
-			return ei.store.RetrieveSimilarTrajectories(ctx, problem, limit)
+			// Fall back to hash-based search
+			return ei.store.RetrieveSimilarHashBased(problem, limit)
 		}
 	}
 
-	// 1. Get structured search results
-	structuredResults, err := ei.store.RetrieveSimilarTrajectories(ctx, problem, limit*2)
+	// 1. Get hash-based search results
+	structuredResults, err := ei.store.RetrieveSimilarHashBased(problem, limit*2)
 	if err != nil {
 		return nil, fmt.Errorf("structured search failed: %w", err)
 	}
@@ -155,10 +171,14 @@ func (ei *EmbeddingIntegration) vectorSearch(ctx context.Context, problem *Probl
 	ei.store.mu.RLock()
 	defer ei.store.mu.RUnlock()
 
+	trajCount := 0
+	embeddingCount := 0
 	for _, traj := range ei.store.trajectories {
+		trajCount++
 		if traj.Problem == nil || traj.Problem.Embedding == nil {
 			continue
 		}
+		embeddingCount++
 
 		// Calculate similarity
 		similarity := embeddings.CosineSimilarity(problem.Embedding, traj.Problem.Embedding)
@@ -179,6 +199,8 @@ func (ei *EmbeddingIntegration) vectorSearch(ctx context.Context, problem *Probl
 	sort.Slice(matches, func(i, j int) bool {
 		return matches[i].SimilarityScore > matches[j].SimilarityScore
 	})
+
+	log.Printf("vectorSearch: %d trajectories, %d with embeddings, %d matches above threshold", trajCount, embeddingCount, len(matches))
 
 	if len(matches) > limit {
 		return matches[:limit]

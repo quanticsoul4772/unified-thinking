@@ -241,10 +241,10 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 
 	embeddingIntegration, err := memory.NewEmbeddingIntegration(store, sqliteStore)
 	if err != nil {
-		log.Printf("Warning: Failed to initialize embeddings: %v", err)
-		log.Printf("Falling back to hash-based search only")
+		log.Printf("ERROR: Failed to initialize embeddings: %v", err)
+		// Don't set integration if there's an error
 	} else if embeddingIntegration != nil {
-		log.Printf("Embeddings initialized successfully")
+		log.Printf("Embeddings initialized successfully with provider: %s", embeddingIntegration.GetProvider())
 		// Load any existing embeddings from storage
 		if err := embeddingIntegration.LoadEmbeddingsFromStorage(); err != nil {
 			log.Printf("Warning: Failed to load embeddings from storage: %v", err)
@@ -253,6 +253,7 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 		// Replace the store's retrieval method with the hybrid search version
 		store.SetEmbeddingIntegration(embeddingIntegration)
 	}
+	// If embeddingIntegration is nil and err is nil, embeddings are simply disabled (not an error)
 
 	// Create session tracker
 	tracker := memory.NewSessionTracker(store)

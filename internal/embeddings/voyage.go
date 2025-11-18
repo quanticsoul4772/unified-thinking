@@ -82,12 +82,65 @@ func (e *VoyageEmbedder) Embed(ctx context.Context, text string) ([]float32, err
 	return embeddings[0], nil
 }
 
-// EmbedBatch generates embeddings for multiple texts
+// EmbedBatch generates embeddings for multiple texts with retry logic
 func (e *VoyageEmbedder) EmbedBatch(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, fmt.Errorf("no texts provided")
 	}
 
+	// Retry configuration for rate limits
+	maxRetries := 3
+	baseDelay := 2 * time.Second // With paid tier (2000 RPM), short delays are fine
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			// Wait before retry with exponential backoff
+			delay := baseDelay * time.Duration(attempt)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		result, err := e.embedBatchOnce(ctx, texts)
+		if err == nil {
+			return result, nil
+		}
+
+		lastErr = err
+
+		// Only retry on rate limit errors (429)
+		if !isRateLimitError(err) {
+			return nil, err
+		}
+	}
+
+	return nil, fmt.Errorf("failed after %d retries: %w", maxRetries, lastErr)
+}
+
+// isRateLimitError checks if the error is a rate limit (429) error
+func isRateLimitError(err error) bool {
+	return err != nil && (contains(err.Error(), "429") || contains(err.Error(), "rate limit"))
+}
+
+// contains checks if s contains substr (simple helper)
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
+// embedBatchOnce performs a single embedding request
+func (e *VoyageEmbedder) embedBatchOnce(ctx context.Context, texts []string) ([][]float32, error) {
 	// Create request
 	reqBody := voyageRequest{
 		Model: e.model,
@@ -112,19 +165,19 @@ func (e *VoyageEmbedder) EmbedBatch(ctx context.Context, texts []string) ([][]fl
 	// Send request
 	resp, err := e.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request (timeout or network error): %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("Voyage API error (status %d): %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response

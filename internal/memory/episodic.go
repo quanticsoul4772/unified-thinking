@@ -211,7 +211,9 @@ func NewEpisodicMemoryStore() *EpisodicMemoryStore {
 // StoreTrajectory stores a complete reasoning trajectory
 func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *ReasoningTrajectory) error {
 	// Generate embedding for the problem if we have integration
+	log.Printf("StoreTrajectory called, embedding integration: %v, problem: %v", s.embeddingIntegration != nil, trajectory.Problem != nil)
 	if s.embeddingIntegration != nil && trajectory.Problem != nil {
+		log.Printf("Calling GenerateAndStoreEmbedding")
 		if err := s.embeddingIntegration.GenerateAndStoreEmbedding(ctx, trajectory.Problem); err != nil {
 			// Log but don't fail - embeddings are optional enhancement
 			log.Printf("Warning: Failed to generate embedding for trajectory: %v", err)
@@ -257,7 +259,12 @@ func (s *EpisodicMemoryStore) RetrieveSimilarTrajectories(ctx context.Context, p
 		return s.embeddingIntegration.RetrieveSimilarWithHybridSearch(ctx, problem, limit)
 	}
 
-	// Otherwise, fall back to hash-based search
+	// Otherwise, use hash-based search
+	return s.RetrieveSimilarHashBased(problem, limit)
+}
+
+// RetrieveSimilarHashBased performs hash-based similarity search (internal method, exported for embedding integration)
+func (s *EpisodicMemoryStore) RetrieveSimilarHashBased(problem *ProblemDescription, limit int) ([]*TrajectoryMatch, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
