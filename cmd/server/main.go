@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"unified-thinking/internal/contextbridge"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
 	"unified-thinking/internal/server"
@@ -54,8 +55,30 @@ func main() {
 	validator := validation.NewLogicValidator()
 	log.Println("Initialized logic validator")
 
+	// Initialize context bridge (disabled by default, enable via CONTEXT_BRIDGE_ENABLED=true)
+	bridgeConfig := contextbridge.ConfigFromEnv()
+	var bridge *contextbridge.ContextBridge
+	if bridgeConfig.Enabled {
+		// Get SQLite storage for context bridge (if available)
+		if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
+			adapter := contextbridge.NewStorageAdapter(sqliteStore)
+			extractor := contextbridge.NewSimpleExtractor()
+			similarity := contextbridge.NewDefaultSimilarity()
+			matcher := contextbridge.NewMatcher(adapter, similarity, extractor)
+			bridge = contextbridge.New(bridgeConfig, matcher, extractor)
+			log.Println("Initialized context bridge with SQLite storage")
+		} else {
+			log.Println("Context bridge requires SQLite storage, skipping initialization")
+		}
+	} else {
+		log.Println("Context bridge disabled (set CONTEXT_BRIDGE_ENABLED=true to enable)")
+	}
+
 	// Create unified server (without orchestrator initially)
 	srv := server.NewUnifiedServer(store, linearMode, treeMode, divergentMode, autoMode, validator)
+	if bridge != nil {
+		srv.SetContextBridge(bridge)
+	}
 	log.Println("Created unified server")
 
 	// Initialize orchestrator with server executor

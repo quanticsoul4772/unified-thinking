@@ -56,6 +56,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
+	"unified-thinking/internal/contextbridge"
 	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/integration"
 	"unified-thinking/internal/memory"
@@ -119,6 +120,8 @@ type UnifiedServer struct {
 	causalTemporalIntegration *integration.CausalTemporalIntegration
 	// Episodic memory system (Phase 2)
 	episodicMemoryHandler *handlers.EpisodicMemoryHandler
+	// Context bridge for cross-session context retrieval
+	contextBridge *contextbridge.ContextBridge
 }
 
 func NewUnifiedServer(
@@ -290,6 +293,16 @@ func (s *UnifiedServer) initializeSemanticAutoMode() {
 // This is a separate method to handle circular dependency between server and orchestrator
 func (s *UnifiedServer) SetOrchestrator(orchestrator *orchestration.Orchestrator) {
 	s.orchestrator = orchestrator
+}
+
+// SetContextBridge sets the context bridge for cross-session context retrieval
+func (s *UnifiedServer) SetContextBridge(bridge *contextbridge.ContextBridge) {
+	s.contextBridge = bridge
+}
+
+// GetContextBridge returns the context bridge (for metrics endpoint)
+func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
+	return s.contextBridge
 }
 
 func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {

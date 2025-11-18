@@ -25,6 +25,7 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/orchestration/` - Workflow orchestration for automated multi-tool pipelines
 - `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, adaptive recommendations, and semantic embeddings integration
 - `internal/embeddings/` - Semantic embeddings for episodic memory using Voyage AI (voyage-3-lite model, 512 dimensions)
+- `internal/contextbridge/` - Cross-session context retrieval with signature matching, LRU caching, and metrics
 - `internal/server/` - MCP server implementation with 63 registered tools
 - `internal/server/handlers/` - 21 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, causal, decision, dual_process, episodic, hallucination, helpers, metacognition, metadata, probabilistic, symbolic, temporal, unknown_unknowns)
 
@@ -525,6 +526,14 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `EMBEDDINGS_MIN_SIMILARITY`: Minimum cosine similarity threshold (default: 0.5)
 - `EMBEDDINGS_CACHE_ENABLED`: Cache embeddings (`true` or `false`)
 - `EMBEDDINGS_CACHE_TTL`: Cache time-to-live (e.g., `24h`, `1h`)
+
+**Context Bridge Environment Variables** (for cross-session context retrieval):
+- `CONTEXT_BRIDGE_ENABLED`: Enable context bridge (`true` or `false`, default: false)
+- `CONTEXT_BRIDGE_MIN_SIMILARITY`: Minimum similarity threshold (default: 0.7)
+- `CONTEXT_BRIDGE_MAX_MATCHES`: Maximum matches to return (default: 3)
+- `CONTEXT_BRIDGE_CACHE_SIZE`: LRU cache size (default: 100)
+- `CONTEXT_BRIDGE_CACHE_TTL`: Cache TTL (default: 15m)
+- `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: 100ms)
 
 ### Auto-Validation Feature
 When a thought is processed with confidence below the threshold (default 0.5):
