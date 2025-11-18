@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 // MockEmbedder implements embeddings.Embedder for testing
 type MockEmbedder struct {
+	mu          sync.RWMutex
 	embedFn     func(ctx context.Context, text string) ([]float32, error)
 	embeddings  map[string][]float32
 	dimension   int
@@ -34,25 +36,39 @@ func NewMockEmbedder() *MockEmbedder {
 }
 
 func (m *MockEmbedder) Embed(ctx context.Context, text string) ([]float32, error) {
+	m.mu.Lock()
 	m.embedCount++
-	if m.shouldError {
-		return nil, errors.New(m.errorMsg)
+	shouldError := m.shouldError
+	errorMsg := m.errorMsg
+	embedFn := m.embedFn
+	m.mu.Unlock()
+
+	if shouldError {
+		return nil, errors.New(errorMsg)
 	}
-	if m.embedFn != nil {
-		return m.embedFn(ctx, text)
+	if embedFn != nil {
+		return embedFn(ctx, text)
 	}
 
-	// Return cached embedding if exists
+	// Check cache with read lock
+	m.mu.RLock()
 	if emb, ok := m.embeddings[text]; ok {
+		m.mu.RUnlock()
 		return emb, nil
 	}
+	m.mu.RUnlock()
 
 	// Generate deterministic embedding based on text hash
 	emb := make([]float32, m.dimension)
 	for i := range emb {
 		emb[i] = float32(i%10) / 10.0 * float32(len(text)%10+1)
 	}
+
+	// Store with write lock
+	m.mu.Lock()
 	m.embeddings[text] = emb
+	m.mu.Unlock()
+
 	return emb, nil
 }
 
