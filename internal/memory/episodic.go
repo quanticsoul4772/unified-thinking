@@ -53,6 +53,19 @@ type ProblemDescription struct {
 	ProblemType  string                 `json:"problem_type"`
 	Complexity   float64                `json:"complexity"`
 	Domain       string                 `json:"domain"`
+
+	// Embedding support (optional)
+	Embedding     []float32          `json:"embedding,omitempty"`      // Vector representation
+	EmbeddingMeta *EmbeddingMetadata `json:"embedding_meta,omitempty"` // Metadata about embedding
+}
+
+// EmbeddingMetadata contains metadata about an embedding
+type EmbeddingMetadata struct {
+	Model     string    `json:"model"`      // e.g., "voyage-3-lite"
+	Provider  string    `json:"provider"`   // e.g., "voyage"
+	Dimension int       `json:"dimension"`  // e.g., 512
+	CreatedAt time.Time `json:"created_at"`
+	Source    string    `json:"source"`     // "description" or "description+context+goals"
 }
 
 // ApproachDescription describes the reasoning approach taken

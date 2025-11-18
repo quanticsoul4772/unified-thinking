@@ -129,6 +129,7 @@ the server includes 63 specialized tools across 13 major categories:
 - adaptive recommendations (suggests proven strategies based on similar past problems)
 - trajectory search (learn from historical successes and failures)
 - retrospective analysis (comprehensive post-session analysis with actionable improvements)
+- **NEW: Semantic embeddings** - optional hybrid search combining hash-based and vector similarity (Voyage AI)
 
 ## installation
 
@@ -202,6 +203,8 @@ for persistent storage across sessions:
 ```
 
 **environment variables**:
+
+**Storage Configuration**:
 - `storage_type`: `memory` (default) or `sqlite`
 - `sqlite_path`: path to sqlite database file (created automatically)
 - `sqlite_timeout`: connection timeout in milliseconds (default: 5000)
@@ -209,9 +212,27 @@ for persistent storage across sessions:
 - `debug`: enable debug logging (`true` or `false`)
 - `auto_validation_threshold`: confidence threshold for auto-validation (default: 0.5)
 
+**Semantic Embeddings Configuration (Optional)**:
+- `EMBEDDINGS_ENABLED`: Enable embeddings feature (`true` or `false`, default: `false`)
+- `EMBEDDINGS_PROVIDER`: Embedding provider (`voyage` for Voyage AI)
+- `EMBEDDINGS_MODEL`: Model to use (`voyage-3-lite`, `voyage-3`, `voyage-3-large`)
+- `VOYAGE_API_KEY`: Your Voyage AI API key (get free key with 200M tokens)
+- `EMBEDDINGS_HYBRID_SEARCH`: Enable RRF hybrid search (`true`, default)
+- `EMBEDDINGS_RRF_K`: RRF parameter (default: `60`)
+- `EMBEDDINGS_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.5`)
+
+See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) for detailed setup instructions.
+
 after saving the config, restart claude desktop.
 
 ## recent updates
+
+### new features (november 2024)
+- **semantic embeddings for episodic memory**: optional hybrid search combining hash-based and vector similarity
+  - voyage ai integration (200m free tokens, anthropic's recommended provider)
+  - rrf (reciprocal rank fusion) for optimal result combination
+  - blob-based vector storage in sqlite (no cgo required)
+  - transparent fallback to hash-based search when embeddings disabled
 
 ### performance improvements
 - refactored server.go from monolithic 2,225-line file into modular components

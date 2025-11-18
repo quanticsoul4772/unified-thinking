@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 1
+const schemaVersion = 2  // Updated for embeddings support
 
 // Schema defines the complete database schema
 const schema = `
@@ -95,6 +95,23 @@ CREATE TABLE IF NOT EXISTS relationships (
     created_at INTEGER NOT NULL
 );
 
+-- Embeddings table for vector storage
+CREATE TABLE IF NOT EXISTS embeddings (
+    id TEXT PRIMARY KEY,
+    problem_id TEXT NOT NULL UNIQUE,  -- References episodic memory problem descriptions
+    embedding BLOB NOT NULL,           -- Serialized float32 vector
+    model TEXT NOT NULL,               -- e.g., 'voyage-3-lite'
+    provider TEXT NOT NULL,            -- e.g., 'voyage'
+    dimension INTEGER NOT NULL,        -- Vector dimension (e.g., 512)
+    source TEXT NOT NULL,              -- What was embedded (e.g., 'description+context+goals')
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for fast problem_id lookups
+CREATE INDEX IF NOT EXISTS idx_embeddings_problem ON embeddings(problem_id);
+CREATE INDEX IF NOT EXISTS idx_embeddings_created ON embeddings(created_at DESC);
+
 -- Full-text search index for thought content
 CREATE VIRTUAL TABLE IF NOT EXISTS thoughts_fts USING fts5(
     id UNINDEXED,
@@ -145,9 +162,48 @@ func initializeSchema(db *sql.DB) error {
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to query schema version: %w", err)
-	} else if currentVersion != schemaVersion {
-		// Future: run migrations here
-		return fmt.Errorf("schema version mismatch: expected %d, got %d", schemaVersion, currentVersion)
+	} else if currentVersion < schemaVersion {
+		// Run migrations
+		if err := runMigrations(db, currentVersion, schemaVersion); err != nil {
+			return fmt.Errorf("failed to run migrations from v%d to v%d: %w", currentVersion, schemaVersion, err)
+		}
+		// Update version
+		_, err = db.Exec("UPDATE schema_metadata SET value = ? WHERE key = 'version'", schemaVersion)
+		if err != nil {
+			return fmt.Errorf("failed to update schema version: %w", err)
+		}
+	} else if currentVersion > schemaVersion {
+		return fmt.Errorf("database version (%d) is newer than application version (%d)", currentVersion, schemaVersion)
+	}
+
+	return nil
+}
+
+// runMigrations applies database migrations
+func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
+	// Migration from v1 to v2: Add embeddings table
+	if fromVersion < 2 && toVersion >= 2 {
+		migration := `
+		-- Embeddings table for vector storage (v2)
+		CREATE TABLE IF NOT EXISTS embeddings (
+			id TEXT PRIMARY KEY,
+			problem_id TEXT NOT NULL UNIQUE,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			source TEXT NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_embeddings_problem ON embeddings(problem_id);
+		CREATE INDEX IF NOT EXISTS idx_embeddings_created ON embeddings(created_at DESC);
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v1->v2 migration: %w", err)
+		}
 	}
 
 	return nil

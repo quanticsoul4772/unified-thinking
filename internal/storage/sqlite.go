@@ -3,9 +3,11 @@ package storage
 
 import (
 	"database/sql"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -1031,6 +1033,105 @@ func (s *SQLiteStorage) GetRecentBranches() ([]*types.Branch, error) {
 
 func (s *SQLiteStorage) GetMetrics() *Metrics {
 	return s.cache.GetMetrics()
+}
+
+// StoreEmbedding stores a vector embedding in the database
+func (s *SQLiteStorage) StoreEmbedding(problemID string, embedding []float32, model, provider string, dimension int, source string) error {
+	// Generate ID
+	id := fmt.Sprintf("emb-%s-%d", problemID, time.Now().Unix())
+
+	// Serialize embedding to bytes
+	embeddingBytes := make([]byte, len(embedding)*4)
+	for i, val := range embedding {
+		bits := math.Float32bits(val)
+		binary.LittleEndian.PutUint32(embeddingBytes[i*4:], bits)
+	}
+
+	now := time.Now().Unix()
+
+	// Insert or update embedding
+	_, err := s.db.Exec(`
+		INSERT INTO embeddings (id, problem_id, embedding, model, provider, dimension, source, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(problem_id) DO UPDATE SET
+			embedding = excluded.embedding,
+			model = excluded.model,
+			provider = excluded.provider,
+			dimension = excluded.dimension,
+			source = excluded.source,
+			updated_at = excluded.updated_at
+	`, id, problemID, embeddingBytes, model, provider, dimension, source, now, now)
+
+	if err != nil {
+		return fmt.Errorf("failed to store embedding: %w", err)
+	}
+
+	return nil
+}
+
+// GetEmbedding retrieves an embedding for a problem ID
+func (s *SQLiteStorage) GetEmbedding(problemID string) ([]float32, string, string, int, error) {
+	var embeddingBytes []byte
+	var model, provider, source string
+	var dimension int
+
+	err := s.db.QueryRow(`
+		SELECT embedding, model, provider, dimension, source
+		FROM embeddings
+		WHERE problem_id = ?
+	`, problemID).Scan(&embeddingBytes, &model, &provider, &dimension, &source)
+
+	if err == sql.ErrNoRows {
+		return nil, "", "", 0, fmt.Errorf("embedding not found for problem: %s", problemID)
+	}
+	if err != nil {
+		return nil, "", "", 0, fmt.Errorf("failed to fetch embedding: %w", err)
+	}
+
+	// Deserialize embedding
+	embedding := make([]float32, len(embeddingBytes)/4)
+	for i := 0; i < len(embedding); i++ {
+		bits := binary.LittleEndian.Uint32(embeddingBytes[i*4:])
+		embedding[i] = math.Float32frombits(bits)
+	}
+
+	return embedding, model, provider, dimension, nil
+}
+
+// GetAllEmbeddings retrieves all embeddings from the database
+func (s *SQLiteStorage) GetAllEmbeddings() (map[string][]float32, error) {
+	rows, err := s.db.Query(`
+		SELECT problem_id, embedding
+		FROM embeddings
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query embeddings: %w", err)
+	}
+	defer rows.Close()
+
+	embeddings := make(map[string][]float32)
+
+	for rows.Next() {
+		var problemID string
+		var embeddingBytes []byte
+
+		if err := rows.Scan(&problemID, &embeddingBytes); err != nil {
+			log.Printf("Warning: failed to scan embedding row: %v", err)
+			continue
+		}
+
+		// Deserialize embedding
+		embedding := make([]float32, len(embeddingBytes)/4)
+		for i := 0; i < len(embedding); i++ {
+			bits := binary.LittleEndian.Uint32(embeddingBytes[i*4:])
+			embedding[i] = math.Float32frombits(bits)
+		}
+
+		embeddings[problemID] = embedding
+	}
+
+	return embeddings, nil
 }
 
 // Close releases database resources
