@@ -227,7 +227,7 @@ after saving the config, restart claude desktop.
 
 ## recent updates
 
-### new features (november 2024)
+### new features
 - **semantic embeddings for episodic memory**: optional hybrid search combining hash-based and vector similarity
   - voyage ai integration (200m free tokens, anthropic's recommended provider)
   - rrf (reciprocal rank fusion) for optimal result combination
