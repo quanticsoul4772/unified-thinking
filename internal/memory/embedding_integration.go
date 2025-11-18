@@ -91,12 +91,10 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 	log.Printf("Generating embedding for problem (text length: %d)", len(text))
 	embedding, err := ei.embedder.Embed(embedCtx, text)
 	if err != nil {
-		log.Printf("ERROR: failed to generate embedding: %v", err)
-		return nil // Don't fail the whole operation
+		return fmt.Errorf("failed to generate embedding: %w", err)
 	}
 	if len(embedding) == 0 {
-		log.Printf("ERROR: embedding returned empty array")
-		return nil
+		return fmt.Errorf("embedding returned empty array")
 	}
 	log.Printf("Successfully generated embedding (dimension: %d)", len(embedding))
 
@@ -121,7 +119,7 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 			"description+context+goals",
 		)
 		if err != nil {
-			log.Printf("Warning: failed to store embedding in SQLite: %v", err)
+			return fmt.Errorf("failed to store embedding in SQLite: %w", err)
 		}
 	}
 
@@ -137,11 +135,8 @@ func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Cont
 
 	// Ensure problem has embedding
 	if problem.Embedding == nil || len(problem.Embedding) == 0 {
-		// Try to generate embedding for the query
 		if err := ei.GenerateAndStoreEmbedding(ctx, problem); err != nil {
-			log.Printf("Warning: failed to generate embedding for query: %v", err)
-			// Fall back to hash-based search
-			return ei.store.RetrieveSimilarHashBased(problem, limit)
+			return nil, fmt.Errorf("failed to generate embedding for query: %w", err)
 		}
 	}
 

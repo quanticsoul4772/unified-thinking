@@ -215,8 +215,7 @@ func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *R
 	if s.embeddingIntegration != nil && trajectory.Problem != nil {
 		log.Printf("Calling GenerateAndStoreEmbedding")
 		if err := s.embeddingIntegration.GenerateAndStoreEmbedding(ctx, trajectory.Problem); err != nil {
-			// Log but don't fail - embeddings are optional enhancement
-			log.Printf("Warning: Failed to generate embedding for trajectory: %v", err)
+			return fmt.Errorf("failed to generate embedding for trajectory: %w", err)
 		}
 	}
 
