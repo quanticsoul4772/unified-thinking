@@ -1,9 +1,14 @@
 # Unified Thinking Server
 
+[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Test Coverage](https://img.shields.io/badge/coverage-85.7%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
+
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
 
 - Go 1.24+
-- 73.9% test coverage (757 tests)
+- 85.7% test coverage
 - 63 tools
 - MIT License
 
@@ -470,7 +475,7 @@ make test-coverage
 make benchmark
 ```
 
-**test coverage**: 73.9% overall | 757 tests | 100% pass rate
+**test coverage**: 85.7% overall | 100% pass rate
 
 ### coverage by package
 
@@ -478,26 +483,20 @@ make benchmark
 |---------|----------|--------|
 | `internal/types` | 100.0% | excellent |
 | `internal/metrics` | 100.0% | excellent |
+| `internal/config` | 97.3% | excellent |
+| `internal/reasoning` | 94.8% | excellent |
+| `internal/memory` | 91.0% | excellent |
+| `internal/modes` | 90.5% | excellent |
 | `internal/analysis` | 89.3% | excellent |
 | `internal/validation` | 88.8% | excellent |
+| `internal/storage` | 87.9% | excellent |
 | `internal/orchestration` | 87.7% | excellent |
 | `internal/metacognition` | 87.2% | excellent |
+| `internal/server` | 83.6% | good |
 | `internal/processing` | 83.3% | excellent |
 | `internal/integration` | 82.2% | excellent |
-| `internal/storage` | 79.5% | good |
-| `internal/reasoning` | 78.7% | good |
-| `internal/modes` | 77.8% | good |
-| `internal/memory` | 67.8% | improved |
-| `internal/config` | 64.6% | adequate |
-| `internal/server/handlers` | 47.2% | improved |
-| `internal/server` | 47.3% | adequate |
+| `internal/server/handlers` | 79.0% | good |
 | `cmd/server` | 25.0% | expected (entry point) |
-
-**highlights:**
-- 757 total tests across all packages
-- memory module: improved from 35.3% to 67.8%
-- zero test failures (757/757 passing)
-- comprehensive edge case coverage
 
 ## troubleshooting
 

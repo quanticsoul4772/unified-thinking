@@ -117,7 +117,7 @@ make benchmark
 make test-all
 ```
 
-**Test Coverage**: The project maintains high test coverage (73.9% overall with 757 tests) across all major components. Key packages have excellent coverage: types (100%), metrics (100%), analysis (89.3%), validation (88.8%), orchestration (87.7%), metacognition (87.2%).
+**Test Coverage**: The project maintains high test coverage (85.7% overall) across all major components. Key packages have excellent coverage: types (100%), metrics (100%), config (97.3%), reasoning (94.8%), memory (91.0%), modes (90.5%), analysis (89.3%), validation (88.8%), storage (87.9%), orchestration (87.7%), metacognition (87.2%).
 
 ### Linting
 ```bash
