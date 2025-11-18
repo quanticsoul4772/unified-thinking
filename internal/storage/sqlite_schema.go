@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 4 // Updated to remove foreign key constraint from context signatures
+const schemaVersion = 5 // Updated to add embedding support for context signatures
 
 // Schema defines the complete database schema
 const schema = `
@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS context_signatures (
     key_concepts TEXT,      -- JSON array
     tool_sequence TEXT,     -- JSON array
     complexity REAL,
+    embedding BLOB,         -- Semantic embedding for similarity (serialized float32 vector)
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
@@ -290,6 +291,18 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v3->v4 migration: %w", err)
+		}
+	}
+
+	// Migration from v4 to v5: Add embedding column to context_signatures
+	if fromVersion < 5 && toVersion >= 5 {
+		migration := `
+		-- Add embedding column for semantic similarity (v5)
+		ALTER TABLE context_signatures ADD COLUMN embedding BLOB;
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v4->v5 migration: %w", err)
 		}
 	}
 

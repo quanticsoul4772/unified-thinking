@@ -19,6 +19,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/contextbridge"
+	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
 	"unified-thinking/internal/server"
@@ -55,6 +56,20 @@ func main() {
 	validator := validation.NewLogicValidator()
 	log.Println("Initialized logic validator")
 
+	// Initialize embedder if API key is available (shared between auto mode and context bridge)
+	var embedder embeddings.Embedder
+	if apiKey := os.Getenv("VOYAGE_API_KEY"); apiKey != "" {
+		model := os.Getenv("EMBEDDINGS_MODEL")
+		if model == "" {
+			model = "voyage-3-lite"
+		}
+		embedder = embeddings.NewVoyageEmbedder(apiKey, model)
+		autoMode.SetEmbedder(embedder)
+		log.Printf("Initialized Voyage AI embedder (model: %s)", model)
+	} else {
+		log.Println("VOYAGE_API_KEY not set, semantic features disabled")
+	}
+
 	// Initialize context bridge (always enabled when SQLite storage is available)
 	bridgeConfig := contextbridge.ConfigFromEnv()
 	var bridge *contextbridge.ContextBridge
@@ -62,9 +77,20 @@ func main() {
 		if bridgeConfig.Enabled {
 			adapter := contextbridge.NewStorageAdapter(sqliteStore)
 			extractor := contextbridge.NewSimpleExtractor()
-			similarity := contextbridge.NewDefaultSimilarity()
+
+			// Use embedding-based similarity if embedder is available, otherwise fall back to concept matching
+			var similarity contextbridge.SimilarityCalculator
+			if embedder != nil {
+				fallback := contextbridge.NewDefaultSimilarity()
+				similarity = contextbridge.NewEmbeddingSimilarity(embedder, fallback, true) // hybrid mode
+				log.Println("Context bridge using embedding-based semantic similarity")
+			} else {
+				similarity = contextbridge.NewDefaultSimilarity()
+				log.Println("Context bridge using concept-based similarity (no embedder)")
+			}
+
 			matcher := contextbridge.NewMatcher(adapter, similarity, extractor)
-			bridge = contextbridge.New(bridgeConfig, matcher, extractor)
+			bridge = contextbridge.New(bridgeConfig, matcher, extractor, embedder)
 			log.Println("Initialized context bridge with SQLite storage")
 		} else {
 			log.Println("Context bridge disabled via CONTEXT_BRIDGE_DISABLED=true")

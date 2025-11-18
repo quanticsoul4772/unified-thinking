@@ -13,6 +13,7 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/types"
 )
 
@@ -1142,6 +1143,7 @@ type ContextSignature struct {
 	KeyConcepts  []string
 	ToolSequence []string
 	Complexity   float64
+	Embedding    []float32 // Semantic embedding for similarity matching
 }
 
 // CandidateWithSignature combines trajectory metadata with its signature
@@ -1164,11 +1166,17 @@ func (s *SQLiteStorage) StoreContextSignature(trajectoryID string, sig *ContextS
 		prefix = sig.Fingerprint[:8]
 	}
 
+	// Serialize embedding if present
+	var embeddingBlob []byte
+	if len(sig.Embedding) > 0 {
+		embeddingBlob = embeddings.SerializeFloat32(sig.Embedding)
+	}
+
 	_, err := s.db.Exec(`
 		INSERT INTO context_signatures
-		(trajectory_id, fingerprint, fingerprint_prefix, domain, key_concepts, tool_sequence, complexity)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, trajectoryID, sig.Fingerprint, prefix, sig.Domain, concepts, tools, sig.Complexity)
+		(trajectory_id, fingerprint, fingerprint_prefix, domain, key_concepts, tool_sequence, complexity, embedding)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, trajectoryID, sig.Fingerprint, prefix, sig.Domain, concepts, tools, sig.Complexity, embeddingBlob)
 
 	if err != nil {
 		return fmt.Errorf("failed to store context signature: %w", err)
@@ -1193,7 +1201,8 @@ func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintP
 				cs.domain,
 				cs.key_concepts,
 				cs.tool_sequence,
-				cs.complexity
+				cs.complexity,
+				cs.embedding
 			FROM context_signatures cs
 			ORDER BY
 				CASE WHEN cs.domain = ? THEN 0 ELSE 1 END,
@@ -1210,7 +1219,8 @@ func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintP
 				cs.domain,
 				cs.key_concepts,
 				cs.tool_sequence,
-				cs.complexity
+				cs.complexity,
+				cs.embedding
 			FROM context_signatures cs
 			ORDER BY cs.created_at DESC
 			LIMIT ?
@@ -1230,6 +1240,7 @@ func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintP
 		var domainVal sql.NullString
 		var conceptsJSON, toolsJSON string
 		var complexity float64
+		var embeddingBlob []byte
 
 		err := rows.Scan(
 			&trajectoryID,
@@ -1238,6 +1249,7 @@ func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintP
 			&conceptsJSON,
 			&toolsJSON,
 			&complexity,
+			&embeddingBlob,
 		)
 		if err != nil {
 			log.Printf("Warning: failed to scan candidate: %v", err)
@@ -1264,6 +1276,11 @@ func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintP
 			if err := json.Unmarshal([]byte(toolsJSON), &sig.ToolSequence); err != nil {
 				sig.ToolSequence = []string{}
 			}
+		}
+
+		// Deserialize embedding if present
+		if len(embeddingBlob) > 0 {
+			sig.Embedding = embeddings.DeserializeFloat32(embeddingBlob)
 		}
 
 		candidates = append(candidates, &CandidateWithSignature{

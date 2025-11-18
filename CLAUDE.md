@@ -533,7 +533,9 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `CONTEXT_BRIDGE_MAX_MATCHES`: Maximum matches to return (default: 3)
 - `CONTEXT_BRIDGE_CACHE_SIZE`: LRU cache size (default: 100)
 - `CONTEXT_BRIDGE_CACHE_TTL`: Cache TTL (default: 15m)
-- `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: 100ms)
+- `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: 2s)
+
+Note: When `VOYAGE_API_KEY` is set, the context bridge uses semantic embeddings for similarity matching instead of concept-based Jaccard similarity. This enables matching between semantically similar but lexically different problems (e.g., "database queries running slowly" matches "SQL performance optimization needed").
 
 ### Auto-Validation Feature
 When a thought is processed with confidence below the threshold (default 0.5):

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"unified-thinking/internal/embeddings"
 )
 
 // ContextBridge enriches tool responses with similar past trajectories
@@ -12,19 +14,34 @@ type ContextBridge struct {
 	config    *Config
 	matcher   *Matcher
 	extractor ConceptExtractor
+	embedder  embeddings.Embedder
 	cache     *LRUCache
 	metrics   *Metrics
 }
 
 // New creates a new context bridge
-func New(config *Config, matcher *Matcher, extractor ConceptExtractor) *ContextBridge {
+func New(config *Config, matcher *Matcher, extractor ConceptExtractor, embedder embeddings.Embedder) *ContextBridge {
 	return &ContextBridge{
 		config:    config,
 		matcher:   matcher,
 		extractor: extractor,
+		embedder:  embedder,
 		cache:     NewLRUCache(config.CacheSize, config.CacheTTL),
 		metrics:   &Metrics{},
 	}
+}
+
+// HasEmbedder returns true if an embedder is configured
+func (cb *ContextBridge) HasEmbedder() bool {
+	return cb.embedder != nil
+}
+
+// GenerateEmbedding generates an embedding for text content
+func (cb *ContextBridge) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	if cb.embedder == nil {
+		return nil, nil
+	}
+	return cb.embedder.Embed(ctx, text)
 }
 
 // EnrichResponse adds context matches to a tool response
@@ -54,6 +71,31 @@ func (cb *ContextBridge) EnrichResponse(
 		return result, nil
 	}
 
+	// Generate embedding for semantic similarity if embedder is available
+	// Use a separate context with timeout for embedding generation
+	var embeddingFailed bool
+	var embeddingError string
+	if cb.embedder != nil && len(sig.Embedding) == 0 {
+		// Extract content for embedding (use full param content)
+		content := extractTextContent(params)
+		if content != "" {
+			// Use a shorter timeout for embedding (500ms) to leave time for matching
+			embedCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+			embedding, embedErr := cb.embedder.Embed(embedCtx, content)
+			cancel()
+
+			if embedErr != nil {
+				// Graceful degradation: log warning but continue with concept-based similarity
+				embeddingFailed = true
+				embeddingError = embedErr.Error()
+				log.Printf("[WARN] Embedding generation failed (will use concept similarity): %v", embedErr)
+			} else if len(embedding) > 0 {
+				sig.Embedding = embedding
+				log.Printf("[DEBUG] Generated embedding for signature (%d dimensions)", len(embedding))
+			}
+		}
+	}
+
 	// Check cache
 	cacheKey := sig.Fingerprint
 	if cached := cb.cache.Get(cacheKey); cached != nil {
@@ -64,10 +106,11 @@ func (cb *ContextBridge) EnrichResponse(
 	}
 	cb.metrics.RecordCacheMiss()
 
-	// Check if we've exceeded timeout
+	// Check if we've exceeded timeout - gracefully degrade with visible notification
 	if time.Now().After(deadline) {
 		cb.metrics.RecordTimeout()
-		return nil, fmt.Errorf("context bridge timeout exceeded (%v) for tool %s", cb.config.Timeout, toolName)
+		log.Printf("[WARN] Context bridge timeout exceeded (%v) for tool %s", cb.config.Timeout, toolName)
+		return cb.buildDegradedResponse(result, "timeout", fmt.Sprintf("Context bridge timeout exceeded (%v)", cb.config.Timeout)), nil
 	}
 
 	// Find matches
@@ -93,21 +136,51 @@ func (cb *ContextBridge) EnrichResponse(
 		cb.cache.Put(cacheKey, matches)
 	}
 
-	return cb.buildEnrichedResponse(result, matches), nil
+	return cb.buildEnrichedResponseWithStatus(result, matches, embeddingFailed, embeddingError), nil
+}
+
+// buildEnrichedResponseWithStatus creates the enriched response with context bridge data and status info
+func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, matches []*Match, embeddingFailed bool, embeddingError string) interface{} {
+	if len(matches) == 0 && !embeddingFailed {
+		return result
+	}
+
+	bridgeData := map[string]interface{}{
+		"version":        "1.0",
+		"matches":        matches,
+		"recommendation": cb.generateRecommendation(matches),
+	}
+
+	// Add embedding status for visibility
+	if embeddingFailed {
+		bridgeData["embedding_status"] = "failed"
+		bridgeData["embedding_error"] = embeddingError
+		bridgeData["similarity_mode"] = "concept_only"
+	} else if len(matches) > 0 && len(matches[0].TrajectoryID) > 0 {
+		bridgeData["similarity_mode"] = "semantic_embedding"
+	}
+
+	return map[string]interface{}{
+		"result":         result,
+		"context_bridge": bridgeData,
+	}
 }
 
 // buildEnrichedResponse creates the enriched response with context bridge data
 func (cb *ContextBridge) buildEnrichedResponse(result interface{}, matches []*Match) interface{} {
-	if len(matches) == 0 {
-		return result
-	}
+	return cb.buildEnrichedResponseWithStatus(result, matches, false, "")
+}
 
+// buildDegradedResponse creates a response that notifies about degraded operation
+func (cb *ContextBridge) buildDegradedResponse(result interface{}, reason string, detail string) interface{} {
 	return map[string]interface{}{
 		"result": result,
-		"context_bridge": &ContextBridgeData{
-			Version:        "1.0",
-			Matches:        matches,
-			Recommendation: cb.generateRecommendation(matches),
+		"context_bridge": map[string]interface{}{
+			"version": "1.0",
+			"status":  "degraded",
+			"reason":  reason,
+			"detail":  detail,
+			"matches": []*Match{}, // Empty matches
 		},
 	}
 }
@@ -154,6 +227,22 @@ func (cb *ContextBridge) GetMetrics() map[string]interface{} {
 // IsEnabled returns whether the context bridge is enabled
 func (cb *ContextBridge) IsEnabled() bool {
 	return cb.config.Enabled
+}
+
+// extractTextContent extracts text content from params for embedding generation
+func extractTextContent(params map[string]interface{}) string {
+	// Check common content field names
+	contentFields := []string{"content", "description", "query", "problem", "text", "message"}
+
+	for _, field := range contentFields {
+		if val, ok := params[field]; ok {
+			if str, ok := val.(string); ok && str != "" {
+				return str
+			}
+		}
+	}
+
+	return ""
 }
 
 // GetConfig returns the current configuration

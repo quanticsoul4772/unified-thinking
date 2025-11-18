@@ -23,7 +23,7 @@ func TestContextBridge_EnrichResponse_Disabled(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil) // nil embedder for tests
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{"content": "test content"}
@@ -52,7 +52,7 @@ func TestContextBridge_EnrichResponse_NotEnabledTool(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil) // nil embedder for tests
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{"content": "test content"}
@@ -102,7 +102,7 @@ func TestContextBridge_EnrichResponse_WithMatches(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{
@@ -126,17 +126,18 @@ func TestContextBridge_EnrichResponse_WithMatches(t *testing.T) {
 		t.Fatal("Expected context_bridge in enriched response")
 	}
 
-	bridgeData, ok := contextBridge.(*ContextBridgeData)
+	bridgeData, ok := contextBridge.(map[string]interface{})
 	if !ok {
-		t.Fatalf("Expected *ContextBridgeData, got %T", contextBridge)
+		t.Fatalf("Expected map[string]interface{}, got %T", contextBridge)
 	}
 
-	if len(bridgeData.Matches) == 0 {
+	matches, ok := bridgeData["matches"].([]*Match)
+	if !ok || len(matches) == 0 {
 		t.Error("Expected at least one match")
 	}
 
-	if bridgeData.Version != "1.0" {
-		t.Errorf("Expected version 1.0, got %s", bridgeData.Version)
+	if bridgeData["version"] != "1.0" {
+		t.Errorf("Expected version 1.0, got %v", bridgeData["version"])
 	}
 }
 
@@ -163,7 +164,7 @@ func TestContextBridge_EnrichResponse_NoMatches(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{
@@ -208,7 +209,7 @@ func TestContextBridge_EnrichResponse_CacheHit(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{
@@ -249,7 +250,7 @@ func TestContextBridge_GenerateRecommendation(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	tests := []struct {
 		name           string
@@ -310,7 +311,7 @@ func TestContextBridge_Metrics(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	result := map[string]interface{}{"id": "test"}
 	params := map[string]interface{}{"content": "test content for metrics"}
@@ -360,7 +361,7 @@ func BenchmarkContextBridge_EnrichResponse(b *testing.B) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	result := map[string]interface{}{"thought_id": "test-123"}
 	params := map[string]interface{}{
@@ -393,14 +394,14 @@ func TestContextBridge_IsEnabled(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	if !bridge.IsEnabled() {
 		t.Error("Expected IsEnabled() to return true")
 	}
 
 	config.Enabled = false
-	bridge2 := New(config, matcher, extractor)
+	bridge2 := New(config, matcher, extractor, nil)
 	if bridge2.IsEnabled() {
 		t.Error("Expected IsEnabled() to return false")
 	}
@@ -415,7 +416,7 @@ func TestContextBridge_GetConfig(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	got := bridge.GetConfig()
 	if got.MinSimilarity != 0.8 {
@@ -508,7 +509,7 @@ func TestConfig_FromEnv(t *testing.T) {
 	if config.CacheSize != 100 {
 		t.Errorf("Expected CacheSize 100, got %v", config.CacheSize)
 	}
-	if config.Timeout != 100*time.Millisecond {
-		t.Errorf("Expected Timeout 100ms, got %v", config.Timeout)
+	if config.Timeout != 2*time.Second {
+		t.Errorf("Expected Timeout 2s, got %v", config.Timeout)
 	}
 }

@@ -32,7 +32,7 @@ func DefaultConfig() *Config {
 		},
 		CacheSize: 100,
 		CacheTTL:  15 * time.Minute,
-		Timeout:   100 * time.Millisecond,
+		Timeout:   2 * time.Second, // Increased to accommodate embedding API latency
 	}
 }
 

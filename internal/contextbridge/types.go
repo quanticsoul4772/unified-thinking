@@ -3,11 +3,12 @@ package contextbridge
 
 // Signature represents a fingerprint of a problem for similarity matching
 type Signature struct {
-	Fingerprint  string   `json:"fingerprint"`
-	Domain       string   `json:"domain"`
-	KeyConcepts  []string `json:"key_concepts"`
-	ToolSequence []string `json:"tool_sequence"`
-	Complexity   float64  `json:"complexity"`
+	Fingerprint  string    `json:"fingerprint"`
+	Domain       string    `json:"domain"`
+	KeyConcepts  []string  `json:"key_concepts"`
+	ToolSequence []string  `json:"tool_sequence"`
+	Complexity   float64   `json:"complexity"`
+	Embedding    []float32 `json:"embedding,omitempty"` // Semantic embedding for similarity
 }
 
 // CandidateWithSignature combines trajectory metadata with its signature

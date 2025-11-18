@@ -65,7 +65,7 @@ func TestIntegration_FullContextBridgeFlow(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	// Test 1: Think tool with database optimization problem
 	t.Run("think_database_optimization", func(t *testing.T) {
@@ -95,19 +95,20 @@ func TestIntegration_FullContextBridgeFlow(t *testing.T) {
 			t.Fatal("Expected context_bridge in response")
 		}
 
-		cbd, ok := bridgeData.(*ContextBridgeData)
+		cbd, ok := bridgeData.(map[string]interface{})
 		if !ok {
-			t.Fatalf("Expected *ContextBridgeData, got %T", bridgeData)
+			t.Fatalf("Expected map[string]interface{}, got %T", bridgeData)
 		}
+		matches := cbd["matches"].([]*Match)
 
 		// Should match database optimization trajectories
-		if len(cbd.Matches) == 0 {
+		if len(matches) == 0 {
 			t.Fatal("Expected at least one match for database optimization query")
 		}
 
 		// First match should be the highest scoring database optimization
 		foundDBMatch := false
-		for _, match := range cbd.Matches {
+		for _, match := range matches {
 			if match.TrajectoryID == "traj-db-opt-1" || match.TrajectoryID == "traj-db-opt-2" {
 				foundDBMatch = true
 				if match.SuccessScore < 0.8 {
@@ -120,11 +121,11 @@ func TestIntegration_FullContextBridgeFlow(t *testing.T) {
 		}
 
 		// Verify recommendation is generated
-		if cbd.Recommendation == "" {
+		if cbd["recommendation"].(string) == "" {
 			t.Error("Expected recommendation to be generated")
 		}
 
-		t.Logf("Found %d matches, recommendation: %s", len(cbd.Matches), cbd.Recommendation)
+		t.Logf("Found %d matches, recommendation: %s", len(matches), cbd["recommendation"].(string))
 	})
 
 	// Test 2: Make-decision tool
@@ -165,16 +166,17 @@ func TestIntegration_FullContextBridgeFlow(t *testing.T) {
 
 		enrichedMap := enriched.(map[string]interface{})
 		if bridgeData, ok := enrichedMap["context_bridge"]; ok {
-			cbd := bridgeData.(*ContextBridgeData)
+			cbd := bridgeData.(map[string]interface{})
+			matches := cbd["matches"].([]*Match)
 			// Should find the ML trajectory
 			foundMLMatch := false
-			for _, match := range cbd.Matches {
+			for _, match := range matches {
 				if match.TrajectoryID == "traj-ml-1" {
 					foundMLMatch = true
 				}
 			}
-			if !foundMLMatch && len(cbd.Matches) > 0 {
-				t.Logf("Found matches but not ML trajectory: %v", cbd.Matches)
+			if !foundMLMatch && len(matches) > 0 {
+				t.Logf("Found matches but not ML trajectory: %v", matches)
 			}
 		}
 	})
@@ -450,7 +452,7 @@ func TestIntegration_ErrorHandling(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(errorStorage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	params := map[string]interface{}{
 		"content": "Test query",
@@ -507,7 +509,7 @@ func TestIntegration_PerformanceBaseline(t *testing.T) {
 	extractor := NewSimpleExtractor()
 	similarity := NewDefaultSimilarity()
 	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor)
+	bridge := New(config, matcher, extractor, nil)
 
 	params := map[string]interface{}{
 		"content": "Database query optimization",
