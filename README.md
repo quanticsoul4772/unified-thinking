@@ -1,27 +1,13 @@
 # Unified Thinking Server
 
-<p align="center">
-  <strong>A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single, efficient Go-based implementation.</strong>
-</p>
+A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#documentation">Documentation</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
-</p>
+- Go 1.24+
+- 73.9% test coverage (757 tests)
+- 63 tools
+- MIT License
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-1.24%2B-00ADD8?style=flat&logo=go" alt="Go Version">
-  <img src="https://img.shields.io/badge/Coverage-73.9%25-green?style=flat" alt="Coverage">
-  <img src="https://img.shields.io/badge/Tests-757%20passing-brightgreen?style=flat" alt="Tests">
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat" alt="License">
-  <img src="https://img.shields.io/badge/Tools-63-orange?style=flat" alt="Tools">
-</p>
-
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone the repository
@@ -581,41 +567,28 @@ make benchmark
 - graceful fallback handling
 - resource limits to prevent dos
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+See [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-- Check our [Code of Conduct](CODE_OF_CONDUCT.md)
-- Read the [Contributing Guide](CONTRIBUTING.md)
-- Submit issues using our [templates](.github/ISSUE_TEMPLATE)
-- Follow our PR [template](.github/pull_request_template.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Issue Templates](.github/ISSUE_TEMPLATE)
+- [PR Template](.github/pull_request_template.md)
 
-### Contributors
+## Security
 
-Thanks to all the people who have contributed to this project!
+For security issues, see [Security Policy](SECURITY.md). Do not report security vulnerabilities through public GitHub issues.
 
-## 🔒 Security
+## License
 
-For security issues, please refer to our [Security Policy](SECURITY.md). Do not report security vulnerabilities through public GitHub issues.
+MIT License - see [LICENSE](LICENSE) file.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with the [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk)
-- Inspired by cognitive science and reasoning frameworks
-- Special thanks to the Claude and Anthropic teams for the MCP protocol
 
-## 📮 Support
+## Support
 
-- 📧 Email: [Your contact email]
-- 🐛 Issues: [GitHub Issues](https://github.com/quanticsoul4772/unified-thinking/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/quanticsoul4772/unified-thinking/discussions)
-
----
-
-<p align="center">
-  Made with ❤️ for better AI reasoning
-</p>
+- Issues: [GitHub Issues](https://github.com/quanticsoul4772/unified-thinking/issues)
+- Discussions: [GitHub Discussions](https://github.com/quanticsoul4772/unified-thinking/discussions)

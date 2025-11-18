@@ -39,12 +39,22 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 5. **Backtracking Mode** (`modes/backtracking.go`) - Checkpoint-based reasoning with restore capabilities
 6. **Auto Mode** (`modes/auto.go`) - Automatic mode selection based on input content analysis
 
-The Auto Mode uses keyword detection to intelligently select the best thinking mode:
+The Auto Mode uses semantic embeddings (when VOYAGE_API_KEY is set) or keyword detection to select the best thinking mode:
+
+**Semantic Detection** (requires VOYAGE_API_KEY):
+- Compares input content against prototype embeddings for each mode
+- Uses cosine similarity to find best match
+- Returns confidence score based on semantic similarity
+- Mode prototypes include 6 examples each for linear, tree, and divergent modes
+
+**Keyword Detection** (fallback when no API key):
 - Divergent triggers: "creative", "unconventional", "what if", "imagine", "challenge", "rebel"
 - Tree triggers: branch_id provided, cross_refs present, key_points present, or keywords "branch", "explore", "alternative", "parallel"
-- Reflection triggers: "reflect", "review", "retrospective", "what did we learn"
-- Backtracking triggers: "checkpoint", "restore", "go back", "revert"
-- Linear: Default fallback for systematic reasoning
+- Linear: Default for systematic reasoning
+
+**Explicit Overrides** (highest priority):
+- ForceRebellion flag forces divergent mode
+- BranchID, CrossRefs, or KeyPoints force tree mode
 
 ## Development Commands
 
