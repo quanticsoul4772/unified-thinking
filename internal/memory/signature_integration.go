@@ -1,10 +1,14 @@
 package memory
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
 	"strings"
+	"time"
+
+	"unified-thinking/internal/embeddings"
 )
 
 // SignatureStorage defines the interface for storing context signatures
@@ -20,12 +24,14 @@ type ContextSignature struct {
 	KeyConcepts  []string
 	ToolSequence []string
 	Complexity   float64
+	Embedding    []float32 // Semantic embedding for similarity matching
 }
 
 // SignatureIntegration handles generating and storing context signatures for trajectories
 type SignatureIntegration struct {
 	storage   SignatureStorage
 	extractor ConceptExtractor
+	embedder  embeddings.Embedder // Optional embedder for semantic similarity
 }
 
 // ConceptExtractor extracts key concepts from text
@@ -99,7 +105,13 @@ func NewSignatureIntegration(storage SignatureStorage, extractor ConceptExtracto
 	}
 }
 
+// SetEmbedder sets the embedder for semantic similarity
+func (si *SignatureIntegration) SetEmbedder(embedder embeddings.Embedder) {
+	si.embedder = embedder
+}
+
 // GenerateAndStoreSignature generates a context signature from a trajectory and stores it
+// Embeddings are generated asynchronously to avoid blocking the main flow
 func (si *SignatureIntegration) GenerateAndStoreSignature(trajectory *ReasoningTrajectory) error {
 	if si.storage == nil || trajectory == nil {
 		return nil
@@ -112,7 +124,7 @@ func (si *SignatureIntegration) GenerateAndStoreSignature(trajectory *ReasoningT
 		return nil
 	}
 
-	// Store the signature
+	// Store the signature immediately (without embedding)
 	if err := si.storage.StoreContextSignature(trajectory.ID, sig); err != nil {
 		log.Printf("Failed to store signature for trajectory %s: %v", trajectory.ID, err)
 		return err
@@ -124,7 +136,40 @@ func (si *SignatureIntegration) GenerateAndStoreSignature(trajectory *ReasoningT
 	}
 	log.Printf("Stored context signature for trajectory %s (fingerprint prefix: %s)",
 		trajectory.ID, sig.Fingerprint[:prefixLen])
+
+	// Generate embedding asynchronously if embedder is available
+	if si.embedder != nil && trajectory.Problem != nil {
+		go si.generateAndUpdateEmbedding(trajectory.ID, trajectory.Problem.Description, sig)
+	}
+
 	return nil
+}
+
+// generateAndUpdateEmbedding generates an embedding and updates the stored signature
+func (si *SignatureIntegration) generateAndUpdateEmbedding(trajectoryID string, text string, sig *ContextSignature) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	embedding, err := si.embedder.Embed(ctx, text)
+	if err != nil {
+		log.Printf("[WARN] Failed to generate embedding for trajectory %s: %v", trajectoryID, err)
+		return
+	}
+
+	if len(embedding) == 0 {
+		log.Printf("[WARN] Empty embedding returned for trajectory %s", trajectoryID)
+		return
+	}
+
+	// Update the signature with the embedding
+	sig.Embedding = embedding
+	if err := si.storage.StoreContextSignature(trajectoryID, sig); err != nil {
+		log.Printf("[WARN] Failed to update signature with embedding for trajectory %s: %v", trajectoryID, err)
+		return
+	}
+
+	log.Printf("[DEBUG] Updated signature with embedding for trajectory %s (%d dimensions)",
+		trajectoryID, len(embedding))
 }
 
 // generateSignature creates a context signature from a trajectory

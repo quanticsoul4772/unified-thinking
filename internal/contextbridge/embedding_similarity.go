@@ -9,9 +9,9 @@ import (
 
 // EmbeddingSimilarity calculates similarity using semantic embeddings
 type EmbeddingSimilarity struct {
-	embedder   embeddings.Embedder
-	fallback   SimilarityCalculator
-	hybridMode bool // Combine embedding + concept similarity
+	embedder    embeddings.Embedder
+	fallback    SimilarityCalculator
+	hybridMode  bool    // Combine embedding + concept similarity
 	embedWeight float64 // Weight for embedding similarity in hybrid mode
 }
 

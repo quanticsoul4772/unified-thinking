@@ -15,10 +15,10 @@ func TestClassifyProblem_MetaQuestion(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "meta question about problems that resist analysis",
@@ -107,10 +107,10 @@ func TestClassifyProblem_EmotionalProblem(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "personal emotional decision",
@@ -163,10 +163,10 @@ func TestClassifyProblem_ValueConflict(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "privacy vs security",
@@ -219,10 +219,10 @@ func TestClassifyProblem_CreativeProblem(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "novel solution request",
@@ -275,10 +275,10 @@ func TestClassifyProblem_TacitKnowledge(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "when to bail out",
@@ -331,10 +331,10 @@ func TestClassifyProblem_ChaoticProblem(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "stock market prediction",
@@ -387,10 +387,10 @@ func TestClassifyProblem_Decomposable(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name           string
-		problem        string
-		expectedType   ProblemType
-		minConfidence  float64
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
 	}{
 		{
 			name:          "simple technical problem",
@@ -451,9 +451,9 @@ func TestDetectEmotionalProblem_NoMatch(t *testing.T) {
 
 	// These should not be detected as emotional problems
 	problems := []string{
-		"How do we implement this feature?",        // No personal pronoun
-		"The team should decide on architecture",   // No emotional terms
-		"We need better performance",               // No emotional context
+		"How do we implement this feature?",      // No personal pronoun
+		"The team should decide on architecture", // No emotional terms
+		"We need better performance",             // No emotional context
 	}
 
 	for _, problem := range problems {
@@ -469,9 +469,9 @@ func TestDetectValueConflict_NoMatch(t *testing.T) {
 
 	// These should not be detected as value conflicts
 	problems := []string{
-		"How do we improve security?",            // Single value, no vs
-		"Balance the load across servers",         // Not a value conflict
-		"Choose between option A and option B",   // No "vs" or "versus"
+		"How do we improve security?",          // Single value, no vs
+		"Balance the load across servers",      // Not a value conflict
+		"Choose between option A and option B", // No "vs" or "versus"
 	}
 
 	for _, problem := range problems {
@@ -549,9 +549,9 @@ func TestClassifyProblem_EdgeCases(t *testing.T) {
 	pc := NewProblemClassifier()
 
 	tests := []struct {
-		name        string
-		problem     string
-		expectType  ProblemType
+		name       string
+		problem    string
+		expectType ProblemType
 	}{
 		{
 			name:       "empty string defaults to decomposable",

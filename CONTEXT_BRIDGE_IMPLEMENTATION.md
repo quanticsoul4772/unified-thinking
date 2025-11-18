@@ -14,15 +14,20 @@ Hybrid implementation combining semantic embeddings (Voyage AI) with concept-bas
 - Core context bridge with signature extraction, matching, and enrichment
 - SQLite storage with schema migrations (v1-v5)
 - LRU caching for recent signatures
-- Metrics collection and exposure
-- Semantic embeddings integration (Voyage AI)
+- Metrics collection and exposure (p50/p95/p99 latency, cache stats, error/timeout counts)
+- Context bridge metrics now exposed in get-metrics tool response
+- Semantic embeddings integration (Voyage AI voyage-3-lite, 512 dimensions)
 - Graceful degradation with visible status in responses
-- Hybrid similarity mode (embedding + concept)
+- Hybrid similarity mode (70% embedding + 30% concept)
+- Proactive rate limiting for Voyage API (30 req/sec, burst of 10)
+- Backfill utility for existing trajectories (BackfillRunner with concurrent processing)
+- Context bridge always returns structure for visibility (even with no matches)
+- Integration tests for embedding similarity path
 
 **Not implemented:**
-- Backfill utility for existing trajectories
 - Gradual rollout (percentage-based feature flag)
 - Alert thresholds and notifications
+- Async embedding generation (currently synchronous with 500ms sub-timeout)
 
 ## Critical Constraints
 
@@ -1260,6 +1265,9 @@ After 1 week of deployment:
 
 **Completed in current implementation:**
 - ~~Replace Jaccard similarity with embedding-based semantic similarity~~ (done - hybrid mode with Voyage AI)
+- ~~Implement backfill utility for existing trajectories~~ (done - BackfillRunner with concurrent processing)
+- ~~Implement rate limiting for embedding API calls~~ (done - token bucket rate limiter, 30 req/sec)
+- ~~Add metrics exposure~~ (done - p50/p95/p99 latency, cache stats, error/timeout counts in get-metrics)
 
 **Remaining improvements:**
 1. Replace SimpleExtractor with NLP-based concept extraction
@@ -1267,6 +1275,6 @@ After 1 week of deployment:
 3. Track engagement (which matches Claude reads) to improve ranking
 4. Add temporal decay (recent trajectories weighted higher)
 5. Support cross-domain transfer learning
-6. Implement backfill utility for existing trajectories
-7. Add async embedding generation to reduce latency
-8. Implement rate limiting for embedding API calls
+6. Add async embedding generation to reduce latency (currently synchronous with 500ms sub-timeout)
+7. Implement gradual rollout (percentage-based feature flag)
+8. Add alert thresholds for performance degradation

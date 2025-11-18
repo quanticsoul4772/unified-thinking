@@ -9,9 +9,9 @@ import (
 
 // EmbeddingCache provides thread-safe caching for embeddings
 type EmbeddingCache struct {
-	mu      sync.RWMutex
-	cache   map[string]*cachedEmbedding
-	ttl     time.Duration
+	mu    sync.RWMutex
+	cache map[string]*cachedEmbedding
+	ttl   time.Duration
 }
 
 // cachedEmbedding represents a cached embedding with expiry

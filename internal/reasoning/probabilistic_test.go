@@ -217,12 +217,12 @@ func TestUpdateBeliefWithEvidence(t *testing.T) {
 	pr := NewProbabilisticReasoner()
 
 	tests := []struct {
-		name          string
-		priorProb     float64
-		evidence      *types.Evidence
-		expectError   bool
-		posteriorMin  float64
-		posteriorMax  float64
+		name         string
+		priorProb    float64
+		evidence     *types.Evidence
+		expectError  bool
+		posteriorMin float64
+		posteriorMax float64
 	}{
 		{
 			name:      "supporting high quality evidence",

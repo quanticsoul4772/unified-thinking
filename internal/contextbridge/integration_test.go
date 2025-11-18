@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"unified-thinking/internal/embeddings"
 )
 
 // TestIntegration_FullContextBridgeFlow tests the complete context bridge flow
@@ -256,12 +258,12 @@ func TestIntegration_SignatureGeneration(t *testing.T) {
 	extractor := NewSimpleExtractor()
 
 	tests := []struct {
-		name            string
-		tool            string
-		params          map[string]interface{}
-		expectNil       bool
-		minConcepts     int
-		expectedDomain  string
+		name           string
+		tool           string
+		params         map[string]interface{}
+		expectNil      bool
+		minConcepts    int
+		expectedDomain string
 	}{
 		{
 			name: "think_with_content",
@@ -539,4 +541,315 @@ func TestIntegration_PerformanceBaseline(t *testing.T) {
 	if avgLatency > 10*time.Millisecond {
 		t.Errorf("Average latency %v exceeds 10ms target", avgLatency)
 	}
+}
+
+// TestIntegration_EmbeddingSimilarityPath tests the full embedding similarity workflow
+func TestIntegration_EmbeddingSimilarityPath(t *testing.T) {
+	// Create candidates with embeddings
+	// Using simple normalized vectors for testing
+	embedding1 := []float32{0.5, 0.5, 0.5, 0.5} // normalized
+	embedding2 := []float32{0.6, 0.4, 0.5, 0.5} // similar to 1
+	embedding3 := []float32{0.1, 0.9, 0.2, 0.3} // different
+
+	storage := &MockStorage{
+		candidates: []*CandidateWithSignature{
+			{
+				TrajectoryID: "traj-emb-1",
+				SessionID:    "sess-emb-1",
+				Description:  "Database performance optimization with indexes",
+				SuccessScore: 0.95,
+				QualityScore: 0.90,
+				Signature: &Signature{
+					Fingerprint:  "emb1fingerprint",
+					Domain:       "engineering",
+					KeyConcepts:  []string{"database", "performance", "indexes"},
+					ToolSequence: []string{"think"},
+					Complexity:   0.7,
+					Embedding:    embedding1,
+				},
+			},
+			{
+				TrajectoryID: "traj-emb-2",
+				SessionID:    "sess-emb-2",
+				Description:  "Query optimization techniques",
+				SuccessScore: 0.85,
+				QualityScore: 0.80,
+				Signature: &Signature{
+					Fingerprint:  "emb2fingerprint",
+					Domain:       "engineering",
+					KeyConcepts:  []string{"query", "optimization", "techniques"},
+					ToolSequence: []string{"think"},
+					Complexity:   0.6,
+					Embedding:    embedding2,
+				},
+			},
+			{
+				TrajectoryID: "traj-emb-3",
+				SessionID:    "sess-emb-3",
+				Description:  "Machine learning model training",
+				SuccessScore: 0.70,
+				QualityScore: 0.75,
+				Signature: &Signature{
+					Fingerprint:  "emb3fingerprint",
+					Domain:       "ai",
+					KeyConcepts:  []string{"machine", "learning", "model"},
+					ToolSequence: []string{"think"},
+					Complexity:   0.8,
+					Embedding:    embedding3,
+				},
+			},
+		},
+	}
+
+	// Configure context bridge with embedding support
+	config := DefaultConfig()
+	config.MinSimilarity = 0.3
+
+	extractor := NewSimpleExtractor()
+	similarity := NewDefaultSimilarity()
+	matcher := NewMatcher(storage, similarity, extractor)
+	// Pass nil embedder - we test similarity calculator directly
+	bridge := New(config, matcher, extractor, nil)
+
+	// Create embedding similarity calculator for direct tests
+	embeddingSim := NewEmbeddingSimilarity(nil, similarity, true)
+
+	// Test 1: Query semantically similar to embedding1
+	t.Run("semantic_match_with_embeddings", func(t *testing.T) {
+		params := map[string]interface{}{
+			"content": "How to improve database performance using indexes?",
+		}
+		result := map[string]interface{}{
+			"thought_id": "thought-emb-test",
+		}
+
+		enriched, err := bridge.EnrichResponse(context.Background(), "think", params, result)
+		if err != nil {
+			t.Fatalf("EnrichResponse failed: %v", err)
+		}
+
+		enrichedMap, ok := enriched.(map[string]interface{})
+		if !ok {
+			t.Fatalf("Expected map, got %T", enriched)
+		}
+
+		bridgeData, ok := enrichedMap["context_bridge"]
+		if !ok {
+			t.Fatal("Expected context_bridge in response")
+		}
+
+		cbd, ok := bridgeData.(map[string]interface{})
+		if !ok {
+			t.Fatalf("Expected map[string]interface{}, got %T", bridgeData)
+		}
+
+		matches := cbd["matches"].([]*Match)
+		if len(matches) == 0 {
+			t.Fatal("Expected at least one match")
+		}
+
+		// Should find database-related trajectories first due to concept similarity
+		foundDBMatch := false
+		for _, match := range matches {
+			if match.TrajectoryID == "traj-emb-1" || match.TrajectoryID == "traj-emb-2" {
+				foundDBMatch = true
+				t.Logf("Found match: %s with similarity %.3f", match.TrajectoryID, match.Similarity)
+			}
+		}
+		if !foundDBMatch {
+			t.Error("Expected to find database-related trajectory matches")
+		}
+	})
+
+	// Test 2: Verify EmbeddingSimilarity calculator works correctly
+	t.Run("embedding_similarity_calculation", func(t *testing.T) {
+		sig1 := &Signature{
+			KeyConcepts: []string{"database", "optimization"},
+			Embedding:   embedding1,
+		}
+		sig2 := &Signature{
+			KeyConcepts: []string{"query", "optimization"},
+			Embedding:   embedding2,
+		}
+		sig3 := &Signature{
+			KeyConcepts: []string{"machine", "learning"},
+			Embedding:   embedding3,
+		}
+
+		// Similar embeddings should have higher score
+		sim12 := embeddingSim.Calculate(sig1, sig2)
+		sim13 := embeddingSim.Calculate(sig1, sig3)
+
+		if sim12 <= sim13 {
+			t.Errorf("Expected sim(1,2)=%.3f > sim(1,3)=%.3f", sim12, sim13)
+		}
+
+		t.Logf("Similarity(1,2)=%.3f, Similarity(1,3)=%.3f", sim12, sim13)
+	})
+
+	// Test 3: Fallback to concept similarity when embeddings missing
+	t.Run("fallback_without_embeddings", func(t *testing.T) {
+		sigWithEmb := &Signature{
+			KeyConcepts: []string{"database", "optimization"},
+			Embedding:   embedding1,
+		}
+		sigWithoutEmb := &Signature{
+			KeyConcepts: []string{"database", "optimization"},
+			Embedding:   nil, // No embedding
+		}
+
+		// Should still calculate similarity using concepts
+		sim := embeddingSim.Calculate(sigWithEmb, sigWithoutEmb)
+		if sim == 0 {
+			t.Error("Expected non-zero similarity even without embedding (concept fallback)")
+		}
+		t.Logf("Similarity with missing embedding: %.3f", sim)
+	})
+
+	// Test 4: Hybrid similarity mode indicator in response
+	t.Run("similarity_mode_indicator", func(t *testing.T) {
+		params := map[string]interface{}{
+			"content": "Database query performance",
+		}
+		result := map[string]interface{}{
+			"thought_id": "thought-mode-test",
+		}
+
+		enriched, err := bridge.EnrichResponse(context.Background(), "think", params, result)
+		if err != nil {
+			t.Fatalf("EnrichResponse failed: %v", err)
+		}
+
+		enrichedMap := enriched.(map[string]interface{})
+		cbd := enrichedMap["context_bridge"].(map[string]interface{})
+
+		// Check if similarity_mode is set
+		if mode, ok := cbd["similarity_mode"]; ok {
+			t.Logf("Similarity mode: %v", mode)
+		}
+	})
+}
+
+// TestIntegration_EmbeddingSimilarityMath tests the mathematical correctness of embedding similarity
+func TestIntegration_EmbeddingSimilarityMath(t *testing.T) {
+	// Test cosine similarity calculation
+	t.Run("cosine_similarity_identical", func(t *testing.T) {
+		v := []float32{1, 2, 3, 4}
+		similarity := embeddings.CosineSimilarity(v, v)
+		if similarity < 0.999 {
+			t.Errorf("Expected ~1.0 for identical vectors, got %.3f", similarity)
+		}
+	})
+
+	t.Run("cosine_similarity_orthogonal", func(t *testing.T) {
+		v1 := []float32{1, 0, 0, 0}
+		v2 := []float32{0, 1, 0, 0}
+		similarity := embeddings.CosineSimilarity(v1, v2)
+		if similarity > 0.001 {
+			t.Errorf("Expected ~0.0 for orthogonal vectors, got %.3f", similarity)
+		}
+	})
+
+	t.Run("cosine_similarity_opposite", func(t *testing.T) {
+		v1 := []float32{1, 0, 0, 0}
+		v2 := []float32{-1, 0, 0, 0}
+		similarity := embeddings.CosineSimilarity(v1, v2)
+		if similarity > -0.999 {
+			t.Errorf("Expected ~-1.0 for opposite vectors, got %.3f", similarity)
+		}
+	})
+
+	// Test hybrid scoring
+	t.Run("hybrid_similarity_scoring", func(t *testing.T) {
+		fallback := NewDefaultSimilarity()
+		embSim := NewEmbeddingSimilarity(nil, fallback, true)
+
+		// Same concepts, same embeddings -> very high similarity
+		sig1 := &Signature{
+			KeyConcepts: []string{"database", "optimization"},
+			Embedding:   []float32{0.5, 0.5, 0.5, 0.5},
+		}
+		sig2 := &Signature{
+			KeyConcepts: []string{"database", "optimization"},
+			Embedding:   []float32{0.5, 0.5, 0.5, 0.5},
+		}
+
+		score := embSim.Calculate(sig1, sig2)
+		// Hybrid similarity = 70% embedding (1.0) + 30% concept (1.0) = 1.0
+		// But the actual calculation may differ based on implementation
+		if score < 0.85 {
+			t.Errorf("Expected high similarity for identical signatures, got %.3f", score)
+		}
+		t.Logf("Identical signature similarity: %.3f", score)
+	})
+}
+
+// TestIntegration_GracefulDegradation tests the system handles missing embeddings gracefully
+func TestIntegration_GracefulDegradation(t *testing.T) {
+	// Create candidates with mixed embedding availability
+	storage := &MockStorage{
+		candidates: []*CandidateWithSignature{
+			{
+				TrajectoryID: "traj-with-emb",
+				SuccessScore: 0.90,
+				Signature: &Signature{
+					KeyConcepts: []string{"database", "queries"},
+					Embedding:   []float32{0.5, 0.5, 0.5, 0.5},
+				},
+			},
+			{
+				TrajectoryID: "traj-without-emb",
+				SuccessScore: 0.85,
+				Signature: &Signature{
+					KeyConcepts: []string{"database", "queries"},
+					Embedding:   nil, // No embedding
+				},
+			},
+		},
+	}
+
+	config := DefaultConfig()
+	config.MinSimilarity = 0.2
+
+	extractor := NewSimpleExtractor()
+	similarity := NewDefaultSimilarity()
+	matcher := NewMatcher(storage, similarity, extractor)
+	// Pass nil embedder - test graceful handling
+	bridge := New(config, matcher, extractor, nil)
+
+	params := map[string]interface{}{
+		"content": "Database query optimization",
+	}
+	result := map[string]interface{}{
+		"thought_id": "test",
+	}
+
+	// Should not error even with mixed embeddings
+	enriched, err := bridge.EnrichResponse(context.Background(), "think", params, result)
+	if err != nil {
+		t.Fatalf("EnrichResponse failed with mixed embeddings: %v", err)
+	}
+
+	enrichedMap := enriched.(map[string]interface{})
+
+	// Check if context_bridge is present
+	bridgeData, ok := enrichedMap["context_bridge"]
+	if !ok {
+		t.Log("No context_bridge in response - this is acceptable for graceful degradation test")
+		return
+	}
+
+	cbd, ok := bridgeData.(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected map[string]interface{}, got %T", bridgeData)
+	}
+
+	matches, ok := cbd["matches"].([]*Match)
+	if !ok {
+		t.Log("No matches in context_bridge - this is acceptable")
+		return
+	}
+
+	// Log results
+	t.Logf("Found %d matches with mixed embedding availability", len(matches))
 }

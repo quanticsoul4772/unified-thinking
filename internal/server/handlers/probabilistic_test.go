@@ -616,8 +616,8 @@ func TestProbabilisticHandler_HandleDetectContradictions(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "detect all (empty request)",
-			input: DetectContradictionsRequest{},
+			name:    "detect all (empty request)",
+			input:   DetectContradictionsRequest{},
 			wantErr: false,
 		},
 		{

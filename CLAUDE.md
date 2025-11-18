@@ -706,6 +706,38 @@ When Claude Desktop starts, it will:
 - Tools: All episodic memory tools return `[]` (empty arrays) instead of `null` when no data exists
 - Persistence: Reasoning sessions survive Claude Desktop restarts
 
+### Context Bridge Improvements
+
+**Metrics Exposure Fix**
+- **Problem**: Context bridge metrics not visible in `get-metrics` tool response
+- **Fix**: Added `ContextBridge` field to `MetricsResponse` struct and populated from `contextBridge.GetMetrics()`
+- **Files Modified**: `internal/server/server.go`
+- **Impact**: `get-metrics` now returns p50/p95/p99 latency, cache hits/misses, error/timeout counts
+
+**Always-Visible Response Structure**
+- **Problem**: Context bridge only returned structure when matches found, making it invisible during initial usage
+- **Fix**: Changed `buildEnrichedResponseWithStatus` to always return `context_bridge` field with `status` and `match_count`
+- **Files Modified**: `internal/contextbridge/bridge.go`, `internal/contextbridge/bridge_test.go`
+- **Impact**: Tool responses always show context bridge status (e.g., `"status": "no_matches"` or `"status": "matches_found"`)
+
+**Rate Limiting Implementation**
+- **Feature**: Proactive token bucket rate limiter for Voyage AI API calls
+- **Configuration**: 30 requests/second, burst of 10
+- **Files Modified**: `internal/embeddings/voyage.go`, `internal/embeddings/embeddings_test.go`
+- **Impact**: Prevents API throttling during high-volume usage
+
+**Backfill Utility**
+- **Feature**: Batch processing utility for adding embeddings to existing trajectories
+- **Implementation**: `BackfillRunner` with concurrent processing, configurable batch size and concurrency
+- **Files Created**: `internal/embeddings/backfill.go`, `internal/embeddings/backfill_test.go`
+- **Usage**: For adding embeddings to trajectories created before embedding support was added
+
+**Debug Logging Consistency**
+- **Problem**: Mixed `fmt.Printf` and `log.Printf` for debug output
+- **Fix**: Converted all debug output to use `log.Printf` with `[DEBUG]` prefix
+- **Files Modified**: `internal/server/server.go`
+- **Impact**: Consistent logging format, all debug output goes through log system
+
 ## Technical Constraints
 
 - Go 1.24+ required

@@ -317,7 +317,7 @@ func TestAnalyzeTrajectoryGroup_Success(t *testing.T) {
 	assert.NotEmpty(t, pattern.ID)
 	assert.NotEmpty(t, pattern.Name)
 	assert.NotEmpty(t, pattern.Description)
-	assert.Equal(t, 1.0, pattern.SuccessRate) // Both successful
+	assert.Equal(t, 1.0, pattern.SuccessRate)              // Both successful
 	assert.InDelta(t, 0.85, pattern.AverageQuality, 0.001) // Use delta for float comparison
 	assert.Equal(t, 2, pattern.UsageCount)
 	assert.NotNil(t, pattern.SuccessfulApproach)

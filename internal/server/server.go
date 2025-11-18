@@ -266,8 +266,16 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	if sqliteStore != nil {
 		adapter := memory.NewSQLiteSignatureAdapter(sqliteStore)
 		signatureIntegration := memory.NewSignatureIntegration(adapter, nil)
+
+		// Set embedder for async embedding generation if available
+		if embeddingIntegration != nil {
+			signatureIntegration.SetEmbedder(embeddingIntegration.GetEmbedder())
+			log.Printf("Context signature integration enabled with async embedding generation")
+		} else {
+			log.Printf("Context signature integration enabled (without embeddings)")
+		}
+
 		store.SetSignatureIntegration(signatureIntegration)
-		log.Printf("Context signature integration enabled for episodic memory")
 	}
 
 	// Create session tracker
@@ -960,9 +968,9 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 
 					// Log the auto-retry for debugging
 					if os.Getenv("DEBUG") == "true" {
-						fmt.Printf("Auto-validation triggered: confidence=%.2f, quality=%.2f, completeness=%.2f, coherence=%.2f\n",
+						log.Printf("[DEBUG] Auto-validation triggered: confidence=%.2f, quality=%.2f, completeness=%.2f, coherence=%.2f",
 							result.Confidence, evaluation.QualityScore, evaluation.CompletenessScore, evaluation.CoherenceScore)
-						fmt.Println("Retrying with ChallengeAssumptions=true")
+						log.Printf("[DEBUG] Retrying with ChallengeAssumptions=true")
 					}
 
 					// Retry with ChallengeAssumptions enabled
@@ -1047,7 +1055,7 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 	// Add auto-validation info to response metadata
 	if autoValidationTriggered {
 		if os.Getenv("DEBUG") == "true" {
-			fmt.Printf("Auto-validation completed for thought %s (confidence: %.2f, retried: %v)\n",
+			log.Printf("[DEBUG] Auto-validation completed for thought %s (confidence: %.2f, retried: %v)",
 				result.ThoughtID, result.Confidence, isAutoRetry)
 		}
 	}
@@ -1368,12 +1376,13 @@ func convertCrossRefs(input []CrossRefInput) []modes.CrossRefInput {
 }
 
 type MetricsResponse struct {
-	TotalThoughts     int            `json:"total_thoughts"`
-	TotalBranches     int            `json:"total_branches"`
-	TotalInsights     int            `json:"total_insights"`
-	TotalValidations  int            `json:"total_validations"`
-	ThoughtsByMode    map[string]int `json:"thoughts_by_mode"`
-	AverageConfidence float64        `json:"average_confidence"`
+	TotalThoughts     int                    `json:"total_thoughts"`
+	TotalBranches     int                    `json:"total_branches"`
+	TotalInsights     int                    `json:"total_insights"`
+	TotalValidations  int                    `json:"total_validations"`
+	ThoughtsByMode    map[string]int         `json:"thoughts_by_mode"`
+	AverageConfidence float64                `json:"average_confidence"`
+	ContextBridge     map[string]interface{} `json:"context_bridge,omitempty"`
 }
 
 type RecentBranchesResponse struct {
@@ -1392,6 +1401,11 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 		TotalValidations:  metrics.TotalValidations,
 		ThoughtsByMode:    metrics.ThoughtsByMode,
 		AverageConfidence: metrics.AverageConfidence,
+	}
+
+	// Include context bridge metrics if available
+	if s.contextBridge != nil {
+		response.ContextBridge = s.contextBridge.GetMetrics()
 	}
 
 	return &mcp.CallToolResult{

@@ -7,12 +7,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
 // VoyageAI API constants
 const (
 	voyageAPIURL = "https://api.voyageai.com/v1/embeddings"
+	// Rate limiting defaults (Voyage AI: 2000 RPM for paid tier)
+	defaultRateLimit    = 30 // requests per second (1800 RPM, leaving headroom)
+	defaultBurstLimit   = 10 // allow small bursts
+	rateLimitWindowSize = time.Second
 )
 
 // VoyageEmbedder implements Embedder using Voyage AI API
@@ -22,18 +27,74 @@ type VoyageEmbedder struct {
 	model     string
 	dimension int
 	timeout   time.Duration
+
+	// Rate limiting
+	rateLimiter *tokenBucketLimiter
+}
+
+// tokenBucketLimiter implements a simple token bucket rate limiter
+type tokenBucketLimiter struct {
+	mu         sync.Mutex
+	tokens     float64
+	maxTokens  float64
+	refillRate float64 // tokens per second
+	lastRefill time.Time
+}
+
+// newTokenBucketLimiter creates a new token bucket rate limiter
+func newTokenBucketLimiter(ratePerSecond, burst int) *tokenBucketLimiter {
+	return &tokenBucketLimiter{
+		tokens:     float64(burst),
+		maxTokens:  float64(burst),
+		refillRate: float64(ratePerSecond),
+		lastRefill: time.Now(),
+	}
+}
+
+// Wait blocks until a token is available or context is cancelled
+func (l *tokenBucketLimiter) Wait(ctx context.Context) error {
+	for {
+		l.mu.Lock()
+		// Refill tokens based on elapsed time
+		now := time.Now()
+		elapsed := now.Sub(l.lastRefill).Seconds()
+		l.tokens += elapsed * l.refillRate
+		if l.tokens > l.maxTokens {
+			l.tokens = l.maxTokens
+		}
+		l.lastRefill = now
+
+		// Check if we have a token
+		if l.tokens >= 1 {
+			l.tokens--
+			l.mu.Unlock()
+			return nil
+		}
+
+		// Calculate wait time for next token
+		waitTime := time.Duration((1.0 - l.tokens) / l.refillRate * float64(time.Second))
+		l.mu.Unlock()
+
+		// Wait for token or context cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(waitTime):
+			// Continue loop to try again
+		}
+	}
 }
 
 // NewVoyageEmbedder creates a new Voyage AI embedder
 func NewVoyageEmbedder(apiKey, model string) *VoyageEmbedder {
 	// Model dimensions from Voyage AI documentation
 	dimensions := map[string]int{
-		"voyage-3-lite":  512,
-		"voyage-3":       1024,
-		"voyage-3-large": 2048,
-		"voyage-code-3":  1536,
+		"voyage-3-lite":    512,
+		"voyage-3":         1024,
+		"voyage-3-large":   2048,
+		"voyage-code-3":    1536,
 		"voyage-finance-2": 1024,
-		"voyage-law-2":   1024,
+		"voyage-law-2":     1024,
 	}
 
 	dim := dimensions[model]
@@ -45,10 +106,11 @@ func NewVoyageEmbedder(apiKey, model string) *VoyageEmbedder {
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		apiKey:    apiKey,
-		model:     model,
-		dimension: dim,
-		timeout:   30 * time.Second,
+		apiKey:      apiKey,
+		model:       model,
+		dimension:   dim,
+		timeout:     30 * time.Second,
+		rateLimiter: newTokenBucketLimiter(defaultRateLimit, defaultBurstLimit),
 	}
 }
 
@@ -82,10 +144,15 @@ func (e *VoyageEmbedder) Embed(ctx context.Context, text string) ([]float32, err
 	return embeddings[0], nil
 }
 
-// EmbedBatch generates embeddings for multiple texts with retry logic
+// EmbedBatch generates embeddings for multiple texts with rate limiting and retry logic
 func (e *VoyageEmbedder) EmbedBatch(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, fmt.Errorf("no texts provided")
+	}
+
+	// Wait for rate limiter before making request
+	if err := e.rateLimiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("rate limiter wait failed: %w", err)
 	}
 
 	// Retry configuration for rate limits

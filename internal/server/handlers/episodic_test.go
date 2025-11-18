@@ -532,11 +532,11 @@ func TestEpisodicMemoryHandler_SessionLifecycle(t *testing.T) {
 	})
 
 	result, err = handler.HandleCompleteSession(ctx, map[string]interface{}{
-		"session_id":           "failure_test",
-		"status":               "failure",
-		"goals_failed":         []interface{}{"all goals"},
-		"unexpected_outcomes":  []interface{}{"error occurred"},
-		"confidence":           0.1,
+		"session_id":          "failure_test",
+		"status":              "failure",
+		"goals_failed":        []interface{}{"all goals"},
+		"unexpected_outcomes": []interface{}{"error occurred"},
+		"confidence":          0.1,
 	})
 
 	if err != nil {

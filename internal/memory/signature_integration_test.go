@@ -33,9 +33,9 @@ func TestSignatureIntegration_GenerateAndStoreSignature(t *testing.T) {
 	integration := NewSignatureIntegration(storage, nil)
 
 	trajectory := &ReasoningTrajectory{
-		ID:        "traj-123",
-		SessionID: "sess-456",
-		Domain:    "engineering",
+		ID:         "traj-123",
+		SessionID:  "sess-456",
+		Domain:     "engineering",
 		Complexity: 0.7,
 		Problem: &ProblemDescription{
 			Description: "How to optimize database queries for better performance",

@@ -62,11 +62,11 @@ type ProblemDescription struct {
 
 // EmbeddingMetadata contains metadata about an embedding
 type EmbeddingMetadata struct {
-	Model     string    `json:"model"`      // e.g., "voyage-3-lite"
-	Provider  string    `json:"provider"`   // e.g., "voyage"
-	Dimension int       `json:"dimension"`  // e.g., 512
+	Model     string    `json:"model"`     // e.g., "voyage-3-lite"
+	Provider  string    `json:"provider"`  // e.g., "voyage"
+	Dimension int       `json:"dimension"` // e.g., 512
 	CreatedAt time.Time `json:"created_at"`
-	Source    string    `json:"source"`     // "description" or "description+context+goals"
+	Source    string    `json:"source"` // "description" or "description+context+goals"
 }
 
 // ApproachDescription describes the reasoning approach taken
@@ -188,10 +188,10 @@ type Recommendation struct {
 type EpisodicMemoryStore struct {
 	trajectories         map[string]*ReasoningTrajectory
 	patterns             map[string]*TrajectoryPattern
-	problemIndex         map[string][]string // problem_hash -> trajectory_ids
-	domainIndex          map[string][]string // domain -> trajectory_ids
-	tagIndex             map[string][]string // tag -> trajectory_ids
-	toolSequenceIndex    map[string][]string // tool_sequence_hash -> trajectory_ids
+	problemIndex         map[string][]string   // problem_hash -> trajectory_ids
+	domainIndex          map[string][]string   // domain -> trajectory_ids
+	tagIndex             map[string][]string   // tag -> trajectory_ids
+	toolSequenceIndex    map[string][]string   // tool_sequence_hash -> trajectory_ids
 	embeddingIntegration *EmbeddingIntegration // Optional embedding-based search
 	signatureIntegration *SignatureIntegration // Optional context signature storage
 	mu                   sync.RWMutex

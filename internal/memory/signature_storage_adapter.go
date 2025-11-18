@@ -26,6 +26,7 @@ func (a *SQLiteSignatureAdapter) StoreContextSignature(trajectoryID string, sig 
 		KeyConcepts:  sig.KeyConcepts,
 		ToolSequence: sig.ToolSequence,
 		Complexity:   sig.Complexity,
+		Embedding:    sig.Embedding, // Include embedding if present
 	}
 
 	return a.store.StoreContextSignature(trajectoryID, storageSig)

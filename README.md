@@ -120,7 +120,14 @@ the server includes 63 specialized tools across 13 major categories:
 - adaptive recommendations (suggests proven strategies based on similar past problems)
 - trajectory search (learn from historical successes and failures)
 - retrospective analysis (comprehensive post-session analysis with actionable improvements)
-- **NEW: Semantic embeddings** - optional hybrid search combining hash-based and vector similarity (Voyage AI)
+- **Semantic embeddings** - optional hybrid search combining hash-based and vector similarity (Voyage AI)
+
+#### context bridge (automatic)
+- **cross-session context retrieval** - automatically surfaces similar past reasoning trajectories
+- **hybrid similarity matching** - 70% embedding similarity + 30% concept overlap
+- **graceful degradation** - continues with concept-only matching if embeddings timeout
+- **performance metrics** - p50/p95/p99 latency, cache stats, error/timeout counts
+- **visible response enrichment** - always shows context_bridge status in tool responses
 
 ## installation
 
@@ -209,11 +216,27 @@ for persistent storage across sessions:
 - `EMBEDDINGS_RRF_K`: RRF fusion parameter (default: `60`)
 - `EMBEDDINGS_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.5`)
 
+**Context Bridge** (automatic cross-session context retrieval):
+- `CONTEXT_BRIDGE_DISABLED`: Set to `true` to disable (enabled by default)
+- `CONTEXT_BRIDGE_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.7`)
+- `CONTEXT_BRIDGE_MAX_MATCHES`: Maximum matches to return (default: `3`)
+- `CONTEXT_BRIDGE_CACHE_SIZE`: LRU cache size (default: `100`)
+- `CONTEXT_BRIDGE_CACHE_TTL`: Cache TTL (default: `15m`)
+- `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: `2s`)
+
 after saving the config, restart claude desktop.
 
 ## recent updates
 
 ### new features
+- **context bridge for cross-session learning**: automatic retrieval of similar past reasoning trajectories
+  - hybrid similarity: 70% embedding cosine similarity + 30% concept jaccard similarity
+  - graceful degradation: continues with concept-only matching if embeddings fail
+  - performance metrics: p50/p95/p99 latency, cache stats, error/timeout counts
+  - visible status in responses: always shows context_bridge field with match status
+  - proactive rate limiting: token bucket rate limiter for Voyage AI API calls
+  - backfill utility: batch processing for adding embeddings to existing trajectories
+
 - **semantic embeddings for episodic memory**: optional hybrid search combining hash-based and vector similarity
   - voyage ai integration (200m free tokens, anthropic's recommended provider)
   - rrf (reciprocal rank fusion) for optimal result combination
@@ -221,22 +244,24 @@ after saving the config, restart claude desktop.
   - transparent fallback to hash-based search when embeddings disabled
 
 ### performance improvements
-- refactored server.go from monolithic 2,225-line file into modular components
-- improved handler test coverage from 43% to 47.2%
-- fixed episodic memory sqlite persistence issues
-- resolved all golangci-lint v2.x compatibility issues
-- formatted entire codebase with gofmt -s for consistency
+- context bridge metrics now exposed in get-metrics response
+- context bridge always returns structure for visibility (even with no matches)
+- proactive rate limiting prevents api throttling (30 req/sec with burst of 10)
+- converted all fmt.Printf debug statements to log.Printf for consistency
+- applied gofmt -s across entire codebase for consistent formatting
 
 ### bug fixes
 - fixed sqlite foreign key constraint failures in episodic memory
 - resolved nil array validation errors in mcp tool responses
 - fixed race conditions in concurrent sqlite tests
-- corrected test timestamp handling and empty path validation
+- fixed context bridge not showing metrics in get-metrics
+- fixed context bridge not returning structure when no matches found
 
 ### code quality
+- 73% test coverage for embeddings package (was 0%)
+- comprehensive integration tests for embedding similarity path
 - removed unused refactoring experiments
 - cleaned up test files and improved edge case coverage
-- updated all packages to pass golangci-lint checks
 - maintained backward compatibility while improving internals
 
 ## available tools (63 total)
@@ -427,6 +452,14 @@ unified-thinking/
 │   │   ├── episodic.go     # reasoning trajectory storage
 │   │   ├── learning.go     # pattern recognition
 │   │   └── retrospective.go # post-session analysis
+│   ├── embeddings/         # semantic embeddings for similarity
+│   │   ├── voyage.go       # voyage ai embedder with rate limiting
+│   │   └── backfill.go     # batch embedding generation utility
+│   ├── contextbridge/      # cross-session context retrieval
+│   │   ├── bridge.go       # response enrichment and metrics
+│   │   ├── matcher.go      # trajectory similarity matching
+│   │   ├── similarity.go   # hybrid similarity calculation
+│   │   └── config.go       # feature configuration
 │   └── server/             # mcp server implementation
 │       └── handlers/       # specialized tool handlers (21 files)
 ```
@@ -444,6 +477,8 @@ the server implements a modular cognitive architecture with specialized packages
 - **integration**: cross-mode synthesis and emergent pattern detection
 - **orchestration**: automated multi-tool workflow execution
 - **memory**: episodic memory for session tracking, pattern learning, and adaptive recommendations
+- **embeddings**: semantic embedding generation with Voyage AI for similarity search
+- **contextbridge**: automatic cross-session context retrieval with hybrid similarity matching
 
 all components are thread-safe, composable, and maintain backward compatibility.
 

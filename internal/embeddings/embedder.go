@@ -28,11 +28,11 @@ type Embedder interface {
 
 // EmbeddingMetadata contains metadata about an embedding
 type EmbeddingMetadata struct {
-	Model     string    `json:"model"`      // e.g., "voyage-3-lite"
-	Provider  string    `json:"provider"`   // e.g., "voyage"
-	Dimension int       `json:"dimension"`  // e.g., 1024
+	Model     string    `json:"model"`     // e.g., "voyage-3-lite"
+	Provider  string    `json:"provider"`  // e.g., "voyage"
+	Dimension int       `json:"dimension"` // e.g., 1024
 	CreatedAt time.Time `json:"created_at"`
-	Source    string    `json:"source"`     // "description" or "description+context+goals"
+	Source    string    `json:"source"` // "description" or "description+context+goals"
 }
 
 // Config holds embedding configuration
@@ -52,9 +52,9 @@ type Config struct {
 	CacheTTL        time.Duration `json:"cache_ttl"`        // Cache expiration
 
 	// Performance
-	BatchSize     int `json:"batch_size"`     // Batch embedding requests
-	MaxConcurrent int `json:"max_concurrent"` // Concurrent API calls
-	Timeout       time.Duration `json:"timeout"` // API call timeout
+	BatchSize     int           `json:"batch_size"`     // Batch embedding requests
+	MaxConcurrent int           `json:"max_concurrent"` // Concurrent API calls
+	Timeout       time.Duration `json:"timeout"`        // API call timeout
 }
 
 // DefaultConfig returns default embedding configuration

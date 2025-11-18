@@ -1,6 +1,10 @@
 package contextbridge
 
-import "sync/atomic"
+import (
+	"sort"
+	"sync"
+	"sync/atomic"
+)
 
 // Metrics tracks context bridge performance and usage
 type Metrics struct {
@@ -12,6 +16,12 @@ type Metrics struct {
 	MaxLatencyMs     int64
 	ErrorCount       int64
 	TimeoutCount     int64
+
+	// For percentile calculations
+	latencyMu         sync.Mutex
+	latencyBuffer     []int64 // Circular buffer of recent latencies
+	latencyIndex      int     // Current position in buffer
+	latencyBufferSize int     // Size of buffer (default 1000)
 }
 
 // RecordEnrichment records a completed enrichment operation
@@ -30,6 +40,49 @@ func (m *Metrics) RecordEnrichment(latencyMs int64, matchCount int) {
 			break
 		}
 	}
+
+	// Track latency in circular buffer for percentile calculations
+	m.latencyMu.Lock()
+	if m.latencyBuffer == nil {
+		m.latencyBufferSize = 1000
+		m.latencyBuffer = make([]int64, m.latencyBufferSize)
+	}
+	m.latencyBuffer[m.latencyIndex] = latencyMs
+	m.latencyIndex = (m.latencyIndex + 1) % m.latencyBufferSize
+	m.latencyMu.Unlock()
+}
+
+// calculatePercentile calculates the p-th percentile from the latency buffer
+func (m *Metrics) calculatePercentile(p float64) int64 {
+	m.latencyMu.Lock()
+	defer m.latencyMu.Unlock()
+
+	if m.latencyBuffer == nil || len(m.latencyBuffer) == 0 {
+		return 0
+	}
+
+	// Get non-zero values (buffer may not be full yet)
+	total := atomic.LoadInt64(&m.TotalEnrichments)
+	count := int(total)
+	if count > m.latencyBufferSize {
+		count = m.latencyBufferSize
+	}
+	if count == 0 {
+		return 0
+	}
+
+	// Copy and sort
+	values := make([]int64, count)
+	for i := 0; i < count; i++ {
+		values[i] = m.latencyBuffer[i]
+	}
+	sort.Slice(values, func(i, j int) bool {
+		return values[i] < values[j]
+	})
+
+	// Calculate percentile index
+	index := int(float64(count-1) * p / 100.0)
+	return values[index]
 }
 
 // RecordCacheHit records a cache hit
@@ -75,6 +128,9 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 		"cache_misses":      cacheMisses,
 		"cache_hit_rate":    cacheHitRate,
 		"avg_latency_ms":    avgLatency,
+		"p50_latency_ms":    m.calculatePercentile(50),
+		"p95_latency_ms":    m.calculatePercentile(95),
+		"p99_latency_ms":    m.calculatePercentile(99),
 		"max_latency_ms":    atomic.LoadInt64(&m.MaxLatencyMs),
 		"error_count":       atomic.LoadInt64(&m.ErrorCount),
 		"timeout_count":     atomic.LoadInt64(&m.TimeoutCount),
@@ -91,4 +147,10 @@ func (m *Metrics) Reset() {
 	atomic.StoreInt64(&m.MaxLatencyMs, 0)
 	atomic.StoreInt64(&m.ErrorCount, 0)
 	atomic.StoreInt64(&m.TimeoutCount, 0)
+
+	// Reset latency buffer
+	m.latencyMu.Lock()
+	m.latencyBuffer = nil
+	m.latencyIndex = 0
+	m.latencyMu.Unlock()
 }

@@ -141,13 +141,11 @@ func (cb *ContextBridge) EnrichResponse(
 
 // buildEnrichedResponseWithStatus creates the enriched response with context bridge data and status info
 func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, matches []*Match, embeddingFailed bool, embeddingError string) interface{} {
-	if len(matches) == 0 && !embeddingFailed {
-		return result
-	}
-
+	// Always return context_bridge structure for visibility (even with no matches)
 	bridgeData := map[string]interface{}{
 		"version":        "1.0",
 		"matches":        matches,
+		"match_count":    len(matches),
 		"recommendation": cb.generateRecommendation(matches),
 	}
 
@@ -156,8 +154,17 @@ func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, mat
 		bridgeData["embedding_status"] = "failed"
 		bridgeData["embedding_error"] = embeddingError
 		bridgeData["similarity_mode"] = "concept_only"
-	} else if len(matches) > 0 && len(matches[0].TrajectoryID) > 0 {
+	} else if cb.embedder != nil {
 		bridgeData["similarity_mode"] = "semantic_embedding"
+	} else {
+		bridgeData["similarity_mode"] = "concept_only"
+	}
+
+	// Add status field for clarity
+	if len(matches) == 0 {
+		bridgeData["status"] = "no_matches"
+	} else {
+		bridgeData["status"] = "matches_found"
 	}
 
 	return map[string]interface{}{

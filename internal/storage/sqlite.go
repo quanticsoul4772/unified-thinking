@@ -1340,6 +1340,118 @@ func (s *SQLiteStorage) GetContextSignature(trajectoryID string) (*ContextSignat
 	return sig, nil
 }
 
+// SignatureForBackfill represents a signature that needs embedding backfill
+type SignatureForBackfill struct {
+	TrajectoryID string
+	Fingerprint  string
+	Domain       string
+	KeyConcepts  []string
+	ToolSequence []string
+	Complexity   float64
+	Description  string // Problem description for embedding generation
+}
+
+// ListSignaturesWithoutEmbeddings returns signatures that need embedding backfill
+func (s *SQLiteStorage) ListSignaturesWithoutEmbeddings(limit int) ([]*SignatureForBackfill, error) {
+	query := `
+		SELECT
+			cs.trajectory_id,
+			cs.fingerprint,
+			cs.domain,
+			cs.key_concepts,
+			cs.tool_sequence,
+			cs.complexity,
+			COALESCE(rt.problem_description, '') as description
+		FROM context_signatures cs
+		LEFT JOIN reasoning_trajectories rt ON cs.trajectory_id = rt.id
+		WHERE cs.embedding IS NULL OR LENGTH(cs.embedding) = 0
+		ORDER BY cs.created_at DESC
+		LIMIT ?
+	`
+
+	rows, err := s.db.Query(query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query signatures without embeddings: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var signatures []*SignatureForBackfill
+	for rows.Next() {
+		var trajectoryID, fingerprint string
+		var domainVal, descriptionVal sql.NullString
+		var conceptsJSON, toolsJSON string
+		var complexity float64
+
+		err := rows.Scan(
+			&trajectoryID,
+			&fingerprint,
+			&domainVal,
+			&conceptsJSON,
+			&toolsJSON,
+			&complexity,
+			&descriptionVal,
+		)
+		if err != nil {
+			log.Printf("Warning: failed to scan signature for backfill: %v", err)
+			continue
+		}
+
+		sig := &SignatureForBackfill{
+			TrajectoryID: trajectoryID,
+			Fingerprint:  fingerprint,
+			Complexity:   complexity,
+		}
+
+		if domainVal.Valid {
+			sig.Domain = domainVal.String
+		}
+		if descriptionVal.Valid {
+			sig.Description = descriptionVal.String
+		}
+
+		// Parse JSON arrays
+		if conceptsJSON != "" {
+			if err := json.Unmarshal([]byte(conceptsJSON), &sig.KeyConcepts); err != nil {
+				sig.KeyConcepts = []string{}
+			}
+		}
+		if toolsJSON != "" {
+			if err := json.Unmarshal([]byte(toolsJSON), &sig.ToolSequence); err != nil {
+				sig.ToolSequence = []string{}
+			}
+		}
+
+		signatures = append(signatures, sig)
+	}
+
+	return signatures, rows.Err()
+}
+
+// UpdateSignatureEmbedding updates just the embedding for an existing signature
+func (s *SQLiteStorage) UpdateSignatureEmbedding(trajectoryID string, embedding []float32) error {
+	var embeddingBlob []byte
+	if len(embedding) > 0 {
+		embeddingBlob = embeddings.SerializeFloat32(embedding)
+	}
+
+	result, err := s.db.Exec(`
+		UPDATE context_signatures
+		SET embedding = ?
+		WHERE trajectory_id = ?
+	`, embeddingBlob, trajectoryID)
+
+	if err != nil {
+		return fmt.Errorf("failed to update signature embedding: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no signature found for trajectory %s", trajectoryID)
+	}
+
+	return nil
+}
+
 // Close releases database resources
 func (s *SQLiteStorage) Close() error {
 	// Close prepared statements (ignore errors in cleanup)

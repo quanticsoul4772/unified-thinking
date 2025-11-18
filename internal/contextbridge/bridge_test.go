@@ -176,13 +176,31 @@ func TestContextBridge_EnrichResponse_NoMatches(t *testing.T) {
 		t.Fatalf("EnrichResponse failed: %v", err)
 	}
 
-	// Should return original result when no matches found
+	// Should return enriched structure with no matches
 	enrichedMap, ok := enriched.(map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected map, got %T", enriched)
 	}
-	if enrichedMap["thought_id"] != "test-123" {
-		t.Error("Expected original result when no matches found")
+
+	// Result should be wrapped
+	resultData, ok := enrichedMap["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected result in enriched response")
+	}
+	if resultData["thought_id"] != "test-123" {
+		t.Error("Expected original result preserved")
+	}
+
+	// Context bridge should be present with no matches
+	bridgeData, ok := enrichedMap["context_bridge"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected context_bridge in enriched response")
+	}
+	if bridgeData["status"] != "no_matches" {
+		t.Errorf("Expected status 'no_matches', got %v", bridgeData["status"])
+	}
+	if bridgeData["match_count"].(int) != 0 {
+		t.Error("Expected zero matches")
 	}
 }
 
@@ -253,9 +271,9 @@ func TestContextBridge_GenerateRecommendation(t *testing.T) {
 	bridge := New(config, matcher, extractor, nil)
 
 	tests := []struct {
-		name           string
-		successScores  []float64
-		wantContains   string
+		name          string
+		successScores []float64
+		wantContains  string
 	}{
 		{
 			name:          "high success",

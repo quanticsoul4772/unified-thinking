@@ -9,11 +9,11 @@ func TestWeightedSimilarity_Calculate(t *testing.T) {
 	calc := NewDefaultSimilarity()
 
 	tests := []struct {
-		name    string
-		sig1    *Signature
-		sig2    *Signature
-		minSim  float64
-		maxSim  float64
+		name   string
+		sig1   *Signature
+		sig2   *Signature
+		minSim float64
+		maxSim float64
 	}{
 		{
 			name: "identical signatures",

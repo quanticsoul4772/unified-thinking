@@ -107,11 +107,11 @@ func TestCalculateDecisionConfidence(t *testing.T) {
 	dm := NewDecisionMaker()
 
 	tests := []struct {
-		name           string
-		options        []*types.DecisionOption
-		bestOption     *types.DecisionOption
-		minConfidence  float64
-		maxConfidence  float64
+		name          string
+		options       []*types.DecisionOption
+		bestOption    *types.DecisionOption
+		minConfidence float64
+		maxConfidence float64
 	}{
 		{
 			name: "clear winner with large margin",
@@ -288,10 +288,10 @@ func TestDecomposeProblem(t *testing.T) {
 	pd := NewProblemDecomposer()
 
 	tests := []struct {
-		name              string
-		problem           string
-		minSubproblems    int
-		minDependencies   int
+		name            string
+		problem         string
+		minSubproblems  int
+		minDependencies int
 	}{
 		{
 			name:            "simple problem",
