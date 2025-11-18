@@ -198,16 +198,11 @@ for persistent storage across sessions:
 - `debug`: enable debug logging (`true` or `false`)
 - `auto_validation_threshold`: confidence threshold for auto-validation (default: 0.5)
 
-**Semantic Embeddings Configuration (Optional)**:
-- `EMBEDDINGS_ENABLED`: Enable embeddings feature (`true` or `false`, default: `false`)
-- `EMBEDDINGS_PROVIDER`: Embedding provider (`voyage` for Voyage AI)
-- `EMBEDDINGS_MODEL`: Model to use (`voyage-3-lite`, `voyage-3`, `voyage-3-large`)
-- `VOYAGE_API_KEY`: Your Voyage AI API key (get free key with 200M tokens)
-- `EMBEDDINGS_HYBRID_SEARCH`: Enable RRF hybrid search (`true`, default)
-- `EMBEDDINGS_RRF_K`: RRF parameter (default: `60`)
+**Semantic Embeddings**:
+- `VOYAGE_API_KEY`: Your Voyage AI API key (required for semantic search)
+- `EMBEDDINGS_MODEL`: Model to use (default: `voyage-3-lite`, also `voyage-3`, `voyage-3-large`)
+- `EMBEDDINGS_RRF_K`: RRF fusion parameter (default: `60`)
 - `EMBEDDINGS_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.5`)
-
-See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) for detailed setup instructions.
 
 after saving the config, restart claude desktop.
 
