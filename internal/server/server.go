@@ -233,6 +233,27 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	// Create episodic memory store
 	store := memory.NewEpisodicMemoryStore()
 
+	// Create embedding integration if enabled
+	var sqliteStore *storage.SQLiteStorage
+	if sqlite, ok := s.storage.(*storage.SQLiteStorage); ok {
+		sqliteStore = sqlite
+	}
+
+	embeddingIntegration, err := memory.NewEmbeddingIntegration(store, sqliteStore)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize embeddings: %v", err)
+		log.Printf("Falling back to hash-based search only")
+	} else if embeddingIntegration != nil {
+		log.Printf("Embeddings initialized successfully")
+		// Load any existing embeddings from storage
+		if err := embeddingIntegration.LoadEmbeddingsFromStorage(); err != nil {
+			log.Printf("Warning: Failed to load embeddings from storage: %v", err)
+		}
+
+		// Replace the store's retrieval method with the hybrid search version
+		store.SetEmbeddingIntegration(embeddingIntegration)
+	}
+
 	// Create session tracker
 	tracker := memory.NewSessionTracker(store)
 

@@ -18,6 +18,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"sort"
 	"sync"
 	"time"
@@ -185,13 +186,14 @@ type Recommendation struct {
 
 // EpisodicMemoryStore manages storage and retrieval of reasoning trajectories
 type EpisodicMemoryStore struct {
-	trajectories      map[string]*ReasoningTrajectory
-	patterns          map[string]*TrajectoryPattern
-	problemIndex      map[string][]string // problem_hash -> trajectory_ids
-	domainIndex       map[string][]string // domain -> trajectory_ids
-	tagIndex          map[string][]string // tag -> trajectory_ids
-	toolSequenceIndex map[string][]string // tool_sequence_hash -> trajectory_ids
-	mu                sync.RWMutex
+	trajectories         map[string]*ReasoningTrajectory
+	patterns             map[string]*TrajectoryPattern
+	problemIndex         map[string][]string // problem_hash -> trajectory_ids
+	domainIndex          map[string][]string // domain -> trajectory_ids
+	tagIndex             map[string][]string // tag -> trajectory_ids
+	toolSequenceIndex    map[string][]string // tool_sequence_hash -> trajectory_ids
+	embeddingIntegration *EmbeddingIntegration // Optional embedding-based search
+	mu                   sync.RWMutex
 }
 
 // NewEpisodicMemoryStore creates a new episodic memory store
@@ -208,6 +210,14 @@ func NewEpisodicMemoryStore() *EpisodicMemoryStore {
 
 // StoreTrajectory stores a complete reasoning trajectory
 func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *ReasoningTrajectory) error {
+	// Generate embedding for the problem if we have integration
+	if s.embeddingIntegration != nil && trajectory.Problem != nil {
+		if err := s.embeddingIntegration.GenerateAndStoreEmbedding(ctx, trajectory.Problem); err != nil {
+			// Log but don't fail - embeddings are optional enhancement
+			log.Printf("Warning: Failed to generate embedding for trajectory: %v", err)
+		}
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -242,6 +252,12 @@ func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *R
 
 // RetrieveSimilarTrajectories finds similar past trajectories
 func (s *EpisodicMemoryStore) RetrieveSimilarTrajectories(ctx context.Context, problem *ProblemDescription, limit int) ([]*TrajectoryMatch, error) {
+	// If we have embedding integration, use hybrid search
+	if s.embeddingIntegration != nil {
+		return s.embeddingIntegration.RetrieveSimilarWithHybridSearch(ctx, problem, limit)
+	}
+
+	// Otherwise, fall back to hash-based search
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -347,6 +363,13 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 	})
 
 	return recommendations, nil
+}
+
+// SetEmbeddingIntegration sets the embedding integration for hybrid search
+func (s *EpisodicMemoryStore) SetEmbeddingIntegration(ei *EmbeddingIntegration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.embeddingIntegration = ei
 }
 
 // GetAllTrajectories returns all stored trajectories (for search operations)
