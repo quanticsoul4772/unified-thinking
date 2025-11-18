@@ -96,6 +96,7 @@ func TestEpisodicMemoryHandler_HandleStartSession(t *testing.T) {
 			if !tt.wantErr {
 				if result == nil {
 					t.Error("CallToolResult should not be nil")
+					return
 				}
 				if result.Content == nil {
 					t.Error("Content should not be nil")
