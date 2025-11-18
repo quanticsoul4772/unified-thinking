@@ -71,11 +71,14 @@ func (cb *ContextBridge) EnrichResponse(
 	}
 
 	// Find matches
+	log.Printf("[DEBUG] Context bridge searching for matches (domain=%s, minSimilarity=%.2f, maxMatches=%d)",
+		sig.Domain, cb.config.MinSimilarity, cb.config.MaxMatches)
 	matches, err := cb.matcher.FindMatches(sig, cb.config.MinSimilarity, cb.config.MaxMatches)
 	if err != nil {
 		cb.metrics.RecordError()
 		return nil, fmt.Errorf("context matching failed: %w", err)
 	}
+	log.Printf("[DEBUG] Context bridge found %d matches above threshold", len(matches))
 
 	// Record metrics
 	elapsed := time.Since(start).Milliseconds()

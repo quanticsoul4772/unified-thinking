@@ -1179,23 +1179,46 @@ func (s *SQLiteStorage) StoreContextSignature(trajectoryID string, sig *ContextS
 
 // FindCandidatesWithSignatures returns candidates with their signatures in a single query
 func (s *SQLiteStorage) FindCandidatesWithSignatures(domain string, fingerprintPrefix string, limit int) ([]*CandidateWithSignature, error) {
-	// Note: This query references a 'trajectories' table that should exist in episodic memory
-	// For now, we'll use a simpler query that just returns signatures
-	query := `
-		SELECT
-			cs.trajectory_id,
-			cs.fingerprint,
-			cs.domain,
-			cs.key_concepts,
-			cs.tool_sequence,
-			cs.complexity
-		FROM context_signatures cs
-		WHERE (cs.domain = ? OR cs.fingerprint_prefix = ?)
-		ORDER BY cs.created_at DESC
-		LIMIT ?
-	`
+	// Query all signatures, optionally filtered by domain
+	// The similarity calculation will filter by actual match quality
+	var query string
+	var args []interface{}
 
-	rows, err := s.db.Query(query, domain, fingerprintPrefix, limit)
+	if domain != "" {
+		// Prefer same domain but include all for similarity matching
+		query = `
+			SELECT
+				cs.trajectory_id,
+				cs.fingerprint,
+				cs.domain,
+				cs.key_concepts,
+				cs.tool_sequence,
+				cs.complexity
+			FROM context_signatures cs
+			ORDER BY
+				CASE WHEN cs.domain = ? THEN 0 ELSE 1 END,
+				cs.created_at DESC
+			LIMIT ?
+		`
+		args = []interface{}{domain, limit}
+	} else {
+		// No domain filter, return most recent
+		query = `
+			SELECT
+				cs.trajectory_id,
+				cs.fingerprint,
+				cs.domain,
+				cs.key_concepts,
+				cs.tool_sequence,
+				cs.complexity
+			FROM context_signatures cs
+			ORDER BY cs.created_at DESC
+			LIMIT ?
+		`
+		args = []interface{}{limit}
+	}
+
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query candidates: %w", err)
 	}

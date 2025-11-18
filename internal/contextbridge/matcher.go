@@ -1,6 +1,7 @@
 package contextbridge
 
 import (
+	"log"
 	"sort"
 )
 
@@ -42,6 +43,7 @@ func (m *Matcher) FindMatches(sig *Signature, minSimilarity float64, maxMatches 
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("[DEBUG] Matcher retrieved %d candidates from storage", len(candidates))
 
 	// Calculate similarity for each candidate - no additional queries needed
 	matches := make([]*Match, 0)
