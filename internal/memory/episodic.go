@@ -193,6 +193,7 @@ type EpisodicMemoryStore struct {
 	tagIndex             map[string][]string // tag -> trajectory_ids
 	toolSequenceIndex    map[string][]string // tool_sequence_hash -> trajectory_ids
 	embeddingIntegration *EmbeddingIntegration // Optional embedding-based search
+	signatureIntegration *SignatureIntegration // Optional context signature storage
 	mu                   sync.RWMutex
 }
 
@@ -246,6 +247,14 @@ func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *R
 	if trajectory.Approach != nil && len(trajectory.Approach.ToolSequence) > 0 {
 		seqHash := computeToolSequenceHash(trajectory.Approach.ToolSequence)
 		s.toolSequenceIndex[seqHash] = append(s.toolSequenceIndex[seqHash], trajectory.ID)
+	}
+
+	// Generate and store context signature if we have integration
+	if s.signatureIntegration != nil {
+		if err := s.signatureIntegration.GenerateAndStoreSignature(trajectory); err != nil {
+			// Log but don't fail - signature storage is optional enhancement
+			log.Printf("Warning: failed to store context signature for trajectory %s: %v", trajectory.ID, err)
+		}
 	}
 
 	return nil
@@ -376,6 +385,13 @@ func (s *EpisodicMemoryStore) SetEmbeddingIntegration(ei *EmbeddingIntegration) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.embeddingIntegration = ei
+}
+
+// SetSignatureIntegration sets the signature integration for context bridge
+func (s *EpisodicMemoryStore) SetSignatureIntegration(si *SignatureIntegration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.signatureIntegration = si
 }
 
 // GetAllTrajectories returns all stored trajectories (for search operations)

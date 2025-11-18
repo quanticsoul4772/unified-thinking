@@ -262,6 +262,14 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	}
 	// If embeddingIntegration is nil and err is nil, embeddings are simply disabled (not an error)
 
+	// Create signature integration for context bridge if SQLite is available
+	if sqliteStore != nil {
+		adapter := memory.NewSQLiteSignatureAdapter(sqliteStore)
+		signatureIntegration := memory.NewSignatureIntegration(adapter, nil)
+		store.SetSignatureIntegration(signatureIntegration)
+		log.Printf("Context signature integration enabled for episodic memory")
+	}
+
 	// Create session tracker
 	tracker := memory.NewSessionTracker(store)
 
