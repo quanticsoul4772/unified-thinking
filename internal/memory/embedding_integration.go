@@ -29,6 +29,11 @@ func (ei *EmbeddingIntegration) GetProvider() string {
 	return "none"
 }
 
+// GetEmbedder returns the underlying embedder for use by other components
+func (ei *EmbeddingIntegration) GetEmbedder() embeddings.Embedder {
+	return ei.embedder
+}
+
 // NewEmbeddingIntegration creates a new embedding integration
 func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQLiteStorage) (*EmbeddingIntegration, error) {
 	// Get configuration from environment

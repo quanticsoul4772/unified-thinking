@@ -56,6 +56,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
+	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/integration"
 	"unified-thinking/internal/memory"
 	"unified-thinking/internal/metacognition"
@@ -226,6 +227,9 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 
 	// Initialize episodic memory system (Phase 2)
 	s.initializeEpisodicMemory()
+
+	// Initialize semantic auto mode detection
+	s.initializeSemanticAutoMode()
 }
 
 // initializeEpisodicMemory initializes the episodic reasoning memory system
@@ -263,6 +267,23 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 
 	// Create episodic memory handler
 	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(store, tracker, learner)
+}
+
+// initializeSemanticAutoMode sets up semantic mode detection for auto mode
+func (s *UnifiedServer) initializeSemanticAutoMode() {
+	apiKey := os.Getenv("VOYAGE_API_KEY")
+	if apiKey == "" {
+		log.Println("ERROR: VOYAGE_API_KEY not set, semantic auto mode detection disabled")
+		return
+	}
+
+	model := os.Getenv("EMBEDDINGS_MODEL")
+	if model == "" {
+		model = "voyage-3-lite"
+	}
+
+	embedder := embeddings.NewVoyageEmbedder(apiKey, model)
+	s.auto.SetEmbedder(embedder)
 }
 
 // SetOrchestrator sets the workflow orchestrator for the server
