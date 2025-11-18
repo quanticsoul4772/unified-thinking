@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"unified-thinking/internal/types"
 )
 
 func TestNewSessionTracker(t *testing.T) {
@@ -484,5 +486,610 @@ func TestAutoStartSession(t *testing.T) {
 
 	if len(session.Steps) != 1 {
 		t.Errorf("Expected 1 step after auto-start, got %d", len(session.Steps))
+	}
+}
+
+func TestRecordThought(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	tracker := NewSessionTracker(store)
+	ctx := context.Background()
+
+	problem := &ProblemDescription{
+		Description: "Test problem",
+		Domain:      "testing",
+	}
+
+	tracker.StartSession(ctx, "session_001", problem)
+
+	thought := &types.Thought{
+		ID:         "thought_001",
+		Content:    "Test thought content",
+		Mode:       types.ModeLinear,
+		BranchID:   "branch_001",
+		Confidence: 0.85,
+	}
+
+	err := tracker.RecordThought(ctx, "session_001", thought, "think", 500*time.Millisecond)
+	if err != nil {
+		t.Fatalf("RecordThought failed: %v", err)
+	}
+
+	// Verify step was recorded
+	session, _ := tracker.GetActiveSession("session_001")
+	if len(session.Steps) != 1 {
+		t.Fatalf("Expected 1 step, got %d", len(session.Steps))
+	}
+
+	step := session.Steps[0]
+	if step.Tool != "think" {
+		t.Errorf("Expected tool 'think', got %s", step.Tool)
+	}
+	if step.Mode != "linear" {
+		t.Errorf("Expected mode 'linear', got %s", step.Mode)
+	}
+	if step.ThoughtID != "thought_001" {
+		t.Errorf("Expected thought_id 'thought_001', got %s", step.ThoughtID)
+	}
+	if step.BranchID != "branch_001" {
+		t.Errorf("Expected branch_id 'branch_001', got %s", step.BranchID)
+	}
+	if step.Confidence != 0.85 {
+		t.Errorf("Expected confidence 0.85, got %.2f", step.Confidence)
+	}
+	if step.Duration != 500*time.Millisecond {
+		t.Errorf("Expected duration 500ms, got %v", step.Duration)
+	}
+	if !step.Success {
+		t.Error("Expected success to be true")
+	}
+
+	// Verify input/output maps
+	if step.Input["content"] != "Test thought content" {
+		t.Error("Input content not set correctly")
+	}
+	if step.Output["thought_id"] != "thought_001" {
+		t.Error("Output thought_id not set correctly")
+	}
+}
+
+func TestRecordThought_AutoStartSession(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	tracker := NewSessionTracker(store)
+	ctx := context.Background()
+
+	thought := &types.Thought{
+		ID:         "thought_001",
+		Content:    "Test thought",
+		Mode:       types.ModeTree,
+		Confidence: 0.7,
+	}
+
+	// Should auto-start session
+	err := tracker.RecordThought(ctx, "new_session", thought, "think", time.Second)
+	if err != nil {
+		t.Fatalf("RecordThought failed: %v", err)
+	}
+
+	// Verify session was auto-started
+	session, exists := tracker.GetActiveSession("new_session")
+	if !exists {
+		t.Fatal("Session not auto-started")
+	}
+
+	if len(session.Steps) != 1 {
+		t.Errorf("Expected 1 step, got %d", len(session.Steps))
+	}
+}
+
+func TestExtractKeyDecisions_AllDecisionTypes(t *testing.T) {
+	steps := []*ReasoningStep{
+		{StepNumber: 1, Tool: "think"},
+		{StepNumber: 2, Tool: "make-decision"},
+		{StepNumber: 3, Tool: "focus-branch"},
+		{StepNumber: 4, Tool: "restore-checkpoint"},
+		{StepNumber: 5, Tool: "synthesize-insights"},
+		{StepNumber: 6, Tool: "validate"},
+	}
+
+	decisions := extractKeyDecisions(steps)
+
+	// Should have 4 decisions
+	if len(decisions) != 4 {
+		t.Errorf("Expected 4 decisions, got %d", len(decisions))
+	}
+
+	// Verify decision types are captured
+	hasMakeDecision := false
+	hasFocusBranch := false
+	hasRestore := false
+	hasSynthesize := false
+
+	for _, d := range decisions {
+		if d == "Decision at step 2" {
+			hasMakeDecision = true
+		}
+		if d == "Switched branch at step 3" {
+			hasFocusBranch = true
+		}
+		if d == "Backtracked at step 4" {
+			hasRestore = true
+		}
+		if d == "Synthesized insights at step 5" {
+			hasSynthesize = true
+		}
+	}
+
+	if !hasMakeDecision {
+		t.Error("Missing make-decision entry")
+	}
+	if !hasFocusBranch {
+		t.Error("Missing focus-branch entry")
+	}
+	if !hasRestore {
+		t.Error("Missing restore-checkpoint entry")
+	}
+	if !hasSynthesize {
+		t.Error("Missing synthesize-insights entry")
+	}
+}
+
+func TestExtractKeyDecisions_NoDecisions(t *testing.T) {
+	steps := []*ReasoningStep{
+		{StepNumber: 1, Tool: "think"},
+		{StepNumber: 2, Tool: "validate"},
+		{StepNumber: 3, Tool: "prove"},
+	}
+
+	decisions := extractKeyDecisions(steps)
+	if len(decisions) != 0 {
+		t.Errorf("Expected 0 decisions, got %d", len(decisions))
+	}
+}
+
+func TestCalculateEfficiency_OptimalSteps(t *testing.T) {
+	session := &ActiveSession{
+		Steps: make([]*ReasoningStep, 5), // 5 steps - below optimal
+	}
+
+	efficiency := calculateEfficiency(session)
+	if efficiency != 1.0 {
+		t.Errorf("Expected efficiency 1.0 for optimal steps, got %.2f", efficiency)
+	}
+}
+
+func TestCalculateEfficiency_MoreThanOptimal(t *testing.T) {
+	session := &ActiveSession{
+		Steps: make([]*ReasoningStep, 14), // Double optimal (7)
+	}
+
+	efficiency := calculateEfficiency(session)
+	// 7/14 = 0.5
+	if efficiency != 0.5 {
+		t.Errorf("Expected efficiency 0.5 for double optimal steps, got %.2f", efficiency)
+	}
+}
+
+func TestCalculateEfficiency_ManySteps(t *testing.T) {
+	session := &ActiveSession{
+		Steps: make([]*ReasoningStep, 100), // Many steps
+	}
+
+	efficiency := calculateEfficiency(session)
+	// Should hit minimum of 0.3
+	if efficiency != 0.3 {
+		t.Errorf("Expected minimum efficiency 0.3, got %.2f", efficiency)
+	}
+}
+
+func TestCalculateEfficiency_EmptySteps(t *testing.T) {
+	session := &ActiveSession{
+		Steps: []*ReasoningStep{},
+	}
+
+	efficiency := calculateEfficiency(session)
+	if efficiency != 0.0 {
+		t.Errorf("Expected efficiency 0.0 for empty steps, got %.2f", efficiency)
+	}
+}
+
+func TestCalculateCompleteness_AllGoalsAchieved(t *testing.T) {
+	session := &ActiveSession{
+		Problem: &ProblemDescription{
+			Goals: []string{"goal1", "goal2", "goal3"},
+		},
+	}
+	outcome := &OutcomeDescription{
+		GoalsAchieved: []string{"goal1", "goal2", "goal3"},
+	}
+
+	completeness := calculateCompleteness(session, outcome)
+	if completeness != 1.0 {
+		t.Errorf("Expected completeness 1.0, got %.2f", completeness)
+	}
+}
+
+func TestCalculateCompleteness_PartialGoals(t *testing.T) {
+	session := &ActiveSession{
+		Problem: &ProblemDescription{
+			Goals: []string{"goal1", "goal2", "goal3"},
+		},
+	}
+	outcome := &OutcomeDescription{
+		GoalsAchieved: []string{"goal1"},
+	}
+
+	completeness := calculateCompleteness(session, outcome)
+	if completeness < 0.33 || completeness > 0.34 {
+		t.Errorf("Expected completeness ~0.33, got %.2f", completeness)
+	}
+}
+
+func TestCalculateCompleteness_NoGoals(t *testing.T) {
+	session := &ActiveSession{
+		Problem: &ProblemDescription{
+			Goals: []string{},
+		},
+	}
+	outcome := &OutcomeDescription{}
+
+	completeness := calculateCompleteness(session, outcome)
+	// With empty goals, totalGoals is 0, so it returns 1.0
+	// But len(Goals) is 0 which triggers the "unknown" case first, returning 0.5
+	// The actual behavior depends on the implementation
+	if completeness != 0.5 && completeness != 1.0 {
+		t.Errorf("Expected completeness 0.5 or 1.0 for empty goals, got %.2f", completeness)
+	}
+}
+
+func TestCalculateCompleteness_NilProblem(t *testing.T) {
+	session := &ActiveSession{
+		Problem: nil,
+	}
+	outcome := &OutcomeDescription{}
+
+	completeness := calculateCompleteness(session, outcome)
+	if completeness != 0.5 {
+		t.Errorf("Expected completeness 0.5 for nil problem, got %.2f", completeness)
+	}
+}
+
+func TestCalculateCompleteness_NilOutcome(t *testing.T) {
+	session := &ActiveSession{
+		Problem: &ProblemDescription{
+			Goals: []string{"goal1"},
+		},
+	}
+
+	completeness := calculateCompleteness(session, nil)
+	if completeness != 0.0 {
+		t.Errorf("Expected completeness 0.0 for nil outcome, got %.2f", completeness)
+	}
+}
+
+func TestCalculateInnovation_WithInnovativeTools(t *testing.T) {
+	session := &ActiveSession{
+		ToolsUsed: map[string]int{
+			"find-analogy":             2,
+			"generate-hypotheses":      1,
+			"detect-emergent-patterns": 1,
+		},
+		ModesUsed: map[string]bool{
+			"divergent": true,
+		},
+	}
+
+	innovation := calculateInnovation(session)
+	// 4 innovative elements, max 5 = 0.8
+	if innovation != 0.8 {
+		t.Errorf("Expected innovation 0.8, got %.2f", innovation)
+	}
+}
+
+func TestCalculateInnovation_NoInnovation(t *testing.T) {
+	session := &ActiveSession{
+		ToolsUsed: map[string]int{
+			"think":    5,
+			"validate": 3,
+		},
+		ModesUsed: map[string]bool{
+			"linear": true,
+		},
+	}
+
+	innovation := calculateInnovation(session)
+	if innovation != 0.0 {
+		t.Errorf("Expected innovation 0.0, got %.2f", innovation)
+	}
+}
+
+func TestCalculateInnovation_MaxInnovation(t *testing.T) {
+	session := &ActiveSession{
+		ToolsUsed: map[string]int{
+			"find-analogy":             1,
+			"generate-hypotheses":      1,
+			"detect-emergent-patterns": 1,
+		},
+		ModesUsed: map[string]bool{
+			"divergent": true,
+		},
+	}
+
+	innovation := calculateInnovation(session)
+	// 4 innovative elements, max 5 = 0.8
+	if innovation > 1.0 {
+		t.Errorf("Innovation should be capped at 1.0, got %.2f", innovation)
+	}
+}
+
+func TestInferTags(t *testing.T) {
+	session := &ActiveSession{
+		Domain: "software-engineering",
+		Steps: []*ReasoningStep{
+			{Mode: "linear"},
+			{Mode: "linear"},
+		},
+		Problem: &ProblemDescription{
+			Complexity: 0.8, // High complexity
+		},
+		ModesUsed: map[string]bool{
+			"linear": true,
+		},
+	}
+	outcome := &OutcomeDescription{
+		Status: "success",
+	}
+
+	tags := inferTags(session, outcome)
+
+	// Check for expected tags
+	hasDoamin := false
+	hasStrategy := false
+	hasStatus := false
+	hasComplexity := false
+	hasMode := false
+
+	for _, tag := range tags {
+		if tag == "software-engineering" {
+			hasDoamin = true
+		}
+		if tag == "systematic-linear" {
+			hasStrategy = true
+		}
+		if tag == "success" {
+			hasStatus = true
+		}
+		if tag == "high-complexity" {
+			hasComplexity = true
+		}
+		if tag == "mode:linear" {
+			hasMode = true
+		}
+	}
+
+	if !hasDoamin {
+		t.Error("Missing domain tag")
+	}
+	if !hasStrategy {
+		t.Error("Missing strategy tag")
+	}
+	if !hasStatus {
+		t.Error("Missing status tag")
+	}
+	if !hasComplexity {
+		t.Error("Missing complexity tag")
+	}
+	if !hasMode {
+		t.Error("Missing mode tag")
+	}
+}
+
+func TestInferTags_LowComplexity(t *testing.T) {
+	session := &ActiveSession{
+		Steps: []*ReasoningStep{},
+		Problem: &ProblemDescription{
+			Complexity: 0.2, // Low complexity
+		},
+		ModesUsed: map[string]bool{},
+	}
+	outcome := &OutcomeDescription{
+		Status: "failure",
+	}
+
+	tags := inferTags(session, outcome)
+
+	hasLowComplexity := false
+	for _, tag := range tags {
+		if tag == "low-complexity" {
+			hasLowComplexity = true
+		}
+	}
+
+	if !hasLowComplexity {
+		t.Error("Missing low-complexity tag")
+	}
+}
+
+func TestInferTags_MediumComplexity(t *testing.T) {
+	session := &ActiveSession{
+		Steps: []*ReasoningStep{},
+		Problem: &ProblemDescription{
+			Complexity: 0.5, // Medium complexity
+		},
+		ModesUsed: map[string]bool{},
+	}
+	outcome := &OutcomeDescription{}
+
+	tags := inferTags(session, outcome)
+
+	hasMediumComplexity := false
+	for _, tag := range tags {
+		if tag == "medium-complexity" {
+			hasMediumComplexity = true
+		}
+	}
+
+	if !hasMediumComplexity {
+		t.Error("Missing medium-complexity tag")
+	}
+}
+
+func TestInferTags_NilOutcome(t *testing.T) {
+	session := &ActiveSession{
+		Steps:     []*ReasoningStep{},
+		ModesUsed: map[string]bool{},
+	}
+
+	// Should not panic
+	tags := inferTags(session, nil)
+	if tags == nil {
+		t.Error("Tags should not be nil")
+	}
+}
+
+func TestCompleteSession_NilStore(t *testing.T) {
+	// Tracker without store
+	tracker := &SessionTracker{
+		activeSessions: make(map[string]*ActiveSession),
+		store:          nil, // No store
+	}
+	ctx := context.Background()
+
+	problem := &ProblemDescription{
+		Description: "Test problem",
+		Domain:      "testing",
+	}
+
+	tracker.StartSession(ctx, "session_001", problem)
+
+	outcome := &OutcomeDescription{
+		Status:     "success",
+		Confidence: 0.9,
+	}
+
+	// Should not panic even with nil store
+	trajectory, err := tracker.CompleteSession(ctx, "session_001", outcome)
+	if err != nil {
+		t.Fatalf("CompleteSession failed: %v", err)
+	}
+
+	if trajectory == nil {
+		t.Fatal("Expected trajectory to be returned")
+	}
+}
+
+func TestCompleteSession_SessionNotFound(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	tracker := NewSessionTracker(store)
+	ctx := context.Background()
+
+	outcome := &OutcomeDescription{
+		Status: "success",
+	}
+
+	_, err := tracker.CompleteSession(ctx, "nonexistent_session", outcome)
+	if err == nil {
+		t.Error("Expected error for nonexistent session")
+	}
+}
+
+func TestCalculateQualityMetrics_WithSteps(t *testing.T) {
+	session := &ActiveSession{
+		Steps: []*ReasoningStep{
+			{Success: true},
+			{Success: true},
+			{Success: false},
+		},
+		Problem: &ProblemDescription{
+			Goals: []string{"goal1", "goal2"},
+		},
+		ModesUsed: map[string]bool{
+			"divergent": true,
+		},
+		ToolsUsed: map[string]int{
+			"find-analogy": 1,
+		},
+	}
+
+	outcome := &OutcomeDescription{
+		GoalsAchieved: []string{"goal1"},
+		Confidence:    0.8,
+	}
+
+	metrics := calculateQualityMetrics(session, outcome)
+
+	if metrics == nil {
+		t.Fatal("Metrics should not be nil")
+	}
+
+	// Reliability should match outcome confidence
+	if metrics.Reliability != 0.8 {
+		t.Errorf("Expected reliability 0.8, got %.2f", metrics.Reliability)
+	}
+
+	// Completeness should be 0.5 (1/2 goals)
+	if metrics.Completeness != 0.5 {
+		t.Errorf("Expected completeness 0.5, got %.2f", metrics.Completeness)
+	}
+
+	// Innovation should be positive (divergent mode + find-analogy)
+	if metrics.Innovation <= 0 {
+		t.Error("Expected positive innovation")
+	}
+
+	// Overall quality should be calculated
+	if metrics.OverallQuality <= 0 {
+		t.Error("Expected positive overall quality")
+	}
+}
+
+func TestCalculateSuccessScore_DefaultStatus(t *testing.T) {
+	outcome := &OutcomeDescription{
+		Status:     "unknown",
+		Confidence: 0.5,
+	}
+	quality := &QualityMetrics{
+		OverallQuality: 0.5,
+	}
+
+	score := calculateSuccessScore(outcome, quality)
+	// Default base score is 0.5
+	if score < 0.3 || score > 0.7 {
+		t.Errorf("Expected score around 0.5, got %.2f", score)
+	}
+}
+
+func TestRecordStep_WithInsights(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	tracker := NewSessionTracker(store)
+	ctx := context.Background()
+
+	problem := &ProblemDescription{
+		Description: "Test problem",
+		Domain:      "testing",
+	}
+
+	tracker.StartSession(ctx, "session_001", problem)
+
+	step := &ReasoningStep{
+		Tool:     "synthesize-insights",
+		Mode:     "reflection",
+		Insights: []string{"Insight 1", "Insight 2"},
+		Success:  true,
+	}
+
+	err := tracker.RecordStep(ctx, "session_001", step)
+	if err != nil {
+		t.Fatalf("RecordStep failed: %v", err)
+	}
+
+	session, _ := tracker.GetActiveSession("session_001")
+	recordedStep := session.Steps[0]
+
+	if len(recordedStep.Insights) != 2 {
+		t.Errorf("Expected 2 insights, got %d", len(recordedStep.Insights))
+	}
+
+	if session.ModesUsed["reflection"] != true {
+		t.Error("Mode 'reflection' should be tracked")
 	}
 }

@@ -379,7 +379,7 @@ func TestAnalyzeCorrelationVsCausation(t *testing.T) {
 
 			if tt.expectedKeyword != "" {
 				analysisLower := toLower(analysis)
-				if !contains(analysisLower, tt.expectedKeyword) {
+				if !containsStr(analysisLower, tt.expectedKeyword) {
 					t.Errorf("Expected analysis to contain %q, got: %q", tt.expectedKeyword, analysis)
 				}
 			}
@@ -480,7 +480,7 @@ func TestGraphSurgery(t *testing.T) {
 	// Find the smoking variable
 	var smokingVar *types.CausalVariable
 	for _, v := range graph.Variables {
-		if contains(toLower(v.Name), "smoking") {
+		if containsStr(toLower(v.Name), "smoking") {
 			smokingVar = v
 			break
 		}
@@ -760,7 +760,7 @@ func toLower(s string) string {
 	return string(result)
 }
 
-func contains(s, substr string) bool {
+func containsStr(s, substr string) bool {
 	if len(s) == 0 || len(substr) == 0 {
 		return false
 	}
@@ -770,4 +770,469 @@ func contains(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// TestDetermineEffectDirection tests the effect direction calculation
+func TestDetermineEffectDirection(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name             string
+		interventionType string
+		linkType         string
+		expected         string
+	}{
+		{
+			name:             "increase with positive link",
+			interventionType: "increase",
+			linkType:         "positive",
+			expected:         "increase",
+		},
+		{
+			name:             "increase with negative link",
+			interventionType: "increase",
+			linkType:         "negative",
+			expected:         "decrease",
+		},
+		{
+			name:             "decrease with positive link",
+			interventionType: "decrease",
+			linkType:         "positive",
+			expected:         "decrease",
+		},
+		{
+			name:             "decrease with negative link",
+			interventionType: "decrease",
+			linkType:         "negative",
+			expected:         "increase",
+		},
+		{
+			name:             "change with positive link",
+			interventionType: "change",
+			linkType:         "positive",
+			expected:         "change",
+		},
+		{
+			name:             "unknown intervention type",
+			interventionType: "unknown",
+			linkType:         "positive",
+			expected:         "change",
+		},
+		{
+			name:             "set intervention",
+			interventionType: "set",
+			linkType:         "negative",
+			expected:         "change",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cr.determineEffectDirection(tt.interventionType, tt.linkType)
+			if result != tt.expected {
+				t.Errorf("determineEffectDirection(%q, %q) = %q, want %q",
+					tt.interventionType, tt.linkType, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestEstimateCounterfactualPlausibility tests the plausibility calculation
+func TestEstimateCounterfactualPlausibility(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name            string
+		changes         map[string]string
+		outcomes        map[string]string
+		minPlausibility float64
+		maxPlausibility float64
+	}{
+		{
+			name:            "single change, few outcomes",
+			changes:         map[string]string{"A": "increase"},
+			outcomes:        map[string]string{"B": "increase"},
+			minPlausibility: 0.6,
+			maxPlausibility: 0.8,
+		},
+		{
+			name: "many changes (>3) reduces plausibility",
+			changes: map[string]string{
+				"A": "increase",
+				"B": "decrease",
+				"C": "change",
+				"D": "set",
+			},
+			outcomes:        map[string]string{"X": "change"},
+			minPlausibility: 0.5,
+			maxPlausibility: 0.7,
+		},
+		{
+			name:    "many outcomes (>5) reduces plausibility",
+			changes: map[string]string{"A": "increase"},
+			outcomes: map[string]string{
+				"B": "increase",
+				"C": "decrease",
+				"D": "change",
+				"E": "increase",
+				"F": "decrease",
+				"G": "change",
+			},
+			minPlausibility: 0.5,
+			maxPlausibility: 0.7,
+		},
+		{
+			name: "many changes AND many outcomes",
+			changes: map[string]string{
+				"A": "increase",
+				"B": "decrease",
+				"C": "change",
+				"D": "set",
+			},
+			outcomes: map[string]string{
+				"W": "increase",
+				"X": "decrease",
+				"Y": "change",
+				"Z": "increase",
+				"V": "decrease",
+				"U": "change",
+			},
+			minPlausibility: 0.4,
+			maxPlausibility: 0.6,
+		},
+		{
+			name:            "empty changes",
+			changes:         map[string]string{},
+			outcomes:        map[string]string{},
+			minPlausibility: 0.6,
+			maxPlausibility: 0.8,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			plausibility := cr.estimateCounterfactualPlausibility(tt.changes, tt.outcomes)
+
+			if plausibility < tt.minPlausibility || plausibility > tt.maxPlausibility {
+				t.Errorf("plausibility %.3f not in expected range [%.3f, %.3f]",
+					plausibility, tt.minPlausibility, tt.maxPlausibility)
+			}
+		})
+	}
+}
+
+// TestInferVariableType tests the variable type inference from context
+func TestInferVariableType(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name         string
+		varName      string
+		context      string
+		expectedType string
+	}{
+		{
+			name:         "binary indicator - yes/no",
+			varName:      "status",
+			context:      "The result is yes or no",
+			expectedType: "binary",
+		},
+		{
+			name:         "binary indicator - true/false",
+			varName:      "flag",
+			context:      "The condition is true",
+			expectedType: "binary",
+		},
+		{
+			name:         "continuous - amount",
+			varName:      "amount",
+			context:      "The total amount increased",
+			expectedType: "continuous",
+		},
+		{
+			name:         "continuous - level",
+			varName:      "water level",
+			context:      "The water level changed",
+			expectedType: "continuous",
+		},
+		{
+			name:         "continuous - temperature",
+			varName:      "temperature",
+			context:      "The temperature increased",
+			expectedType: "continuous",
+		},
+		{
+			name:         "categorical - type",
+			varName:      "type",
+			context:      "The type of product",
+			expectedType: "categorical",
+		},
+		{
+			name:         "categorical - category",
+			varName:      "category",
+			context:      "The product category",
+			expectedType: "categorical",
+		},
+		{
+			name:         "default to continuous",
+			varName:      "variable",
+			context:      "Some observation",
+			expectedType: "continuous",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cr.inferVariableType(tt.varName, tt.context)
+			if result != tt.expectedType {
+				t.Errorf("inferVariableType(%q, %q) = %q, want %q",
+					tt.varName, tt.context, result, tt.expectedType)
+			}
+		})
+	}
+}
+
+// TestCleanVariableName tests the variable name cleaning
+func TestCleanVariableName(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name     string
+		text     string
+		expected string
+	}{
+		{
+			name:     "simple text",
+			text:     "temperature",
+			expected: "temperature",
+		},
+		{
+			name:     "trim whitespace",
+			text:     "  temperature  ",
+			expected: "temperature",
+		},
+		{
+			name:     "remove when prefix",
+			text:     "when temperature rises",
+			expected: "temperature rises",
+		},
+		{
+			name:     "remove if prefix",
+			text:     "if the pressure increases",
+			expected: "pressure increases",
+		},
+		{
+			name:     "remove the prefix",
+			text:     "the system",
+			expected: "system",
+		},
+		{
+			name:     "remove period suffix",
+			text:     "temperature.",
+			expected: "temperature",
+		},
+		{
+			name:     "remove comma suffix",
+			text:     "temperature,",
+			expected: "temperature",
+		},
+		{
+			name:     "text with comma",
+			text:     "temperature, humidity",
+			expected: "temperature",
+		},
+		{
+			name:     "too short",
+			text:     "ab",
+			expected: "",
+		},
+		{
+			name:     "only whitespace",
+			text:     "   ",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cr.cleanVariableName(tt.text)
+			if result != tt.expected {
+				t.Errorf("cleanVariableName(%q) = %q, want %q",
+					tt.text, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestEstimateLinkStrength tests link strength estimation
+func TestEstimateLinkStrength(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name        string
+		observation string
+		keyword     string
+		minStrength float64
+		maxStrength float64
+	}{
+		{
+			name:        "strong indicator",
+			observation: "Temperature strongly increases sales",
+			keyword:     "increases",
+			minStrength: 0.85,
+			maxStrength: 1.0,
+		},
+		{
+			name:        "significant indicator",
+			observation: "Rain significantly decreases attendance",
+			keyword:     "decreases",
+			minStrength: 0.85,
+			maxStrength: 1.0,
+		},
+		{
+			name:        "moderate indicator",
+			observation: "Prices moderately affect demand",
+			keyword:     "affect",
+			minStrength: 0.5,
+			maxStrength: 0.7,
+		},
+		{
+			name:        "slight indicator",
+			observation: "Size slightly influences cost",
+			keyword:     "influences",
+			minStrength: 0.2,
+			maxStrength: 0.4,
+		},
+		{
+			name:        "may indicator",
+			observation: "This may cause issues",
+			keyword:     "cause",
+			minStrength: 0.2,
+			maxStrength: 0.4,
+		},
+		{
+			name:        "default strength",
+			observation: "A causes B",
+			keyword:     "causes",
+			minStrength: 0.6,
+			maxStrength: 0.8,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			strength := cr.estimateLinkStrength(tt.observation, tt.keyword)
+			if strength < tt.minStrength || strength > tt.maxStrength {
+				t.Errorf("estimateLinkStrength(%q, %q) = %.2f, expected in [%.2f, %.2f]",
+					tt.observation, tt.keyword, strength, tt.minStrength, tt.maxStrength)
+			}
+		})
+	}
+}
+
+// TestEstimateLinkConfidence tests link confidence estimation
+func TestEstimateLinkConfidence(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name          string
+		observation   string
+		minConfidence float64
+		maxConfidence float64
+	}{
+		{
+			name:          "high confidence - proven",
+			observation:   "It has been proven that A causes B",
+			minConfidence: 0.85,
+			maxConfidence: 1.0,
+		},
+		{
+			name:          "high confidence - demonstrated",
+			observation:   "Research demonstrated the effect",
+			minConfidence: 0.85,
+			maxConfidence: 1.0,
+		},
+		{
+			name:          "low confidence - possibly",
+			observation:   "This possibly affects outcomes",
+			minConfidence: 0.4,
+			maxConfidence: 0.6,
+		},
+		{
+			name:          "low confidence - uncertain",
+			observation:   "The relationship is uncertain",
+			minConfidence: 0.4,
+			maxConfidence: 0.6,
+		},
+		{
+			name:          "default confidence",
+			observation:   "A causes B",
+			minConfidence: 0.6,
+			maxConfidence: 0.8,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			confidence := cr.estimateLinkConfidence(tt.observation)
+			if confidence < tt.minConfidence || confidence > tt.maxConfidence {
+				t.Errorf("estimateLinkConfidence(%q) = %.2f, expected in [%.2f, %.2f]",
+					tt.observation, confidence, tt.minConfidence, tt.maxConfidence)
+			}
+		})
+	}
+}
+
+// TestCalculateInterventionConfidence tests the intervention confidence calculation
+func TestCalculateInterventionConfidence(t *testing.T) {
+	cr := NewCausalReasoner()
+
+	tests := []struct {
+		name          string
+		effects       []*types.PredictedEffect
+		minConfidence float64
+		maxConfidence float64
+	}{
+		{
+			name:          "no effects",
+			effects:       []*types.PredictedEffect{},
+			minConfidence: 0.5,
+			maxConfidence: 0.5,
+		},
+		{
+			name: "single high confidence effect",
+			effects: []*types.PredictedEffect{
+				{Variable: "A", Probability: 0.9, PathLength: 1},
+			},
+			minConfidence: 0.8,
+			maxConfidence: 1.0,
+		},
+		{
+			name: "multiple effects with different path lengths",
+			effects: []*types.PredictedEffect{
+				{Variable: "A", Probability: 0.8, PathLength: 1},
+				{Variable: "B", Probability: 0.6, PathLength: 2},
+			},
+			minConfidence: 0.4,
+			maxConfidence: 0.8,
+		},
+		{
+			name: "distant effects lower weight",
+			effects: []*types.PredictedEffect{
+				{Variable: "A", Probability: 0.8, PathLength: 3},
+			},
+			minConfidence: 0.2,
+			maxConfidence: 0.4,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			confidence := cr.calculateInterventionConfidence(tt.effects)
+			if confidence < tt.minConfidence || confidence > tt.maxConfidence {
+				t.Errorf("calculateInterventionConfidence() = %.2f, expected in [%.2f, %.2f]",
+					confidence, tt.minConfidence, tt.maxConfidence)
+			}
+		})
+	}
 }

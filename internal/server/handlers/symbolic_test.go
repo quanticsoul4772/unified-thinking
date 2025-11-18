@@ -305,3 +305,75 @@ func TestSymbolicHandler_ConstraintConsistencyChecking(t *testing.T) {
 		t.Error("HandleCheckConstraints() should return result")
 	}
 }
+
+// TestSymbolicHandler_HandleCheckConstraints_MoreCases tests additional constraint scenarios
+func TestSymbolicHandler_HandleCheckConstraints_MoreCases(t *testing.T) {
+	store := storage.NewMemoryStorage()
+	reasoner := validation.NewSymbolicReasoner()
+	handler := NewSymbolicHandler(reasoner, store)
+
+	ctx := context.Background()
+
+	// Test with function symbol
+	params := map[string]interface{}{
+		"symbols": []map[string]interface{}{
+			{"name": "f", "type": "function", "domain": "real"},
+			{"name": "x", "type": "variable", "domain": "real"},
+		},
+		"constraints": []map[string]interface{}{
+			{"type": "equality", "expression": "f(x) = x^2", "symbols": []string{"f", "x"}},
+		},
+	}
+
+	result, err := handler.HandleCheckConstraints(ctx, params)
+	if err != nil {
+		t.Errorf("HandleCheckConstraints() unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Error("HandleCheckConstraints() should return result")
+	}
+
+	// Test with boolean domain
+	params2 := map[string]interface{}{
+		"symbols": []map[string]interface{}{
+			{"name": "p", "type": "variable", "domain": "boolean"},
+			{"name": "q", "type": "variable", "domain": "boolean"},
+		},
+		"constraints": []map[string]interface{}{
+			{"type": "implication", "expression": "p -> q", "symbols": []string{"p", "q"}},
+		},
+	}
+
+	result2, err := handler.HandleCheckConstraints(ctx, params2)
+	if err != nil {
+		t.Errorf("HandleCheckConstraints() with boolean domain error: %v", err)
+	}
+	if result2 == nil {
+		t.Error("HandleCheckConstraints() with boolean domain should return result")
+	}
+}
+
+// TestSymbolicHandler_HandleProveTheorem_InvalidProof tests invalid proofs
+func TestSymbolicHandler_HandleProveTheorem_InvalidProof(t *testing.T) {
+	store := storage.NewMemoryStorage()
+	reasoner := validation.NewSymbolicReasoner()
+	handler := NewSymbolicHandler(reasoner, store)
+
+	ctx := context.Background()
+
+	// Invalid proof - conclusion doesn't follow
+	params := map[string]interface{}{
+		"name":       "Invalid proof",
+		"premises":   []string{"P"},
+		"conclusion": "Q",
+	}
+
+	result, err := handler.HandleProveTheorem(ctx, params)
+	if err != nil {
+		t.Errorf("HandleProveTheorem() unexpected error: %v", err)
+	}
+	// Should return result even if proof is invalid
+	if result == nil {
+		t.Error("HandleProveTheorem() should return result even for invalid proof")
+	}
+}

@@ -259,6 +259,6 @@ func TestCaseBasedHandler_RetrieveCasesWithStoredCases(t *testing.T) {
 }
 
 // Note: TestCaseBasedHandler_PerformCBRCycleWithStoredCases is omitted
-// because it requires testing the internal CBR reasoner logic which is covered
-// in reasoning/case_based_test.go. The handler tests focus on parameter validation
+// because it requires the internal CBR reasoner to have properly initialized
+// embedding indices. The handler tests focus on parameter validation
 // and error handling rather than the full CBR cycle logic.

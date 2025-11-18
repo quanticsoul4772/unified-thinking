@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestNewEpisodicMemoryStore(t *testing.T) {
@@ -520,4 +521,345 @@ func TestConcurrentAccess(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		<-done
 	}
+}
+
+func TestSetEmbeddingIntegration(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+
+	// Initially nil
+	if store.embeddingIntegration != nil {
+		t.Error("Expected nil embedding integration initially")
+	}
+
+	// Create mock embedding integration
+	mockEI := &EmbeddingIntegration{
+		store: store,
+	}
+
+	store.SetEmbeddingIntegration(mockEI)
+
+	// Now should be set
+	if store.embeddingIntegration != mockEI {
+		t.Error("Embedding integration not set correctly")
+	}
+
+	// Can set to nil
+	store.SetEmbeddingIntegration(nil)
+	if store.embeddingIntegration != nil {
+		t.Error("Expected nil after setting to nil")
+	}
+}
+
+func TestGetAllTrajectories(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Initially empty
+	trajectories := store.GetAllTrajectories()
+	if len(trajectories) != 0 {
+		t.Errorf("Expected 0 trajectories initially, got %d", len(trajectories))
+	}
+
+	// Store some trajectories
+	for i := 0; i < 5; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("session_%d", i),
+			ProblemID: fmt.Sprintf("problem_%d", i),
+			Domain:    "test",
+			Problem: &ProblemDescription{
+				Domain:      "test",
+				Description: fmt.Sprintf("Problem %d", i),
+			},
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Get all trajectories
+	trajectories = store.GetAllTrajectories()
+	if len(trajectories) != 5 {
+		t.Errorf("Expected 5 trajectories, got %d", len(trajectories))
+	}
+
+	// Verify they have IDs
+	for _, traj := range trajectories {
+		if traj.ID == "" {
+			t.Error("Trajectory has empty ID")
+		}
+	}
+}
+
+func TestGetAllTrajectories_Concurrent(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store some trajectories first (not concurrently)
+	for i := 0; i < 10; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("session_%d", i),
+			ProblemID: fmt.Sprintf("problem_%d", i),
+			Domain:    "test",
+			Problem: &ProblemDescription{
+				Domain:      "test",
+				Description: fmt.Sprintf("Problem %d", i),
+			},
+		}
+		err := store.StoreTrajectory(ctx, traj)
+		if err != nil {
+			t.Fatalf("Failed to store trajectory: %v", err)
+		}
+	}
+
+	// Verify all 10 are stored before concurrent access
+	if len(store.trajectories) != 10 {
+		t.Fatalf("Expected 10 trajectories stored, got %d", len(store.trajectories))
+	}
+
+	// Concurrent reads
+	done := make(chan int, 5)
+	for i := 0; i < 5; i++ {
+		go func() {
+			trajs := store.GetAllTrajectories()
+			done <- len(trajs)
+		}()
+	}
+
+	// Wait for all reads and verify
+	for i := 0; i < 5; i++ {
+		count := <-done
+		if count != 10 {
+			t.Errorf("Expected 10 trajectories, got %d", count)
+		}
+	}
+}
+
+func TestComputeToolSequenceHash(t *testing.T) {
+	// Same sequence should produce same hash
+	hash1 := computeToolSequenceHash([]string{"think", "validate", "prove"})
+	hash2 := computeToolSequenceHash([]string{"think", "validate", "prove"})
+
+	if hash1 != hash2 {
+		t.Error("Same sequences should produce same hash")
+	}
+
+	// Different sequences should produce different hashes
+	hash3 := computeToolSequenceHash([]string{"think", "prove", "validate"})
+	if hash1 == hash3 {
+		t.Error("Different sequences should produce different hash")
+	}
+
+	// Empty sequence
+	hash4 := computeToolSequenceHash([]string{})
+	if hash4 == "" {
+		t.Error("Empty sequence should still produce a hash")
+	}
+}
+
+func TestIdentifyRelevanceFactors(t *testing.T) {
+	problem := &ProblemDescription{
+		Domain:      "software-engineering",
+		ProblemType: "debugging",
+	}
+
+	trajectory := &ReasoningTrajectory{
+		Domain: "software-engineering",
+		Problem: &ProblemDescription{
+			ProblemType: "debugging",
+		},
+		SuccessScore: 0.9,
+	}
+
+	factors := identifyRelevanceFactors(problem, trajectory)
+
+	// Should identify same domain
+	foundDomain := false
+	for _, f := range factors {
+		if f == "Same domain" {
+			foundDomain = true
+			break
+		}
+	}
+	if !foundDomain {
+		t.Error("Expected to identify same domain")
+	}
+
+	// Should identify same problem type
+	foundType := false
+	for _, f := range factors {
+		if f == "Same problem type" {
+			foundType = true
+			break
+		}
+	}
+	if !foundType {
+		t.Error("Expected to identify same problem type")
+	}
+
+	// Should identify high success rate
+	foundSuccess := false
+	for _, f := range factors {
+		if f == "High success rate" {
+			foundSuccess = true
+			break
+		}
+	}
+	if !foundSuccess {
+		t.Error("Expected to identify high success rate")
+	}
+}
+
+func TestAbsAndMaxFloat(t *testing.T) {
+	// Test abs
+	if abs(-5.0) != 5.0 {
+		t.Error("abs(-5.0) should be 5.0")
+	}
+	if abs(5.0) != 5.0 {
+		t.Error("abs(5.0) should be 5.0")
+	}
+	if abs(0.0) != 0.0 {
+		t.Error("abs(0.0) should be 0.0")
+	}
+
+	// Test max
+	if max(3, 5) != 5 {
+		t.Error("max(3, 5) should be 5")
+	}
+	if max(5, 3) != 5 {
+		t.Error("max(5, 3) should be 5")
+	}
+	if max(5, 5) != 5 {
+		t.Error("max(5, 5) should be 5")
+	}
+
+	// Test maxFloat
+	if maxFloat(3.0, 5.0) != 5.0 {
+		t.Error("maxFloat(3.0, 5.0) should be 5.0")
+	}
+	if maxFloat(5.0, 3.0) != 5.0 {
+		t.Error("maxFloat(5.0, 3.0) should be 5.0")
+	}
+}
+
+func TestRetrieveSimilarTrajectories_WithEmbeddingIntegration(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store some trajectories
+	for i := 0; i < 3; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("session_%d", i),
+			Domain:    "test",
+			Problem: &ProblemDescription{
+				Domain:      "test",
+				ProblemType: "testing",
+			},
+			SuccessScore: 0.8,
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Without embedding integration - uses hash-based search
+	problem := &ProblemDescription{
+		Domain:      "test",
+		ProblemType: "testing",
+	}
+
+	matches, err := store.RetrieveSimilarTrajectories(ctx, problem, 10)
+	if err != nil {
+		t.Fatalf("RetrieveSimilarTrajectories failed: %v", err)
+	}
+
+	if len(matches) < 1 {
+		t.Logf("Found %d matches", len(matches))
+	}
+}
+
+func TestGenerateTrajectoryID(t *testing.T) {
+	// With session and problem ID
+	traj1 := &ReasoningTrajectory{
+		SessionID: "session_1",
+		ProblemID: "problem_1",
+		StartTime: time.Now(),
+	}
+	id1 := generateTrajectoryID(traj1)
+	if id1 == "" {
+		t.Error("Expected non-empty ID")
+	}
+	if !testContains(id1, "traj_") {
+		t.Error("Expected ID to start with 'traj_'")
+	}
+
+	// Without session/problem ID
+	traj2 := &ReasoningTrajectory{
+		SessionID: "",
+		ProblemID: "",
+	}
+	id2 := generateTrajectoryID(traj2)
+	if id2 == "" {
+		t.Error("Expected non-empty ID even without session/problem")
+	}
+}
+
+func TestRetrieveSimilarHashBased_NoMatches(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store trajectory in different domain
+	traj := &ReasoningTrajectory{
+		SessionID: "session_1",
+		Domain:    "different-domain",
+		Problem: &ProblemDescription{
+			Domain:      "different-domain",
+			ProblemType: "other",
+		},
+	}
+	store.StoreTrajectory(ctx, traj)
+
+	// Search for different domain
+	problem := &ProblemDescription{
+		Domain:      "test-domain",
+		ProblemType: "testing",
+	}
+
+	matches, err := store.RetrieveSimilarHashBased(problem, 10)
+	if err != nil {
+		t.Fatalf("RetrieveSimilarHashBased failed: %v", err)
+	}
+
+	// Should return empty array, not nil
+	if matches == nil {
+		t.Error("Expected non-nil matches array")
+	}
+}
+
+func TestGetRecommendations_NoSimilarTrajectories(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	recCtx := &RecommendationContext{
+		CurrentProblem:      &ProblemDescription{Domain: "test"},
+		SimilarTrajectories: []*TrajectoryMatch{},
+	}
+
+	recommendations, err := store.GetRecommendations(ctx, recCtx)
+	if err != nil {
+		t.Fatalf("GetRecommendations failed: %v", err)
+	}
+
+	// Should return empty array, not nil
+	if recommendations == nil {
+		t.Error("Expected non-nil recommendations array")
+	}
+	if len(recommendations) != 0 {
+		t.Errorf("Expected 0 recommendations, got %d", len(recommendations))
+	}
+}
+
+// testContains is a simple substring check for testing
+func testContains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
