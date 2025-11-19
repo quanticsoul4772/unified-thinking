@@ -133,21 +133,79 @@ the server includes 63 specialized tools across 13 major categories:
 
 ### prerequisites
 
-- go 1.24 or higher
-- git
+- Go 1.24 or higher
+- Git
 
-### build
+### macOS / Linux
 
+#### Install Go
+
+**macOS (using Homebrew):**
 ```bash
-go mod download
-go build -o bin/unified-thinking.exe ./cmd/server
+brew install go
 ```
 
-or using make:
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt update
+sudo apt install golang-go
+```
+
+**Verify Go installation:**
+```bash
+go version  # Should show 1.24 or higher
+```
+
+#### Build the Server
+
+```bash
+# Clone the repository
+git clone https://github.com/quanticsoul4772/unified-thinking.git
+cd unified-thinking
+
+# Download dependencies and build
+go mod download
+go build -o bin/unified-thinking ./cmd/server
+```
+
+Or using the Makefile (auto-detects your OS):
 
 ```bash
 make build
 ```
+
+The binary will be created at `bin/unified-thinking` (no .exe extension).
+
+### Windows
+
+#### Install Go
+
+Download and install Go from [go.dev/dl](https://go.dev/dl/)
+
+**Verify Go installation:**
+```cmd
+go version  # Should show 1.24 or higher
+```
+
+#### Build the Server
+
+```bash
+# Clone the repository
+git clone https://github.com/quanticsoul4772/unified-thinking.git
+cd unified-thinking
+
+# Download dependencies and build
+go mod download
+go build -o bin/unified-thinking.exe ./cmd/server
+```
+
+Or using the Makefile:
+
+```bash
+make build
+```
+
+The binary will be created at `bin\unified-thinking.exe`.
 
 ## documentation
 
@@ -163,17 +221,40 @@ comprehensive documentation is available:
 
 ### basic configuration (in-memory)
 
-add to your claude desktop config (`%appdata%\claude\claude_desktop_config.json` on windows):
+**Config file locations:**
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%appdata%\claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+**macOS / Linux:**
 
 ```json
 {
-  "mcpservers": {
+  "mcpServers": {
     "unified-thinking": {
-      "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
-      "transport": "stdio",
+      "command": "/path/to/unified-thinking/bin/unified-thinking",
+      "args": [],
       "env": {
-        "debug": "true"
-      }
+        "DEBUG": "true"
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**Windows:**
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
+      "args": [],
+      "env": {
+        "DEBUG": "true"
+      },
+      "type": "stdio"
     }
   }
 }
@@ -183,18 +264,91 @@ add to your claude desktop config (`%appdata%\claude\claude_desktop_config.json`
 
 for persistent storage across sessions:
 
+**macOS / Linux:**
+
 ```json
 {
-  "mcpservers": {
+  "mcpServers": {
     "unified-thinking": {
-      "command": "/path/to/unified-thinking/bin/unified-thinking.exe",
-      "transport": "stdio",
+      "command": "/path/to/unified-thinking/bin/unified-thinking",
+      "args": [],
       "env": {
-        "debug": "true",
-        "storage_type": "sqlite",
-        "sqlite_path": "c:\\users\\yourname\\appdata\\roaming\\claude\\unified-thinking.db",
-        "storage_fallback": "memory"
-      }
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
+        "STORAGE_FALLBACK": "memory"
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**Windows:**
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
+      "args": [],
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
+        "STORAGE_FALLBACK": "memory"
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+### configuration with sqlite + voyage ai (recommended)
+
+for full functionality with persistent storage and semantic embeddings:
+
+**macOS / Linux:**
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "/path/to/unified-thinking/bin/unified-thinking",
+      "args": [],
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
+        "STORAGE_FALLBACK": "memory",
+        "VOYAGE_API_KEY": "your-voyage-api-key-here",
+        "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "CONTEXT_BRIDGE_DISABLED": "false"
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**Windows:**
+
+```json
+{
+  "mcpServers": {
+    "unified-thinking": {
+      "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
+      "args": [],
+      "env": {
+        "DEBUG": "true",
+        "STORAGE_TYPE": "sqlite",
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
+        "STORAGE_FALLBACK": "memory",
+        "VOYAGE_API_KEY": "your-voyage-api-key-here",
+        "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "CONTEXT_BRIDGE_DISABLED": "false"
+      },
+      "type": "stdio"
     }
   }
 }
