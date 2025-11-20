@@ -56,10 +56,11 @@ make build
 the server includes 63 specialized tools across 13 major categories:
 
 #### probabilistic reasoning (4 tools)
-- bayesian inference with prior and posterior belief updates
-- evidence-based probability updates with quality assessment
+- bayesian inference with mathematically correct two-likelihood updates (P(E|H) and P(E|¬H))
+- evidence-based probability updates with configurable likelihood estimation
 - belief combination operations (and/or logic)
 - confidence estimation from evidence aggregation
+- metrics tracking: update counts, uninformative evidence rate, error rate
 
 #### causal reasoning (5 tools)
 - causal graph construction from observations
