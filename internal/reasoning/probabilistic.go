@@ -16,17 +16,31 @@ import (
 
 // ProbabilisticReasoner performs Bayesian inference and probabilistic reasoning
 type ProbabilisticReasoner struct {
-	mu      sync.RWMutex
-	beliefs map[string]*types.ProbabilisticBelief
-	counter int
-	metrics *metrics.ProbabilisticMetrics
+	mu        sync.RWMutex
+	beliefs   map[string]*types.ProbabilisticBelief
+	counter   int
+	metrics   *metrics.ProbabilisticMetrics
+	estimator LikelihoodEstimator
 }
 
-// NewProbabilisticReasoner creates a new probabilistic reasoner
+// NewProbabilisticReasoner creates a new probabilistic reasoner with default settings
 func NewProbabilisticReasoner() *ProbabilisticReasoner {
 	return &ProbabilisticReasoner{
-		beliefs: make(map[string]*types.ProbabilisticBelief),
-		metrics: metrics.NewProbabilisticMetrics(),
+		beliefs:   make(map[string]*types.ProbabilisticBelief),
+		metrics:   metrics.NewProbabilisticMetrics(),
+		estimator: NewStandardEstimator(nil), // Use default profile
+	}
+}
+
+// NewProbabilisticReasonerWithEstimator creates a reasoner with custom likelihood estimator
+func NewProbabilisticReasonerWithEstimator(estimator LikelihoodEstimator) *ProbabilisticReasoner {
+	if estimator == nil {
+		estimator = NewStandardEstimator(nil)
+	}
+	return &ProbabilisticReasoner{
+		beliefs:   make(map[string]*types.ProbabilisticBelief),
+		metrics:   metrics.NewProbabilisticMetrics(),
+		estimator: estimator,
 	}
 }
 
@@ -237,28 +251,22 @@ func (pr *ProbabilisticReasoner) UpdateBeliefFull(beliefID string, evidenceID st
 	return belief, nil
 }
 
-// UpdateBeliefWithEvidence uses evidence strength to update belief
-// This method now properly estimates both P(E|H) and P(E|¬H) from evidence quality
+// UpdateBeliefWithEvidence uses evidence strength to update belief.
+// This method estimates both P(E|H) and P(E|¬H) from evidence quality using
+// a configurable LikelihoodEstimator.
 func (pr *ProbabilisticReasoner) UpdateBeliefWithEvidence(beliefID string, evidence *types.Evidence) (*types.ProbabilisticBelief, error) {
 	_, exists := pr.beliefs[beliefID]
 	if !exists {
 		return nil, fmt.Errorf("belief not found: %s", beliefID)
 	}
 
-	// Estimate likelihoods from evidence quality and reliability
-	// We need both P(E|H) and P(E|¬H) for proper Bayesian update
-	var likelihoodIfTrue, likelihoodIfFalse float64
-
-	if evidence.SupportsClaim {
-		// Evidence supports the belief
-		// Strong evidence means high P(E|H) and low P(E|¬H)
-		likelihoodIfTrue = 0.5 + (evidence.OverallScore * 0.4)  // Range: 0.5-0.9
-		likelihoodIfFalse = 0.5 - (evidence.OverallScore * 0.3) // Range: 0.2-0.5
-	} else {
-		// Evidence refutes the belief
-		// Strong refuting evidence means low P(E|H) and high P(E|¬H)
-		likelihoodIfTrue = 0.5 - (evidence.OverallScore * 0.4)  // Range: 0.1-0.5
-		likelihoodIfFalse = 0.5 + (evidence.OverallScore * 0.3) // Range: 0.5-0.8
+	// Use the likelihood estimator to convert evidence quality to conditional probabilities
+	likelihoodIfTrue, likelihoodIfFalse, err := pr.estimator.EstimateLikelihoods(evidence)
+	if err != nil {
+		if pr.metrics != nil {
+			pr.metrics.RecordError()
+		}
+		return nil, fmt.Errorf("failed to estimate likelihoods: %w", err)
 	}
 
 	// Use the mathematically correct UpdateBeliefFull method
