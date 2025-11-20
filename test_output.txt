@@ -1,0 +1,27 @@
+# unified-thinking/internal/integration
+FAIL	unified-thinking/cmd/server [build failed]
+internal\integration\evidence_pipeline.go:200:50: ep.probabilisticReasoner.UpdateBelief undefined (type *reasoning.ProbabilisticReasoner has no field or method UpdateBelief)
+internal\integration\probabilistic_causal.go:58:41: pci.probReasoner.UpdateBelief undefined (type *reasoning.ProbabilisticReasoner has no field or method UpdateBelief)
+# unified-thinking/internal/reasoning [unified-thinking/internal/reasoning.test]
+internal\reasoning\concurrent_test.go:89:18: pr.UpdateBelief undefined (type *ProbabilisticReasoner has no field or method UpdateBelief)
+internal\reasoning\probabilistic_test.go:106:23: pr.UpdateBelief undefined (type *ProbabilisticReasoner has no field or method UpdateBelief)
+internal\reasoning\probabilistic_validation_test.go:231:19: reasoner.UpdateBelief undefined (type *ProbabilisticReasoner has no field or method UpdateBelief)
+ok  	unified-thinking/internal/analysis	(cached)
+ok  	unified-thinking/internal/config	(cached)
+ok  	unified-thinking/internal/contextbridge	(cached)
+ok  	unified-thinking/internal/embeddings	(cached)
+FAIL	unified-thinking/internal/integration [build failed]
+ok  	unified-thinking/internal/memory	(cached)
+ok  	unified-thinking/internal/metacognition	(cached)
+ok  	unified-thinking/internal/metrics	(cached)
+ok  	unified-thinking/internal/modes	(cached)
+ok  	unified-thinking/internal/orchestration	(cached)
+ok  	unified-thinking/internal/processing	(cached)
+FAIL	unified-thinking/internal/reasoning [build failed]
+FAIL	unified-thinking/internal/server [build failed]
+FAIL	unified-thinking/internal/server/handlers [build failed]
+?   	unified-thinking/internal/server/types	[no test files]
+ok  	unified-thinking/internal/storage	(cached)
+ok  	unified-thinking/internal/types	(cached)
+ok  	unified-thinking/internal/validation	(cached)
+FAIL
