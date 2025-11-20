@@ -1383,6 +1383,7 @@ type MetricsResponse struct {
 	ThoughtsByMode    map[string]int         `json:"thoughts_by_mode"`
 	AverageConfidence float64                `json:"average_confidence"`
 	ContextBridge     map[string]interface{} `json:"context_bridge,omitempty"`
+	Probabilistic     map[string]interface{} `json:"probabilistic,omitempty"`
 }
 
 type RecentBranchesResponse struct {
@@ -1406,6 +1407,11 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 	// Include context bridge metrics if available
 	if s.contextBridge != nil {
 		response.ContextBridge = s.contextBridge.GetMetrics()
+	}
+
+	// Include probabilistic reasoning metrics
+	if s.probabilisticReasoner != nil {
+		response.Probabilistic = s.probabilisticReasoner.GetMetrics()
 	}
 
 	return &mcp.CallToolResult{

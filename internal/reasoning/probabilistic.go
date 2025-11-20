@@ -4,10 +4,13 @@ package reasoning
 
 import (
 	"fmt"
+	"log"
 	"math"
+	"os"
 	"sync"
 	"time"
 
+	"unified-thinking/internal/metrics"
 	"unified-thinking/internal/types"
 )
 
@@ -16,12 +19,14 @@ type ProbabilisticReasoner struct {
 	mu      sync.RWMutex
 	beliefs map[string]*types.ProbabilisticBelief
 	counter int
+	metrics *metrics.ProbabilisticMetrics
 }
 
 // NewProbabilisticReasoner creates a new probabilistic reasoner
 func NewProbabilisticReasoner() *ProbabilisticReasoner {
 	return &ProbabilisticReasoner{
 		beliefs: make(map[string]*types.ProbabilisticBelief),
+		metrics: metrics.NewProbabilisticMetrics(),
 	}
 }
 
@@ -46,16 +51,34 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 	}
 
 	pr.beliefs[belief.ID] = belief
+
+	if pr.metrics != nil {
+		pr.metrics.RecordBeliefCreated()
+	}
+
 	return belief, nil
 }
 
 // UpdateBelief applies Bayesian update based on new evidence
 //
-// DEPRECATED: This method is mathematically incorrect when evidenceProb is provided directly.
-// Use UpdateBeliefFull instead, which properly requires both P(E|H) and P(E|¬H).
+// DEPRECATED: This method is mathematically questionable and should not be used in new code.
 //
-// This method is retained for backward compatibility but now delegates to UpdateBeliefFull
-// with a default P(E|¬H) = 0.5 when evidenceProb is not provided.
+// PROBLEMS WITH THIS API:
+// 1. Assumes P(E|¬H) = 0.5 (neutral), which is rarely correct in real scenarios
+// 2. The "evidenceProb" parameter is ignored because it conflates P(E) with likelihoods
+// 3. Cannot properly apply Bayes' theorem without both P(E|H) and P(E|¬H)
+// 4. Produces incorrect posteriors when evidence has asymmetric likelihoods
+//
+// MIGRATION PATH - Replace this:
+//   pr.UpdateBelief(beliefID, evidenceID, 0.8, 0.5)
+//
+// With this:
+//   pr.UpdateBeliefFull(beliefID, evidenceID, 0.8, 0.2)
+//   // Explicitly specify: 0.8 = P(E|H), 0.2 = P(E|¬H)
+//
+// Or use UpdateBeliefWithEvidence if you have an Evidence struct that includes quality scores.
+//
+// DO NOT USE THIS METHOD IN NEW CODE. Use UpdateBeliefFull for correctness.
 //
 // Parameters:
 //   - beliefID: ID of the belief to update
@@ -79,19 +102,55 @@ func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string
 	return pr.UpdateBeliefFull(beliefID, evidenceID, likelihood, likelihoodIfFalse)
 }
 
-// UpdateBeliefFull applies Bayesian update with full parameters
+// UpdateBeliefFull applies Bayesian update with full parameters.
+//
+// MATHEMATICAL FOUNDATION:
 // This is the mathematically correct implementation of Bayes' theorem:
-// P(H|E) = P(E|H)P(H) / [P(E|H)P(H) + P(E|¬H)P(¬H)]
 //
-// Why both likelihoods are needed:
-// - P(E|H): How likely we'd see this evidence if the hypothesis is true
-// - P(E|¬H): How likely we'd see this evidence if the hypothesis is false
-// Without both, we cannot properly normalize the posterior probability.
+//   P(H|E) = P(E|H) × P(H) / [P(E|H) × P(H) + P(E|¬H) × P(¬H)]
 //
-// Example: Medical test with 99% sensitivity (P(positive|disease) = 0.99)
-// and 95% specificity (P(negative|healthy) = 0.95, so P(positive|healthy) = 0.05).
-// For a disease with 1% prevalence, a positive test only gives ~17% probability
-// of having the disease, NOT 99%! This is why we need both likelihoods.
+// Where:
+//   - P(H|E) = Posterior probability (updated belief after seeing evidence)
+//   - P(E|H) = Likelihood if true (probability of evidence if hypothesis is true)
+//   - P(H) = Prior probability (belief before seeing evidence)
+//   - P(E|¬H) = Likelihood if false (probability of evidence if hypothesis is false)
+//   - P(¬H) = 1 - P(H) (probability hypothesis is false)
+//
+// WHY BOTH LIKELIHOODS ARE REQUIRED:
+// Without both P(E|H) and P(E|¬H), we cannot properly normalize the posterior probability.
+// This is a common source of the "base rate fallacy" - ignoring how common the evidence
+// is under alternative hypotheses leads to dramatically incorrect probability estimates.
+//
+// CRITICAL EXAMPLE - Medical Testing (Base Rate Fallacy):
+// A medical test has:
+//   - 99% sensitivity: P(positive|disease) = 0.99
+//   - 95% specificity: P(negative|healthy) = 0.95, so P(positive|healthy) = 0.05
+//   - Disease prevalence: 1% (prior probability)
+//
+// Question: If a patient tests positive, what is P(disease|positive)?
+//
+// INTUITIVE (WRONG) ANSWER: 99% (the test sensitivity)
+//
+// CORRECT CALCULATION:
+//   P(disease|positive) = 0.99 × 0.01 / [0.99 × 0.01 + 0.05 × 0.99]
+//                       = 0.0099 / [0.0099 + 0.0495]
+//                       = 0.0099 / 0.0594
+//                       ≈ 0.167 (16.7%)
+//
+// The positive test only gives a 16.7% probability of disease, NOT 99%!
+// This counterintuitive result occurs because the disease is rare (1% base rate).
+// Out of 10,000 people: 100 have disease (99 test positive), 9,900 are healthy (495 test positive).
+// Total positive tests: 594. Of these, only 99 actually have the disease (99/594 ≈ 16.7%).
+//
+// WITHOUT P(E|¬H) = 0.05, WE CANNOT COMPUTE THIS CORRECTLY!
+//
+// WARNING TO FUTURE DEVELOPERS:
+// Do NOT "optimize" this back to a single likelihood parameter. The mathematical correctness
+// depends on having BOTH conditional probabilities. Any attempt to simplify this API will
+// reintroduce the base rate fallacy and produce incorrect probability updates.
+//
+// If you think this can be simplified, read the medical test example above carefully and
+// try to compute the correct posterior with only one likelihood - you will find it's impossible.
 //
 // Parameters:
 //   - beliefID: ID of the belief to update
@@ -111,9 +170,15 @@ func (pr *ProbabilisticReasoner) UpdateBeliefFull(beliefID string, evidenceID st
 
 	// Validate likelihood parameters
 	if likelihoodIfTrue < 0 || likelihoodIfTrue > 1 {
+		if pr.metrics != nil {
+			pr.metrics.RecordError()
+		}
 		return nil, fmt.Errorf("P(E|H) must be between 0 and 1, got: %f", likelihoodIfTrue)
 	}
 	if likelihoodIfFalse < 0 || likelihoodIfFalse > 1 {
+		if pr.metrics != nil {
+			pr.metrics.RecordError()
+		}
 		return nil, fmt.Errorf("P(E|¬H) must be between 0 and 1, got: %f", likelihoodIfFalse)
 	}
 
@@ -122,12 +187,25 @@ func (pr *ProbabilisticReasoner) UpdateBeliefFull(beliefID string, evidenceID st
 	if math.Abs(likelihoodIfTrue-likelihoodIfFalse) < 1e-10 {
 		// Evidence is equally likely regardless of hypothesis truth
 		// No update needed - posterior equals prior
+
+		// Log warning - this may indicate upstream issues with evidence quality
+		if os.Getenv("DEBUG") != "" {
+			log.Printf("[WARN] Uninformative evidence for belief %s: P(E|H)=%.4f, P(E|¬H)=%.4f (equal within tolerance). Evidence ID: %s",
+				beliefID, likelihoodIfTrue, likelihoodIfFalse, evidenceID)
+		}
+
 		belief.Evidence = append(belief.Evidence, evidenceID)
 		belief.UpdatedAt = time.Now()
 		if belief.Metadata == nil {
 			belief.Metadata = make(map[string]interface{})
 		}
 		belief.Metadata["last_update_uninformative"] = true
+		belief.Metadata["uninformative_reason"] = "likelihoods_equal"
+
+		if pr.metrics != nil {
+			pr.metrics.RecordUninformative()
+		}
+
 		return belief, nil
 	}
 
@@ -151,6 +229,10 @@ func (pr *ProbabilisticReasoner) UpdateBeliefFull(beliefID string, evidenceID st
 	belief.Probability = posterior
 	belief.Evidence = append(belief.Evidence, evidenceID)
 	belief.UpdatedAt = time.Now()
+
+	if pr.metrics != nil {
+		pr.metrics.RecordUpdate()
+	}
 
 	return belief, nil
 }
@@ -233,7 +315,29 @@ func (pr *ProbabilisticReasoner) CombineBeliefs(beliefIDs []string, operation st
 		return 0, fmt.Errorf("unknown operation: %s (use 'and' or 'or')", operation)
 	}
 
+	if pr.metrics != nil {
+		pr.metrics.RecordBeliefsCombined()
+	}
+
 	return result, nil
+}
+
+// GetMetrics returns current probabilistic reasoning metrics
+func (pr *ProbabilisticReasoner) GetMetrics() map[string]interface{} {
+	if pr.metrics == nil {
+		return map[string]interface{}{}
+	}
+
+	stats := pr.metrics.GetStats()
+	return map[string]interface{}{
+		"updates_total":         stats["updates_total"],
+		"updates_uninformative": stats["updates_uninformative"],
+		"updates_error":         stats["updates_error"],
+		"beliefs_created":       stats["beliefs_created"],
+		"beliefs_combined":      stats["beliefs_combined"],
+		"uninformative_rate":    pr.metrics.GetUninformativeRate(),
+		"error_rate":            pr.metrics.GetErrorRate(),
+	}
 }
 
 // EstimateConfidence estimates confidence in a conclusion based on supporting evidence
