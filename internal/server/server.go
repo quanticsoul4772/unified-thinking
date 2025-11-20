@@ -4,6 +4,46 @@
 // thought processing, validation, search, and advanced cognitive reasoning. All
 // responses are JSON formatted for consumption by Claude AI via stdio transport.
 //
+// THREE-LAYER ARCHITECTURE:
+//
+// The server uses a three-layer separation pattern for maintainability and type safety:
+//
+// LAYER 1: Tool Definitions (tools.go)
+//   - Centralized registry of all 63 MCP tool schemas
+//   - Tool names, descriptions, parameter specifications
+//   - Usage examples, integration patterns, and workflow documentation
+//   - Single source of truth for tool interfaces
+//
+// LAYER 2: Handler Implementation (handlers/*.go)
+//   - Domain-specific business logic organized by cognitive domain:
+//     * thinking.go - Core thinking operations
+//     * probabilistic.go - Bayesian inference and evidence
+//     * decision.go - Decision-making and problem decomposition
+//     * metacognition.go - Self-evaluation and bias detection
+//     * temporal.go, causal.go - Advanced reasoning patterns
+//   - Type-safe request/response handling with validation
+//   - Independent, testable components with clear responsibilities
+//
+// LAYER 3: Tool Registration (server.go:RegisterTools)
+//   - Wiring between tool definitions (Layer 1) and handler implementations (Layer 2)
+//   - Type-safe argument unmarshaling from JSON to typed structs
+//   - MCP protocol compliance and error handling
+//
+// WHY THIS PATTERN:
+//
+// Go's type system requires compile-time knowledge of generic type parameters.
+// The MCP SDK's AddTool[TArgs, TResult] cannot be called dynamically with reflection.
+// The switch statement in RegisterTools() provides type safety while maintaining
+// clean separation between schema definition and business logic implementation.
+//
+// Benefits:
+//   - Type Safety: Compile-time verification of all tool interfaces
+//   - Maintainability: Clear separation of concerns across layers
+//   - Testability: Handler logic independently testable
+//   - Documentation: Schema and examples live with definitions
+//
+// TOOL CATEGORIES (63 total):
+//
 // Core Tools (11):
 //   - think, history, list-branches, focus-branch, branch-history, recent-branches
 //   - validate, prove, check-syntax, search, get-metrics
@@ -321,7 +361,32 @@ func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
 	return s.contextBridge
 }
 
+// RegisterTools registers all 63 MCP tools with the server.
+//
+// ORGANIZATION:
+// Tools are registered in the following order matching the package documentation:
+//   1. Core Tools (11): think, history, branches, validation, search, metrics
+//   2. Probabilistic & Evidence (4): probabilistic-reasoning, assess-evidence, etc.
+//   3. Decision & Problem-Solving (3): make-decision, decompose-problem, verify-thought
+//   4. Metacognition (3): self-evaluate, detect-biases, detect-blind-spots
+//   5. Hallucination & Calibration (4): verification and calibration tracking
+//   6. Temporal & Perspective (4): temporal analysis and perspective tools
+//   7. Causal Reasoning (5): causal graphs, interventions, counterfactuals
+//   8. Integration & Synthesis (6): synthesis, workflows, patterns
+//   9. Advanced Reasoning (10): dual-process, backtracking, abductive, CBR, symbolic
+//   10. Enhanced Tools (8): analogies, arguments, evidence pipeline
+//   11. Episodic Memory (5): session tracking, learning, recommendations
+//
+// Each tool follows the pattern:
+//   1. Get tool definition from tools.go
+//   2. Unmarshal request arguments to typed struct
+//   3. Call handler method with typed request
+//   4. Return result or error
 func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
+	// ========================================================================
+	// CORE THINKING TOOLS (11 tools)
+	// ========================================================================
+
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name: "think",
 		Description: `Main thinking tool supporting multiple cognitive modes (linear, tree, divergent, auto).
