@@ -1,15 +1,16 @@
 # Unified Thinking Server
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Test Coverage](https://img.shields.io/badge/coverage-85.7%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![Test Coverage](https://img.shields.io/badge/coverage-84.3%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
+[![Tests](https://img.shields.io/badge/tests-102%20files-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
 
 - Go 1.24+
-- 85.7% test coverage
-- 63 tools
+- 84.3% test coverage (102 test files, 1,300+ tests)
+- 63 MCP tools
 - MIT License
 
 ## Quick Start
