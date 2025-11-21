@@ -383,8 +383,20 @@ type BeliefUpdate struct {
 }
 
 // BatchUpdateBeliefFull performs multiple belief updates in a single transaction
-// PERFORMANCE OPTIMIZATION: Reduces lock contention for sequential updates
-// This is 40-50% faster than calling UpdateBeliefFull multiple times
+// 
+// ⚠️ WARNING - PERFORMANCE NOTICE:
+// Benchmarking shows this batch API is NOT faster than individual UpdateBeliefFull calls.
+// Go's RWMutex is extremely efficient, and the overhead of evidence array growth
+// and memory allocation dominates any lock contention savings.
+// 
+// Benchmark results:
+// - Batch API: ~94 μs per update (5 updates)
+// - Individual: ~475 ns per update
+// - Batch is 200x slower per update!
+//
+// Use this API only for CONVENIENCE (single function call for multiple updates),
+// NOT for performance optimization. For best performance, use individual
+// UpdateBeliefFull calls.
 //
 // Example usage:
 //   updates := []BeliefUpdate{
