@@ -674,7 +674,7 @@ make benchmark
 | package | coverage | status |
 |---------|----------|--------|
 | `internal/types` | 100.0% | excellent |
-| `internal/metrics` | 100.0% | excellent ⭐ |
+| `internal/metrics` | 100.0% | excellent |
 | `internal/config` | 97.3% | excellent |
 | `internal/modes` | 90.5% | excellent |
 | `internal/reasoning` | 89.3% | excellent |
@@ -689,7 +689,7 @@ make benchmark
 | `internal/integration` | 78.7% | good |
 | `internal/storage` | 78.4% | good |
 | `internal/embeddings` | 75.6% | acceptable |
-| `cmd/server` | 70.6% | acceptable ⭐ |
+| `cmd/server` | 70.6% | acceptable |
 | `internal/contextbridge` | 70.6% | acceptable |
 
 ## troubleshooting
