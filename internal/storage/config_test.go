@@ -20,10 +20,6 @@ func TestDefaultConfig(t *testing.T) {
 	if config.SQLiteTimeout != 5000 {
 		t.Errorf("Default SQLiteTimeout = %v, want 5000", config.SQLiteTimeout)
 	}
-
-	if config.FallbackType != StorageTypeMemory {
-		t.Errorf("Default FallbackType = %v, want %v", config.FallbackType, StorageTypeMemory)
-	}
 }
 
 func TestConfigFromEnv(t *testing.T) {
@@ -31,14 +27,12 @@ func TestConfigFromEnv(t *testing.T) {
 	originalStorageType := os.Getenv("STORAGE_TYPE")
 	originalSQLitePath := os.Getenv("SQLITE_PATH")
 	originalSQLiteTimeout := os.Getenv("SQLITE_TIMEOUT")
-	originalFallback := os.Getenv("STORAGE_FALLBACK")
 
 	// Restore original env vars after test
 	defer func() {
 		os.Setenv("STORAGE_TYPE", originalStorageType)
 		os.Setenv("SQLITE_PATH", originalSQLitePath)
 		os.Setenv("SQLITE_TIMEOUT", originalSQLiteTimeout)
-		os.Setenv("STORAGE_FALLBACK", originalFallback)
 	}()
 
 	tests := []struct {
@@ -58,9 +52,6 @@ func TestConfigFromEnv(t *testing.T) {
 				}
 				if cfg.SQLiteTimeout != 5000 {
 					t.Errorf("SQLiteTimeout = %v, want 5000", cfg.SQLiteTimeout)
-				}
-				if cfg.FallbackType != StorageTypeMemory {
-					t.Errorf("FallbackType = %v, want %v", cfg.FallbackType, StorageTypeMemory)
 				}
 			},
 		},
@@ -145,23 +136,11 @@ func TestConfigFromEnv(t *testing.T) {
 			},
 		},
 		{
-			name: "custom fallback type",
-			envVars: map[string]string{
-				"STORAGE_FALLBACK": "sqlite",
-			},
-			validate: func(t *testing.T, cfg Config) {
-				if cfg.FallbackType != StorageTypeSQLite {
-					t.Errorf("FallbackType = %v, want sqlite", cfg.FallbackType)
-				}
-			},
-		},
-		{
 			name: "all custom values",
 			envVars: map[string]string{
-				"STORAGE_TYPE":     "sqlite",
-				"SQLITE_PATH":      "/tmp/test.db",
-				"SQLITE_TIMEOUT":   "8000",
-				"STORAGE_FALLBACK": "memory",
+				"STORAGE_TYPE":   "sqlite",
+				"SQLITE_PATH":    "/tmp/test.db",
+				"SQLITE_TIMEOUT": "8000",
 			},
 			validate: func(t *testing.T, cfg Config) {
 				if cfg.Type != StorageTypeSQLite {
@@ -173,9 +152,6 @@ func TestConfigFromEnv(t *testing.T) {
 				if cfg.SQLiteTimeout != 8000 {
 					t.Errorf("SQLiteTimeout = %v, want 8000", cfg.SQLiteTimeout)
 				}
-				if cfg.FallbackType != StorageTypeMemory {
-					t.Errorf("FallbackType = %v, want memory", cfg.FallbackType)
-				}
 			},
 		},
 	}
@@ -186,7 +162,6 @@ func TestConfigFromEnv(t *testing.T) {
 			os.Unsetenv("STORAGE_TYPE")
 			os.Unsetenv("SQLITE_PATH")
 			os.Unsetenv("SQLITE_TIMEOUT")
-			os.Unsetenv("STORAGE_FALLBACK")
 
 			// Set env vars for this test
 			for key, value := range tt.envVars {
@@ -276,7 +251,6 @@ func TestConfigStructFields(t *testing.T) {
 		Type:          StorageTypeSQLite,
 		SQLitePath:    "/test/path.db",
 		SQLiteTimeout: 3000,
-		FallbackType:  StorageTypeMemory,
 	}
 
 	if config.Type != StorageTypeSQLite {
@@ -287,9 +261,6 @@ func TestConfigStructFields(t *testing.T) {
 	}
 	if config.SQLiteTimeout != 3000 {
 		t.Errorf("SQLiteTimeout field not set correctly")
-	}
-	if config.FallbackType != StorageTypeMemory {
-		t.Errorf("FallbackType field not set correctly")
 	}
 }
 
@@ -335,21 +306,6 @@ func TestConfigFromEnvEmptyTimeout(t *testing.T) {
 	// Should use default timeout
 	if config.SQLiteTimeout != 5000 {
 		t.Errorf("SQLiteTimeout = %v, want 5000 (default)", config.SQLiteTimeout)
-	}
-}
-
-func TestConfigFromEnvEmptyFallback(t *testing.T) {
-	originalFallback := os.Getenv("STORAGE_FALLBACK")
-	defer os.Setenv("STORAGE_FALLBACK", originalFallback)
-
-	// Set empty fallback
-	os.Setenv("STORAGE_FALLBACK", "")
-
-	config := ConfigFromEnv()
-
-	// Should use default fallback
-	if config.FallbackType != StorageTypeMemory {
-		t.Errorf("FallbackType = %v, want memory (default)", config.FallbackType)
 	}
 }
 
@@ -408,31 +364,5 @@ func TestConfigFromEnvLargeTimeout(t *testing.T) {
 
 	if config.SQLiteTimeout != 3600000 {
 		t.Errorf("SQLiteTimeout = %v, want 3600000", config.SQLiteTimeout)
-	}
-}
-
-func TestConfigFromEnvMemoryFallback(t *testing.T) {
-	originalFallback := os.Getenv("STORAGE_FALLBACK")
-	defer os.Setenv("STORAGE_FALLBACK", originalFallback)
-
-	os.Setenv("STORAGE_FALLBACK", "memory")
-
-	config := ConfigFromEnv()
-
-	if config.FallbackType != StorageTypeMemory {
-		t.Errorf("FallbackType = %v, want memory", config.FallbackType)
-	}
-}
-
-func TestConfigFromEnvSQLiteFallback(t *testing.T) {
-	originalFallback := os.Getenv("STORAGE_FALLBACK")
-	defer os.Setenv("STORAGE_FALLBACK", originalFallback)
-
-	os.Setenv("STORAGE_FALLBACK", "sqlite")
-
-	config := ConfigFromEnv()
-
-	if config.FallbackType != StorageTypeSQLite {
-		t.Errorf("FallbackType = %v, want sqlite", config.FallbackType)
 	}
 }
