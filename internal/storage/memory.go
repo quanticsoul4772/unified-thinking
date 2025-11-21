@@ -51,6 +51,9 @@ type MemoryStorage struct {
 	contentIndex    map[string][]string             // word -> []thoughtIDs
 	indexAccessTime map[string]time.Time            // word -> last access time (for LRU eviction)
 	modeIndex       map[types.ThinkingMode][]string // mode -> []thoughtIDs
+	// TIER 2 OPTIMIZATION: Hot word cache for frequently accessed index entries
+	hotWordCache    map[string][]string // Cache for top 100 most accessed words
+	hotWordAccess   map[string]int      // Access count for cache promotion
 
 	// Ordered slices for deterministic pagination (sorted by timestamp, newest first)
 	thoughtsOrdered []*types.Thought
@@ -78,6 +81,8 @@ func NewMemoryStorage() *MemoryStorage {
 		contentIndex:    make(map[string][]string),
 		indexAccessTime: make(map[string]time.Time),
 		modeIndex:       make(map[types.ThinkingMode][]string),
+		hotWordCache:    make(map[string][]string, 100), // Cache top 100 hot words
+		hotWordAccess:   make(map[string]int, 200),      // Track access counts
 		thoughtsOrdered: make([]*types.Thought, 0, 100), // Pre-allocate typical size
 		branchesOrdered: make([]*types.Branch, 0, 20),   // Pre-allocate typical size
 		recentBranchIDs: make([]string, 0, MaxRecentBranches),
@@ -442,21 +447,38 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 	}
 
 	// Build candidate set using index for fast filtering
+	// TIER 2 OPTIMIZATION: Use slice for small result sets (< 100), map for large
+	// Linear scan is faster than map allocation for small sets (cache-friendly)
+	const mapConversionThreshold = 100
 	var candidateSet map[string]bool
+	var candidateSlice []string
+	var useSlice bool
 
 	if query != "" {
 		// Use index to find matching thoughts
 		matchedIDs := s.searchByIndex(query, mode)
-		candidateSet = make(map[string]bool, len(matchedIDs))
-		for _, id := range matchedIDs {
-			candidateSet[id] = true
+		if len(matchedIDs) < mapConversionThreshold {
+			// Small set: use slice (no allocation, cache-friendly)
+			candidateSlice = matchedIDs
+			useSlice = true
+		} else {
+			// Large set: use map for O(1) lookup
+			candidateSet = make(map[string]bool, len(matchedIDs))
+			for _, id := range matchedIDs {
+				candidateSet[id] = true
+			}
 		}
 	} else if mode != "" {
 		// Mode-only filter: use mode index
 		modeIDs := s.modeIndex[mode]
-		candidateSet = make(map[string]bool, len(modeIDs))
-		for _, id := range modeIDs {
-			candidateSet[id] = true
+		if len(modeIDs) < mapConversionThreshold {
+			candidateSlice = modeIDs
+			useSlice = true
+		} else {
+			candidateSet = make(map[string]bool, len(modeIDs))
+			for _, id := range modeIDs {
+				candidateSet[id] = true
+			}
 		}
 	} else {
 		// No filters: all thoughts are candidates
@@ -474,7 +496,19 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 		}
 
 		// Check if thought matches filter criteria
-		if candidateSet != nil && !candidateSet[thought.ID] {
+		if useSlice {
+			// Linear scan for small result sets
+			found := false
+			for _, id := range candidateSlice {
+				if id == thought.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		} else if candidateSet != nil && !candidateSet[thought.ID] {
 			continue // Not in candidate set, skip
 		}
 
@@ -522,7 +556,22 @@ func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []s
 		if _, exists := s.indexAccessTime[word]; exists {
 			s.indexAccessTime[word] = now
 		}
-		for _, thoughtID := range s.contentIndex[word] {
+		
+		// TIER 2 OPTIMIZATION: Check hot word cache first
+		var wordIDs []string
+		if cached, inCache := s.hotWordCache[word]; inCache {
+			wordIDs = cached
+		} else {
+			wordIDs = s.contentIndex[word]
+			// Track access for cache promotion
+			s.hotWordAccess[word]++
+			if s.hotWordAccess[word] > 5 && len(s.hotWordCache) < 100 {
+				// Promote to hot cache after 5 accesses
+				s.hotWordCache[word] = wordIDs
+			}
+		}
+		
+		for _, thoughtID := range wordIDs {
 			// Filter by mode if specified
 			if mode != "" {
 				thought, exists := s.thoughts[thoughtID]

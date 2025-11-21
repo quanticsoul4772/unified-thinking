@@ -170,6 +170,8 @@ func (m *TreeMode) updateBranchMetrics(branch *types.Branch) {
 	}
 
 	// Calculate priority
+	// TIER 2 OPTIMIZATION: Priority calculation is simple and fast (no caching needed)
+	// The cost of cache management would exceed calculation cost
 	insightScore := float64(len(branch.Insights)) * 0.1
 	crossRefScore := 0.0
 	for _, xref := range branch.CrossRefs {
