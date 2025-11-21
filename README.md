@@ -8,11 +8,6 @@
 
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
 
-- Go 1.24+
-- 84.3% test coverage (105 test files, 1,300+ tests)
-- 63 MCP tools
-- MIT License
-
 ## Quick Start
 
 ```bash
@@ -395,7 +390,7 @@ after saving the config, restart claude desktop.
   - transparent fallback to hash-based search when embeddings disabled
 
 ### performance improvements
-- **production optimizations (november 2025)**: comprehensive performance tuning completed
+- **production optimizations**: comprehensive performance tuning completed
   - tier 1-3 optimizations: memory allocation patterns, locking efficiency, hot path optimization
   - production profiling: identified and resolved critical bottlenecks
   - improved memory allocation and eliminated redundant locking
@@ -414,7 +409,7 @@ after saving the config, restart claude desktop.
 - fixed context bridge not returning structure when no matches found
 
 ### code quality
-- 73% test coverage for embeddings package (was 0%)
+- 73% test coverage for embeddings package
 - comprehensive integration tests for embedding similarity path
 - removed unused refactoring experiments
 - cleaned up test files and improved edge case coverage
