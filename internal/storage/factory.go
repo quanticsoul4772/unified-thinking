@@ -8,7 +8,7 @@ import (
 )
 
 // NewStorage creates a storage backend based on configuration
-// Implements graceful fallback to memory storage on errors
+// Fails fast on any initialization errors - no fallback
 func NewStorage(cfg Config) (Storage, error) {
 	switch cfg.Type {
 	case StorageTypeMemory:
@@ -19,10 +19,6 @@ func NewStorage(cfg Config) (Storage, error) {
 		log.Printf("Initializing SQLite storage at %s", cfg.SQLitePath)
 		sqliteStore, err := NewSQLiteStorage(cfg.SQLitePath, cfg.SQLiteTimeout)
 		if err != nil {
-			if cfg.FallbackType != "" && cfg.FallbackType != cfg.Type {
-				log.Printf("SQLite initialization failed: %v. Falling back to %s", err, cfg.FallbackType)
-				return NewStorage(Config{Type: cfg.FallbackType})
-			}
 			return nil, fmt.Errorf("sqlite initialization failed: %w", err)
 		}
 		return sqliteStore, nil
