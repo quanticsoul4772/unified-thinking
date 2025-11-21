@@ -271,7 +271,7 @@ The server supports **pluggable storage backends** via the `storage.Storage` int
 - Write-through caching for performance
 - Full-text search via FTS5
 - WAL mode for concurrent reads
-- Graceful fallback to memory on errors
+- **Fail-fast behavior**: Server fails immediately if SQLite initialization fails (no silent fallback)
 
 **Configuration** via environment variables:
 ```bash
@@ -280,13 +280,13 @@ STORAGE_TYPE=sqlite     # Persistent SQLite storage
 
 SQLITE_PATH=./data/thoughts.db  # Database file path
 SQLITE_TIMEOUT=5000             # Connection timeout (ms)
-STORAGE_FALLBACK=memory         # Fallback if SQLite fails
 ```
+
+**Note**: The server uses fail-fast behavior. If the configured storage backend fails to initialize, the server will terminate immediately rather than falling back to an alternative storage type.
 
 **Storage Factory** (`storage/factory.go`):
 - `NewStorageFromEnv()` - Creates storage from environment variables
 - `NewStorage(cfg Config)` - Creates storage from explicit configuration
-- Automatic fallback handling
 
 **Storage Operations**:
 - Thread-safe with RWMutex locking
@@ -473,8 +473,7 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
-        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
-        "STORAGE_FALLBACK": "memory"
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db"
       }
     }
   }
@@ -492,7 +491,6 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
-        "STORAGE_FALLBACK": "memory",
         "EMBEDDINGS_ENABLED": "true",
         "EMBEDDINGS_PROVIDER": "voyage",
         "EMBEDDINGS_MODEL": "voyage-3-lite",
@@ -512,9 +510,10 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `STORAGE_TYPE`: `memory` (default) or `sqlite`
 - `SQLITE_PATH`: Path to SQLite database file (created if not exists)
 - `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
-- `STORAGE_FALLBACK`: Fallback storage type if primary fails (default: none)
 - `DEBUG`: Enable debug logging (`true` or `false`)
 - `AUTO_VALIDATION_THRESHOLD`: Confidence threshold below which auto-validation triggers (default: 0.5, range: 0.0-1.0)
+
+**Note**: Server uses fail-fast behavior. If SQLite initialization fails, the server terminates immediately.
 
 **Embeddings Environment Variables** (for semantic search in episodic memory):
 - `EMBEDDINGS_ENABLED`: Enable semantic embeddings (`true` or `false`, default: false)

@@ -4,12 +4,12 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-84.3%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-102%20files-blue)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tests](https://img.shields.io/badge/tests-105%20files-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
 
 - Go 1.24+
-- 84.3% test coverage (102 test files, 1,300+ tests)
+- 84.3% test coverage (105 test files, 1,300+ tests)
 - 63 MCP tools
 - MIT License
 
@@ -277,8 +277,7 @@ for persistent storage across sessions:
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
-        "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
-        "STORAGE_FALLBACK": "memory"
+        "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db"
       },
       "type": "stdio"
     }
@@ -297,8 +296,7 @@ for persistent storage across sessions:
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
-        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
-        "STORAGE_FALLBACK": "memory"
+        "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db"
       },
       "type": "stdio"
     }
@@ -322,7 +320,6 @@ for full functionality with persistent storage and semantic embeddings:
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
-        "STORAGE_FALLBACK": "memory",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
         "EMBEDDINGS_MODEL": "voyage-3-lite",
         "CONTEXT_BRIDGE_DISABLED": "false"
@@ -345,7 +342,6 @@ for full functionality with persistent storage and semantic embeddings:
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
-        "STORAGE_FALLBACK": "memory",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
         "EMBEDDINGS_MODEL": "voyage-3-lite",
         "CONTEXT_BRIDGE_DISABLED": "false"
@@ -362,7 +358,6 @@ for full functionality with persistent storage and semantic embeddings:
 - `storage_type`: `memory` (default) or `sqlite`
 - `sqlite_path`: path to sqlite database file (created automatically)
 - `sqlite_timeout`: connection timeout in milliseconds (default: 5000)
-- `storage_fallback`: storage to use if primary fails (e.g., `memory`)
 - `debug`: enable debug logging (`true` or `false`)
 - `auto_validation_threshold`: confidence threshold for auto-validation (default: 0.5)
 
@@ -400,6 +395,11 @@ after saving the config, restart claude desktop.
   - transparent fallback to hash-based search when embeddings disabled
 
 ### performance improvements
+- **production optimizations (november 2025)**: comprehensive performance tuning completed
+  - tier 1-3 optimizations: memory allocation patterns, locking efficiency, hot path optimization
+  - production profiling: identified and resolved critical bottlenecks
+  - improved memory allocation and eliminated redundant locking
+  - removed storage fallback feature for fail-fast behavior
 - context bridge metrics now exposed in get-metrics response
 - context bridge always returns structure for visibility (even with no matches)
 - proactive rate limiting prevents api throttling (30 req/sec with burst of 10)
