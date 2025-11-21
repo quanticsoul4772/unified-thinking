@@ -667,28 +667,30 @@ make test-coverage
 make benchmark
 ```
 
-**test coverage**: 85.7% overall | 100% pass rate
+**test coverage**: 84.3% overall | 100% pass rate
 
 ### coverage by package
 
 | package | coverage | status |
 |---------|----------|--------|
 | `internal/types` | 100.0% | excellent |
-| `internal/metrics` | 100.0% | excellent |
+| `internal/metrics` | 100.0% | excellent ⭐ |
 | `internal/config` | 97.3% | excellent |
-| `internal/reasoning` | 94.8% | excellent |
-| `internal/memory` | 91.0% | excellent |
 | `internal/modes` | 90.5% | excellent |
+| `internal/reasoning` | 89.3% | excellent |
 | `internal/analysis` | 89.3% | excellent |
+| `internal/memory` | 88.9% | excellent |
 | `internal/validation` | 88.8% | excellent |
-| `internal/storage` | 87.9% | excellent |
 | `internal/orchestration` | 87.7% | excellent |
 | `internal/metacognition` | 87.2% | excellent |
-| `internal/server` | 83.6% | good |
-| `internal/processing` | 83.3% | excellent |
-| `internal/integration` | 82.2% | excellent |
+| `internal/processing` | 83.3% | good |
+| `internal/server` | 79.3% | good |
 | `internal/server/handlers` | 79.0% | good |
-| `cmd/server` | 25.0% | expected (entry point) |
+| `internal/integration` | 78.7% | good |
+| `internal/storage` | 78.4% | good |
+| `internal/embeddings` | 75.6% | acceptable |
+| `cmd/server` | 70.6% | acceptable ⭐ |
+| `internal/contextbridge` | 70.6% | acceptable |
 
 ## troubleshooting
 
