@@ -57,7 +57,10 @@ func (m *MockEmbedder) Embed(ctx context.Context, text string) ([]float32, error
 		seed = seed*31 + int64(c)
 	}
 
-	rng := rand.New(rand.NewSource(seed))
+	// G404: Using math/rand is intentional here for deterministic test embeddings.
+	// This is mock test code, not cryptographic use. We need reproducible outputs
+	// where the same text always produces the same embedding vector.
+	rng := rand.New(rand.NewSource(seed)) //nolint:gosec
 
 	// Generate random unit vector (deterministic due to seed)
 	var sumSquares float64
