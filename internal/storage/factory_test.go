@@ -67,41 +67,27 @@ func TestNewStorage(t *testing.T) {
 	}
 }
 
-func TestNewStorageFallback(t *testing.T) {
+func TestNewStorageFailFast(t *testing.T) {
 	tests := []struct {
-		name         string
-		config       Config
-		wantErr      bool
-		wantFallback bool
+		name    string
+		config  Config
+		wantErr bool
 	}{
 		{
-			name: "sqlite fails with fallback to memory",
-			config: Config{
-				Type:         StorageTypeSQLite,
-				SQLitePath:   "/invalid/\x00/path/test.db", // Invalid path
-				FallbackType: StorageTypeMemory,
-			},
-			wantErr:      false,
-			wantFallback: true,
-		},
-		{
-			name: "sqlite fails without fallback",
+			name: "sqlite fails with invalid path (fail-fast)",
 			config: Config{
 				Type:       StorageTypeSQLite,
-				SQLitePath: "/invalid/\x00/path/test.db",
+				SQLitePath: "/invalid/\x00/path/test.db", // Invalid path
 			},
-			wantErr:      true,
-			wantFallback: false,
+			wantErr: true,
 		},
 		{
-			name: "sqlite fails with same type fallback",
+			name: "sqlite fails with empty path (fail-fast)",
 			config: Config{
-				Type:         StorageTypeSQLite,
-				SQLitePath:   "/invalid/\x00/path/test.db",
-				FallbackType: StorageTypeSQLite,
+				Type:       StorageTypeSQLite,
+				SQLitePath: "",
 			},
-			wantErr:      true,
-			wantFallback: false,
+			wantErr: true,
 		},
 	}
 
@@ -114,12 +100,9 @@ func TestNewStorageFallback(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr && tt.wantFallback {
-				// Verify it fell back to memory storage
-				typeName := getTypeName(storage)
-				if typeName != "*storage.MemoryStorage" {
-					t.Errorf("Expected fallback to MemoryStorage, got %v", typeName)
-				}
+			// With fail-fast behavior, storage should be nil on error
+			if tt.wantErr && storage != nil {
+				t.Error("Expected nil storage on error with fail-fast behavior")
 				CloseStorage(storage)
 			}
 		})
@@ -131,14 +114,12 @@ func TestNewStorageFromEnv(t *testing.T) {
 	originalStorageType := os.Getenv("STORAGE_TYPE")
 	originalSQLitePath := os.Getenv("SQLITE_PATH")
 	originalSQLiteTimeout := os.Getenv("SQLITE_TIMEOUT")
-	originalFallback := os.Getenv("STORAGE_FALLBACK")
 
 	// Restore original env vars after test
 	defer func() {
 		os.Setenv("STORAGE_TYPE", originalStorageType)
 		os.Setenv("SQLITE_PATH", originalSQLitePath)
 		os.Setenv("SQLITE_TIMEOUT", originalSQLiteTimeout)
-		os.Setenv("STORAGE_FALLBACK", originalFallback)
 	}()
 
 	tests := []struct {
@@ -164,10 +145,9 @@ func TestNewStorageFromEnv(t *testing.T) {
 		{
 			name: "sqlite storage from env",
 			envVars: map[string]string{
-				"STORAGE_TYPE":     "sqlite",
-				"SQLITE_PATH":      filepath.Join(t.TempDir(), "env-test.db"),
-				"SQLITE_TIMEOUT":   "3000",
-				"STORAGE_FALLBACK": "memory",
+				"STORAGE_TYPE":   "sqlite",
+				"SQLITE_PATH":    filepath.Join(t.TempDir(), "env-test.db"),
+				"SQLITE_TIMEOUT": "3000",
 			},
 			wantErr:  false,
 			wantType: "*storage.SQLiteStorage",
@@ -180,7 +160,6 @@ func TestNewStorageFromEnv(t *testing.T) {
 			os.Unsetenv("STORAGE_TYPE")
 			os.Unsetenv("SQLITE_PATH")
 			os.Unsetenv("SQLITE_TIMEOUT")
-			os.Unsetenv("STORAGE_FALLBACK")
 
 			// Set env vars for this test
 			for key, value := range tt.envVars {
@@ -258,46 +237,42 @@ func TestCloseStorageNil(t *testing.T) {
 }
 
 func TestFactoryWithInvalidSQLitePath(t *testing.T) {
-	// Test that factory handles invalid SQLite paths correctly
+	// Test that factory fails fast with invalid SQLite paths
 	config := Config{
-		Type:         StorageTypeSQLite,
-		SQLitePath:   "", // Empty path
-		FallbackType: StorageTypeMemory,
+		Type:       StorageTypeSQLite,
+		SQLitePath: "", // Empty path
 	}
 
-	// This should fail and fallback to memory
+	// This should fail with fail-fast behavior
 	storage, err := NewStorage(config)
 
-	if err != nil {
-		t.Errorf("NewStorage() should fallback, not error: %v", err)
+	if err == nil {
+		t.Error("NewStorage() should error with invalid path (fail-fast behavior)")
 	}
 
-	if storage == nil {
-		t.Fatal("NewStorage() returned nil")
+	if storage != nil {
+		t.Error("NewStorage() should return nil on error")
+		CloseStorage(storage)
 	}
-
-	// Verify it fell back to memory
-	typeName := getTypeName(storage)
-	if typeName != "*storage.MemoryStorage" {
-		t.Errorf("Expected fallback to MemoryStorage, got %v", typeName)
-	}
-
-	CloseStorage(storage)
 }
 
-func TestFactoryRecursiveFallback(t *testing.T) {
-	// Test that factory doesn't infinitely recurse with invalid fallback
+func TestFactoryFailFastBehavior(t *testing.T) {
+	// Test that factory fails immediately without attempting fallback
 	config := Config{
-		Type:         StorageTypeSQLite,
-		SQLitePath:   "/invalid/\x00/path/test.db",
-		FallbackType: StorageTypeSQLite, // Same type as primary
+		Type:       StorageTypeSQLite,
+		SQLitePath: "/invalid/\x00/path/test.db",
 	}
 
-	_, err := NewStorage(config)
+	storage, err := NewStorage(config)
 
-	// Should error, not fallback infinitely
+	// Should error immediately (fail-fast)
 	if err == nil {
-		t.Error("NewStorage() should error with same type fallback")
+		t.Error("NewStorage() should error immediately with invalid path")
+	}
+
+	if storage != nil {
+		t.Error("NewStorage() should return nil on error")
+		CloseStorage(storage)
 	}
 }
 

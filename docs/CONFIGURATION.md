@@ -158,21 +158,7 @@ export SQLITE_PATH="C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-think
 export SQLITE_TIMEOUT=10000
 ```
 
-#### STORAGE_FALLBACK
-
-**Description**: Fallback storage type if primary storage fails
-
-**Default**: `""` (no fallback)
-
-**Valid Values**: `memory`, `""` (empty for no fallback)
-
-**Environment Variable**: `STORAGE_FALLBACK`
-
-**Example**:
-```bash
-export STORAGE_TYPE=sqlite
-export STORAGE_FALLBACK=memory
-```
+**Note**: The server uses fail-fast behavior. If the configured storage backend fails to initialize, the server will terminate immediately rather than falling back to an alternative storage type.
 
 ## Feature Flags
 
@@ -460,7 +446,6 @@ export UT_LOGGING_FORMAT=text
         "DEBUG": "false",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\ProgramData\\unified-thinking\\thoughts.db",
-        "STORAGE_FALLBACK": "memory",
         "AUTO_VALIDATION_THRESHOLD": "0.5"
       }
     }
@@ -639,7 +624,13 @@ Check validation errors in the startup logs. Common issues:
 ## Changes in Version 1.1.0
 
 - Added SQLite storage backend support
-- Added `STORAGE_TYPE`, `SQLITE_PATH`, `SQLITE_TIMEOUT`, `STORAGE_FALLBACK` environment variables
+- Added `STORAGE_TYPE`, `SQLITE_PATH`, `SQLITE_TIMEOUT` environment variables
 - Added `AUTO_VALIDATION_THRESHOLD` for confidence-based auto-validation
 - Updated examples to show SQLite configuration
 - All storage backends now support FTS5 full-text search
+
+## Changes in Version 1.2.0
+
+- Removed `STORAGE_FALLBACK` environment variable (now uses fail-fast behavior)
+- Server terminates immediately if configured storage backend fails to initialize
+- No silent fallback to alternative storage types
