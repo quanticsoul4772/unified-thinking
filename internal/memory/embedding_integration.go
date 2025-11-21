@@ -166,7 +166,7 @@ func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Cont
 
 // vectorSearch performs semantic similarity search using embeddings
 func (ei *EmbeddingIntegration) vectorSearch(ctx context.Context, problem *ProblemDescription, limit int) []*TrajectoryMatch {
-	matches := make([]*TrajectoryMatch, 0)
+	matches := make([]*TrajectoryMatch, 0, limit) // Pre-allocate to expected result size
 
 	ei.store.mu.RLock()
 	defer ei.store.mu.RUnlock()

@@ -279,8 +279,8 @@ func (s *EpisodicMemoryStore) RetrieveSimilarHashBased(problem *ProblemDescripti
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// Initialize with empty array (never return nil)
-	matches := make([]*TrajectoryMatch, 0)
+	// Initialize with capacity based on expected limit (never return nil)
+	matches := make([]*TrajectoryMatch, 0, limit)
 
 	// Find candidates by problem similarity
 	problemHash := computeProblemHash(problem)
@@ -292,7 +292,7 @@ func (s *EpisodicMemoryStore) RetrieveSimilarHashBased(problem *ProblemDescripti
 	}
 
 	// Remove duplicates
-	seen := make(map[string]bool)
+	seen := make(map[string]bool, len(candidateIDs))
 	uniqueIDs := make([]string, 0, len(candidateIDs))
 	for _, id := range candidateIDs {
 		if !seen[id] {
@@ -337,8 +337,8 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// Initialize with empty array (never return nil)
-	recommendations := make([]*Recommendation, 0)
+	// Initialize with capacity based on typical recommendation count (never return nil)
+	recommendations := make([]*Recommendation, 0, 5)
 
 	// Analyze similar trajectories for patterns
 	for _, match := range recCtx.SimilarTrajectories {

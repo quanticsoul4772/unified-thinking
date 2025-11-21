@@ -48,8 +48,9 @@ type MemoryStorage struct {
 	relationships map[string]*types.Relationship
 
 	// Search indices for O(1) word lookup (optimization for SearchThoughts)
-	contentIndex map[string][]string             // word -> []thoughtIDs
-	modeIndex    map[types.ThinkingMode][]string // mode -> []thoughtIDs
+	contentIndex    map[string][]string             // word -> []thoughtIDs
+	indexAccessTime map[string]time.Time            // word -> last access time (for LRU eviction)
+	modeIndex       map[types.ThinkingMode][]string // mode -> []thoughtIDs
 
 	// Ordered slices for deterministic pagination (sorted by timestamp, newest first)
 	thoughtsOrdered []*types.Thought
@@ -75,9 +76,10 @@ func NewMemoryStorage() *MemoryStorage {
 		validations:     make(map[string]*types.Validation),
 		relationships:   make(map[string]*types.Relationship),
 		contentIndex:    make(map[string][]string),
+		indexAccessTime: make(map[string]time.Time),
 		modeIndex:       make(map[types.ThinkingMode][]string),
-		thoughtsOrdered: make([]*types.Thought, 0),
-		branchesOrdered: make([]*types.Branch, 0),
+		thoughtsOrdered: make([]*types.Thought, 0, 100), // Pre-allocate typical size
+		branchesOrdered: make([]*types.Branch, 0, 20),   // Pre-allocate typical size
 		recentBranchIDs: make([]string, 0, MaxRecentBranches),
 	}
 }
@@ -114,11 +116,11 @@ func (s *MemoryStorage) StoreThought(thought *types.Thought) error {
 }
 
 // indexThoughtContent tokenizes thought content and adds to inverted index
+// Implements LRU eviction when index reaches capacity to prevent unbounded growth
 func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
-	// Check global index size to prevent unbounded growth
+	// Check global index size and evict LRU entries if at capacity
 	if len(s.contentIndex) >= MaxIndexSize {
-		log.Printf("Warning: Content index at capacity (%d), skipping indexing for thought %s", MaxIndexSize, thought.ID)
-		return
+		s.evictLRUIndexEntries(MaxIndexSize / 10) // Evict 10% of capacity
 	}
 
 	// Tokenize content by splitting on whitespace and punctuation
@@ -128,8 +130,9 @@ func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
 	})
 
 	// Add thought ID to index for each unique word
-	seen := make(map[string]bool)
+	seen := make(map[string]bool, len(words))
 	uniqueWordCount := 0
+	now := time.Now()
 
 	for _, word := range words {
 		// Enforce word length limit to prevent extremely long words
@@ -149,7 +152,44 @@ func (s *MemoryStorage) indexThoughtContent(thought *types.Thought) {
 		seen[word] = true
 		uniqueWordCount++
 		s.contentIndex[word] = append(s.contentIndex[word], thought.ID)
+		s.indexAccessTime[word] = now // Track access time for LRU
 	}
+}
+
+// evictLRUIndexEntries removes the least recently used entries from the content index
+// This prevents unbounded memory growth and ensures new thoughts remain searchable
+func (s *MemoryStorage) evictLRUIndexEntries(count int) {
+	if count <= 0 || len(s.contentIndex) == 0 {
+		return
+	}
+
+	// Build list of (word, lastAccessTime) pairs
+	type wordEntry struct {
+		word       string
+		accessTime time.Time
+	}
+	entries := make([]wordEntry, 0, len(s.contentIndex))
+	for word, accessTime := range s.indexAccessTime {
+		entries = append(entries, wordEntry{word, accessTime})
+	}
+
+	// Sort by access time (oldest first)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].accessTime.Before(entries[j].accessTime)
+	})
+
+	// Evict oldest entries
+	evicted := 0
+	for _, entry := range entries {
+		if evicted >= count {
+			break
+		}
+		delete(s.contentIndex, entry.word)
+		delete(s.indexAccessTime, entry.word)
+		evicted++
+	}
+
+	log.Printf("Evicted %d LRU index entries (index size now: %d)", evicted, len(s.contentIndex))
 }
 
 // GetThought retrieves a thought by ID (returns a copy to prevent data races)
@@ -440,6 +480,7 @@ func (s *MemoryStorage) SearchThoughts(query string, mode types.ThinkingMode, li
 }
 
 // searchByIndex uses inverted index to find thoughts matching query words
+// Updates access time for LRU tracking
 func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []string {
 	queryLower := strings.ToLower(query)
 	queryWords := strings.FieldsFunc(queryLower, func(r rune) bool {
@@ -460,9 +501,14 @@ func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []s
 
 	// Find thoughts containing any query word (OR semantics)
 	matchedThoughts := make(map[string]bool)
+	now := time.Now()
 	for _, word := range queryWords {
 		if len(word) < 2 {
 			continue
+		}
+		// Update access time for LRU tracking
+		if _, exists := s.indexAccessTime[word]; exists {
+			s.indexAccessTime[word] = now
 		}
 		for _, thoughtID := range s.contentIndex[word] {
 			// Filter by mode if specified

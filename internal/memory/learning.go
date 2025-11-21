@@ -91,7 +91,7 @@ func (l *LearningEngine) analyzeTrajectoryGroup(trajectories []*ReasoningTraject
 	}
 
 	// Separate successful from failed trajectories
-	successful := make([]*ReasoningTrajectory, 0)
+	successful := make([]*ReasoningTrajectory, 0, len(trajectories)/2) // Estimate 50% success rate
 	for _, traj := range trajectories {
 		if traj.SuccessScore >= l.minSuccessRate {
 			successful = append(successful, traj)

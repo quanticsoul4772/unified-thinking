@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -22,8 +21,8 @@ type SQLiteStorage struct {
 	db    *sql.DB
 	cache *MemoryStorage // Write-through cache for fast reads
 
-	mu             sync.RWMutex
-	activeBranchID string
+	// Removed redundant activeBranchID mutex - delegated to cache
+	// This eliminates double lock acquisition for active branch operations
 	thoughtCounter atomic.Int64
 	branchCounter  atomic.Int64
 	//nolint:unused // Reserved for future use
@@ -575,7 +574,7 @@ func (s *SQLiteStorage) loadBranchThoughts(branchID string) ([]*types.Thought, e
 	}
 	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
-	thoughts := make([]*types.Thought, 0)
+	thoughts := make([]*types.Thought, 0, 10) // Pre-allocate for typical branch size
 	for rows.Next() {
 		thought, err := s.scanThought(rows)
 		if err != nil {
@@ -602,7 +601,7 @@ func (s *SQLiteStorage) loadBranchInsights(branchID string) ([]*types.Insight, e
 	}
 	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
-	insights := make([]*types.Insight, 0)
+	insights := make([]*types.Insight, 0, 5) // Pre-allocate for typical insight count
 	for rows.Next() {
 		insight, err := s.scanInsight(rows)
 		if err != nil {
@@ -628,7 +627,7 @@ func (s *SQLiteStorage) loadBranchCrossRefs(branchID string) ([]*types.CrossRef,
 	}
 	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
-	crossRefs := make([]*types.CrossRef, 0)
+	crossRefs := make([]*types.CrossRef, 0, 3) // Pre-allocate for typical cross-ref count
 	for rows.Next() {
 		var id, fromBranch, toBranch, xrefType, reason string
 		var strength float64
@@ -662,24 +661,14 @@ func (s *SQLiteStorage) ListBranches() []*types.Branch {
 }
 
 // GetActiveBranch returns the currently active branch
+// Delegates entirely to cache to avoid double lock acquisition
 func (s *SQLiteStorage) GetActiveBranch() (*types.Branch, error) {
-	s.mu.RLock()
-	branchID := s.activeBranchID
-	s.mu.RUnlock()
-
-	if branchID == "" {
-		return nil, fmt.Errorf("no active branch")
-	}
-
-	return s.GetBranch(branchID)
+	return s.cache.GetActiveBranch()
 }
 
 // SetActiveBranch sets the active branch
+// Delegates entirely to cache to avoid double lock acquisition
 func (s *SQLiteStorage) SetActiveBranch(branchID string) error {
-	s.mu.Lock()
-	s.activeBranchID = branchID
-	s.mu.Unlock()
-
 	return s.cache.SetActiveBranch(branchID)
 }
 
@@ -994,7 +983,7 @@ func (s *SQLiteStorage) GetRecentBranches() ([]*types.Branch, error) {
 	}
 	defer rows.Close() //nolint:errcheck // rows.Err() will catch any real errors
 
-	branches := make([]*types.Branch, 0)
+	branches := make([]*types.Branch, 0, MaxRecentBranches) // Pre-allocate to query limit
 	for rows.Next() {
 		branch := &types.Branch{}
 		var parentBranchID sql.NullString

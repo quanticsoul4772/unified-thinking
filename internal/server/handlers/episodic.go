@@ -88,7 +88,7 @@ func (h *EpisodicMemoryHandler) HandleStartSession(ctx context.Context, params m
 
 	// Ensure suggestions is never nil (MCP requires arrays, not null)
 	if suggestions == nil {
-		suggestions = make([]*memory.Recommendation, 0)
+		suggestions = make([]*memory.Recommendation, 0, 3) // Pre-allocate typical size
 	}
 
 	resp := &StartSessionResponse{
@@ -237,10 +237,10 @@ func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, pa
 
 	// Initialize empty arrays if nil to ensure valid JSON
 	if recommendations == nil {
-		recommendations = make([]*memory.Recommendation, 0)
+		recommendations = make([]*memory.Recommendation, 0, 5) // Pre-allocate typical size
 	}
 	if patterns == nil {
-		patterns = make([]*memory.TrajectoryPattern, 0)
+		patterns = make([]*memory.TrajectoryPattern, 0, 3) // Pre-allocate typical size
 	}
 
 	resp := &GetRecommendationsResponse{
@@ -295,8 +295,12 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 	// Get all trajectories and filter
 	allTrajectories := h.store.GetAllTrajectories()
 
-	// Filter by criteria
-	filtered := make([]*memory.ReasoningTrajectory, 0)
+	// Filter by criteria - pre-allocate to input size
+	limit := req.Limit
+	if limit <= 0 {
+		limit = 20 // Default limit
+	}
+	filtered := make([]*memory.ReasoningTrajectory, 0, limit)
 	for _, traj := range allTrajectories {
 		// Filter by domain
 		if req.Domain != "" && traj.Domain != req.Domain {
