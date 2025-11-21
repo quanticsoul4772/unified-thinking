@@ -129,9 +129,8 @@ func TestInitializeContextBridge_WithEmbedder(t *testing.T) {
 	defer components.Cleanup()
 
 	// With SQLite and context bridge enabled, should have bridge
-	if components.ContextBridge != nil {
-		// Bridge initialized successfully
-		// Cannot check much more without starting actual server
+	if components.ContextBridge == nil {
+		t.Error("Expected ContextBridge to be initialized with SQLite storage and embedder")
 	}
 }
 
@@ -151,8 +150,8 @@ func TestInitializeContextBridge_WithoutEmbedder(t *testing.T) {
 	defer components.Cleanup()
 
 	// Bridge should still work without embedder (uses concept similarity)
-	if components.ContextBridge != nil {
-		// Successfully initialized without embedder
+	if components.ContextBridge == nil {
+		t.Error("Expected ContextBridge to be initialized even without embedder (concept-based similarity)")
 	}
 }
 
