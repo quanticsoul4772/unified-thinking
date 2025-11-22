@@ -1,0 +1,124 @@
+{
+  "name": "Learning Effectiveness - Repeated Problems",
+  "description": "Same problems repeated to measure episodic learning improvement",
+  "category": "learning",
+  "problems": [
+    {
+      "id": "learn_logic_001_iter1",
+      "description": "All birds have wings. Sparrows are birds. Do sparrows have wings?",
+      "input": {
+        "premises": ["All birds have wings", "Sparrows are birds"],
+        "conclusion": "Sparrows have wings",
+        "mode": "linear",
+        "iteration": 1
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_logic_001", "iteration": 1}
+    },
+    {
+      "id": "learn_logic_001_iter2",
+      "description": "All birds have wings. Sparrows are birds. Do sparrows have wings?",
+      "input": {
+        "premises": ["All birds have wings", "Sparrows are birds"],
+        "conclusion": "Sparrows have wings",
+        "mode": "linear",
+        "iteration": 2
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_logic_001", "iteration": 2}
+    },
+    {
+      "id": "learn_logic_001_iter3",
+      "description": "All birds have wings. Sparrows are birds. Do sparrows have wings?",
+      "input": {
+        "premises": ["All birds have wings", "Sparrows are birds"],
+        "conclusion": "Sparrows have wings",
+        "mode": "linear",
+        "iteration": 3
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_logic_001", "iteration": 3}
+    },
+    {
+      "id": "learn_bayes_001_iter1",
+      "description": "Flip a fair coin twice. What is P(at least one heads)?",
+      "input": {
+        "experiment": "flip fair coin twice",
+        "query": "P(at least one heads)",
+        "mode": "linear",
+        "iteration": 1
+      },
+      "expected": 0.75,
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_bayes_001", "iteration": 1, "tolerance": 0.05}
+    },
+    {
+      "id": "learn_bayes_001_iter2",
+      "description": "Flip a fair coin twice. What is P(at least one heads)?",
+      "input": {
+        "experiment": "flip fair coin twice",
+        "query": "P(at least one heads)",
+        "mode": "linear",
+        "iteration": 2
+      },
+      "expected": 0.75,
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_bayes_001", "iteration": 2, "tolerance": 0.05}
+    },
+    {
+      "id": "learn_bayes_001_iter3",
+      "description": "Flip a fair coin twice. What is P(at least one heads)?",
+      "input": {
+        "experiment": "flip fair coin twice",
+        "query": "P(at least one heads)",
+        "mode": "linear",
+        "iteration": 3
+      },
+      "expected": 0.75,
+      "difficulty": "easy",
+      "metadata": {"base_problem": "learn_bayes_001", "iteration": 3, "tolerance": 0.05}
+    },
+    {
+      "id": "learn_causal_001_iter1",
+      "description": "Fertilizer correlates with plant growth. Does fertilizer cause growth?",
+      "input": {
+        "observation": "Fertilizer correlates with plant growth",
+        "question": "Causal relationship?",
+        "mode": "linear",
+        "iteration": 1
+      },
+      "expected": "likely yes",
+      "difficulty": "medium",
+      "metadata": {"base_problem": "learn_causal_001", "iteration": 1}
+    },
+    {
+      "id": "learn_causal_001_iter2",
+      "description": "Fertilizer correlates with plant growth. Does fertilizer cause growth?",
+      "input": {
+        "observation": "Fertilizer correlates with plant growth",
+        "question": "Causal relationship?",
+        "mode": "linear",
+        "iteration": 2
+      },
+      "expected": "likely yes",
+      "difficulty": "medium",
+      "metadata": {"base_problem": "learn_causal_001", "iteration": 2}
+    },
+    {
+      "id": "learn_causal_001_iter3",
+      "description": "Fertilizer correlates with plant growth. Does fertilizer cause growth?",
+      "input": {
+        "observation": "Fertilizer correlates with plant growth",
+        "question": "Causal relationship?",
+        "mode": "linear",
+        "iteration": 3
+      },
+      "expected": "likely yes",
+      "difficulty": "medium",
+      "metadata": {"base_problem": "learn_causal_001", "iteration": 3}
+    }
+  ]
+}

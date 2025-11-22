@@ -1,0 +1,121 @@
+name: Reasoning Benchmarks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight UTC
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  benchmark:
+    name: Run Reasoning Quality Benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for trend analysis
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run benchmark tests
+        run: |
+          echo "Running reasoning quality benchmarks..."
+          go test -v ./benchmarks/ -timeout 5m > benchmark_output.txt 2>&1
+          cat benchmark_output.txt
+        continue-on-error: true
+
+      - name: Extract metrics
+        id: metrics
+        run: |
+          # Extract accuracy from test output
+          LOGIC_ACC=$(grep "Logic.*Baseline.*accuracy" benchmark_output.txt | grep -oP '\d+\.\d+' | head -1 || echo "0")
+          PROB_ACC=$(grep "Probabilistic.*Baseline.*accuracy" benchmark_output.txt | grep -oP '\d+\.\d+' | head -1 || echo "0")
+          CAUSAL_ACC=$(grep "Causal.*Baseline.*accuracy" benchmark_output.txt | grep -oP '\d+\.\d+' | head -1 || echo "0")
+
+          echo "logic_accuracy=$LOGIC_ACC" >> $GITHUB_OUTPUT
+          echo "prob_accuracy=$PROB_ACC" >> $GITHUB_OUTPUT
+          echo "causal_accuracy=$CAUSAL_ACC" >> $GITHUB_OUTPUT
+
+          echo "Extracted Metrics:"
+          echo "  Logic: $LOGIC_ACC%"
+          echo "  Probabilistic: $PROB_ACC%"
+          echo "  Causal: $CAUSAL_ACC%"
+
+      - name: Check for regressions
+        run: |
+          # Baseline values (from Phase 2 implementation)
+          BASELINE_LOGIC=50.0
+          BASELINE_PROB=10.0
+          BASELINE_CAUSAL=0.0
+          REGRESSION_THRESHOLD=2.0
+
+          LOGIC_ACC=${{ steps.metrics.outputs.logic_accuracy }}
+          PROB_ACC=${{ steps.metrics.outputs.prob_accuracy }}
+          CAUSAL_ACC=${{ steps.metrics.outputs.causal_accuracy }}
+
+          # Check logic regression
+          LOGIC_DIFF=$(echo "$BASELINE_LOGIC - $LOGIC_ACC" | bc)
+          if (( $(echo "$LOGIC_DIFF > $REGRESSION_THRESHOLD" | bc -l) )); then
+            echo "::error::Logic reasoning regression detected: $LOGIC_ACC% vs baseline $BASELINE_LOGIC% (>${REGRESSION_THRESHOLD}% drop)"
+            exit 1
+          fi
+
+          # Check probabilistic regression
+          PROB_DIFF=$(echo "$BASELINE_PROB - $PROB_ACC" | bc)
+          if (( $(echo "$PROB_DIFF > $REGRESSION_THRESHOLD" | bc -l) )); then
+            echo "::error::Probabilistic reasoning regression detected: $PROB_ACC% vs baseline $BASELINE_PROB% (>${REGRESSION_THRESHOLD}% drop)"
+            exit 1
+          fi
+
+          echo "No regressions detected - all benchmarks within acceptable range"
+
+      - name: Save benchmark results
+        run: |
+          mkdir -p benchmarks/results
+          cp benchmark_output.txt benchmarks/results/run_$(date +%Y%m%d_%H%M%S).txt
+
+          # Create summary
+          cat > benchmarks/results/latest.txt << EOF
+          Benchmark Run: $(date)
+          Commit: ${{ github.sha }}
+
+          Results:
+            Logic Reasoning: ${{ steps.metrics.outputs.logic_accuracy }}%
+            Probabilistic Reasoning: ${{ steps.metrics.outputs.prob_accuracy }}%
+            Causal Reasoning: ${{ steps.metrics.outputs.causal_accuracy }}%
+          EOF
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: |
+            benchmark_output.txt
+            benchmarks/results/
+          retention-days: 90
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = require('fs').readFileSync('benchmarks/results/latest.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## Benchmark Results\n\n```\n' + output + '\n```'
+            });

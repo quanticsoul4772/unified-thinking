@@ -194,6 +194,7 @@ help:
 	@echo "  test-storage           - Run storage layer tests only"
 	@echo "  test-storage-coverage  - Storage tests with coverage"
 	@echo "  benchmark              - Run performance benchmarks"
+	@echo "  benchmark-reasoning    - Run reasoning quality benchmarks"
 	@echo "  test-all               - Run all test suites (comprehensive)"
 	@echo ""
 	@echo "Code Quality:"
