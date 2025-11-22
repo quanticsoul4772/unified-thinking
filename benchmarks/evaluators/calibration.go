@@ -63,7 +63,8 @@ func ComputeCalibration(results []CalibrationResult) *CalibrationMetrics {
 		if result.Correct {
 			actual = 1.0
 		}
-		brierSum += math.Pow(result.Confidence-actual, 2)
+		diff := result.Confidence - actual
+		brierSum += diff * diff
 	}
 
 	// Calculate metrics
