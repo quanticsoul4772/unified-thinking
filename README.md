@@ -206,9 +206,9 @@ The binary will be created at `bin\unified-thinking.exe`.
 
 ## documentation
 
-- **[CLAUDE.md](CLAUDE.md)** - technical architecture and implementation guide
-- **[CONFIGURATION.md](docs/CONFIGURATION.md)** - detailed configuration options and examples
-- **[EMBEDDINGS.md](docs/EMBEDDINGS.md)** - semantic embeddings setup and usage
+- **[API Reference](API_REFERENCE.md)** - complete reference for all 50 mcp tools with parameters, examples, and response formats
+- **[Configuration Guide](docs/CONFIGURATION.md)** - detailed configuration options and examples
+- **[Embeddings Guide](docs/EMBEDDINGS.md)** - semantic embeddings setup and usage
 
 ## configuration
 
