@@ -84,11 +84,13 @@ func (pr *ProbabilisticReasoner) CreateBelief(statement string, priorProb float6
 // 4. Produces incorrect posteriors when evidence has asymmetric likelihoods
 //
 // MIGRATION PATH - Replace this:
-//   pr.UpdateBelief(beliefID, evidenceID, 0.8, 0.5)
+//
+//	pr.UpdateBelief(beliefID, evidenceID, 0.8, 0.5)
 //
 // With this:
-//   pr.UpdateBeliefFull(beliefID, evidenceID, 0.8, 0.2)
-//   // Explicitly specify: 0.8 = P(E|H), 0.2 = P(E|¬H)
+//
+//	pr.UpdateBeliefFull(beliefID, evidenceID, 0.8, 0.2)
+//	// Explicitly specify: 0.8 = P(E|H), 0.2 = P(E|¬H)
 //
 // Or use UpdateBeliefWithEvidence if you have an Evidence struct that includes quality scores.
 //
@@ -121,7 +123,7 @@ func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string
 // MATHEMATICAL FOUNDATION:
 // This is the mathematically correct implementation of Bayes' theorem:
 //
-//   P(H|E) = P(E|H) × P(H) / [P(E|H) × P(H) + P(E|¬H) × P(¬H)]
+//	P(H|E) = P(E|H) × P(H) / [P(E|H) × P(H) + P(E|¬H) × P(¬H)]
 //
 // Where:
 //   - P(H|E) = Posterior probability (updated belief after seeing evidence)
@@ -146,10 +148,11 @@ func (pr *ProbabilisticReasoner) UpdateBelief(beliefID string, evidenceID string
 // INTUITIVE (WRONG) ANSWER: 99% (the test sensitivity)
 //
 // CORRECT CALCULATION:
-//   P(disease|positive) = 0.99 × 0.01 / [0.99 × 0.01 + 0.05 × 0.99]
-//                       = 0.0099 / [0.0099 + 0.0495]
-//                       = 0.0099 / 0.0594
-//                       ≈ 0.167 (16.7%)
+//
+//	P(disease|positive) = 0.99 × 0.01 / [0.99 × 0.01 + 0.05 × 0.99]
+//	                    = 0.0099 / [0.0099 + 0.0495]
+//	                    = 0.0099 / 0.0594
+//	                    ≈ 0.167 (16.7%)
 //
 // The positive test only gives a 16.7% probability of disease, NOT 99%!
 // This counterintuitive result occurs because the disease is rare (1% base rate).
@@ -374,4 +377,3 @@ func (pr *ProbabilisticReasoner) EstimateConfidence(evidences []*types.Evidence)
 	confidence := supportingScore / total
 	return math.Max(0, math.Min(1, confidence))
 }
-

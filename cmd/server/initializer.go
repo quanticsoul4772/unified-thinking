@@ -142,6 +142,7 @@ func (c *ServerComponents) Cleanup() error {
 	}
 	return nil
 }
+
 //   - {{causal_graph.id}} or $causal_graph.id - reference nested field in previous result
 //
 // Resolution Order:

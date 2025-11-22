@@ -93,12 +93,14 @@ func NewStandardEstimator(profile *EvidenceProfile) *StandardEstimator {
 // The estimation works as follows:
 //
 // For supporting evidence (SupportsClaim = true):
-//   P(E|H) = 0.5 + (OverallScore × SupportHigh)
-//   P(E|¬H) = 0.5 - (OverallScore × SupportLow)
+//
+//	P(E|H) = 0.5 + (OverallScore × SupportHigh)
+//	P(E|¬H) = 0.5 - (OverallScore × SupportLow)
 //
 // For refuting evidence (SupportsClaim = false):
-//   P(E|H) = 0.5 - (OverallScore × RefuteHigh)
-//   P(E|¬H) = 0.5 + (OverallScore × RefuteLow)
+//
+//	P(E|H) = 0.5 - (OverallScore × RefuteHigh)
+//	P(E|¬H) = 0.5 + (OverallScore × RefuteLow)
 //
 // This ensures:
 // - High-quality evidence has strong likelihood ratios (far from 1.0)

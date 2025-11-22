@@ -16,11 +16,11 @@
 //
 // LAYER 2: Handler Implementation (handlers/*.go)
 //   - Domain-specific business logic organized by cognitive domain:
-//     * thinking.go - Core thinking operations
-//     * probabilistic.go - Bayesian inference and evidence
-//     * decision.go - Decision-making and problem decomposition
-//     * metacognition.go - Self-evaluation and bias detection
-//     * temporal.go, causal.go - Advanced reasoning patterns
+//   - thinking.go - Core thinking operations
+//   - probabilistic.go - Bayesian inference and evidence
+//   - decision.go - Decision-making and problem decomposition
+//   - metacognition.go - Self-evaluation and bias detection
+//   - temporal.go, causal.go - Advanced reasoning patterns
 //   - Type-safe request/response handling with validation
 //   - Independent, testable components with clear responsibilities
 //
@@ -372,23 +372,23 @@ func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
 //
 // ORGANIZATION:
 // Tools are registered in the following order matching the package documentation:
-//   1. Core Tools (11): think, history, branches, validation, search, metrics
-//   2. Probabilistic & Evidence (4): probabilistic-reasoning, assess-evidence, etc.
-//   3. Decision & Problem-Solving (3): make-decision, decompose-problem, verify-thought
-//   4. Metacognition (3): self-evaluate, detect-biases, detect-blind-spots
-//   5. Hallucination & Calibration (4): verification and calibration tracking
-//   6. Temporal & Perspective (4): temporal analysis and perspective tools
-//   7. Causal Reasoning (5): causal graphs, interventions, counterfactuals
-//   8. Integration & Synthesis (6): synthesis, workflows, patterns
-//   9. Advanced Reasoning (10): dual-process, backtracking, abductive, CBR, symbolic
-//   10. Enhanced Tools (8): analogies, arguments, evidence pipeline
-//   11. Episodic Memory (5): session tracking, learning, recommendations
+//  1. Core Tools (11): think, history, branches, validation, search, metrics
+//  2. Probabilistic & Evidence (4): probabilistic-reasoning, assess-evidence, etc.
+//  3. Decision & Problem-Solving (3): make-decision, decompose-problem, verify-thought
+//  4. Metacognition (3): self-evaluate, detect-biases, detect-blind-spots
+//  5. Hallucination & Calibration (4): verification and calibration tracking
+//  6. Temporal & Perspective (4): temporal analysis and perspective tools
+//  7. Causal Reasoning (5): causal graphs, interventions, counterfactuals
+//  8. Integration & Synthesis (6): synthesis, workflows, patterns
+//  9. Advanced Reasoning (10): dual-process, backtracking, abductive, CBR, symbolic
+//  10. Enhanced Tools (8): analogies, arguments, evidence pipeline
+//  11. Episodic Memory (5): session tracking, learning, recommendations
 //
 // Each tool follows the pattern:
-//   1. Get tool definition from tools.go
-//   2. Unmarshal request arguments to typed struct
-//   3. Call handler method with typed request
-//   4. Return result or error
+//  1. Get tool definition from tools.go
+//  2. Unmarshal request arguments to typed struct
+//  3. Call handler method with typed request
+//  4. Return result or error
 func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	// ========================================================================
 	// CORE THINKING TOOLS (11 tools)

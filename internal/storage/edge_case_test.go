@@ -51,7 +51,7 @@ func TestMemoryStorage_UnicodeContent(t *testing.T) {
 		{"emoji", "🤔💭🧠 thinking with emojis"},
 		{"japanese", "日本語のテスト内容"},
 		{"mixed", "Mixed 日本語 and English 🎌"},
-		{"rtl", "العربية نص"}, // Arabic RTL text
+		{"rtl", "العربية نص"},               // Arabic RTL text
 		{"zero width", "test\u200Bcontent"}, // Zero-width space
 	}
 
@@ -246,7 +246,7 @@ func TestMemoryStorage_SearchWithOffsetAndLimit(t *testing.T) {
 		{"first page", "Searchable", 10, 0, 10},
 		{"second page", "Searchable", 10, 10, 10},
 		{"offset beyond results", "Searchable", 10, 100, 0},
-		{"limit zero", "Searchable", 0, 0, 20}, // Should return all
+		{"limit zero", "Searchable", 0, 0, 20},      // Should return all
 		{"negative limit", "Searchable", -1, 0, 20}, // Should default to max
 	}
 

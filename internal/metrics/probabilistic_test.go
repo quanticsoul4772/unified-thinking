@@ -100,10 +100,10 @@ func TestProbabilisticMetrics_RecordBeliefsCombined(t *testing.T) {
 
 func TestProbabilisticMetrics_GetUninformativeRate(t *testing.T) {
 	tests := []struct {
-		name           string
-		totalUpdates   int
-		uninformative  int
-		expectedRate   float64
+		name          string
+		totalUpdates  int
+		uninformative int
+		expectedRate  float64
 	}{
 		{"no updates", 0, 0, 0.0},
 		{"all informative", 10, 0, 0.0},

@@ -10,9 +10,9 @@ import (
 // MockEmbedder provides a fake embedder for testing without external API dependencies.
 // It generates deterministic embeddings based on text hash for reproducible tests.
 type MockEmbedder struct {
-	dimension int
-	model     string
-	provider  string
+	dimension   int
+	model       string
+	provider    string
 	failOnEmbed bool // Simulate API failures
 }
 

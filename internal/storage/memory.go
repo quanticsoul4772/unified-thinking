@@ -40,7 +40,7 @@ const (
 // MemoryStorage implements in-memory storage with thread-safe operations.
 // All Get methods return deep copies to prevent external mutation of internal state.
 type MemoryStorage struct {
-	mu            sync.RWMutex
+	mu               sync.RWMutex
 	thoughts         map[string]*types.Thought
 	branches         map[string]*types.Branch
 	insights         map[string]*types.Insight
@@ -53,8 +53,8 @@ type MemoryStorage struct {
 	indexAccessTime map[string]time.Time            // word -> last access time (for LRU eviction)
 	modeIndex       map[types.ThinkingMode][]string // mode -> []thoughtIDs
 	// TIER 2 OPTIMIZATION: Hot word cache for frequently accessed index entries
-	hotWordCache    map[string][]string // Cache for top 100 most accessed words
-	hotWordAccess   map[string]int      // Access count for cache promotion
+	hotWordCache  map[string][]string // Cache for top 100 most accessed words
+	hotWordAccess map[string]int      // Access count for cache promotion
 
 	// Ordered slices for deterministic pagination (sorted by timestamp, newest first)
 	thoughtsOrdered []*types.Thought
@@ -559,7 +559,7 @@ func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []s
 		if _, exists := s.indexAccessTime[word]; exists {
 			s.indexAccessTime[word] = now
 		}
-		
+
 		// TIER 2 OPTIMIZATION: Check hot word cache first
 		var wordIDs []string
 		if cached, inCache := s.hotWordCache[word]; inCache {
@@ -573,7 +573,7 @@ func (s *MemoryStorage) searchByIndex(query string, mode types.ThinkingMode) []s
 				s.hotWordCache[word] = wordIDs
 			}
 		}
-		
+
 		for _, thoughtID := range wordIDs {
 			// Filter by mode if specified
 			if mode != "" {

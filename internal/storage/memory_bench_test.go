@@ -80,8 +80,8 @@ func BenchmarkIndexThoughtContent(b *testing.B) {
 // BenchmarkCopyThought compares original vs optimized copy
 func BenchmarkCopyThought(b *testing.B) {
 	thought := &types.Thought{
-		Content: "Test thought content",
-		Mode:    types.ModeLinear,
+		Content:   "Test thought content",
+		Mode:      types.ModeLinear,
 		KeyPoints: []string{"point1", "point2", "point3"},
 		Metadata: map[string]interface{}{
 			"key1":   "value1",
