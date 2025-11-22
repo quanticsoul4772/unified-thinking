@@ -69,7 +69,6 @@ type MemoryStorage struct {
 	insightCounter      int
 	validationCounter   int
 	relationshipCounter int
-	trajectoryCounter   int
 }
 
 // NewMemoryStorage creates a new in-memory storage
