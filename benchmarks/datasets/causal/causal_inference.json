@@ -1,0 +1,130 @@
+{
+  "name": "Causal Inference Problems",
+  "description": "Causal reasoning, correlation vs causation, and intervention prediction",
+  "category": "causal",
+  "problems": [
+    {
+      "id": "causal_001",
+      "description": "Ice cream sales and drowning deaths both increase in summer. Does ice cream cause drowning?",
+      "input": {
+        "observation": "Ice cream sales correlate with drowning deaths",
+        "question": "Does ice cream cause drowning?",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "spurious_correlation", "confounder": "temperature"}
+    },
+    {
+      "id": "causal_002",
+      "description": "Students who take notes on laptops score lower than those using pen and paper. Should we ban laptops to improve scores?",
+      "input": {
+        "observation": "Laptop users score lower",
+        "intervention": "Ban laptops",
+        "expected_outcome": "Higher scores?",
+        "mode": "linear"
+      },
+      "expected": "insufficient evidence",
+      "difficulty": "medium",
+      "metadata": {"type": "confounding", "potential_confounders": ["student engagement", "class difficulty"]}
+    },
+    {
+      "id": "causal_003",
+      "description": "Countries with more fire trucks have more fires. Do fire trucks cause fires?",
+      "input": {
+        "observation": "Fire trucks correlate with fires",
+        "question": "Do fire trucks cause fires?",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "reverse_causation", "actual_cause": "population size"}
+    },
+    {
+      "id": "causal_004",
+      "description": "Smoking correlates with lung cancer. Does smoking cause lung cancer?",
+      "input": {
+        "observation": "Smokers have higher lung cancer rates",
+        "question": "Does smoking cause lung cancer?",
+        "evidence": ["dose-response relationship", "temporal precedence", "biological mechanism"],
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"type": "causal_determination", "hill_criteria": true}
+    },
+    {
+      "id": "causal_005",
+      "description": "You observe: studying increases test scores. If we force all students to study 2 more hours, what happens to average scores?",
+      "input": {
+        "observation": "Study time correlates with test scores (r=0.6)",
+        "intervention": "Increase study time by 2 hours for all students",
+        "mode": "linear"
+      },
+      "expected": "likely increase",
+      "difficulty": "medium",
+      "metadata": {"type": "intervention_prediction", "confounders": ["motivation", "ability"]}
+    },
+    {
+      "id": "causal_006",
+      "description": "Exercise correlates with health. But healthier people exercise more. What is the causal relationship?",
+      "input": {
+        "observation": "Exercise and health correlate",
+        "question": "Direction of causation?",
+        "mode": "linear"
+      },
+      "expected": "bidirectional",
+      "difficulty": "hard",
+      "metadata": {"type": "reverse_causation", "feedback_loop": true}
+    },
+    {
+      "id": "causal_007",
+      "description": "Education correlates with income. Is this causal? What confounds exist?",
+      "input": {
+        "observation": "More education correlates with higher income",
+        "question": "Causal or confounded?",
+        "mode": "linear"
+      },
+      "expected": "confounded",
+      "difficulty": "medium",
+      "metadata": {"type": "confounding", "confounders": ["family background", "intelligence", "motivation"]}
+    },
+    {
+      "id": "causal_008",
+      "description": "Counterfactual: If you hadn't studied, would you have passed the exam? (You studied and passed)",
+      "input": {
+        "actual": {"studied": true, "passed": true},
+        "counterfactual": {"studied": false, "passed": "?"},
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "hard",
+      "metadata": {"type": "counterfactual"}
+    },
+    {
+      "id": "causal_009",
+      "description": "Vitamin C intake correlates with lower cold duration. Does vitamin C reduce cold duration?",
+      "input": {
+        "observation": "Vitamin C users have shorter colds (on average)",
+        "question": "Does vitamin C cause shorter colds?",
+        "evidence_quality": "observational study",
+        "mode": "linear"
+      },
+      "expected": "unclear",
+      "difficulty": "medium",
+      "metadata": {"type": "causal_determination", "confounders": ["health consciousness", "reporting bias"]}
+    },
+    {
+      "id": "causal_010",
+      "description": "Rooster crows before sunrise every day. Does the rooster cause the sun to rise?",
+      "input": {
+        "observation": "Rooster crowing precedes sunrise (100% correlation)",
+        "question": "Does rooster crowing cause sunrise?",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "correlation_not_causation", "actual_cause": "earth rotation"}
+    }
+  ]
+}

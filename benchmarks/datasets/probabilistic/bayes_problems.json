@@ -1,0 +1,142 @@
+{
+  "name": "Bayesian Reasoning Problems",
+  "description": "Probability updates and Bayesian inference tests",
+  "category": "probabilistic",
+  "problems": [
+    {
+      "id": "bayes_001",
+      "description": "A medical test is 99% accurate. The disease affects 1% of the population. You test positive. What is the probability you have the disease?",
+      "input": {
+        "prior": 0.01,
+        "sensitivity": 0.99,
+        "specificity": 0.99,
+        "mode": "linear"
+      },
+      "expected": 0.50,
+      "difficulty": "medium",
+      "metadata": {"type": "base_rate_fallacy", "tolerance": 0.05}
+    },
+    {
+      "id": "bayes_002",
+      "description": "A bag has 3 red and 2 blue balls. You draw red. You return it and draw again. What is P(red on second draw)?",
+      "input": {
+        "red_balls": 3,
+        "blue_balls": 2,
+        "first_draw": "red",
+        "with_replacement": true,
+        "mode": "linear"
+      },
+      "expected": 0.60,
+      "difficulty": "easy",
+      "metadata": {"type": "conditional_probability", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_003",
+      "description": "Two dice are rolled. Given that the sum is 7, what is P(first die shows 4)?",
+      "input": {
+        "event": "sum is 7",
+        "query": "first die is 4",
+        "mode": "linear"
+      },
+      "expected": 0.1667,
+      "difficulty": "medium",
+      "metadata": {"type": "conditional_probability", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_004",
+      "description": "You flip a fair coin 3 times and get HHH. What is P(heads on next flip)?",
+      "input": {
+        "observations": ["H", "H", "H"],
+        "query": "P(H on flip 4)",
+        "mode": "linear"
+      },
+      "expected": 0.50,
+      "difficulty": "easy",
+      "metadata": {"type": "independence", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_005",
+      "description": "Box A has 3 gold, 1 silver coin. Box B has 1 gold, 3 silver. You pick a box at random and draw a gold coin. What is P(you picked Box A)?",
+      "input": {
+        "box_a": {"gold": 3, "silver": 1},
+        "box_b": {"gold": 1, "silver": 3},
+        "observation": "gold coin",
+        "mode": "linear"
+      },
+      "expected": 0.75,
+      "difficulty": "medium",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.05}
+    },
+    {
+      "id": "bayes_006",
+      "description": "P(rain) = 0.3, P(traffic | rain) = 0.8, P(traffic | no rain) = 0.2. Given traffic, what is P(rain)?",
+      "input": {
+        "prior_rain": 0.3,
+        "p_traffic_given_rain": 0.8,
+        "p_traffic_given_no_rain": 0.2,
+        "observation": "traffic",
+        "mode": "linear"
+      },
+      "expected": 0.55,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.05}
+    },
+    {
+      "id": "bayes_007",
+      "description": "A factory has 3 machines. Machine 1 makes 50% of items with 5% defect rate. Machine 2 makes 30% with 3% defect rate. Machine 3 makes 20% with 2% defect rate. Given a defective item, what is P(from Machine 1)?",
+      "input": {
+        "machine_1": {"production_rate": 0.50, "defect_rate": 0.05},
+        "machine_2": {"production_rate": 0.30, "defect_rate": 0.03},
+        "machine_3": {"production_rate": 0.20, "defect_rate": 0.02},
+        "observation": "defective",
+        "mode": "linear"
+      },
+      "expected": 0.658,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.05}
+    },
+    {
+      "id": "bayes_008",
+      "description": "You meet someone who is a librarian. Are they more likely to be (A) shy or (B) outgoing, given base rates?",
+      "input": {
+        "profession": "librarian",
+        "trait_a": "shy",
+        "trait_b": "outgoing",
+        "population_shy": 0.40,
+        "population_outgoing": 0.60,
+        "mode": "linear"
+      },
+      "expected": "outgoing",
+      "difficulty": "medium",
+      "metadata": {"type": "base_rate_neglect"}
+    },
+    {
+      "id": "bayes_009",
+      "description": "P(A) = 0.6, P(B) = 0.5, P(A and B) = 0.3. What is P(A | B)?",
+      "input": {
+        "p_a": 0.6,
+        "p_b": 0.5,
+        "p_a_and_b": 0.3,
+        "query": "P(A | B)",
+        "mode": "linear"
+      },
+      "expected": 0.60,
+      "difficulty": "easy",
+      "metadata": {"type": "conditional_probability", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_010",
+      "description": "In a class, 60% are female. 30% of females wear glasses, 20% of males wear glasses. You see someone wearing glasses. What is P(female)?",
+      "input": {
+        "p_female": 0.60,
+        "p_glasses_given_female": 0.30,
+        "p_glasses_given_male": 0.20,
+        "observation": "wearing glasses",
+        "mode": "linear"
+      },
+      "expected": 0.69,
+      "difficulty": "medium",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.05}
+    }
+  ]
+}
