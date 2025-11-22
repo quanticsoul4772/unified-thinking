@@ -216,161 +216,148 @@ comprehensive documentation is available:
 
 ## configuration
 
-### basic configuration (in-memory)
-
 **Config file locations:**
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows:** `%appdata%\claude\claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
-**macOS / Linux:**
+### minimal configuration (in-memory only)
 
+Basic setup with no persistence - data lost on restart:
+
+**macOS / Linux:**
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "/path/to/unified-thinking/bin/unified-thinking",
-      "args": [],
       "env": {
         "DEBUG": "true"
-      },
-      "type": "stdio"
+      }
     }
   }
 }
 ```
 
 **Windows:**
-
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
-      "args": [],
       "env": {
         "DEBUG": "true"
-      },
-      "type": "stdio"
+      }
     }
   }
 }
 ```
 
-### configuration with sqlite persistence
+### recommended configuration (sqlite persistence)
 
-for persistent storage across sessions:
+Persistent storage for thoughts and trajectories across sessions:
 
 **macOS / Linux:**
-
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "/path/to/unified-thinking/bin/unified-thinking",
-      "args": [],
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db"
-      },
-      "type": "stdio"
+      }
     }
   }
 }
 ```
 
 **Windows:**
-
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
-      "args": [],
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db"
-      },
-      "type": "stdio"
+      }
     }
   }
 }
 ```
 
-### configuration with sqlite + voyage ai (recommended)
+### full configuration (sqlite + semantic embeddings)
 
-for full functionality with persistent storage and semantic embeddings:
+Complete setup with persistence and semantic similarity search:
 
 **macOS / Linux:**
-
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "/path/to/unified-thinking/bin/unified-thinking",
-      "args": [],
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
-        "EMBEDDINGS_MODEL": "voyage-3-lite",
-        "CONTEXT_BRIDGE_DISABLED": "false"
-      },
-      "type": "stdio"
+        "EMBEDDINGS_MODEL": "voyage-3-lite"
+      }
     }
   }
 }
 ```
 
 **Windows:**
-
 ```json
 {
   "mcpServers": {
     "unified-thinking": {
       "command": "C:\\path\\to\\unified-thinking\\bin\\unified-thinking.exe",
-      "args": [],
       "env": {
         "DEBUG": "true",
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
-        "EMBEDDINGS_MODEL": "voyage-3-lite",
-        "CONTEXT_BRIDGE_DISABLED": "false"
-      },
-      "type": "stdio"
+        "EMBEDDINGS_MODEL": "voyage-3-lite"
+      }
     }
   }
 }
 ```
 
-**environment variables**:
+### environment variables
 
 **Storage Configuration**:
-- `storage_type`: `memory` (default) or `sqlite`
-- `sqlite_path`: path to sqlite database file (created automatically)
-- `sqlite_timeout`: connection timeout in milliseconds (default: 5000)
-- `debug`: enable debug logging (`true` or `false`)
-- `auto_validation_threshold`: confidence threshold for auto-validation (default: 0.5)
+- `STORAGE_TYPE`: `memory` (default) or `sqlite`
+- `SQLITE_PATH`: Path to database file (created automatically if it doesn't exist)
+- `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: `5000`)
+- `DEBUG`: Enable debug logging (`true` or `false`)
+- `AUTO_VALIDATION_THRESHOLD`: Confidence threshold for auto-validation (default: `0.5`)
 
-**Semantic Embeddings**:
-- `VOYAGE_API_KEY`: Your Voyage AI API key (required for semantic search)
-- `EMBEDDINGS_MODEL`: Model to use (default: `voyage-3-lite`, also `voyage-3`, `voyage-3-large`)
-- `EMBEDDINGS_RRF_K`: RRF fusion parameter (default: `60`)
-- `EMBEDDINGS_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.5`)
+**Semantic Embeddings** (optional - improves similarity search):
+- `VOYAGE_API_KEY`: Your Voyage AI API key from https://dashboard.voyageai.com/
+- `EMBEDDINGS_MODEL`: Model to use (default: `voyage-3-lite`, also: `voyage-3`, `voyage-3-large`)
+- `EMBEDDINGS_RRF_K`: Reciprocal rank fusion parameter (default: `60`)
+- `EMBEDDINGS_MIN_SIMILARITY`: Minimum cosine similarity threshold (default: `0.5`)
+- `EMBEDDINGS_CACHE_ENABLED`: Cache embeddings for reuse (default: `true`)
+- `EMBEDDINGS_CACHE_TTL`: Cache time-to-live (default: `24h`)
 
-**Context Bridge** (automatic cross-session context retrieval):
-- `CONTEXT_BRIDGE_DISABLED`: Set to `true` to disable (enabled by default)
-- `CONTEXT_BRIDGE_MIN_SIMILARITY`: Minimum similarity threshold (default: `0.7`)
+**Context Bridge** (automatic cross-session context):
+- `CONTEXT_BRIDGE_ENABLED`: Enable cross-session context retrieval (default: `true`)
+- `CONTEXT_BRIDGE_MIN_SIMILARITY`: Minimum similarity for matches (default: `0.7`)
 - `CONTEXT_BRIDGE_MAX_MATCHES`: Maximum matches to return (default: `3`)
 - `CONTEXT_BRIDGE_CACHE_SIZE`: LRU cache size (default: `100`)
-- `CONTEXT_BRIDGE_CACHE_TTL`: Cache TTL (default: `15m`)
+- `CONTEXT_BRIDGE_CACHE_TTL`: Cache time-to-live (default: `15m`)
 - `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: `2s`)
 
-after saving the config, restart claude desktop.
+**Important Notes**:
+- **Trajectory persistence requires SQLite**: Set `STORAGE_TYPE=sqlite` to enable episodic memory persistence
+- **Fail-fast behavior**: Server terminates if SQLite initialization fails (no silent fallback to memory)
+- **Restart required**: Changes to configuration require restarting Claude Desktop to take effect
 
 ## recent updates
 
