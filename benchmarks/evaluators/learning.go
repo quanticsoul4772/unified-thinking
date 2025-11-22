@@ -139,7 +139,7 @@ func sortIterationResults(results []IterationResult) {
 
 // FormatLearningReport generates a text report of learning metrics
 func FormatLearningReport(metrics *LearningMetrics) string {
-	report := fmt.Sprintf("Learning Analysis:\n")
+	report := "Learning Analysis:\n"
 	report += fmt.Sprintf("  Initial Accuracy: %.2f%%\n", metrics.InitialAccuracy*100)
 	report += fmt.Sprintf("  Final Accuracy: %.2f%%\n", metrics.FinalAccuracy*100)
 	report += fmt.Sprintf("  Improvement: %.2f%% (%.1f%% relative)\n",
@@ -148,12 +148,12 @@ func FormatLearningReport(metrics *LearningMetrics) string {
 	report += fmt.Sprintf("  Iterations: %d\n", metrics.Iterations)
 
 	if metrics.SignificantImprovement {
-		report += fmt.Sprintf("  Status: SIGNIFICANT improvement detected\n")
+		report += "  Status: SIGNIFICANT improvement detected\n"
 	} else {
-		report += fmt.Sprintf("  Status: No significant improvement\n")
+		report += "  Status: No significant improvement\n"
 	}
 
-	report += fmt.Sprintf("\nAccuracy by Iteration:\n")
+	report += "\nAccuracy by Iteration:\n"
 	for i := 1; i <= metrics.Iterations; i++ {
 		if acc, exists := metrics.AccuracyByIter[i]; exists {
 			report += fmt.Sprintf("  Iteration %d: %.2f%%\n", i, acc*100)
