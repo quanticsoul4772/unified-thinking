@@ -1441,6 +1441,61 @@ func (s *SQLiteStorage) UpdateSignatureEmbedding(trajectoryID string, embedding 
 	return nil
 }
 
+// StoreTrajectoryJSON stores a reasoning trajectory as JSON in SQLite
+func (s *SQLiteStorage) StoreTrajectoryJSON(id string, trajectoryJSON string) error {
+	_, err := s.db.Exec(`
+		INSERT INTO trajectories (id, trajectory_json, created_at)
+		VALUES (?, ?, ?)
+	`, id, trajectoryJSON, time.Now().Unix())
+
+	return err
+}
+
+// GetTrajectoryJSON retrieves a trajectory JSON by ID from SQLite
+func (s *SQLiteStorage) GetTrajectoryJSON(id string) (string, error) {
+	var trajectoryJSON string
+
+	err := s.db.QueryRow(`
+		SELECT trajectory_json
+		FROM trajectories
+		WHERE id = ?
+	`, id).Scan(&trajectoryJSON)
+
+	if err == sql.ErrNoRows {
+		return "", fmt.Errorf("trajectory not found: %s", id)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to query trajectory: %w", err)
+	}
+
+	return trajectoryJSON, nil
+}
+
+// GetAllTrajectoriesJSON returns all stored trajectory JSONs
+func (s *SQLiteStorage) GetAllTrajectoriesJSON() (map[string]string, error) {
+	rows, err := s.db.Query(`
+		SELECT id, trajectory_json
+		FROM trajectories
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query trajectories: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var id, trajectoryJSON string
+		if err := rows.Scan(&id, &trajectoryJSON); err != nil {
+			log.Printf("Warning: failed to scan trajectory: %v", err)
+			continue
+		}
+		result[id] = trajectoryJSON
+	}
+
+	return result, rows.Err()
+}
+
 // Close releases database resources
 func (s *SQLiteStorage) Close() error {
 	// Close prepared statements (ignore errors in cleanup)

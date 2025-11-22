@@ -41,11 +41,12 @@ const (
 // All Get methods return deep copies to prevent external mutation of internal state.
 type MemoryStorage struct {
 	mu            sync.RWMutex
-	thoughts      map[string]*types.Thought
-	branches      map[string]*types.Branch
-	insights      map[string]*types.Insight
-	validations   map[string]*types.Validation
-	relationships map[string]*types.Relationship
+	thoughts         map[string]*types.Thought
+	branches         map[string]*types.Branch
+	insights         map[string]*types.Insight
+	validations      map[string]*types.Validation
+	relationships    map[string]*types.Relationship
+	trajectoriesJSON map[string]string // Episodic memory trajectories as JSON
 
 	// Search indices for O(1) word lookup (optimization for SearchThoughts)
 	contentIndex    map[string][]string             // word -> []thoughtIDs
@@ -68,24 +69,26 @@ type MemoryStorage struct {
 	insightCounter      int
 	validationCounter   int
 	relationshipCounter int
+	trajectoryCounter   int
 }
 
 // NewMemoryStorage creates a new in-memory storage
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
-		thoughts:        make(map[string]*types.Thought),
-		branches:        make(map[string]*types.Branch),
-		insights:        make(map[string]*types.Insight),
-		validations:     make(map[string]*types.Validation),
-		relationships:   make(map[string]*types.Relationship),
-		contentIndex:    make(map[string][]string),
-		indexAccessTime: make(map[string]time.Time),
-		modeIndex:       make(map[types.ThinkingMode][]string),
-		hotWordCache:    make(map[string][]string, 100), // Cache top 100 hot words
-		hotWordAccess:   make(map[string]int, 200),      // Track access counts
-		thoughtsOrdered: make([]*types.Thought, 0, 100), // Pre-allocate typical size
-		branchesOrdered: make([]*types.Branch, 0, 20),   // Pre-allocate typical size
-		recentBranchIDs: make([]string, 0, MaxRecentBranches),
+		thoughts:         make(map[string]*types.Thought),
+		branches:         make(map[string]*types.Branch),
+		insights:         make(map[string]*types.Insight),
+		validations:      make(map[string]*types.Validation),
+		relationships:    make(map[string]*types.Relationship),
+		trajectoriesJSON: make(map[string]string),
+		contentIndex:     make(map[string][]string),
+		indexAccessTime:  make(map[string]time.Time),
+		modeIndex:        make(map[types.ThinkingMode][]string),
+		hotWordCache:     make(map[string][]string, 100), // Cache top 100 hot words
+		hotWordAccess:    make(map[string]int, 200),      // Track access counts
+		thoughtsOrdered:  make([]*types.Thought, 0, 100), // Pre-allocate typical size
+		branchesOrdered:  make([]*types.Branch, 0, 20),   // Pre-allocate typical size
+		recentBranchIDs:  make([]string, 0, MaxRecentBranches),
 	}
 }
 
@@ -764,4 +767,40 @@ func (s *MemoryStorage) trackRecentBranch(branchID string) {
 	if len(s.recentBranchIDs) > 10 {
 		s.recentBranchIDs = s.recentBranchIDs[:10]
 	}
+}
+
+// StoreTrajectoryJSON stores a reasoning trajectory as JSON (avoids import cycle)
+func (s *MemoryStorage) StoreTrajectoryJSON(id string, trajectoryJSON string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.trajectoriesJSON[id] = trajectoryJSON
+	return nil
+}
+
+// GetTrajectoryJSON retrieves a trajectory JSON by ID
+func (s *MemoryStorage) GetTrajectoryJSON(id string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	trajectoryJSON, exists := s.trajectoriesJSON[id]
+	if !exists {
+		return "", fmt.Errorf("trajectory not found: %s", id)
+	}
+
+	return trajectoryJSON, nil
+}
+
+// GetAllTrajectoriesJSON returns all stored trajectory JSONs with metadata for filtering
+func (s *MemoryStorage) GetAllTrajectoriesJSON() (map[string]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Return a copy to prevent external modifications
+	result := make(map[string]string, len(s.trajectoriesJSON))
+	for id, jsonData := range s.trajectoriesJSON {
+		result[id] = jsonData
+	}
+
+	return result, nil
 }

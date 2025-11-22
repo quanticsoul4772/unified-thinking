@@ -17,6 +17,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
@@ -194,6 +195,7 @@ type EpisodicMemoryStore struct {
 	toolSequenceIndex    map[string][]string   // tool_sequence_hash -> trajectory_ids
 	embeddingIntegration *EmbeddingIntegration // Optional embedding-based search
 	signatureIntegration *SignatureIntegration // Optional context signature storage
+	storageBackend       interface{}           // Optional persistent storage backend (storage.Storage with trajectory methods)
 	mu                   sync.RWMutex
 }
 
@@ -227,8 +229,24 @@ func (s *EpisodicMemoryStore) StoreTrajectory(ctx context.Context, trajectory *R
 		trajectory.ID = generateTrajectoryID(trajectory)
 	}
 
-	// Store the trajectory
+	// Store the trajectory in memory
 	s.trajectories[trajectory.ID] = trajectory
+
+	// Persist to storage backend if available (using JSON to avoid import cycle)
+	if s.storageBackend != nil {
+		type trajectoryJSONStorer interface {
+			StoreTrajectoryJSON(id string, trajectoryJSON string) error
+		}
+		if storer, ok := s.storageBackend.(trajectoryJSONStorer); ok {
+			// Serialize trajectory to JSON
+			trajectoryJSON, err := json.Marshal(trajectory)
+			if err != nil {
+				log.Printf("Warning: failed to marshal trajectory for persistence: %v", err)
+			} else if err := storer.StoreTrajectoryJSON(trajectory.ID, string(trajectoryJSON)); err != nil {
+				log.Printf("Warning: failed to persist trajectory to storage backend: %v", err)
+			}
+		}
+	}
 
 	// Update indexes
 	if trajectory.Problem != nil {
@@ -395,6 +413,62 @@ func (s *EpisodicMemoryStore) SetSignatureIntegration(si *SignatureIntegration) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.signatureIntegration = si
+}
+
+// SetStorageBackend sets the persistent storage backend and loads existing trajectories
+func (s *EpisodicMemoryStore) SetStorageBackend(backend interface{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.storageBackend = backend
+
+	// Load existing trajectories from storage
+	type trajectoryJSONLoader interface {
+		GetAllTrajectoriesJSON() (map[string]string, error)
+	}
+	if loader, ok := backend.(trajectoryJSONLoader); ok {
+		trajectoriesJSON, err := loader.GetAllTrajectoriesJSON()
+		if err != nil {
+			return fmt.Errorf("failed to load trajectories from storage: %w", err)
+		}
+
+		// Deserialize and rebuild indexes
+		loadedCount := 0
+		for id, trajectoryJSON := range trajectoriesJSON {
+			var trajectory ReasoningTrajectory
+			if err := json.Unmarshal([]byte(trajectoryJSON), &trajectory); err != nil {
+				log.Printf("Warning: failed to unmarshal trajectory %s: %v", id, err)
+				continue
+			}
+
+			// Store in memory
+			s.trajectories[id] = &trajectory
+
+			// Rebuild indexes
+			if trajectory.Problem != nil {
+				problemHash := computeProblemHash(trajectory.Problem)
+				s.problemIndex[problemHash] = append(s.problemIndex[problemHash], id)
+			}
+
+			if trajectory.Domain != "" {
+				s.domainIndex[trajectory.Domain] = append(s.domainIndex[trajectory.Domain], id)
+			}
+
+			for _, tag := range trajectory.Tags {
+				s.tagIndex[tag] = append(s.tagIndex[tag], id)
+			}
+
+			if trajectory.Approach != nil && len(trajectory.Approach.ToolSequence) > 0 {
+				seqHash := computeToolSequenceHash(trajectory.Approach.ToolSequence)
+				s.toolSequenceIndex[seqHash] = append(s.toolSequenceIndex[seqHash], id)
+			}
+
+			loadedCount++
+		}
+
+		log.Printf("Loaded %d trajectories from persistent storage", loadedCount)
+	}
+
+	return nil
 }
 
 // GetAllTrajectories returns all stored trajectories (for search operations)

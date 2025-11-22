@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 5 // Updated to add embedding support for context signatures
+const schemaVersion = 6 // Updated to add trajectories table for episodic memory persistence
 
 // Schema defines the complete database schema
 const schema = `
@@ -131,6 +131,17 @@ CREATE TABLE IF NOT EXISTS context_signatures (
 CREATE INDEX IF NOT EXISTS idx_context_domain ON context_signatures(domain);
 CREATE INDEX IF NOT EXISTS idx_context_prefix ON context_signatures(fingerprint_prefix);
 CREATE INDEX IF NOT EXISTS idx_context_trajectory ON context_signatures(trajectory_id);
+
+-- Trajectories table for episodic memory persistence
+-- Stores complete trajectory as JSON to avoid import cycles
+CREATE TABLE IF NOT EXISTS trajectories (
+    id TEXT PRIMARY KEY,
+    trajectory_json TEXT NOT NULL,   -- Complete ReasoningTrajectory as JSON
+    created_at INTEGER NOT NULL
+);
+
+-- Index for retrieval
+CREATE INDEX IF NOT EXISTS idx_trajectories_created ON trajectories(created_at DESC);
 
 -- Full-text search index for thought content
 CREATE VIRTUAL TABLE IF NOT EXISTS thoughts_fts USING fts5(
@@ -303,6 +314,25 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v4->v5 migration: %w", err)
+		}
+	}
+
+	// Migration from v5 to v6: Add trajectories table for episodic memory persistence
+	if fromVersion < 6 && toVersion >= 6 {
+		migration := `
+		-- Trajectories table for episodic memory persistence (v6)
+		-- Stores complete trajectory as JSON to avoid import cycles
+		CREATE TABLE IF NOT EXISTS trajectories (
+			id TEXT PRIMARY KEY,
+			trajectory_json TEXT NOT NULL,
+			created_at INTEGER NOT NULL
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_trajectories_created ON trajectories(created_at DESC);
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v5->v6 migration: %w", err)
 		}
 	}
 

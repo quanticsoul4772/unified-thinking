@@ -47,6 +47,7 @@ type MetricsProvider interface {
 
 // Storage combines all repository interfaces for unified access
 // This is the main interface that modes and handlers should depend on
+// Note: Trajectory persistence is handled separately via StorageBackend interface in memory package
 type Storage interface {
 	ThoughtRepository
 	BranchRepository

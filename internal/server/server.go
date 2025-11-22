@@ -280,6 +280,13 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	// Create episodic memory store
 	store := memory.NewEpisodicMemoryStore()
 
+	// Set storage backend for trajectory persistence and load existing trajectories
+	if err := store.SetStorageBackend(s.storage); err != nil {
+		log.Printf("Warning: failed to load trajectories from storage: %v", err)
+	} else {
+		log.Printf("Episodic memory configured with persistent storage backend")
+	}
+
 	// Create embedding integration if enabled
 	var sqliteStore *storage.SQLiteStorage
 	if sqlite, ok := s.storage.(*storage.SQLiteStorage); ok {
