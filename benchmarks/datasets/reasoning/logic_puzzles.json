@@ -1,0 +1,127 @@
+{
+  "name": "Logic Puzzles",
+  "description": "Deductive reasoning and logical inference problems",
+  "category": "reasoning",
+  "problems": [
+    {
+      "id": "logic_001",
+      "description": "All mammals are warm-blooded. All dogs are mammals. Therefore, all dogs are warm-blooded. Is this reasoning valid?",
+      "input": {
+        "premises": ["All mammals are warm-blooded", "All dogs are mammals"],
+        "conclusion": "All dogs are warm-blooded",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "syllogism"}
+    },
+    {
+      "id": "logic_002",
+      "description": "If it rains, the ground gets wet. The ground is wet. Therefore, it rained. Is this reasoning valid?",
+      "input": {
+        "premises": ["If it rains, then the ground gets wet", "The ground is wet"],
+        "conclusion": "It rained",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "medium",
+      "metadata": {"type": "affirming_consequent", "fallacy": true}
+    },
+    {
+      "id": "logic_003",
+      "description": "Either the butler did it or the gardener did it. The butler did not do it. Who did it?",
+      "input": {
+        "premises": ["butler OR gardener", "NOT butler"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "gardener",
+      "difficulty": "easy",
+      "metadata": {"type": "disjunctive_syllogism"}
+    },
+    {
+      "id": "logic_004",
+      "description": "All politicians are liars. Some liars are clever. Therefore, some politicians are clever. Is this valid?",
+      "input": {
+        "premises": ["All politicians are liars", "Some liars are clever"],
+        "conclusion": "Some politicians are clever",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "medium",
+      "metadata": {"type": "undistributed_middle"}
+    },
+    {
+      "id": "logic_005",
+      "description": "If John studies, he passes. John passed. Did John study?",
+      "input": {
+        "premises": ["If John studies, then John passes", "John passed"],
+        "conclusion": "John studied",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "affirming_consequent"}
+    },
+    {
+      "id": "logic_006",
+      "description": "No cats are dogs. Some pets are cats. Therefore, some pets are not dogs. Is this valid?",
+      "input": {
+        "premises": ["No cats are dogs", "Some pets are cats"],
+        "conclusion": "Some pets are not dogs",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_007",
+      "description": "If you exercise regularly, you stay healthy. You don't exercise regularly. Therefore, you are not healthy. Valid?",
+      "input": {
+        "premises": ["If exercise, then healthy", "NOT exercise"],
+        "conclusion": "NOT healthy",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "easy",
+      "metadata": {"type": "denying_antecedent", "fallacy": true}
+    },
+    {
+      "id": "logic_008",
+      "description": "All birds can fly. Penguins are birds. Therefore, penguins can fly. What's wrong with this reasoning?",
+      "input": {
+        "premises": ["All birds can fly", "Penguins are birds"],
+        "conclusion": "Penguins can fly",
+        "mode": "linear"
+      },
+      "expected": "false premise",
+      "difficulty": "easy",
+      "metadata": {"type": "false_premise"}
+    },
+    {
+      "id": "logic_009",
+      "description": "If the alarm rings, there's a fire. There's no fire. Therefore, the alarm didn't ring. Valid?",
+      "input": {
+        "premises": ["If alarm, then fire", "NOT fire"],
+        "conclusion": "NOT alarm",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_010",
+      "description": "Either we go to the beach or we stay home. We went to the beach. Therefore, we didn't stay home. Valid?",
+      "input": {
+        "premises": ["beach XOR home", "beach"],
+        "conclusion": "NOT home",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "exclusive_or"}
+    }
+  ]
+}

@@ -91,10 +91,15 @@ test-storage-coverage:
 	go tool cover -html=storage-coverage.out -o storage-coverage.html
 	@echo "Storage coverage report saved to storage-coverage.html"
 
-# Run benchmarks
+# Run performance benchmarks
 benchmark:
-	@echo "Running benchmarks..."
+	@echo "Running performance benchmarks..."
 	go test -bench=. -benchmem ./internal/storage/
+
+# Run reasoning benchmarks
+benchmark-reasoning:
+	@echo "Running reasoning quality benchmarks..."
+	go test -v ./benchmarks/
 
 # Run all test suites (comprehensive)
 test-all: test-race test-coverage
