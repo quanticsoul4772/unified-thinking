@@ -28,9 +28,19 @@ jobs:
           cache: true
 
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
+        uses: securego/gosec@v2.21.4
         with:
           args: '-no-fail -fmt sarif -out gosec-results.sarif ./...'
+
+      - name: Fix SARIF schema issues
+        run: |
+          # Fix artifactChanges null values in SARIF output
+          # The SARIF spec requires artifactChanges to be an array, not null
+          if [ -f gosec-results.sarif ]; then
+            # Replace null artifactChanges with empty arrays
+            sed -i 's/"artifactChanges": null/"artifactChanges": []/g' gosec-results.sarif
+            echo "SARIF file validated and fixed if needed"
+          fi
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v4
