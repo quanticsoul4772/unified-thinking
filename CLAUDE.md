@@ -272,6 +272,7 @@ The server supports **pluggable storage backends** via the `storage.Storage` int
 - Full-text search via FTS5
 - WAL mode for concurrent reads
 - **Fail-fast behavior**: Server fails immediately if SQLite initialization fails (no silent fallback)
+- **Trajectory persistence**: Episodic memory trajectories stored as JSON in trajectories table (schema v6)
 
 **Configuration** via environment variables:
 ```bash
@@ -338,8 +339,9 @@ When using SQLite storage (`STORAGE_TYPE=sqlite`):
 - **Prepared statements**: Pre-compiled SQL statements for performance
 
 **Schema Design** (`sqlite_schema.go`):
-- Core tables: `thoughts`, `branches`, `insights`, `cross_refs`, `validations`, `relationships`
+- Core tables: `thoughts`, `branches`, `insights`, `cross_refs`, `validations`, `relationships`, `trajectories`
 - FTS5 virtual table: `thoughts_fts` for full-text search on thought content
+- Trajectories table: Stores complete `ReasoningTrajectory` as JSON blob (avoids import cycles)
 - Indexes: Optimized for common query patterns (mode filtering, branch lookups, timestamps)
 - JSON columns: `key_points`, `metadata` stored as JSON for complex types
 
@@ -758,7 +760,26 @@ Following expert panel recommendations and agent analysis, implemented comprehen
 - Benchmark tests: 15+ benchmarks with performance baselines
 - Integration tests: 5+ comprehensive workflow tests
 
-## Recent Fixes
+## Recent Updates
+
+### Trajectory Persistence Implementation (Commit 0bdfc49)
+
+**Feature**: Full SQLite persistence for episodic memory trajectories
+- **Problem**: Trajectories were only stored in-memory, causing complete data loss on Claude Desktop restart
+- **Implementation**:
+  - Added `trajectories` table to SQLite schema (v6) storing complete trajectory as JSON
+  - Implemented `StoreTrajectoryJSON()`, `GetTrajectoryJSON()`, `GetAllTrajectoriesJSON()` in both MemoryStorage and SQLiteStorage
+  - Modified `EpisodicMemoryStore.StoreTrajectory()` to serialize and persist via storage backend
+  - Added `SetStorageBackend()` method that loads existing trajectories on initialization and rebuilds indexes
+  - Used JSON serialization to avoid import cycle between storage and memory packages
+- **Files Modified**:
+  - `internal/storage/sqlite_schema.go` - Added trajectories table and v5→v6 migration
+  - `internal/storage/sqlite.go` - Implemented JSON-based trajectory persistence
+  - `internal/storage/memory.go` - Added trajectoriesJSON map and methods
+  - `internal/memory/episodic.go` - Serialize to JSON, persist via backend, load on init
+  - `internal/server/server.go` - Wire storage backend to episodic memory
+- **Impact**: Reasoning sessions, trajectories, and pattern learning now survive Claude Desktop restarts
+- **Validation**: Confirmed working via post-restart testing - trajectory retrieval successful
 
 ### Episodic Memory Fixes (Commit e7cc5c7)
 

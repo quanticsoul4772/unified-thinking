@@ -402,6 +402,10 @@ after saving the config, restart claude desktop.
 - applied gofmt -s across entire codebase for consistent formatting
 
 ### bug fixes
+- **trajectory persistence**: fixed episodic memory trajectories not persisting across restarts (schema v6)
+  - implemented json-based trajectory storage in sqlite
+  - auto-load existing trajectories on server initialization
+  - rebuild all indexes (problem, domain, tag, tool sequence) from persisted data
 - fixed sqlite foreign key constraint failures in episodic memory
 - resolved nil array validation errors in mcp tool responses
 - fixed race conditions in concurrent sqlite tests
