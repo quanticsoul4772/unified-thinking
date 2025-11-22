@@ -206,13 +206,9 @@ The binary will be created at `bin\unified-thinking.exe`.
 
 ## documentation
 
-comprehensive documentation is available:
-
-- **[API Reference](API_REFERENCE.md)** - complete reference for all 63 mcp tools with parameters, examples, and response formats
-- **[Architecture Diagrams](ARCHITECTURE.md)** - visual representations of system architecture, data flows, and component interactions
-- **[Project Index](PROJECT_INDEX.md)** - comprehensive project structure, architecture, and component overview
-- **[MCP Integration Test Report](MCP_INTEGRATION_TEST_REPORT.md)** - end-to-end validation results and production readiness certification
-- **[Architecture Guide](CLAUDE.md)** - detailed technical architecture and implementation guide
+- **[CLAUDE.md](CLAUDE.md)** - technical architecture and implementation guide
+- **[CONFIGURATION.md](docs/CONFIGURATION.md)** - detailed configuration options and examples
+- **[EMBEDDINGS.md](docs/EMBEDDINGS.md)** - semantic embeddings setup and usage
 
 ## configuration
 
