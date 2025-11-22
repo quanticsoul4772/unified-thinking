@@ -356,7 +356,6 @@ Complete setup with persistence and semantic similarity search:
 
 **Important Notes**:
 - **Trajectory persistence requires SQLite**: Set `STORAGE_TYPE=sqlite` to enable episodic memory persistence
-- **Fail-fast behavior**: Server terminates if SQLite initialization fails (no silent fallback to memory)
 - **Restart required**: Changes to configuration require restarting Claude Desktop to take effect
 
 ## recent updates
@@ -381,7 +380,6 @@ Complete setup with persistence and semantic similarity search:
   - tier 1-3 optimizations: memory allocation patterns, locking efficiency, hot path optimization
   - production profiling: identified and resolved critical bottlenecks
   - improved memory allocation and eliminated redundant locking
-  - removed storage fallback feature for fail-fast behavior
 - context bridge metrics now exposed in get-metrics response
 - context bridge always returns structure for visibility (even with no matches)
 - proactive rate limiting prevents api throttling (30 req/sec with burst of 10)
@@ -402,7 +400,6 @@ Complete setup with persistence and semantic similarity search:
 ### code quality
 - 73% test coverage for embeddings package
 - comprehensive integration tests for embedding similarity path
-- removed unused refactoring experiments
 - cleaned up test files and improved edge case coverage
 - maintained backward compatibility while improving internals
 

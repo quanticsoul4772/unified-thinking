@@ -271,8 +271,7 @@ The server supports **pluggable storage backends** via the `storage.Storage` int
 - Write-through caching for performance
 - Full-text search via FTS5
 - WAL mode for concurrent reads
-- **Fail-fast behavior**: Server fails immediately if SQLite initialization fails (no silent fallback)
-- **Trajectory persistence**: Episodic memory trajectories stored as JSON in trajectories table (schema v6)
+- Trajectory persistence: Episodic memory trajectories stored as JSON in trajectories table (schema v6)
 
 **Configuration** via environment variables:
 ```bash
@@ -282,8 +281,6 @@ STORAGE_TYPE=sqlite     # Persistent SQLite storage
 SQLITE_PATH=./data/thoughts.db  # Database file path
 SQLITE_TIMEOUT=5000             # Connection timeout (ms)
 ```
-
-**Note**: The server uses fail-fast behavior. If the configured storage backend fails to initialize, the server will terminate immediately rather than falling back to an alternative storage type.
 
 **Storage Factory** (`storage/factory.go`):
 - `NewStorageFromEnv()` - Creates storage from environment variables
@@ -514,8 +511,6 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `SQLITE_TIMEOUT`: Connection timeout in milliseconds (default: 5000)
 - `DEBUG`: Enable debug logging (`true` or `false`)
 - `AUTO_VALIDATION_THRESHOLD`: Confidence threshold below which auto-validation triggers (default: 0.5, range: 0.0-1.0)
-
-**Note**: Server uses fail-fast behavior. If SQLite initialization fails, the server terminates immediately.
 
 **Embeddings Environment Variables** (for semantic search in episodic memory):
 - `EMBEDDINGS_ENABLED`: Enable semantic embeddings (`true` or `false`, default: false)
