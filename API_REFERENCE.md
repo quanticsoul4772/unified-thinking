@@ -382,36 +382,6 @@ Get system performance and usage metrics.
 
 ---
 
-### list-integration-patterns
-
-List common multi-server workflow patterns for orchestrating tools across the MCP ecosystem.
-
-**Parameters:** None
-
-**Example Request:**
-```json
-{}
-```
-
-**Example Response:**
-```json
-{
-  "patterns": [
-    {
-      "name": "Research-Enhanced Thinking",
-      "description": "Combine web search with reasoning",
-      "steps": ["brave_web_search", "think", "assess-evidence"],
-      "use_case": "When you need external information",
-      "servers": ["brave-search", "unified-thinking"]
-    }
-  ],
-  "count": 10,
-  "status": "success"
-}
-```
-
----
-
 ## 2. Probabilistic Reasoning Tools
 
 ### probabilistic-reasoning
@@ -1506,6 +1476,36 @@ Register a new custom workflow for automated tool coordination.
     ],
     "created_at": "2024-01-15T10:00:00Z"
   }
+}
+```
+
+---
+
+### list-integration-patterns
+
+List common multi-server workflow patterns for orchestrating tools across the MCP ecosystem.
+
+**Parameters:** None
+
+**Example Request:**
+```json
+{}
+```
+
+**Example Response:**
+```json
+{
+  "patterns": [
+    {
+      "name": "Research-Enhanced Thinking",
+      "description": "Combine web search with reasoning",
+      "steps": ["brave_web_search", "think", "assess-evidence"],
+      "use_case": "When you need external information",
+      "servers": ["brave-search", "unified-thinking"]
+    }
+  ],
+  "count": 10,
+  "status": "success"
 }
 ```
 
