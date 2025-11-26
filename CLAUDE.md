@@ -180,17 +180,17 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 14. `detect-contradictions` - Find contradictions among thoughts or within branches
 15. `sensitivity-analysis` - Test robustness of conclusions to assumption changes
 
-**Decision & Problem-Solving Tools** (3 tools):
+**Decision & Problem-Solving Tools** (2 tools):
 16. `make-decision` - Multi-criteria decision analysis with weighted scoring
 17. `decompose-problem` - Break complex problems into manageable subproblems
-18. `verify-thought` - Verify thought validity and structure
 
 **Metacognition Tools** (3 tools):
-19. `self-evaluate` - Metacognitive self-assessment of reasoning quality
-20. `detect-biases` - Identify cognitive biases and logical fallacies
-21. `detect-blind-spots` - Identify unknown unknowns and knowledge gaps
+18. `self-evaluate` - Metacognitive self-assessment of reasoning quality
+19. `detect-biases` - Identify cognitive biases and logical fallacies
+20. `detect-blind-spots` - Identify unknown unknowns and knowledge gaps
 
-**Hallucination & Calibration Tools** (4 tools):
+**Hallucination & Calibration Tools** (5 tools):
+21. `verify-thought` - Verify thought validity and hallucination detection
 22. `get-hallucination-report` - Retrieve hallucination detection reports
 23. `record-prediction` - Record a prediction for calibration tracking
 24. `record-outcome` - Record prediction outcomes
@@ -614,7 +614,7 @@ When Claude Desktop starts, it will:
 ### Core Infrastructure
 1. `cmd/server/main.go` - Entry point, initializes storage and server components
 2. `internal/types/types.go` - All core data structures and constants (50+ types)
-3. `internal/server/server.go` - Tool registration and request handlers (50 tools)
+3. `internal/server/server.go` - Tool registration and request handlers (63 tools)
 4. `internal/server/handlers/` - Modular handlers for thinking, branches, validation, search, enhanced cognitive tools
 
 ### Storage Layer

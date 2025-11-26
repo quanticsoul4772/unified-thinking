@@ -206,7 +206,7 @@ The binary will be created at `bin\unified-thinking.exe`.
 
 ## documentation
 
-- **[API Reference](API_REFERENCE.md)** - complete reference for all 50 mcp tools with parameters, examples, and response formats
+- **[API Reference](API_REFERENCE.md)** - complete reference for all 63 MCP tools with parameters, examples, and response formats
 - **[Configuration Guide](docs/CONFIGURATION.md)** - detailed configuration options and examples
 - **[Embeddings Guide](docs/EMBEDDINGS.md)** - semantic embeddings setup and usage
 

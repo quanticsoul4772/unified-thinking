@@ -51,14 +51,14 @@
 // Probabilistic & Evidence Tools (4):
 //   - probabilistic-reasoning, assess-evidence, detect-contradictions, sensitivity-analysis
 //
-// Decision & Problem-Solving Tools (3):
-//   - make-decision, decompose-problem, verify-thought
+// Decision & Problem-Solving Tools (2):
+//   - make-decision, decompose-problem
 //
 // Metacognition Tools (3):
 //   - self-evaluate, detect-biases, detect-blind-spots
 //
-// Hallucination & Calibration Tools (4):
-//   - get-hallucination-report, record-prediction, record-outcome, get-calibration-report
+// Hallucination & Calibration Tools (5):
+//   - verify-thought, get-hallucination-report, record-prediction, record-outcome, get-calibration-report
 //
 // Temporal & Perspective Tools (4):
 //   - analyze-perspectives, analyze-temporal, compare-time-horizons, identify-optimal-timing
