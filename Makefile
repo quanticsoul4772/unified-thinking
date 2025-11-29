@@ -210,3 +210,20 @@ help:
 	@echo "  install-deps           - Download Go dependencies"
 	@echo "  verify                 - Verify installation"
 	@echo "  help                   - Show this help message"
+
+# Build server binary for E2E testing
+.PHONY: build-server
+build-server:
+	@echo "Building server binary for E2E testing..."
+	go build -o unified-thinking-server ./cmd/server
+
+# Run E2E benchmarks via MCP protocol
+.PHONY: benchmark-e2e
+benchmark-e2e: build-server
+	@echo "Running E2E benchmarks via MCP..."
+	go test -v ./benchmarks/ -run TestMCP -timeout 10m
+
+# Run all benchmarks (unit + E2E)
+.PHONY: benchmark-all
+benchmark-all: benchmark benchmark-e2e
+	@echo "All benchmarks complete"

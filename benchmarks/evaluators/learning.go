@@ -8,23 +8,23 @@ import (
 
 // LearningMetrics tracks improvement over iterations
 type LearningMetrics struct {
-	InitialAccuracy   float64            // Accuracy on first iteration
-	FinalAccuracy     float64            // Accuracy on last iteration
-	ImprovementRate   float64            // Absolute improvement
-	RelativeImprovement float64          // Percentage improvement
-	Iterations        int                // Number of iterations
-	AccuracyByIter    map[int]float64    // Accuracy per iteration
-	LearningRate      float64            // Rate of learning (slope)
-	SignificantImprovement bool          // Statistical significance
-	PValue            float64            // P-value for improvement
+	InitialAccuracy        float64         // Accuracy on first iteration
+	FinalAccuracy          float64         // Accuracy on last iteration
+	ImprovementRate        float64         // Absolute improvement
+	RelativeImprovement    float64         // Percentage improvement
+	Iterations             int             // Number of iterations
+	AccuracyByIter         map[int]float64 // Accuracy per iteration
+	LearningRate           float64         // Rate of learning (slope)
+	SignificantImprovement bool            // Statistical significance
+	PValue                 float64         // P-value for improvement
 }
 
 // IterationResult represents results for a single iteration
 type IterationResult struct {
-	Iteration   int
-	Correct     int
-	Total       int
-	Accuracy    float64
+	Iteration int
+	Correct   int
+	Total     int
+	Accuracy  float64
 }
 
 // ComputeLearning calculates learning metrics from iteration results
@@ -80,8 +80,8 @@ func ComputeLearning(results []IterationResult) *LearningMetrics {
 
 // GroupByIteration groups results by iteration number
 func GroupByIteration(results []struct {
-	Correct    bool
-	Iteration  int
+	Correct   bool
+	Iteration int
 }) []IterationResult {
 	// Count by iteration
 	iterCounts := make(map[int]*struct {

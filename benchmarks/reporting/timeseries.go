@@ -12,14 +12,14 @@ import (
 
 // TimeSeriesEntry represents a single benchmark run in time series
 type TimeSeriesEntry struct {
-	Timestamp    time.Time              `json:"timestamp"`
-	GitCommit    string                 `json:"git_commit"`
-	Accuracy     map[string]float64     `json:"accuracy"`      // suite_name -> accuracy
-	ECE          map[string]float64     `json:"ece"`           // suite_name -> ECE
-	AvgLatency   map[string]int64       `json:"avg_latency"`   // suite_name -> latency (nanoseconds)
-	TotalCorrect int                    `json:"total_correct"`
+	Timestamp     time.Time              `json:"timestamp"`
+	GitCommit     string                 `json:"git_commit"`
+	Accuracy      map[string]float64     `json:"accuracy"`    // suite_name -> accuracy
+	ECE           map[string]float64     `json:"ece"`         // suite_name -> ECE
+	AvgLatency    map[string]int64       `json:"avg_latency"` // suite_name -> latency (nanoseconds)
+	TotalCorrect  int                    `json:"total_correct"`
 	TotalProblems int                    `json:"total_problems"`
-	Metadata     map[string]interface{} `json:"metadata"`
+	Metadata      map[string]interface{} `json:"metadata"`
 }
 
 // TimeSeries stores historical benchmark results

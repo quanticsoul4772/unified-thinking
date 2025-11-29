@@ -7,12 +7,12 @@ import (
 
 // CalibrationMetrics computes confidence calibration quality
 type CalibrationMetrics struct {
-	ECE              float64            // Expected Calibration Error
-	MCE              float64            // Maximum Calibration Error
-	Brier            float64            // Brier score
-	BucketAccuracies map[int]float64    // Accuracy per confidence bucket
-	BucketCounts     map[int]int        // Count per bucket
-	BucketConfidence map[int]float64    // Avg confidence per bucket
+	ECE              float64         // Expected Calibration Error
+	MCE              float64         // Maximum Calibration Error
+	Brier            float64         // Brier score
+	BucketAccuracies map[int]float64 // Accuracy per confidence bucket
+	BucketCounts     map[int]int     // Count per bucket
+	BucketConfidence map[int]float64 // Avg confidence per bucket
 }
 
 // CalibrationResult represents a single prediction for calibration

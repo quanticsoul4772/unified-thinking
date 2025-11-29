@@ -9,11 +9,11 @@ import (
 
 // BenchmarkReport represents a markdown-formatted benchmark report
 type BenchmarkReport struct {
-	Title       string
-	Timestamp   time.Time
-	GitCommit   string
-	Suites      []SuiteReport
-	Summary     SummaryReport
+	Title     string
+	Timestamp time.Time
+	GitCommit string
+	Suites    []SuiteReport
+	Summary   SummaryReport
 }
 
 // SuiteReport represents results for one test suite

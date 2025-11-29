@@ -7,14 +7,14 @@ import (
 
 // EfficiencyMetrics tracks performance characteristics
 type EfficiencyMetrics struct {
-	TotalLatency    time.Duration // Total time spent
-	AvgLatency      time.Duration // Average latency per problem
-	P50Latency      time.Duration // Median latency
-	P95Latency      time.Duration // 95th percentile latency
-	P99Latency      time.Duration // 99th percentile latency
-	TotalTokens     int           // Total tokens used (if tracked)
-	AvgTokens       float64       // Average tokens per problem
-	ProblemsPerSec  float64       // Throughput
+	TotalLatency   time.Duration // Total time spent
+	AvgLatency     time.Duration // Average latency per problem
+	P50Latency     time.Duration // Median latency
+	P95Latency     time.Duration // 95th percentile latency
+	P99Latency     time.Duration // 99th percentile latency
+	TotalTokens    int           // Total tokens used (if tracked)
+	AvgTokens      float64       // Average tokens per problem
+	ProblemsPerSec float64       // Throughput
 }
 
 // LatencyResult represents timing information for a single problem

@@ -76,8 +76,8 @@ func computeECE(results []*Result) float64 {
 
 	// Bucket results by confidence (10 buckets: 0-0.1, 0.1-0.2, ..., 0.9-1.0)
 	buckets := make([]struct {
-		totalCount int
-		correctCount int
+		totalCount    int
+		correctCount  int
 		avgConfidence float64
 		sumConfidence float64
 	}, 10)
@@ -112,7 +112,7 @@ func computeECE(results []*Result) float64 {
 		avgConfidence := bucket.sumConfidence / float64(bucket.totalCount)
 		weight := float64(bucket.totalCount) / float64(totalCount)
 
-		ece += weight * abs(bucketAccuracy - avgConfidence)
+		ece += weight * abs(bucketAccuracy-avgConfidence)
 	}
 
 	return ece

@@ -2,7 +2,6 @@
 package benchmarks
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -72,54 +71,126 @@ func (e *DirectExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result
 }
 
 // MCPExecutor executes problems via MCP protocol (for integration testing)
-// This is a placeholder for future stdio/SSE MCP client integration
 type MCPExecutor struct {
+	client     *MCPClient
 	serverPath string
+	env        []string
 }
 
 // NewMCPExecutor creates a new MCP executor
-func NewMCPExecutor(serverPath string) *MCPExecutor {
-	return &MCPExecutor{serverPath: serverPath}
+func NewMCPExecutor(serverPath string, env []string) *MCPExecutor {
+	return &MCPExecutor{
+		serverPath: serverPath,
+		env:        env,
+	}
 }
 
 // Execute runs a problem via MCP protocol
 func (e *MCPExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result, error) {
 	start := time.Now()
 
-	// TODO: Implement actual MCP communication via stdio
-	// For Phase 1, we'll use the DirectExecutor
-	// Phase 2 will add proper MCP client integration
-
-	// Placeholder response
-	ctx := context.Background()
-	_ = ctx
-
-	// Create MCP tool call request
-	toolCall := map[string]interface{}{
-		"tool": "think",
-		"args": map[string]interface{}{
-			"content": problem.Description,
-			"mode":    problem.Input["mode"],
-		},
+	// Lazy initialization - reuse client for multiple problems
+	if e.client == nil {
+		client, err := NewMCPClient(e.serverPath, e.env)
+		if err != nil {
+			return &Result{
+				ProblemID: problem.ID,
+				Correct:   false,
+				Score:     0.0,
+				Latency:   time.Since(start),
+				Error:     fmt.Sprintf("Failed to create MCP client: %v", err),
+			}, nil
+		}
+		if err := client.Start(); err != nil {
+			return &Result{
+				ProblemID: problem.ID,
+				Correct:   false,
+				Score:     0.0,
+				Latency:   time.Since(start),
+				Error:     fmt.Sprintf("Failed to start MCP server: %v", err),
+			}, nil
+		}
+		e.client = client
 	}
 
-	_ = toolCall
+	// Extract parameters
+	content, ok := problem.Input["content"].(string)
+	if !ok {
+		content = problem.Description
+	}
+
+	mode, ok := problem.Input["mode"].(string)
+	if !ok {
+		mode = "auto"
+	}
+
+	// Call think tool via MCP
+	args := map[string]interface{}{
+		"content": content,
+		"mode":    mode,
+	}
+
+	resp, err := e.client.CallTool("think", args)
+	if err != nil {
+		return &Result{
+			ProblemID: problem.ID,
+			Correct:   false,
+			Score:     0.0,
+			Latency:   time.Since(start),
+			Error:     fmt.Sprintf("MCP call failed: %v", err),
+		}, nil
+	}
 
 	latency := time.Since(start)
 
-	// For now, return a placeholder
+	// Extract thought data from MCP response
+	// Data is in structuredContent field
+	var thoughtID string
+	var responseText string
+	var confidence float64
+	var thinkMode string
+
+	if structured, ok := resp.Content["structuredContent"].(map[string]interface{}); ok {
+		thoughtID, _ = structured["thought_id"].(string)
+		confidence, _ = structured["confidence"].(float64)
+		thinkMode, _ = structured["mode"].(string)
+
+		// Response text is in the content array as JSON
+		if contentArray, ok := resp.Content["content"].([]interface{}); ok && len(contentArray) > 0 {
+			if contentItem, ok := contentArray[0].(map[string]interface{}); ok {
+				responseText, _ = contentItem["text"].(string)
+			}
+		}
+	}
+
+	// Evaluate response
+	correct, score, err := evaluator.Evaluate(responseText, problem.Expected)
+	if err != nil {
+		return nil, fmt.Errorf("evaluation failed: %w", err)
+	}
+
 	result := &Result{
 		ProblemID:  problem.ID,
-		Correct:    false,
-		Score:      0.0,
-		Confidence: 0.0,
+		Correct:    correct,
+		Score:      score,
+		Confidence: confidence,
 		Latency:    latency,
-		Mode:       "auto",
-		Response:   "",
-		Error:      "MCP executor not yet implemented",
+		Mode:       thinkMode,
+		Response:   responseText,
+		Metadata: map[string]interface{}{
+			"thought_id": thoughtID,
+		},
 	}
 
 	return result, nil
+}
+
+// Close gracefully shuts down the MCP client
+func (e *MCPExecutor) Close() error {
+	if e.client != nil {
+		return e.client.Close()
+	}
+	return nil
 }
 
 // MockExecutor provides deterministic results for testing the framework itself
