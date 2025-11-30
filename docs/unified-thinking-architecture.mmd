@@ -1,0 +1,105 @@
+flowchart TB
+    Start([Client Request]) --> Router{Tool Category}
+    
+    %% Core Thinking Path
+    Router --> Think[think<br/>Linear/Tree/Divergent/Auto]
+    Think --> ModeSelect{Mode Selection}
+    ModeSelect -->|Linear| LinearThink[Sequential Reasoning]
+    ModeSelect -->|Tree| TreeThink[Multi-Branch Exploration]
+    ModeSelect -->|Divergent| DivergentThink[Creative Brainstorming]
+    ModeSelect -->|Auto| AutoDetect[Complexity Detection]
+    
+    AutoDetect -->|Simple| LinearThink
+    AutoDetect -->|Complex| TreeThink
+    
+    LinearThink --> ContextBridge[Context Bridge<br/>Semantic Enrichment]
+    TreeThink --> ContextBridge
+    DivergentThink --> ContextBridge
+    
+    ContextBridge --> VoyageAPI[Voyage AI<br/>Embeddings]
+    VoyageAPI --> SemanticCache[(Semantic Cache)]
+    
+    ContextBridge --> ThoughtCreate[Create Thought Object]
+    ThoughtCreate --> SQLiteWrite[(SQLite Database<br/>thoughts.db)]
+    SQLiteWrite --> MetadataGen[Generate Metadata]
+    
+    MetadataGen --> Response([Return Result<br/>+ Suggestions])
+    
+    %% Validation Path
+    Router --> Validate[validate<br/>Logical Consistency]
+    Validate --> SQLiteRead[(SQLite Read)]
+    SQLiteRead --> LogicCheck[Logic Analysis]
+    LogicCheck --> BiasDetect[Detect Biases]
+    BiasDetect --> FallacyCheck[Check Fallacies]
+    FallacyCheck --> ContradictCheck[Find Contradictions]
+    ContradictCheck --> Response
+    
+    %% Decision Making Path
+    Router --> Decision[make-decision<br/>Multi-Criteria]
+    Decision --> CriteriaWeight[Weight Criteria]
+    CriteriaWeight --> ScoreOptions[Score Options]
+    ScoreOptions --> RankResults[Rank & Recommend]
+    RankResults --> ExportFormat[Generate Export<br/>Obsidian/Memory]
+    ExportFormat --> Response
+    
+    %% Causal Reasoning Path
+    Router --> Causal[build-causal-graph<br/>Causal Modeling]
+    Causal --> ParseObs[Parse Observations]
+    ParseObs --> BuildGraph[Construct Graph]
+    BuildGraph --> Simulate[simulate-intervention]
+    Simulate --> CounterFact[generate-counterfactual]
+    CounterFact --> SQLiteWrite
+    
+    %% Analysis Tools Path
+    Router --> Analysis[Analysis Tools<br/>40+ Tools]
+    Analysis --> Decompose[decompose-problem]
+    Analysis --> Temporal[analyze-temporal]
+    Analysis --> Perspective[analyze-perspectives]
+    Analysis --> Synthesis[synthesize-insights]
+    
+    Decompose --> SQLiteWrite
+    Temporal --> SQLiteWrite
+    Perspective --> SQLiteWrite
+    Synthesis --> SQLiteWrite
+    
+    %% Episodic Memory Path
+    Router --> Episodic[Episodic Memory<br/>Learning System]
+    Episodic --> StartSession[start-reasoning-session]
+    StartSession --> TrackTools[Track Tool Usage]
+    TrackTools --> CompleteSession[complete-reasoning-session]
+    CompleteSession --> AnalyzeTrajectory[analyze-trajectory]
+    AnalyzeTrajectory --> LearnPatterns[Pattern Learning]
+    LearnPatterns --> GetRecommend[get-recommendations]
+    GetRecommend --> Response
+    
+    %% Storage Layer
+    SQLiteWrite --> Tables[(Tables:<br/>thoughts<br/>branches<br/>insights<br/>causal_graphs<br/>beliefs<br/>decisions<br/>trajectories<br/>predictions)]
+    
+    %% Context Bridge Detail
+    SemanticCache --> MatchScore{Similarity > 0.7?}
+    MatchScore -->|Yes| EnrichContext[Enrich with<br/>Related Thoughts]
+    MatchScore -->|No| NoEnrich[No Enrichment]
+    
+    %% Verification System
+    Router --> Verify[verify-thought<br/>Hallucination Check]
+    Verify --> SemanticUncert[Semantic Uncertainty<br/>Analysis]
+    SemanticUncert --> ClaimExtract[Extract Claims]
+    ClaimExtract --> RiskScore[Calculate Risk]
+    RiskScore --> HallucinReport[Generate Report]
+    HallucinReport --> Response
+    
+    %% Integration Patterns
+    Response --> Integration{Multi-Server<br/>Integration}
+    Integration -->|Research| BraveSearch[brave-search]
+    Integration -->|Knowledge| Memory[memory MCP]
+    Integration -->|Documentation| Obsidian[obsidian MCP]
+    Integration -->|Context| Conversation[conversation MCP]
+    
+    style SQLiteWrite fill:#4CAF50
+    style Tables fill:#4CAF50
+    style ContextBridge fill:#2196F3
+    style VoyageAPI fill:#2196F3
+    style SemanticCache fill:#2196F3
+    style Response fill:#FF9800
+    style Start fill:#9C27B0
+    style Integration fill:#E91E63

@@ -1,0 +1,163 @@
+flowchart TB
+    Client([MCP Client<br/>Claude/User]) --> Tools{63 MCP Tools}
+    
+    %% Core Thinking - 4 tools
+    Tools -->|Core 4| Core[Core Thinking]
+    Core --> T1[think]
+    Core --> T2[dual-process-think]
+    Core --> T3[validate]
+    Core --> T4[verify-thought]
+    
+    T1 --> Modes{Thinking Modes}
+    Modes -->|linear| Linear[Sequential Chain]
+    Modes -->|tree| Tree[Multi-Branch]
+    Modes -->|divergent| Divergent[Creative]
+    Modes -->|auto| Auto[Auto-Detect]
+    
+    Linear --> ContextBridge[Context Bridge<br/>Voyage AI Embeddings]
+    Tree --> ContextBridge
+    Divergent --> ContextBridge
+    Auto --> ContextBridge
+    
+    ContextBridge --> Cache[(Semantic Cache<br/>similarity>0.7)]
+    Cache --> DB[(SQLite Database)]
+    
+    %% Navigation - 9 tools
+    Tools -->|Nav 9| Nav[Navigation & History]
+    Nav --> T5[history]
+    Nav --> T6[search]
+    Nav --> T7[list-branches]
+    Nav --> T8[branch-history]
+    Nav --> T9[focus-branch]
+    Nav --> T10[recent-branches]
+    Nav --> T11[create-checkpoint]
+    Nav --> T12[restore-checkpoint]
+    Nav --> T13[list-checkpoints]
+    T5 --> DB
+    T6 --> DB
+    
+    %% Decision Making - 5 tools
+    Tools -->|Decision 5| Decision[Decision Making]
+    Decision --> T14[make-decision]
+    Decision --> T15[identify-optimal-timing]
+    Decision --> T16[compare-time-horizons]
+    Decision --> T17[analyze-decision-timing]
+    Decision --> T18[analyze-temporal]
+    T14 --> DB
+    
+    %% Problem Analysis - 6 tools
+    Tools -->|Analysis 6| Analysis[Problem Analysis]
+    Analysis --> T19[decompose-problem]
+    Analysis --> T20[analyze-perspectives]
+    Analysis --> T21[analyze-correlation-vs-causation]
+    Analysis --> T22[detect-blind-spots]
+    Analysis --> T23[self-evaluate]
+    Analysis --> T24[decompose-argument]
+    T19 --> DB
+    
+    %% Causal Reasoning - 6 tools
+    Tools -->|Causal 6| Causal[Causal Reasoning]
+    Causal --> T25[build-causal-graph]
+    Causal --> T26[get-causal-graph]
+    Causal --> T27[simulate-intervention]
+    Causal --> T28[generate-counterfactual]
+    Causal --> T29[analyze-temporal-causal-effects]
+    Causal --> T30[process-evidence-pipeline]
+    T25 --> DB
+    T26 --> DB
+    
+    %% Logic & Validation - 7 tools
+    Tools -->|Logic 7| Logic[Logic & Validation]
+    Logic --> T31[check-syntax]
+    Logic --> T32[check-constraints]
+    Logic --> T33[prove]
+    Logic --> T34[prove-theorem]
+    Logic --> T35[detect-contradictions]
+    Logic --> T36[detect-biases]
+    Logic --> T37[detect-fallacies]
+    
+    %% Evidence & Reasoning - 6 tools
+    Tools -->|Evidence 6| Evidence[Evidence & Reasoning]
+    Evidence --> T38[assess-evidence]
+    Evidence --> T39[probabilistic-reasoning]
+    Evidence --> T40[sensitivity-analysis]
+    Evidence --> T41[generate-hypotheses]
+    Evidence --> T42[evaluate-hypotheses]
+    Evidence --> T43[generate-counter-arguments]
+    T38 --> DB
+    
+    %% Synthesis & Integration - 5 tools
+    Tools -->|Synthesis 5| Synthesis[Synthesis & Integration]
+    Synthesis --> T44[synthesize-insights]
+    Synthesis --> T45[detect-emergent-patterns]
+    Synthesis --> T46[perform-cbr-cycle]
+    Synthesis --> T47[retrieve-similar-cases]
+    Synthesis --> T48[find-analogy]
+    Synthesis --> T49[apply-analogy]
+    T46 --> DB
+    
+    %% Episodic Memory - 5 tools
+    Tools -->|Memory 5| Memory[Episodic Memory & Learning]
+    Memory --> T50[start-reasoning-session]
+    Memory --> T51[complete-reasoning-session]
+    Memory --> T52[analyze-trajectory]
+    Memory --> T53[search-trajectories]
+    Memory --> T54[get-recommendations]
+    
+    T50 --> TrajectoryDB[(Trajectory DB<br/>Pattern Learning)]
+    T51 --> TrajectoryDB
+    TrajectoryDB --> T54
+    
+    %% Confidence Calibration - 3 tools
+    Tools -->|Calibration 3| Calibration[Confidence Calibration]
+    Calibration --> T55[record-prediction]
+    Calibration --> T56[record-outcome]
+    Calibration --> T57[get-calibration-report]
+    T55 --> DB
+    T56 --> DB
+    
+    %% Workflow Management - 4 tools
+    Tools -->|Workflow 4| Workflow[Workflow Management]
+    Workflow --> T58[register-workflow]
+    Workflow --> T59[list-workflows]
+    Workflow --> T60[execute-workflow]
+    Workflow --> T61[list-integration-patterns]
+    
+    %% System Utilities - 2 tools
+    Tools -->|System 2| System[System Utilities]
+    System --> T62[get-metrics]
+    System --> T63[get-hallucination-report]
+    
+    %% Database Tables
+    DB --> Tables{8 Tables}
+    Tables --> TBL1[thoughts]
+    Tables --> TBL2[branches]
+    Tables --> TBL3[insights]
+    Tables --> TBL4[causal_graphs]
+    Tables --> TBL5[beliefs]
+    Tables --> TBL6[decisions]
+    Tables --> TBL7[trajectories]
+    Tables --> TBL8[predictions]
+    
+    %% Response Flow
+    DB --> Response([Return Result<br/>+ Metadata])
+    Response --> Meta{Metadata}
+    Meta --> Suggest[Suggested Next Tools]
+    Meta --> Actions[Action Recommendations]
+    Meta --> Export[Export Formats]
+    
+    %% Multi-Server Integration
+    Export -->|brave-search| Research[Web Research]
+    Export -->|memory| KG[Knowledge Graph]
+    Export -->|obsidian| Docs[Documentation]
+    Export -->|conversation| Context[Past Context]
+    
+    %% Styling
+    style DB fill:#4CAF50
+    style Tables fill:#4CAF50
+    style ContextBridge fill:#2196F3
+    style Cache fill:#2196F3
+    style Response fill:#FF9800
+    style Client fill:#9C27B0
+    style TrajectoryDB fill:#9C27B0
+    style Tools fill:#E91E63

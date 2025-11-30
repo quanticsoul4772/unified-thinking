@@ -1,0 +1,130 @@
+flowchart TB
+    Client([MCP Client<br/>Claude/User]) --> ToolCall{54 MCP Tools}
+    
+    %% Core Thinking Tools
+    ToolCall -->|Core 4 tools| ThinkEngine[Thinking Engine]
+    ThinkEngine --> Think[think]
+    ThinkEngine --> DualProcess[dual-process-think]
+    ThinkEngine --> Validate[validate]
+    ThinkEngine --> Verify[verify-thought]
+    
+    Think --> ModeRouter{Mode?}
+    ModeRouter -->|linear| LinearMode[Sequential Chain]
+    ModeRouter -->|tree| TreeMode[Multi-Branch]
+    ModeRouter -->|divergent| DivergentMode[Creative]
+    ModeRouter -->|auto| AutoMode[Auto-Detect]
+    
+    %% Context Bridge
+    LinearMode --> ContextBridge[Context Bridge]
+    TreeMode --> ContextBridge
+    DivergentMode --> ContextBridge
+    AutoMode --> ContextBridge
+    
+    ContextBridge --> Voyage[Voyage AI<br/>Semantic Embeddings]
+    Voyage --> Cache[(Semantic Cache<br/>100 items)]
+    Cache -->|similarity>0.7| Enrich[Enrich Context]
+    
+    %% Storage
+    Enrich --> Store[(SQLite Database)]
+    Store --> Tables{8 Tables}
+    Tables --> T1[thoughts]
+    Tables --> T2[branches]
+    Tables --> T3[insights]
+    Tables --> T4[causal_graphs]
+    Tables --> T5[beliefs]
+    Tables --> T6[decisions]
+    Tables --> T7[trajectories]
+    Tables --> T8[predictions]
+    
+    %% Decision Making Tools
+    ToolCall -->|Decision 3 tools| DecisionEngine[Decision Engine]
+    DecisionEngine --> MakeDecision[make-decision]
+    DecisionEngine --> OptimalTiming[identify-optimal-timing]
+    DecisionEngine --> CompareHorizons[compare-time-horizons]
+    MakeDecision --> Store
+    
+    %% Problem Analysis Tools
+    ToolCall -->|Analysis 6 tools| AnalysisEngine[Analysis Engine]
+    AnalysisEngine --> Decompose[decompose-problem]
+    AnalysisEngine --> Perspectives[analyze-perspectives]
+    AnalysisEngine --> Temporal[analyze-temporal]
+    AnalysisEngine --> Correlation[analyze-correlation-vs-causation]
+    AnalysisEngine --> BlindSpots[detect-blind-spots]
+    AnalysisEngine --> SelfEval[self-evaluate]
+    Decompose --> Store
+    
+    %% Causal Reasoning Tools
+    ToolCall -->|Causal 4 tools| CausalEngine[Causal Engine]
+    CausalEngine --> BuildGraph[build-causal-graph]
+    CausalEngine --> GetGraph[get-causal-graph]
+    CausalEngine --> Simulate[simulate-intervention]
+    CausalEngine --> Counterfactual[generate-counterfactual]
+    BuildGraph --> Store
+    
+    %% Logic & Validation Tools
+    ToolCall -->|Logic 6 tools| LogicEngine[Logic Engine]
+    LogicEngine --> Syntax[check-syntax]
+    LogicEngine --> Constraints[check-constraints]
+    LogicEngine --> Prove[prove]
+    LogicEngine --> Theorem[prove-theorem]
+    LogicEngine --> Contradictions[detect-contradictions]
+    LogicEngine --> Biases[detect-biases]
+    
+    %% Evidence & Reasoning Tools
+    ToolCall -->|Evidence 5 tools| EvidenceEngine[Evidence Engine]
+    EvidenceEngine --> Assess[assess-evidence]
+    EvidenceEngine --> Probabilistic[probabilistic-reasoning]
+    EvidenceEngine --> Sensitivity[sensitivity-analysis]
+    EvidenceEngine --> GenHypo[generate-hypotheses]
+    EvidenceEngine --> EvalHypo[evaluate-hypotheses]
+    
+    %% Episodic Memory Tools
+    ToolCall -->|Memory 5 tools| EpisodicEngine[Episodic Memory]
+    EpisodicEngine --> StartSession[start-reasoning-session]
+    EpisodicEngine --> CompleteSession[complete-reasoning-session]
+    EpisodicEngine --> AnalyzeTrajectory[analyze-trajectory]
+    EpisodicEngine --> SearchTrajectories[search-trajectories]
+    EpisodicEngine --> GetRecs[get-recommendations]
+    
+    StartSession --> TrackDB[(Trajectory DB)]
+    CompleteSession --> TrackDB
+    TrackDB --> Learning[Pattern Learning]
+    Learning --> GetRecs
+    
+    %% Navigation Tools
+    ToolCall -->|Navigation 9 tools| NavEngine[Navigation]
+    NavEngine --> History[history]
+    NavEngine --> Search[search]
+    NavEngine --> ListBranches[list-branches]
+    NavEngine --> BranchHistory[branch-history]
+    NavEngine --> Focus[focus-branch]
+    NavEngine --> Recent[recent-branches]
+    NavEngine --> Checkpoint[create-checkpoint]
+    NavEngine --> Restore[restore-checkpoint]
+    NavEngine --> ListCheckpoints[list-checkpoints]
+    
+    History --> Store
+    Search --> Store
+    
+    %% Response Flow
+    Store --> Response([Return Result])
+    Response --> Metadata{Include Metadata}
+    Metadata --> Suggestions[Suggested Next Tools]
+    Metadata --> Actions[Action Recommendations]
+    Metadata --> Exports[Export Formats]
+    
+    %% Multi-Server Integration
+    Exports -->|brave-search| Research[Web Research]
+    Exports -->|memory| KnowledgeGraph[Knowledge Graph]
+    Exports -->|obsidian| Documentation[Documentation]
+    Exports -->|conversation| Context[Past Context]
+    
+    style Store fill:#4CAF50
+    style Tables fill:#4CAF50
+    style ContextBridge fill:#2196F3
+    style Voyage fill:#2196F3
+    style Cache fill:#2196F3
+    style Response fill:#FF9800
+    style Client fill:#9C27B0
+    style TrackDB fill:#9C27B0
+    style Learning fill:#9C27B0

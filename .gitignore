@@ -55,3 +55,7 @@ docs/fixes/
 gosec-report*.json
 gosec*.json
 *-security-report.json
+
+# Generated documentation images (regenerate from .mmd source files)
+*.png
+*.svg
