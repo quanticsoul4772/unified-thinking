@@ -12,11 +12,11 @@ import (
 
 // RLExecutor executes problems with Thompson Sampling RL tracking
 type RLExecutor struct {
-	storage           storage.Storage
-	rlStorage         RLStorage
-	outcomeThreshold  float64 // Confidence threshold for success
-	trackOutcomes     bool    // Whether to record outcomes
-	strategyID        string  // Last selected strategy ID
+	storage            storage.Storage
+	rlStorage          RLStorage
+	outcomeThreshold   float64 // Confidence threshold for success
+	trackOutcomes      bool    // Whether to record outcomes
+	strategyID         string  // Last selected strategy ID
 	strategySelections map[string]int
 	strategySuccesses  map[string]int
 }

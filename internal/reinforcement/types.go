@@ -15,8 +15,8 @@ type Strategy struct {
 	IsActive    bool                   `json:"is_active"`
 
 	// Thompson Sampling state
-	Alpha          float64 `json:"alpha"`           // Successes + 1
-	Beta           float64 `json:"beta"`            // Failures + 1
+	Alpha          float64 `json:"alpha"` // Successes + 1
+	Beta           float64 `json:"beta"`  // Failures + 1
 	TotalTrials    int     `json:"total_trials"`
 	TotalSuccesses int     `json:"total_successes"`
 }

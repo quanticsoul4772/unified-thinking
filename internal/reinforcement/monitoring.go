@@ -8,17 +8,17 @@ import (
 
 // PerformanceMetrics aggregates strategy performance data
 type PerformanceMetrics struct {
-	StrategyID       string
-	StrategyName     string
-	Mode             string
-	TotalTrials      int
-	TotalSuccesses   int
-	SuccessRate      float64
-	Alpha            float64
-	Beta             float64
-	ExpectedRate     float64  // E[Beta(α,β)] = α/(α+β)
-	ConvergenceGap   float64  // |ExpectedRate - EmpiricalRate|
-	LastUpdated      int64
+	StrategyID     string
+	StrategyName   string
+	Mode           string
+	TotalTrials    int
+	TotalSuccesses int
+	SuccessRate    float64
+	Alpha          float64
+	Beta           float64
+	ExpectedRate   float64 // E[Beta(α,β)] = α/(α+β)
+	ConvergenceGap float64 // |ExpectedRate - EmpiricalRate|
+	LastUpdated    int64
 }
 
 // ComputePerformanceMetrics calculates comprehensive metrics for a strategy
@@ -51,12 +51,12 @@ func (pm *PerformanceMetrics) IsConverged(threshold float64) bool {
 
 // ExplorationMetrics tracks exploration/exploitation balance
 type ExplorationMetrics struct {
-	TotalSelections     int
-	GreedySelections    int
-	ExplorationCount    int
-	ExplorationRate     float64
-	StrategyDiversity   float64 // Shannon entropy
-	UniqueStrategies    int
+	TotalSelections   int
+	GreedySelections  int
+	ExplorationCount  int
+	ExplorationRate   float64
+	StrategyDiversity float64 // Shannon entropy
+	UniqueStrategies  int
 }
 
 // ComputeExplorationMetrics calculates exploration metrics
@@ -120,7 +120,7 @@ type LearningMetrics struct {
 	TotalTrials         int
 	LearningRate        float64 // Improvement per trial
 	HasConverged        bool
-	Trend               string  // "improving", "declining", "stable"
+	Trend               string // "improving", "declining", "stable"
 }
 
 // ComputeLearningMetrics calculates learning progress metrics

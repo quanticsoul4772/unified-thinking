@@ -43,11 +43,11 @@ func TestComputePerformanceMetrics(t *testing.T) {
 // TestIsConverged tests convergence detection
 func TestIsConverged(t *testing.T) {
 	tests := []struct {
-		name       string
-		trials     int
-		gap        float64
-		threshold  float64
-		expected   bool
+		name      string
+		trials    int
+		gap       float64
+		threshold float64
+		expected  bool
 	}{
 		{"converged_sufficient_trials", 50, 0.03, 0.05, true},
 		{"not_converged_large_gap", 50, 0.15, 0.05, false},

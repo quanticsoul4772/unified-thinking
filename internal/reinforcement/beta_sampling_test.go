@@ -171,10 +171,10 @@ func TestBetaMode(t *testing.T) {
 		beta  float64
 		want  float64
 	}{
-		{alpha: 5, beta: 2, want: 4.0 / 5.0},   // (5-1)/(5+2-2) = 0.8
-		{alpha: 2, beta: 5, want: 1.0 / 5.0},   // (2-1)/(2+5-2) = 0.2
-		{alpha: 1, beta: 1, want: -1},          // No mode
-		{alpha: 0.5, beta: 2, want: -1},        // No mode
+		{alpha: 5, beta: 2, want: 4.0 / 5.0}, // (5-1)/(5+2-2) = 0.8
+		{alpha: 2, beta: 5, want: 1.0 / 5.0}, // (2-1)/(2+5-2) = 0.2
+		{alpha: 1, beta: 1, want: -1},        // No mode
+		{alpha: 0.5, beta: 2, want: -1},      // No mode
 	}
 
 	for _, tt := range tests {

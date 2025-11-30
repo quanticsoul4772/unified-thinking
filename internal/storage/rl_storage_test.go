@@ -201,12 +201,12 @@ func TestRLStorage_GetStrategyPerformance(t *testing.T) {
 	defer store.Close()
 
 	// Record some outcomes
-	store.IncrementThompsonAlpha("strategy_linear")   // 1 success
-	store.IncrementThompsonAlpha("strategy_linear")   // 2 successes
-	store.IncrementThompsonBeta("strategy_linear")    // 1 failure
-	store.IncrementThompsonAlpha("strategy_tree")     // 1 success
-	store.IncrementThompsonBeta("strategy_tree")      // 1 failure
-	store.IncrementThompsonBeta("strategy_tree")      // 2 failures
+	store.IncrementThompsonAlpha("strategy_linear") // 1 success
+	store.IncrementThompsonAlpha("strategy_linear") // 2 successes
+	store.IncrementThompsonBeta("strategy_linear")  // 1 failure
+	store.IncrementThompsonAlpha("strategy_tree")   // 1 success
+	store.IncrementThompsonBeta("strategy_tree")    // 1 failure
+	store.IncrementThompsonBeta("strategy_tree")    // 2 failures
 
 	// Get performance
 	perf, err := store.GetRLStrategyPerformance()

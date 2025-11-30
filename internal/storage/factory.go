@@ -19,8 +19,10 @@ func NewStorage(cfg Config) (Storage, error) {
 		log.Printf("Initializing SQLite storage at %s", cfg.SQLitePath)
 		sqliteStore, err := NewSQLiteStorage(cfg.SQLitePath, cfg.SQLiteTimeout)
 		if err != nil {
+			log.Printf("ERROR: SQLite initialization FAILED: %v", err)
 			return nil, fmt.Errorf("sqlite initialization failed: %w", err)
 		}
+		log.Println("SUCCESS: SQLite storage initialized - type is *storage.SQLiteStorage")
 		return sqliteStore, nil
 
 	default:

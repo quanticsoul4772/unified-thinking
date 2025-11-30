@@ -10,10 +10,10 @@ func TestThompsonSelector_AddStrategy(t *testing.T) {
 	ts := NewThompsonSelector(42)
 
 	strategy := &Strategy{
-		ID:          "test_strategy",
-		Name:        "Test Strategy",
-		Mode:        "linear",
-		IsActive:    true,
+		ID:       "test_strategy",
+		Name:     "Test Strategy",
+		Mode:     "linear",
+		IsActive: true,
 	}
 
 	ts.AddStrategy(strategy)
