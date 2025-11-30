@@ -57,6 +57,9 @@ func (e *DirectExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result
 		return nil, fmt.Errorf("evaluation failed: %w", err)
 	}
 
+	// Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+	tokens := estimateTokens(content) + estimateTokens(response)
+
 	result := &Result{
 		ProblemID:  problem.ID,
 		Correct:    correct,
@@ -65,9 +68,16 @@ func (e *DirectExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result
 		Latency:    latency,
 		Mode:       string(thought.Mode),
 		Response:   response,
+		Tokens:     tokens,
 	}
 
 	return result, nil
+}
+
+// estimateTokens provides rough token count estimation
+// Uses approximation: 1 token ≈ 4 characters (GPT tokenization average)
+func estimateTokens(text string) int {
+	return len(text) / 4
 }
 
 // MCPExecutor executes problems via MCP protocol (for integration testing)
@@ -169,6 +179,9 @@ func (e *MCPExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result, e
 		return nil, fmt.Errorf("evaluation failed: %w", err)
 	}
 
+	// Estimate tokens from input and response
+	tokens := estimateTokens(content) + estimateTokens(responseText)
+
 	result := &Result{
 		ProblemID:  problem.ID,
 		Correct:    correct,
@@ -177,6 +190,7 @@ func (e *MCPExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result, e
 		Latency:    latency,
 		Mode:       thinkMode,
 		Response:   responseText,
+		Tokens:     tokens,
 		Metadata: map[string]interface{}{
 			"thought_id": thoughtID,
 		},

@@ -43,7 +43,7 @@ func TestProbabilisticReasoning(t *testing.T) {
 		latencyResults[i] = evaluators.LatencyResult{
 			ProblemID: r.ProblemID,
 			Latency:   r.Latency,
-			Tokens:    0, // TODO: Track tokens in Phase 3
+			Tokens:    r.Tokens,
 		}
 	}
 	efficiency := evaluators.ComputeEfficiency(latencyResults)
@@ -55,6 +55,8 @@ func TestProbabilisticReasoning(t *testing.T) {
 	t.Logf("P95 Latency: %v", efficiency.P95Latency)
 	t.Logf("P99 Latency: %v", efficiency.P99Latency)
 	t.Logf("Throughput: %.2f problems/sec", efficiency.ProblemsPerSec)
+	t.Logf("Total Tokens: %d", efficiency.TotalTokens)
+	t.Logf("Avg Tokens: %.1f", efficiency.AvgTokens)
 
 	// Show individual results for failed problems
 	t.Logf("\nFailed Problems:")

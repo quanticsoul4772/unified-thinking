@@ -21,7 +21,8 @@ type Result struct {
 	Score      float64                `json:"score"`      // 0.0 to 1.0
 	Confidence float64                `json:"confidence"` // Reported by system
 	Latency    time.Duration          `json:"latency"`
-	Mode       string                 `json:"mode"` // Which thinking mode was used
+	Mode       string                 `json:"mode"`   // Which thinking mode was used
+	Tokens     int                    `json:"tokens"` // Estimated token count
 	Response   string                 `json:"response"`
 	Error      string                 `json:"error,omitempty"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
