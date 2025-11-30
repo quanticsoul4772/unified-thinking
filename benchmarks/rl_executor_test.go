@@ -155,6 +155,9 @@ func TestRLExecutor_Stats(t *testing.T) {
 		t.Errorf("Expected 3 outcomes, got %d", len(mockRL.outcomes))
 	}
 
+	// Verify we have successes tracked
+	_ = successes // Used below after reset
+
 	// Test reset
 	executor.ResetStats()
 	selections, successes = executor.GetStrategyStats()

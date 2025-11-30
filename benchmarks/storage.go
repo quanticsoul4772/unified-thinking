@@ -72,7 +72,9 @@ func (s *BenchmarkStorage) StoreBenchmarkRun(run *BenchmarkRun) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback() // Ignore error - commit might have happened
+	}()
 
 	// Calculate total tokens
 	totalTokens := 0

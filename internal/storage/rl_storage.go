@@ -94,7 +94,9 @@ func (s *SQLiteStorage) GetAllRLStrategies() ([]*reinforcement.Strategy, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query strategies: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	var strategies []*reinforcement.Strategy
 	for rows.Next() {
@@ -208,7 +210,9 @@ func (s *SQLiteStorage) GetRLStrategyPerformance() ([]*reinforcement.Strategy, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to query performance: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	var strategies []*reinforcement.Strategy
 	for rows.Next() {
