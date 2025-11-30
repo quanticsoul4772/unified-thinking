@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -121,10 +122,18 @@ func NewMCPClient(serverPath string, env []string, configs ...Config) (*MCPClien
 		return nil, fmt.Errorf("server path cannot be empty")
 	}
 
-	// Check if server binary exists
-	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("server binary not found: %s", serverPath)
+	// Resolve to absolute path if relative
+	absPath, err := filepath.Abs(serverPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve absolute path: %w", err)
 	}
+
+	// Check if server binary exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("server binary not found: %s", absPath)
+	}
+
+	serverPath = absPath
 
 	// Use provided config or default
 	config := DefaultConfig()
@@ -184,13 +193,13 @@ func (c *MCPClient) Start() error {
 
 	// Wait for server to be ready
 	if err := c.waitForReady(c.config.ReadyTimeout); err != nil {
-		c.Close()
+		_ = c.Close() // Best effort cleanup
 		return fmt.Errorf("server not ready: %w", err)
 	}
 
 	// Perform MCP protocol handshake
 	if err := c.Initialize(); err != nil {
-		c.Close()
+		_ = c.Close() // Best effort cleanup
 		return fmt.Errorf("MCP initialization failed: %w", err)
 	}
 
@@ -283,7 +292,7 @@ func (c *MCPClient) Initialize() error {
 // monitorProcess watches for process exit (P2 #10: cancels context on exit)
 func (c *MCPClient) monitorProcess() {
 	go func() {
-		c.cmd.Wait()
+		_ = c.cmd.Wait() // Ignore error - just monitoring for exit
 		c.cancel() // Cancel context when process exits
 		close(c.done)
 	}()
@@ -535,7 +544,7 @@ func (c *MCPClient) Close() error {
 	}
 
 	if c.stdin != nil {
-		c.stdin.Close()
+		_ = c.stdin.Close() // Best effort cleanup
 	}
 
 	if c.cmd == nil || c.cmd.Process == nil {
@@ -559,7 +568,7 @@ func (c *MCPClient) Close() error {
 		return nil
 	case <-time.After(c.config.CloseTimeout):
 		// Force kill after timeout
-		c.cmd.Process.Kill()
+		_ = c.cmd.Process.Kill()
 		return fmt.Errorf("forced kill after timeout")
 	}
 }
