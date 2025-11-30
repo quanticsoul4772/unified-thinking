@@ -1489,8 +1489,14 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 
 	// Include Thompson Sampling RL metrics if SQLite storage is available
 	if sqliteStore, ok := s.storage.(*storage.SQLiteStorage); ok {
+		log.Println("[DEBUG] SQLite storage detected, querying RL strategies...")
 		strategies, err := sqliteStore.GetRLStrategyPerformance()
-		if err == nil && len(strategies) > 0 {
+		if err != nil {
+			log.Printf("[ERROR] Failed to get RL strategy performance: %v", err)
+		} else if len(strategies) == 0 {
+			log.Println("[WARNING] No RL strategies found in database")
+		} else {
+			log.Printf("[DEBUG] Found %d RL strategies", len(strategies))
 			rlMetrics := make(map[string]interface{})
 			rlMetrics["enabled"] = true
 			rlMetrics["total_strategies"] = len(strategies)
@@ -1523,7 +1529,10 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 			}
 
 			response.ThompsonSamplingRL = rlMetrics
+			log.Println("[DEBUG] RL metrics added to response")
 		}
+	} else {
+		log.Println("[DEBUG] Not using SQLite storage - RL not available")
 	}
 
 	return &mcp.CallToolResult{
