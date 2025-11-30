@@ -236,6 +236,22 @@ CREATE INDEX IF NOT EXISTS idx_branches_accessed ON branches(last_accessed_at DE
 CREATE INDEX IF NOT EXISTS idx_branches_priority ON branches(priority DESC);
 CREATE INDEX IF NOT EXISTS idx_crossrefs_from ON cross_refs(from_branch);
 CREATE INDEX IF NOT EXISTS idx_crossrefs_to ON cross_refs(to_branch);
+
+-- Seed default Thompson Sampling RL strategies (always run on init)
+INSERT OR IGNORE INTO rl_strategies (id, name, description, mode, parameters, created_at, is_active) VALUES
+('strategy_linear', 'Linear Sequential', 'Step-by-step systematic reasoning', 'linear', '{}', strftime('%s', 'now'), 1),
+('strategy_tree', 'Tree Exploration', 'Multi-branch parallel exploration', 'tree', '{}', strftime('%s', 'now'), 1),
+('strategy_divergent', 'Divergent Creative', 'Creative unconventional thinking', 'divergent', '{"force_rebellion": false}', strftime('%s', 'now'), 1),
+('strategy_reflection', 'Reflective Analysis', 'Metacognitive reflection', 'reflection', '{}', strftime('%s', 'now'), 1),
+('strategy_backtracking', 'Checkpoint Backtracking', 'Iterative refinement with rollback', 'backtracking', '{}', strftime('%s', 'now'), 1);
+
+-- Initialize Thompson state with uniform priors (always run on init)
+INSERT OR IGNORE INTO rl_thompson_state (strategy_id, alpha, beta, total_trials, total_successes, last_updated) VALUES
+('strategy_linear', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+('strategy_tree', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+('strategy_divergent', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+('strategy_reflection', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+('strategy_backtracking', 1.0, 1.0, 0, 0, strftime('%s', 'now'));
 `
 
 // initializeSchema creates all tables and indexes
