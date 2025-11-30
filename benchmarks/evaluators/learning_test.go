@@ -7,19 +7,19 @@ import (
 
 func TestComputeLearning(t *testing.T) {
 	tests := []struct {
-		name                   string
-		results                []IterationResult
-		wantInitial            float64
-		wantFinal              float64
-		wantImprovement        float64
+		name                    string
+		results                 []IterationResult
+		wantInitial             float64
+		wantFinal               float64
+		wantImprovement         float64
 		wantSignificantLearning bool
 	}{
 		{
-			name:                   "empty results",
-			results:                []IterationResult{},
-			wantInitial:            0.0,
-			wantFinal:              0.0,
-			wantImprovement:        0.0,
+			name:                    "empty results",
+			results:                 []IterationResult{},
+			wantInitial:             0.0,
+			wantFinal:               0.0,
+			wantImprovement:         0.0,
 			wantSignificantLearning: false,
 		},
 		{
@@ -29,9 +29,9 @@ func TestComputeLearning(t *testing.T) {
 				{Iteration: 2, Correct: 5, Total: 10, Accuracy: 0.5},
 				{Iteration: 3, Correct: 5, Total: 10, Accuracy: 0.5},
 			},
-			wantInitial:            0.5,
-			wantFinal:              0.5,
-			wantImprovement:        0.0,
+			wantInitial:             0.5,
+			wantFinal:               0.5,
+			wantImprovement:         0.0,
 			wantSignificantLearning: false,
 		},
 		{
@@ -41,9 +41,9 @@ func TestComputeLearning(t *testing.T) {
 				{Iteration: 2, Correct: 5, Total: 10, Accuracy: 0.5},
 				{Iteration: 3, Correct: 8, Total: 10, Accuracy: 0.8},
 			},
-			wantInitial:            0.3,
-			wantFinal:              0.8,
-			wantImprovement:        0.5,
+			wantInitial:             0.3,
+			wantFinal:               0.8,
+			wantImprovement:         0.5,
 			wantSignificantLearning: true,
 		},
 		{
@@ -52,9 +52,9 @@ func TestComputeLearning(t *testing.T) {
 				{Iteration: 1, Correct: 5, Total: 10, Accuracy: 0.5},
 				{Iteration: 2, Correct: 6, Total: 10, Accuracy: 0.6},
 			},
-			wantInitial:            0.5,
-			wantFinal:              0.6,
-			wantImprovement:        0.1,
+			wantInitial:             0.5,
+			wantFinal:               0.6,
+			wantImprovement:         0.1,
 			wantSignificantLearning: false, // Will be slightly below due to float precision
 		},
 		{
@@ -64,9 +64,9 @@ func TestComputeLearning(t *testing.T) {
 				{Iteration: 2, Correct: 5, Total: 10, Accuracy: 0.5},
 				{Iteration: 3, Correct: 3, Total: 10, Accuracy: 0.3},
 			},
-			wantInitial:            0.8,
-			wantFinal:              0.3,
-			wantImprovement:        -0.5,
+			wantInitial:             0.8,
+			wantFinal:               0.3,
+			wantImprovement:         -0.5,
 			wantSignificantLearning: false,
 		},
 	}

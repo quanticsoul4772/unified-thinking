@@ -293,7 +293,7 @@ func (c *MCPClient) Initialize() error {
 func (c *MCPClient) monitorProcess() {
 	go func() {
 		_ = c.cmd.Wait() // Ignore error - just monitoring for exit
-		c.cancel() // Cancel context when process exits
+		c.cancel()       // Cancel context when process exits
 		close(c.done)
 	}()
 }

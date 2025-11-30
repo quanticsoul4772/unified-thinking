@@ -8,12 +8,12 @@ func TestExactMatchEvaluator_Evaluate(t *testing.T) {
 	eval := NewExactMatchEvaluator()
 
 	tests := []struct {
-		name         string
-		response     interface{}
-		expected     interface{}
-		wantCorrect  bool
-		wantScore    float64
-		wantErr      bool
+		name        string
+		response    interface{}
+		expected    interface{}
+		wantCorrect bool
+		wantScore   float64
+		wantErr     bool
 	}{
 		{
 			name:        "exact match - same case",
