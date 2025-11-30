@@ -61,3 +61,7 @@ gosec*.json
 # Generated documentation images (regenerate from .mmd source files)
 *.png
 *.svg
+
+# Benchmark test databases
+test_*.db
+benchmarks/results/*.db
