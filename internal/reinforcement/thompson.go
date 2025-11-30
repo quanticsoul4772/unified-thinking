@@ -42,10 +42,10 @@ func (ts *ThompsonSelector) AddStrategy(strategy *Strategy) {
 // SelectStrategy uses Thompson Sampling to select the best strategy
 //
 // Algorithm:
-// 1. For each strategy, sample θ ~ Beta(α, β)
-// 2. Select strategy with highest sampled θ
-// 3. This balances exploration (uncertain strategies get chances) and
-//    exploitation (proven strategies selected more often)
+//  1. For each strategy, sample θ ~ Beta(α, β)
+//  2. Select strategy with highest sampled θ
+//  3. This balances exploration (uncertain strategies get chances) and
+//     exploitation (proven strategies selected more often)
 func (ts *ThompsonSelector) SelectStrategy(ctx ProblemContext) (*Strategy, error) {
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()

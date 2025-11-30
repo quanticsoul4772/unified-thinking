@@ -1448,14 +1448,14 @@ func convertCrossRefs(input []CrossRefInput) []modes.CrossRefInput {
 }
 
 type MetricsResponse struct {
-	TotalThoughts     int                    `json:"total_thoughts"`
-	TotalBranches     int                    `json:"total_branches"`
-	TotalInsights     int                    `json:"total_insights"`
-	TotalValidations  int                    `json:"total_validations"`
-	ThoughtsByMode    map[string]int         `json:"thoughts_by_mode"`
-	AverageConfidence float64                `json:"average_confidence"`
-	ContextBridge     map[string]interface{} `json:"context_bridge,omitempty"`
-	Probabilistic     map[string]interface{} `json:"probabilistic,omitempty"`
+	TotalThoughts      int                    `json:"total_thoughts"`
+	TotalBranches      int                    `json:"total_branches"`
+	TotalInsights      int                    `json:"total_insights"`
+	TotalValidations   int                    `json:"total_validations"`
+	ThoughtsByMode     map[string]int         `json:"thoughts_by_mode"`
+	AverageConfidence  float64                `json:"average_confidence"`
+	ContextBridge      map[string]interface{} `json:"context_bridge,omitempty"`
+	Probabilistic      map[string]interface{} `json:"probabilistic,omitempty"`
 	ThompsonSamplingRL map[string]interface{} `json:"thompson_sampling_rl,omitempty"`
 }
 
