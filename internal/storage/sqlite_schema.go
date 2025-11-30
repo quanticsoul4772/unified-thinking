@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 7 // Updated to add Thompson Sampling RL tables
+const schemaVersion = 8 // Updated to add entity embedding cache for knowledge graphs
 
 // Schema defines the complete database schema
 const schema = `
@@ -226,6 +226,22 @@ END;
 CREATE TRIGGER IF NOT EXISTS thoughts_fts_delete AFTER DELETE ON thoughts BEGIN
     DELETE FROM thoughts_fts WHERE rowid = old.rowid;
 END;
+
+-- Knowledge graph entity embedding cache for semantic search
+CREATE TABLE IF NOT EXISTS entity_embeddings (
+    entity_id TEXT PRIMARY KEY,
+    entity_label TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    embedding BLOB NOT NULL,
+    model TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    dimension INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_entity_embeddings_type ON entity_embeddings(entity_type);
+CREATE INDEX IF NOT EXISTS idx_entity_embeddings_created ON entity_embeddings(created_at DESC);
 
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_thoughts_mode ON thoughts(mode);
@@ -503,6 +519,31 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v6->v7 migration: %w", err)
+		}
+	}
+
+	// Migration from v7 to v8: Add entity embedding cache for knowledge graphs
+	if fromVersion < 8 && toVersion >= 8 {
+		migration := `
+		-- Entity embedding cache for knowledge graph semantic search (v8)
+		CREATE TABLE IF NOT EXISTS entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_entity_embeddings_type ON entity_embeddings(entity_type);
+		CREATE INDEX IF NOT EXISTS idx_entity_embeddings_created ON entity_embeddings(created_at DESC);
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v7->v8 migration: %w", err)
 		}
 	}
 
