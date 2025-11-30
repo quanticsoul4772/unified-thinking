@@ -236,8 +236,11 @@ CREATE INDEX IF NOT EXISTS idx_branches_accessed ON branches(last_accessed_at DE
 CREATE INDEX IF NOT EXISTS idx_branches_priority ON branches(priority DESC);
 CREATE INDEX IF NOT EXISTS idx_crossrefs_from ON cross_refs(from_branch);
 CREATE INDEX IF NOT EXISTS idx_crossrefs_to ON cross_refs(to_branch);
+`
 
--- Seed default Thompson Sampling RL strategies (always run on init)
+// seedData contains initial data that should only be inserted during first-time database creation
+const seedData = `
+-- Seed default Thompson Sampling RL strategies
 INSERT OR IGNORE INTO rl_strategies (id, name, description, mode, parameters, created_at, is_active) VALUES
 ('strategy_linear', 'Linear Sequential', 'Step-by-step systematic reasoning', 'linear', '{}', strftime('%s', 'now'), 1),
 ('strategy_tree', 'Tree Exploration', 'Multi-branch parallel exploration', 'tree', '{}', strftime('%s', 'now'), 1),
@@ -245,7 +248,7 @@ INSERT OR IGNORE INTO rl_strategies (id, name, description, mode, parameters, cr
 ('strategy_reflection', 'Reflective Analysis', 'Metacognitive reflection', 'reflection', '{}', strftime('%s', 'now'), 1),
 ('strategy_backtracking', 'Checkpoint Backtracking', 'Iterative refinement with rollback', 'backtracking', '{}', strftime('%s', 'now'), 1);
 
--- Initialize Thompson state with uniform priors (always run on init)
+-- Initialize Thompson state with uniform priors
 INSERT OR IGNORE INTO rl_thompson_state (strategy_id, alpha, beta, total_trials, total_successes, last_updated) VALUES
 ('strategy_linear', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
 ('strategy_tree', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
@@ -256,7 +259,7 @@ INSERT OR IGNORE INTO rl_thompson_state (strategy_id, alpha, beta, total_trials,
 
 // initializeSchema creates all tables and indexes
 func initializeSchema(db *sql.DB) error {
-	// Execute schema
+	// Execute schema (tables, indexes, views only - no data inserts)
 	if _, err := db.Exec(schema); err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
@@ -265,10 +268,15 @@ func initializeSchema(db *sql.DB) error {
 	var currentVersion int
 	err := db.QueryRow("SELECT value FROM schema_metadata WHERE key = 'version'").Scan(&currentVersion)
 	if err == sql.ErrNoRows {
-		// First time initialization
+		// First time initialization - set version and seed initial data
 		_, err = db.Exec("INSERT INTO schema_metadata (key, value) VALUES ('version', ?)", schemaVersion)
 		if err != nil {
 			return fmt.Errorf("failed to set schema version: %w", err)
+		}
+
+		// Seed initial data (only runs on first-time database creation)
+		if _, err := db.Exec(seedData); err != nil {
+			return fmt.Errorf("failed to seed initial data: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to query schema version: %w", err)
