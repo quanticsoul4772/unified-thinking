@@ -3,9 +3,13 @@ package modes
 import (
 	"context"
 	"log"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"unified-thinking/internal/embeddings"
+	"unified-thinking/internal/reinforcement"
 	"unified-thinking/internal/types"
 )
 
@@ -37,22 +41,86 @@ var modePrototypes = map[types.ThinkingMode][]string{
 	},
 }
 
-// AutoMode implements automatic mode detection
+// AutoMode implements automatic mode detection with optional Thompson Sampling RL
 type AutoMode struct {
 	linear          *LinearMode
 	tree            *TreeMode
 	divergent       *DivergentMode
 	embedder        embeddings.Embedder
-	prototypeEmbeds map[types.ThinkingMode][]float32 // Averaged prototype embeddings
+	prototypeEmbeds map[types.ThinkingMode][]float32
+
+	// Thompson Sampling RL
+	rlEnabled         bool
+	thompsonSelector  *reinforcement.ThompsonSelector
+	outcomeThreshold  float64                      // Confidence threshold for success (default 0.7)
+	selectedStrategy  *reinforcement.Strategy      // Track last selected strategy for outcome recording
+	storage           RLStorage                    // Storage interface for loading/persisting RL state
+}
+
+// RLStorage defines the interface for RL persistence
+type RLStorage interface {
+	GetAllRLStrategies() ([]*reinforcement.Strategy, error)
+	IncrementThompsonAlpha(strategyID string) error
+	IncrementThompsonBeta(strategyID string) error
+	RecordRLOutcome(outcome *reinforcement.Outcome) error
 }
 
 // NewAutoMode creates a new auto mode detector
 func NewAutoMode(linear *LinearMode, tree *TreeMode, divergent *DivergentMode) *AutoMode {
 	return &AutoMode{
-		linear:    linear,
-		tree:      tree,
-		divergent: divergent,
+		linear:           linear,
+		tree:             tree,
+		divergent:        divergent,
+		outcomeThreshold: 0.7, // Default threshold
 	}
+}
+
+// SetRLStorage enables Thompson Sampling RL by providing storage backend
+func (m *AutoMode) SetRLStorage(storage RLStorage) error {
+	// Check if RL is enabled via environment
+	rlEnabled := os.Getenv("RL_ENABLED")
+	if rlEnabled != "true" && rlEnabled != "1" {
+		log.Println("RL disabled (RL_ENABLED not set to true)")
+		return nil
+	}
+
+	m.storage = storage
+	m.rlEnabled = true
+
+	// Load outcome threshold from environment
+	if thresholdStr := os.Getenv("RL_OUTCOME_THRESHOLD"); thresholdStr != "" {
+		if threshold, err := strconv.ParseFloat(thresholdStr, 64); err == nil {
+			m.outcomeThreshold = threshold
+		}
+	}
+
+	// Initialize Thompson selector
+	m.thompsonSelector = reinforcement.NewThompsonSelectorWithTime()
+
+	// Load strategies from storage
+	strategies, err := storage.GetAllRLStrategies()
+	if err != nil {
+		log.Printf("Warning: failed to load RL strategies: %v", err)
+		// Disable RL if we can't load strategies
+		m.rlEnabled = false
+		return err
+	}
+
+	if len(strategies) == 0 {
+		log.Println("Warning: no RL strategies found in database")
+		m.rlEnabled = false
+		return nil
+	}
+
+	// Register strategies with Thompson selector
+	for _, strategy := range strategies {
+		m.thompsonSelector.AddStrategy(strategy)
+	}
+
+	log.Printf("Thompson Sampling RL enabled with %d strategies (threshold: %.2f)",
+		len(strategies), m.outcomeThreshold)
+
+	return nil
 }
 
 // SetEmbedder sets the embedder for semantic mode detection
@@ -109,8 +177,24 @@ func (m *AutoMode) initializePrototypes() {
 
 // ProcessThought automatically selects the best mode and processes
 func (m *AutoMode) ProcessThought(ctx context.Context, input ThoughtInput) (*ThoughtResult, error) {
+	startTime := time.Now()
+
 	mode := m.detectMode(input)
 
+	// Execute with selected mode
+	result, err := m.executeMode(ctx, mode, input)
+
+	// Record outcome if RL enabled and we have a selected strategy
+	if m.rlEnabled && m.selectedStrategy != nil && result != nil {
+		executionTimeNs := time.Since(startTime).Nanoseconds()
+		m.recordOutcome(input, result, executionTimeNs)
+	}
+
+	return result, err
+}
+
+// executeMode executes the thought with the specified mode
+func (m *AutoMode) executeMode(ctx context.Context, mode types.ThinkingMode, input ThoughtInput) (*ThoughtResult, error) {
 	switch mode {
 	case types.ModeLinear:
 		return m.linear.ProcessThought(ctx, input)
@@ -143,6 +227,15 @@ func (m *AutoMode) detectModeWithConfidence(input ThoughtInput) (types.ThinkingM
 	// Tree structural indicators (checked before keywords to prioritize explicit structure)
 	if input.BranchID != "" || len(input.CrossRefs) > 0 || len(input.KeyPoints) > 0 {
 		return types.ModeTree, 1.0
+	}
+
+	// Use Thompson Sampling RL if enabled
+	if m.rlEnabled && m.thompsonSelector != nil {
+		mode, confidence := m.detectModeRL(input)
+		if mode != "" {
+			return types.ThinkingMode(mode), confidence
+		}
+		// Fall through to semantic/keyword detection if RL fails
 	}
 
 	// Use semantic detection if embedder is available
@@ -179,6 +272,124 @@ func (m *AutoMode) detectModeWithConfidence(input ThoughtInput) (types.ThinkingM
 
 	// Default to linear
 	return types.ModeLinear, 0.5
+}
+
+// detectModeRL uses Thompson Sampling to select mode
+func (m *AutoMode) detectModeRL(input ThoughtInput) (string, float64) {
+	// Determine problem type from content
+	problemType := detectProblemType(input.Content)
+
+	// Create problem context
+	ctx := reinforcement.ProblemContext{
+		Description: input.Content,
+		Type:        problemType,
+	}
+
+	// Let Thompson selector choose strategy
+	strategy, err := m.thompsonSelector.SelectStrategy(ctx)
+	if err != nil {
+		log.Printf("ERROR: Thompson selector failed: %v", err)
+		return "", 0
+	}
+
+	// Store selected strategy for outcome recording
+	m.selectedStrategy = strategy
+
+	// Log selection
+	log.Printf("Thompson selected: %s (α=%.2f, β=%.2f, rate=%.2f)",
+		strategy.Name, strategy.Alpha, strategy.Beta, strategy.SuccessRate())
+
+	// Return mode with high confidence (we trust Thompson)
+	return strategy.Mode, 0.95
+}
+
+// detectProblemType analyzes content to determine problem category
+func detectProblemType(content string) string {
+	lower := strings.ToLower(content)
+
+	// Causal reasoning indicators
+	causalKeywords := []string{"cause", "effect", "intervention", "why", "because", "leads to"}
+	for _, kw := range causalKeywords {
+		if strings.Contains(lower, kw) {
+			return "causal"
+		}
+	}
+
+	// Probabilistic reasoning indicators
+	probKeywords := []string{"probability", "likely", "chance", "uncertain", "odds", "bayesian"}
+	for _, kw := range probKeywords {
+		if strings.Contains(lower, kw) {
+			return "probabilistic"
+		}
+	}
+
+	// Logical reasoning indicators
+	logicKeywords := []string{"if", "then", "therefore", "implies", "conclude", "prove"}
+	for _, kw := range logicKeywords {
+		if strings.Contains(lower, kw) {
+			return "logical"
+		}
+	}
+
+	// Default to general
+	return "general"
+}
+
+// recordOutcome records the execution outcome for Thompson Sampling
+func (m *AutoMode) recordOutcome(input ThoughtInput, result *ThoughtResult, executionTimeNs int64) {
+	if m.storage == nil || m.selectedStrategy == nil {
+		return
+	}
+
+	// Determine success based on confidence threshold
+	success := result.Confidence >= m.outcomeThreshold
+
+	// Update Thompson state in database
+	var err error
+	if success {
+		err = m.storage.IncrementThompsonAlpha(m.selectedStrategy.ID)
+	} else {
+		err = m.storage.IncrementThompsonBeta(m.selectedStrategy.ID)
+	}
+
+	if err != nil {
+		log.Printf("Warning: failed to update Thompson state: %v", err)
+	}
+
+	// Record full outcome for analysis
+	outcome := &reinforcement.Outcome{
+		StrategyID:         m.selectedStrategy.ID,
+		ProblemID:          "", // Could generate from hash of content
+		ProblemType:        detectProblemType(input.Content),
+		ProblemDescription: input.Content,
+		Success:            success,
+		ConfidenceBefore:   input.Confidence,
+		ConfidenceAfter:    result.Confidence,
+		ExecutionTimeNs:    executionTimeNs,
+		TokenCount:         0, // Could estimate from content length
+		Timestamp:          time.Now().Unix(),
+	}
+
+	if err := m.storage.RecordRLOutcome(outcome); err != nil {
+		log.Printf("Warning: failed to record RL outcome: %v", err)
+	}
+
+	// Update in-memory Thompson selector
+	if err := m.thompsonSelector.RecordOutcome(m.selectedStrategy.ID, success); err != nil {
+		log.Printf("Warning: failed to update Thompson selector: %v", err)
+	}
+
+	// Log outcome
+	if success {
+		log.Printf("RL outcome recorded: SUCCESS (confidence %.2f >= %.2f)",
+			result.Confidence, m.outcomeThreshold)
+	} else {
+		log.Printf("RL outcome recorded: FAILURE (confidence %.2f < %.2f)",
+			result.Confidence, m.outcomeThreshold)
+	}
+
+	// Clear selected strategy
+	m.selectedStrategy = nil
 }
 
 // detectModeSemantic uses embeddings to determine the best mode

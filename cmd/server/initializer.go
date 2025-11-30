@@ -68,6 +68,15 @@ func InitializeServer() (*ServerComponents, error) {
 		log.Println("VOYAGE_API_KEY not set, semantic features disabled")
 	}
 
+	// Initialize Thompson Sampling RL if SQLite storage is available
+	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
+		if err := components.AutoMode.SetRLStorage(sqliteStore); err != nil {
+			log.Printf("Warning: failed to initialize Thompson Sampling RL: %v", err)
+		}
+	} else {
+		log.Println("Thompson Sampling RL requires SQLite storage (using in-memory storage)")
+	}
+
 	// Initialize context bridge if SQLite storage is available
 	bridgeConfig := contextbridge.ConfigFromEnv()
 	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
