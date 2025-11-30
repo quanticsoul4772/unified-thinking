@@ -1456,6 +1456,7 @@ type MetricsResponse struct {
 	AverageConfidence float64                `json:"average_confidence"`
 	ContextBridge     map[string]interface{} `json:"context_bridge,omitempty"`
 	Probabilistic     map[string]interface{} `json:"probabilistic,omitempty"`
+	ThompsonSamplingRL map[string]interface{} `json:"thompson_sampling_rl,omitempty"`
 }
 
 type RecentBranchesResponse struct {
@@ -1484,6 +1485,45 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 	// Include probabilistic reasoning metrics
 	if s.probabilisticReasoner != nil {
 		response.Probabilistic = s.probabilisticReasoner.GetMetrics()
+	}
+
+	// Include Thompson Sampling RL metrics if SQLite storage is available
+	if sqliteStore, ok := s.storage.(*storage.SQLiteStorage); ok {
+		strategies, err := sqliteStore.GetRLStrategyPerformance()
+		if err == nil && len(strategies) > 0 {
+			rlMetrics := make(map[string]interface{})
+			rlMetrics["enabled"] = true
+			rlMetrics["total_strategies"] = len(strategies)
+
+			// Build strategy summary
+			strategyList := make([]map[string]interface{}, 0, len(strategies))
+			totalTrials := 0
+			totalSuccesses := 0
+
+			for _, strategy := range strategies {
+				strategyList = append(strategyList, map[string]interface{}{
+					"id":           strategy.ID,
+					"name":         strategy.Name,
+					"mode":         strategy.Mode,
+					"trials":       strategy.TotalTrials,
+					"successes":    strategy.TotalSuccesses,
+					"success_rate": strategy.SuccessRate(),
+					"alpha":        strategy.Alpha,
+					"beta":         strategy.Beta,
+				})
+				totalTrials += strategy.TotalTrials
+				totalSuccesses += strategy.TotalSuccesses
+			}
+
+			rlMetrics["strategies"] = strategyList
+			rlMetrics["total_trials"] = totalTrials
+			rlMetrics["total_successes"] = totalSuccesses
+			if totalTrials > 0 {
+				rlMetrics["overall_success_rate"] = float64(totalSuccesses) / float64(totalTrials)
+			}
+
+			response.ThompsonSamplingRL = rlMetrics
+		}
 	}
 
 	return &mcp.CallToolResult{
