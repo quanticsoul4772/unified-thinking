@@ -213,9 +213,15 @@ help:
 
 # Build server binary for E2E testing
 .PHONY: build-server
+ifeq ($(UNAME_S),Windows)
+build-server:
+	@echo "Building server binary for E2E testing (Windows)..."
+	go build -o unified-thinking-server.exe ./cmd/server
+else
 build-server:
 	@echo "Building server binary for E2E testing..."
 	go build -o unified-thinking-server ./cmd/server
+endif
 
 # Run E2E benchmarks via MCP protocol
 .PHONY: benchmark-e2e

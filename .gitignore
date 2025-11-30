@@ -4,6 +4,8 @@ bin/
 *.dll
 *.so
 *.dylib
+unified-thinking-server
+unified-thinking-server.exe
 
 # Test binary
 *.test

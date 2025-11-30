@@ -3,6 +3,7 @@ package benchmarks
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -14,9 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// getServerPath returns the platform-appropriate server binary path
+func getServerPath() string {
+	if runtime.GOOS == "windows" {
+		return "../unified-thinking-server.exe"
+	}
+	return "../unified-thinking-server"
+}
+
 // Test 1: Basic MCPClient connectivity
 func TestMCPClientStartStop(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	// Skip if server binary not available
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
@@ -39,7 +48,7 @@ func TestMCPClientStartStop(t *testing.T) {
 
 // Test 2: Single think tool call
 func TestMCPClientThinkTool(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -103,7 +112,7 @@ func TestMCPClientThinkTool(t *testing.T) {
 
 // Test 3: Full E2E benchmark suite via MCP
 func TestMCPExecutorE2E(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -159,7 +168,7 @@ func TestMCPExecutorE2E(t *testing.T) {
 
 // Test 4: Performance comparison (Direct vs MCP)
 func TestMCPVsDirectPerformance(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -217,7 +226,7 @@ func TestMCPVsDirectPerformance(t *testing.T) {
 
 // Test 6: Server crash recovery
 func TestMCPExecutorServerCrash(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -264,7 +273,7 @@ func TestMCPExecutorServerCrash(t *testing.T) {
 
 // Test 7: Connection reuse
 func TestMCPExecutorConnectionReuse(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -329,7 +338,7 @@ func avgDuration(durations []time.Duration) time.Duration {
 // Test 8: Concurrent tool calls (P2 #8)
 // Each goroutine creates its own MCP client since stdio isn't thread-safe
 func TestMCPConcurrentCalls(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -397,7 +406,7 @@ func TestMCPConcurrentCalls(t *testing.T) {
 
 // Test 9: Protocol version mismatch (P2 #8)
 func TestMCPProtocolMismatch(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -431,7 +440,7 @@ func TestMCPProtocolMismatch(t *testing.T) {
 
 // Test 10: Timeout behavior (P2 #8)
 func TestMCPExecutorTimeout(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -467,7 +476,7 @@ func TestMCPExecutorTimeout(t *testing.T) {
 // Test 11: Invalid response handling (P2 #8)
 // Note: This tests the client's resilience to unexpected response formats
 func TestMCPExecutorInvalidResponse(t *testing.T) {
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		t.Skip("Server binary not found")
@@ -503,7 +512,7 @@ func FuzzMCPClient(f *testing.F) {
 	f.Add("unicode: 你好世界 🌍", "divergent")
 	f.Add(string(make([]byte, 1000)), "auto")
 
-	serverPath := "../unified-thinking-server"
+	serverPath := getServerPath()
 
 	// Check if server binary exists
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
