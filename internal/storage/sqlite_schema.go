@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const schemaVersion = 6 // Updated to add trajectories table for episodic memory persistence
+const schemaVersion = 7 // Updated to add Thompson Sampling RL tables
 
 // Schema defines the complete database schema
 const schema = `
@@ -142,6 +142,69 @@ CREATE TABLE IF NOT EXISTS trajectories (
 
 -- Index for retrieval
 CREATE INDEX IF NOT EXISTS idx_trajectories_created ON trajectories(created_at DESC);
+
+-- Thompson Sampling RL tables for adaptive mode selection
+-- Strategies: Available reasoning strategies
+CREATE TABLE IF NOT EXISTS rl_strategies (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    mode TEXT NOT NULL,
+    parameters TEXT,
+    created_at INTEGER NOT NULL,
+    is_active INTEGER DEFAULT 1
+);
+
+-- Strategy outcomes: Historical performance data
+CREATE TABLE IF NOT EXISTS rl_strategy_outcomes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    strategy_id TEXT NOT NULL,
+    problem_id TEXT NOT NULL,
+    problem_type TEXT,
+    problem_description TEXT,
+    success INTEGER NOT NULL,
+    confidence_before REAL,
+    confidence_after REAL,
+    execution_time_ns INTEGER,
+    token_count INTEGER,
+    reasoning_path TEXT,
+    timestamp INTEGER NOT NULL,
+    metadata TEXT,
+    FOREIGN KEY (strategy_id) REFERENCES rl_strategies(id)
+);
+
+-- Thompson state: Beta distribution parameters
+CREATE TABLE IF NOT EXISTS rl_thompson_state (
+    strategy_id TEXT PRIMARY KEY,
+    alpha REAL NOT NULL DEFAULT 1.0,
+    beta REAL NOT NULL DEFAULT 1.0,
+    total_trials INTEGER DEFAULT 0,
+    total_successes INTEGER DEFAULT 0,
+    last_updated INTEGER NOT NULL,
+    FOREIGN KEY (strategy_id) REFERENCES rl_strategies(id)
+);
+
+-- Indexes for RL queries
+CREATE INDEX IF NOT EXISTS idx_rl_outcomes_strategy ON rl_strategy_outcomes(strategy_id);
+CREATE INDEX IF NOT EXISTS idx_rl_outcomes_type ON rl_strategy_outcomes(problem_type);
+CREATE INDEX IF NOT EXISTS idx_rl_outcomes_timestamp ON rl_strategy_outcomes(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_rl_outcomes_success ON rl_strategy_outcomes(success);
+
+-- View for strategy performance monitoring
+CREATE VIEW IF NOT EXISTS rl_strategy_performance AS
+SELECT
+    s.id,
+    s.name,
+    s.mode,
+    COALESCE(ts.total_trials, 0) as trials,
+    COALESCE(ts.total_successes, 0) as successes,
+    COALESCE(CAST(ts.total_successes AS REAL) / NULLIF(ts.total_trials, 0), 0.0) as success_rate,
+    ts.alpha,
+    ts.beta,
+    ts.last_updated
+FROM rl_strategies s
+LEFT JOIN rl_thompson_state ts ON s.id = ts.strategy_id
+WHERE s.is_active = 1;
 
 -- Full-text search index for thought content
 CREATE VIRTUAL TABLE IF NOT EXISTS thoughts_fts USING fts5(
@@ -333,6 +396,89 @@ func runMigrations(db *sql.DB, fromVersion, toVersion int) error {
 
 		if _, err := db.Exec(migration); err != nil {
 			return fmt.Errorf("failed to apply v5->v6 migration: %w", err)
+		}
+	}
+
+	// Migration from v6 to v7: Add Thompson Sampling RL tables
+	if fromVersion < 7 && toVersion >= 7 {
+		migration := `
+		-- Thompson Sampling RL tables (v7)
+		CREATE TABLE IF NOT EXISTS rl_strategies (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL UNIQUE,
+			description TEXT,
+			mode TEXT NOT NULL,
+			parameters TEXT,
+			created_at INTEGER NOT NULL,
+			is_active INTEGER DEFAULT 1
+		);
+
+		CREATE TABLE IF NOT EXISTS rl_strategy_outcomes (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			strategy_id TEXT NOT NULL,
+			problem_id TEXT NOT NULL,
+			problem_type TEXT,
+			problem_description TEXT,
+			success INTEGER NOT NULL,
+			confidence_before REAL,
+			confidence_after REAL,
+			execution_time_ns INTEGER,
+			token_count INTEGER,
+			reasoning_path TEXT,
+			timestamp INTEGER NOT NULL,
+			metadata TEXT,
+			FOREIGN KEY (strategy_id) REFERENCES rl_strategies(id)
+		);
+
+		CREATE TABLE IF NOT EXISTS rl_thompson_state (
+			strategy_id TEXT PRIMARY KEY,
+			alpha REAL NOT NULL DEFAULT 1.0,
+			beta REAL NOT NULL DEFAULT 1.0,
+			total_trials INTEGER DEFAULT 0,
+			total_successes INTEGER DEFAULT 0,
+			last_updated INTEGER NOT NULL,
+			FOREIGN KEY (strategy_id) REFERENCES rl_strategies(id)
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_rl_outcomes_strategy ON rl_strategy_outcomes(strategy_id);
+		CREATE INDEX IF NOT EXISTS idx_rl_outcomes_type ON rl_strategy_outcomes(problem_type);
+		CREATE INDEX IF NOT EXISTS idx_rl_outcomes_timestamp ON rl_strategy_outcomes(timestamp DESC);
+		CREATE INDEX IF NOT EXISTS idx_rl_outcomes_success ON rl_strategy_outcomes(success);
+
+		CREATE VIEW IF NOT EXISTS rl_strategy_performance AS
+		SELECT
+			s.id,
+			s.name,
+			s.mode,
+			COALESCE(ts.total_trials, 0) as trials,
+			COALESCE(ts.total_successes, 0) as successes,
+			COALESCE(CAST(ts.total_successes AS REAL) / NULLIF(ts.total_trials, 0), 0.0) as success_rate,
+			ts.alpha,
+			ts.beta,
+			ts.last_updated
+		FROM rl_strategies s
+		LEFT JOIN rl_thompson_state ts ON s.id = ts.strategy_id
+		WHERE s.is_active = 1;
+
+		-- Initialize default strategies
+		INSERT OR IGNORE INTO rl_strategies (id, name, description, mode, parameters, created_at, is_active) VALUES
+		('strategy_linear', 'Linear Sequential', 'Step-by-step systematic reasoning', 'linear', '{}', strftime('%s', 'now'), 1),
+		('strategy_tree', 'Tree Exploration', 'Multi-branch parallel exploration', 'tree', '{}', strftime('%s', 'now'), 1),
+		('strategy_divergent', 'Divergent Creative', 'Creative unconventional thinking', 'divergent', '{"force_rebellion": false}', strftime('%s', 'now'), 1),
+		('strategy_reflection', 'Reflective Analysis', 'Metacognitive reflection', 'reflection', '{}', strftime('%s', 'now'), 1),
+		('strategy_backtracking', 'Checkpoint Backtracking', 'Iterative refinement with rollback', 'backtracking', '{}', strftime('%s', 'now'), 1);
+
+		-- Initialize Thompson state with uniform priors
+		INSERT OR IGNORE INTO rl_thompson_state (strategy_id, alpha, beta, total_trials, total_successes, last_updated) VALUES
+		('strategy_linear', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+		('strategy_tree', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+		('strategy_divergent', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+		('strategy_reflection', 1.0, 1.0, 0, 0, strftime('%s', 'now')),
+		('strategy_backtracking', 1.0, 1.0, 0, 0, strftime('%s', 'now'));
+		`
+
+		if _, err := db.Exec(migration); err != nil {
+			return fmt.Errorf("failed to apply v6->v7 migration: %w", err)
 		}
 	}
 
