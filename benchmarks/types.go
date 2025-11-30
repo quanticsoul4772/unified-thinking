@@ -57,4 +57,16 @@ type BenchmarkRun struct {
 	TotalProblems    int            `json:"total_problems"`
 	CorrectProblems  int            `json:"correct_problems"`
 	ModeDistribution map[string]int `json:"mode_distribution"`
+
+	// Thompson Sampling RL metrics
+	RLEnabled               bool                   `json:"rl_enabled"`
+	StrategyDistribution    map[string]int         `json:"strategy_distribution,omitempty"`     // Count by strategy
+	StrategySuccessRate     map[string]float64     `json:"strategy_success_rate,omitempty"`     // Success rate by strategy
+	LearningCurve           []float64              `json:"learning_curve,omitempty"`            // Accuracy over time (rolling window)
+	InitialAccuracy         float64                `json:"initial_accuracy,omitempty"`          // First 20% of problems
+	FinalAccuracy           float64                `json:"final_accuracy,omitempty"`            // Last 20% of problems
+	AccuracyImprovement     float64                `json:"accuracy_improvement,omitempty"`      // Final - Initial
+	ExplorationRate         float64                `json:"exploration_rate,omitempty"`          // % of time non-greedy strategy chosen
+	StrategyDiversity       float64                `json:"strategy_diversity,omitempty"`        // Shannon entropy of strategy distribution
+	RLMetadata              map[string]interface{} `json:"rl_metadata,omitempty"`
 }

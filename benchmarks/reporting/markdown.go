@@ -25,6 +25,16 @@ type SuiteReport struct {
 	ECE              float64
 	AvgLatency       time.Duration
 	ModeDistribution map[string]int
+
+	// Thompson Sampling RL metrics
+	RLEnabled            bool
+	StrategyDistribution map[string]int
+	StrategySuccessRate  map[string]float64
+	InitialAccuracy      float64
+	FinalAccuracy        float64
+	AccuracyImprovement  float64
+	ExplorationRate      float64
+	StrategyDiversity    float64
 }
 
 // SummaryReport represents overall summary
@@ -72,6 +82,35 @@ func GenerateMarkdown(report *BenchmarkReport) string {
 			for mode, count := range suite.ModeDistribution {
 				pct := float64(count) / float64(suite.TotalProblems) * 100
 				b.WriteString(fmt.Sprintf("- %s: %d (%.1f%%)\n", mode, count, pct))
+			}
+		}
+
+		// Thompson Sampling RL metrics
+		if suite.RLEnabled {
+			b.WriteString("\n**Thompson Sampling RL Metrics:**\n\n")
+			b.WriteString("| Metric | Value |\n")
+			b.WriteString("|--------|-------|\n")
+			b.WriteString(fmt.Sprintf("| Initial Accuracy (first 20%%) | %.2f%% |\n", suite.InitialAccuracy*100))
+			b.WriteString(fmt.Sprintf("| Final Accuracy (last 20%%) | %.2f%% |\n", suite.FinalAccuracy*100))
+
+			// Format improvement with +/- indicator
+			improvementStr := fmt.Sprintf("%.2f%%", suite.AccuracyImprovement*100)
+			if suite.AccuracyImprovement > 0 {
+				improvementStr = "+" + improvementStr
+			}
+			b.WriteString(fmt.Sprintf("| Accuracy Improvement | %s |\n", improvementStr))
+
+			b.WriteString(fmt.Sprintf("| Exploration Rate | %.2f%% |\n", suite.ExplorationRate*100))
+			b.WriteString(fmt.Sprintf("| Strategy Diversity (entropy) | %.3f |\n\n", suite.StrategyDiversity))
+
+			if len(suite.StrategyDistribution) > 0 {
+				b.WriteString("**Strategy Distribution:**\n\n")
+				for strategyID, count := range suite.StrategyDistribution {
+					pct := float64(count) / float64(suite.TotalProblems) * 100
+					successRate := suite.StrategySuccessRate[strategyID]
+					b.WriteString(fmt.Sprintf("- %s: %d (%.1f%%) - Success: %.2f%%\n",
+						strategyID, count, pct, successRate*100))
+				}
 			}
 		}
 
