@@ -51,13 +51,12 @@ func TestAutoMode_RLIntegration(t *testing.T) {
 				TotalSuccesses: 0,
 			},
 		},
-		outcomes:      []*reinforcement.Outcome{},
+		outcomes:        []*reinforcement.Outcome{},
 		alphaIncrements: make(map[string]int),
 		betaIncrements:  make(map[string]int),
 	}
 
-	// Set RL storage (RL_ENABLED is checked by SetRLStorage, we simulate enabled)
-	t.Setenv("RL_ENABLED", "true")
+	// Set RL storage (RL is always enabled when storage is available)
 	t.Setenv("RL_OUTCOME_THRESHOLD", "0.8")
 
 	err := auto.SetRLStorage(mockStorage)
@@ -125,8 +124,8 @@ func TestAutoMode_RLIntegration(t *testing.T) {
 	}
 }
 
-// TestAutoMode_RLDisabled tests that RL gracefully falls back when disabled
-func TestAutoMode_RLDisabled(t *testing.T) {
+// TestAutoMode_RLFallbackNoStrategies tests that RL gracefully falls back when no strategies available
+func TestAutoMode_RLFallbackNoStrategies(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	linear := NewLinearMode(store)
 	tree := NewTreeMode(store)
@@ -134,10 +133,10 @@ func TestAutoMode_RLDisabled(t *testing.T) {
 
 	auto := NewAutoMode(linear, tree, divergent)
 
-	// Don't set RL_ENABLED
+	// No strategies - RL should gracefully disable
 	mockStorage := &mockRLStorage{
-		strategies: []*reinforcement.Strategy{},
-		outcomes:   []*reinforcement.Outcome{},
+		strategies:      []*reinforcement.Strategy{},
+		outcomes:        []*reinforcement.Outcome{},
 		alphaIncrements: make(map[string]int),
 		betaIncrements:  make(map[string]int),
 	}
@@ -148,7 +147,7 @@ func TestAutoMode_RLDisabled(t *testing.T) {
 	}
 
 	if auto.rlEnabled {
-		t.Error("RL should be disabled when RL_ENABLED not set")
+		t.Error("RL should be disabled when no strategies available")
 	}
 
 	// Process thought - should use keyword detection
@@ -172,7 +171,7 @@ func TestAutoMode_RLDisabled(t *testing.T) {
 	}
 }
 
-// TestAutoMode_RLNoStrategies tests behavior when no strategies are available
+// TestAutoMode_RLNoStrategies tests that RL is disabled when no strategies available
 func TestAutoMode_RLNoStrategies(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	linear := NewLinearMode(store)
@@ -181,11 +180,9 @@ func TestAutoMode_RLNoStrategies(t *testing.T) {
 
 	auto := NewAutoMode(linear, tree, divergent)
 
-	t.Setenv("RL_ENABLED", "true")
-
 	mockStorage := &mockRLStorage{
-		strategies: []*reinforcement.Strategy{}, // No strategies
-		outcomes:   []*reinforcement.Outcome{},
+		strategies:      []*reinforcement.Strategy{}, // No strategies
+		outcomes:        []*reinforcement.Outcome{},
 		alphaIncrements: make(map[string]int),
 		betaIncrements:  make(map[string]int),
 	}

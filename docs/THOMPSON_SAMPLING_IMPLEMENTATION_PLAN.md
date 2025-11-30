@@ -419,11 +419,14 @@ func RunSuiteWithRL(suite *BenchmarkSuite, selector *ThompsonSelector, evaluator
 
 ```bash
 # Thompson Sampling Configuration
-RL_ENABLED=true                    # Enable/disable RL
-RL_MIN_SAMPLES=10                  # Minimum samples before exploitation
-RL_EXPLORATION_BONUS=0.1           # UCB exploration bonus (optional)
-RL_OUTCOME_THRESHOLD=0.7           # Confidence threshold for success
+# RL_ENABLED - NOT NEEDED - RL is ALWAYS enabled when using SQLite storage
+RL_OUTCOME_THRESHOLD=0.7           # Confidence threshold for success (default: 0.7)
 ```
+
+**Note**: Thompson Sampling RL is automatically enabled when:
+- `STORAGE_TYPE=sqlite` (SQLite backend required)
+- Strategies exist in database (seeded during schema v7 migration)
+- No configuration flag needed - it's always on
 
 ### Initial Strategies
 

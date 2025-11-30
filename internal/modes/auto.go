@@ -50,11 +50,11 @@ type AutoMode struct {
 	prototypeEmbeds map[types.ThinkingMode][]float32
 
 	// Thompson Sampling RL
-	rlEnabled         bool
-	thompsonSelector  *reinforcement.ThompsonSelector
-	outcomeThreshold  float64                      // Confidence threshold for success (default 0.7)
-	selectedStrategy  *reinforcement.Strategy      // Track last selected strategy for outcome recording
-	storage           RLStorage                    // Storage interface for loading/persisting RL state
+	rlEnabled        bool
+	thompsonSelector *reinforcement.ThompsonSelector
+	outcomeThreshold float64                 // Confidence threshold for success (default 0.7)
+	selectedStrategy *reinforcement.Strategy // Track last selected strategy for outcome recording
+	storage          RLStorage               // Storage interface for loading/persisting RL state
 }
 
 // RLStorage defines the interface for RL persistence
@@ -76,18 +76,11 @@ func NewAutoMode(linear *LinearMode, tree *TreeMode, divergent *DivergentMode) *
 }
 
 // SetRLStorage enables Thompson Sampling RL by providing storage backend
+// RL is ALWAYS enabled when SQLite storage is available (no flag required)
 func (m *AutoMode) SetRLStorage(storage RLStorage) error {
-	// Check if RL is enabled via environment
-	rlEnabled := os.Getenv("RL_ENABLED")
-	if rlEnabled != "true" && rlEnabled != "1" {
-		log.Println("RL disabled (RL_ENABLED not set to true)")
-		return nil
-	}
-
 	m.storage = storage
-	m.rlEnabled = true
 
-	// Load outcome threshold from environment
+	// Load outcome threshold from environment (default: 0.7)
 	if thresholdStr := os.Getenv("RL_OUTCOME_THRESHOLD"); thresholdStr != "" {
 		if threshold, err := strconv.ParseFloat(thresholdStr, 64); err == nil {
 			m.outcomeThreshold = threshold
@@ -116,6 +109,9 @@ func (m *AutoMode) SetRLStorage(storage RLStorage) error {
 	for _, strategy := range strategies {
 		m.thompsonSelector.AddStrategy(strategy)
 	}
+
+	// RL is now enabled
+	m.rlEnabled = true
 
 	log.Printf("Thompson Sampling RL enabled with %d strategies (threshold: %.2f)",
 		len(strategies), m.outcomeThreshold)
