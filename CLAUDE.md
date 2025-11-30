@@ -523,6 +523,14 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `EMBEDDINGS_CACHE_ENABLED`: Cache embeddings (`true` or `false`)
 - `EMBEDDINGS_CACHE_TTL`: Cache time-to-live (e.g., `24h`, `1h`)
 
+**Knowledge Graph Environment Variables** (for Neo4j integration):
+- `NEO4J_URI`: Neo4j connection URI (default: `bolt://localhost:7687`)
+- `NEO4J_USERNAME`: Neo4j username (default: `neo4j`)
+- `NEO4J_PASSWORD`: Neo4j password (default: `password`)
+- `NEO4J_DATABASE`: Neo4j database name (default: `neo4j`)
+- `NEO4J_TIMEOUT_MS`: Connection timeout in milliseconds (default: 5000)
+- `NEO4J_ENABLED`: Enable knowledge graph integration (`true` or `false`, default: false)
+
 **Context Bridge Environment Variables** (for cross-session context retrieval):
 - `CONTEXT_BRIDGE_ENABLED`: Enable context bridge (`true` or `false`, default: false)
 - `CONTEXT_BRIDGE_MIN_SIMILARITY`: Minimum similarity threshold (default: 0.7)

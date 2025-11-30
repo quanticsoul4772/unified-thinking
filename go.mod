@@ -6,6 +6,7 @@ toolchain go1.24.10
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.1.0
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
 	github.com/stretchr/testify v1.11.1
 	modernc.org/sqlite v1.40.1
 )
