@@ -122,6 +122,486 @@
       "expected": "valid",
       "difficulty": "easy",
       "metadata": {"type": "exclusive_or"}
+    },
+    {
+      "id": "logic_011",
+      "description": "All squares are rectangles. All rectangles have four sides. Therefore, all squares have four sides. Valid?",
+      "input": {
+        "premises": ["All squares are rectangles", "All rectangles have four sides"],
+        "conclusion": "All squares have four sides",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "transitive_syllogism"}
+    },
+    {
+      "id": "logic_012",
+      "description": "If the car starts, the battery is charged. The battery is charged. Therefore, the car starts. Valid?",
+      "input": {
+        "premises": ["If car starts, then battery charged", "Battery charged"],
+        "conclusion": "Car starts",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "medium",
+      "metadata": {"type": "affirming_consequent", "fallacy": true}
+    },
+    {
+      "id": "logic_013",
+      "description": "No fish are mammals. Whales are mammals. Therefore, whales are not fish. Valid?",
+      "input": {
+        "premises": ["No fish are mammals", "Whales are mammals"],
+        "conclusion": "Whales are not fish",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_014",
+      "description": "All prime numbers greater than 2 are odd. 7 is a prime number greater than 2. Is 7 odd?",
+      "input": {
+        "premises": ["All primes > 2 are odd", "7 is prime and > 2"],
+        "conclusion": "7 is odd",
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"type": "universal_instantiation"}
+    },
+    {
+      "id": "logic_015",
+      "description": "If it's Tuesday, I have a meeting. I have a meeting. Is it Tuesday?",
+      "input": {
+        "premises": ["If Tuesday, then meeting", "Meeting"],
+        "conclusion": "Tuesday",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "affirming_consequent"}
+    },
+    {
+      "id": "logic_016",
+      "description": "Some doctors are rich. All rich people are happy. Therefore, some doctors are happy. Valid?",
+      "input": {
+        "premises": ["Some doctors are rich", "All rich people are happy"],
+        "conclusion": "Some doctors are happy",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "medium",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_017",
+      "description": "Either A or B is true. A is false. What can we conclude?",
+      "input": {
+        "premises": ["A OR B", "NOT A"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "B",
+      "difficulty": "easy",
+      "metadata": {"type": "disjunctive_syllogism"}
+    },
+    {
+      "id": "logic_018",
+      "description": "All even numbers are divisible by 2. 15 is not divisible by 2. Is 15 even?",
+      "input": {
+        "premises": ["All even numbers divisible by 2", "15 not divisible by 2"],
+        "conclusion": "15 is not even",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_019",
+      "description": "If Sarah is late, she misses the bus. Sarah is not late. Did she miss the bus?",
+      "input": {
+        "premises": ["If late, then miss bus", "NOT late"],
+        "conclusion": "NOT miss bus",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "denying_antecedent", "fallacy": true}
+    },
+    {
+      "id": "logic_020",
+      "description": "All metals conduct electricity. Copper is a metal. Does copper conduct electricity?",
+      "input": {
+        "premises": ["All metals conduct electricity", "Copper is a metal"],
+        "conclusion": "Copper conducts electricity",
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "easy",
+      "metadata": {"type": "universal_instantiation"}
+    },
+    {
+      "id": "logic_021",
+      "description": "If the code compiles, there are no syntax errors. The code doesn't compile. Therefore, there are syntax errors. Valid?",
+      "input": {
+        "premises": ["If compiles, then no syntax errors", "NOT compiles"],
+        "conclusion": "syntax errors",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "easy",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_022",
+      "description": "All programmers drink coffee. Some coffee drinkers are tired. Therefore, some programmers are tired. Valid?",
+      "input": {
+        "premises": ["All programmers drink coffee", "Some coffee drinkers are tired"],
+        "conclusion": "Some programmers are tired",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "medium",
+      "metadata": {"type": "undistributed_middle"}
+    },
+    {
+      "id": "logic_023",
+      "description": "Either the server is down or the network is slow. The server is not down. What can we conclude?",
+      "input": {
+        "premises": ["server down OR network slow", "NOT server down"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "network slow",
+      "difficulty": "easy",
+      "metadata": {"type": "disjunctive_syllogism"}
+    },
+    {
+      "id": "logic_024",
+      "description": "If you use version control, your code is backed up. You don't use version control. Therefore, your code is not backed up. Valid?",
+      "input": {
+        "premises": ["If version control, then backed up", "NOT version control"],
+        "conclusion": "NOT backed up",
+        "mode": "linear"
+      },
+      "expected": "invalid",
+      "difficulty": "medium",
+      "metadata": {"type": "denying_antecedent", "fallacy": true}
+    },
+    {
+      "id": "logic_025",
+      "description": "All reptiles are cold-blooded. All snakes are reptiles. All pythons are snakes. Are pythons cold-blooded?",
+      "input": {
+        "premises": ["All reptiles are cold-blooded", "All snakes are reptiles", "All pythons are snakes"],
+        "conclusion": "All pythons are cold-blooded",
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "medium",
+      "metadata": {"type": "chain_syllogism"}
+    },
+    {
+      "id": "logic_026",
+      "description": "No vegetarians eat meat. Alice is a vegetarian. Does Alice eat meat?",
+      "input": {
+        "premises": ["No vegetarians eat meat", "Alice is a vegetarian"],
+        "conclusion": "Alice eats meat",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_027",
+      "description": "If the function is recursive, it calls itself. This function calls itself. Is it recursive?",
+      "input": {
+        "premises": ["If recursive, then calls itself", "Function calls itself"],
+        "conclusion": "Function is recursive",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "hard",
+      "metadata": {"type": "affirming_consequent"}
+    },
+    {
+      "id": "logic_028",
+      "description": "All triangles have three sides. This shape has four sides. Is it a triangle?",
+      "input": {
+        "premises": ["All triangles have three sides", "This shape has four sides"],
+        "conclusion": "This shape is not a triangle",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_029",
+      "description": "Some students study hard. All students who study hard get good grades. Therefore, some students get good grades. Valid?",
+      "input": {
+        "premises": ["Some students study hard", "All who study hard get good grades"],
+        "conclusion": "Some students get good grades",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "medium",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_030",
+      "description": "If the test passes, the code is correct. The test didn't pass. Is the code correct?",
+      "input": {
+        "premises": ["If test passes, then code correct", "NOT test passes"],
+        "conclusion": "NOT code correct",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "modus_tollens_misapplication"}
+    },
+    {
+      "id": "logic_031",
+      "description": "All prime numbers except 2 are odd. 13 is odd. Is 13 prime?",
+      "input": {
+        "premises": ["All primes except 2 are odd", "13 is odd"],
+        "conclusion": "13 is prime",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "hard",
+      "metadata": {"type": "affirming_consequent"}
+    },
+    {
+      "id": "logic_032",
+      "description": "Either A and B are both true, or both false. A is true. What about B?",
+      "input": {
+        "premises": ["(A AND B) OR (NOT A AND NOT B)", "A"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "B",
+      "difficulty": "medium",
+      "metadata": {"type": "biconditional"}
+    },
+    {
+      "id": "logic_033",
+      "description": "No circular reasoning is valid. This argument uses circular reasoning. Is this argument valid?",
+      "input": {
+        "premises": ["No circular reasoning is valid", "This argument uses circular reasoning"],
+        "conclusion": "This argument is not valid",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_034",
+      "description": "If the database is normalized, there are no redundancies. There are redundancies. Is the database normalized?",
+      "input": {
+        "premises": ["If normalized, then no redundancies", "There are redundancies"],
+        "conclusion": "NOT normalized",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_035",
+      "description": "All mammals have hair. Dolphins are mammals. Dolphins live underwater. Therefore, some underwater animals have hair. Valid?",
+      "input": {
+        "premises": ["All mammals have hair", "Dolphins are mammals", "Dolphins live underwater"],
+        "conclusion": "Some underwater animals have hair",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "medium",
+      "metadata": {"type": "complex_syllogism"}
+    },
+    {
+      "id": "logic_036",
+      "description": "Either X or Y is the solution, but not both. X is not the solution. What is the solution?",
+      "input": {
+        "premises": ["X XOR Y", "NOT X"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "Y",
+      "difficulty": "easy",
+      "metadata": {"type": "exclusive_disjunction"}
+    },
+    {
+      "id": "logic_037",
+      "description": "All valid arguments with true premises have true conclusions. This argument has a false conclusion. What can we conclude?",
+      "input": {
+        "premises": ["All (valid AND true premises) have true conclusions", "This has false conclusion"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "invalid or false premise",
+      "difficulty": "hard",
+      "metadata": {"type": "modus_tollens_complex"}
+    },
+    {
+      "id": "logic_038",
+      "description": "If it's a bug, it needs fixing. If it needs fixing, we need time. We don't have time. Is it a bug?",
+      "input": {
+        "premises": ["If bug, then needs fixing", "If needs fixing, then need time", "NOT have time"],
+        "conclusion": "NOT bug",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "hard",
+      "metadata": {"type": "chain_modus_tollens"}
+    },
+    {
+      "id": "logic_039",
+      "description": "Some cats are black. All black things absorb heat. Therefore, some cats absorb heat. Valid?",
+      "input": {
+        "premises": ["Some cats are black", "All black things absorb heat"],
+        "conclusion": "Some cats absorb heat",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "medium",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_040",
+      "description": "No correct programs have infinite loops. This program has an infinite loop. Is it correct?",
+      "input": {
+        "premises": ["No correct programs have infinite loops", "This program has infinite loop"],
+        "conclusion": "This program is not correct",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_041",
+      "description": "If P implies Q, and Q implies R, then P implies R. P implies Q. Q implies R. Does P imply R?",
+      "input": {
+        "premises": ["P → Q", "Q → R"],
+        "conclusion": "P → R",
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "medium",
+      "metadata": {"type": "hypothetical_syllogism"}
+    },
+    {
+      "id": "logic_042",
+      "description": "Either the password is correct or access is denied. Access is granted. What about the password?",
+      "input": {
+        "premises": ["password correct OR access denied", "access granted"],
+        "conclusion": "?",
+        "mode": "linear"
+      },
+      "expected": "password correct",
+      "difficulty": "medium",
+      "metadata": {"type": "disjunctive_syllogism_complex"}
+    },
+    {
+      "id": "logic_043",
+      "description": "All efficient algorithms run in polynomial time. Algorithm X runs in exponential time. Is Algorithm X efficient?",
+      "input": {
+        "premises": ["All efficient algorithms run in polynomial time", "Algorithm X runs in exponential time"],
+        "conclusion": "Algorithm X is not efficient",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "medium",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_044",
+      "description": "If the moon is made of cheese, then mice live there. The moon is not made of cheese. Do mice live there?",
+      "input": {
+        "premises": ["If moon is cheese, then mice live there", "Moon is NOT cheese"],
+        "conclusion": "Mice do NOT live there",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "denying_antecedent", "fallacy": true}
+    },
+    {
+      "id": "logic_045",
+      "description": "No irrational numbers can be expressed as fractions. Pi cannot be expressed as a fraction. Is pi irrational?",
+      "input": {
+        "premises": ["No irrational numbers can be expressed as fractions", "Pi cannot be expressed as a fraction"],
+        "conclusion": "Pi is irrational",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "hard",
+      "metadata": {"type": "affirming_consequent"}
+    },
+    {
+      "id": "logic_046",
+      "description": "All A are B. No B are C. Therefore, no A are C. Valid?",
+      "input": {
+        "premises": ["All A are B", "No B are C"],
+        "conclusion": "No A are C",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "medium",
+      "metadata": {"type": "categorical_syllogism"}
+    },
+    {
+      "id": "logic_047",
+      "description": "If debugging is hard, then programming must have been harder. Programming was not harder. Was debugging hard?",
+      "input": {
+        "premises": ["If debugging hard, then programming harder", "NOT programming harder"],
+        "conclusion": "NOT debugging hard",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "medium",
+      "metadata": {"type": "modus_tollens"}
+    },
+    {
+      "id": "logic_048",
+      "description": "Some students are athletes. All athletes train regularly. No one who trains regularly is lazy. Therefore, some students are not lazy. Valid?",
+      "input": {
+        "premises": ["Some students are athletes", "All athletes train regularly", "No one who trains regularly is lazy"],
+        "conclusion": "Some students are not lazy",
+        "mode": "linear"
+      },
+      "expected": "valid",
+      "difficulty": "hard",
+      "metadata": {"type": "complex_categorical_syllogism"}
+    },
+    {
+      "id": "logic_049",
+      "description": "If the system is secure, it uses encryption. The system uses encryption. Is it secure?",
+      "input": {
+        "premises": ["If secure, then uses encryption", "Uses encryption"],
+        "conclusion": "Secure",
+        "mode": "linear"
+      },
+      "expected": "cannot determine",
+      "difficulty": "medium",
+      "metadata": {"type": "affirming_consequent", "fallacy": true}
+    },
+    {
+      "id": "logic_050",
+      "description": "All squares are rectangles. All rectangles are quadrilaterals. All quadrilaterals are polygons. Are all squares polygons?",
+      "input": {
+        "premises": ["All squares are rectangles", "All rectangles are quadrilaterals", "All quadrilaterals are polygons"],
+        "conclusion": "All squares are polygons",
+        "mode": "linear"
+      },
+      "expected": "yes",
+      "difficulty": "medium",
+      "metadata": {"type": "chain_syllogism"}
     }
   ]
 }

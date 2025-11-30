@@ -125,6 +125,193 @@
       "expected": "no",
       "difficulty": "easy",
       "metadata": {"type": "correlation_not_causation", "actual_cause": "earth rotation"}
+    },
+    {
+      "id": "causal_011",
+      "description": "Shoe size correlates with reading ability in children. Do bigger feet cause better reading?",
+      "input": {
+        "observation": "Children with larger shoe sizes read better",
+        "question": "Does shoe size cause reading ability?",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "easy",
+      "metadata": {"type": "spurious_correlation", "confounder": "age"}
+    },
+    {
+      "id": "causal_012",
+      "description": "Hospitals with more patients tend to have more deaths. Should we close large hospitals to reduce deaths?",
+      "input": {
+        "observation": "Hospital size correlates with death count",
+        "intervention": "Close large hospitals",
+        "question": "Will this reduce deaths?",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "medium",
+      "metadata": {"type": "selection_bias", "mechanism": "sick people go to hospitals"}
+    },
+    {
+      "id": "causal_013",
+      "description": "Employees who work from home are less productive. Does remote work cause reduced productivity?",
+      "input": {
+        "observation": "Remote workers have 15% lower output",
+        "question": "Does working from home cause lower productivity?",
+        "mode": "linear"
+      },
+      "expected": "unclear",
+      "difficulty": "hard",
+      "metadata": {"type": "confounding", "confounders": ["job type", "self-selection", "home environment", "time flexibility"]}
+    },
+    {
+      "id": "causal_014",
+      "description": "Meditation reduces stress. But stressed people seek meditation. What is the causal direction?",
+      "input": {
+        "observation": "People who meditate report lower stress",
+        "question": "Does meditation reduce stress, or do low-stress people meditate more?",
+        "mode": "linear"
+      },
+      "expected": "bidirectional",
+      "difficulty": "hard",
+      "metadata": {"type": "reverse_causation", "feedback_loop": true, "mechanism": "stress drives meditation seeking; meditation reduces stress"}
+    },
+    {
+      "id": "causal_015",
+      "description": "If we increase police presence in high-crime areas, will crime decrease?",
+      "input": {
+        "observation": "Areas with more police have more arrests",
+        "intervention": "Double police presence in high-crime neighborhoods",
+        "question": "Predict effect on crime rate",
+        "mode": "linear"
+      },
+      "expected": "likely decrease",
+      "difficulty": "medium",
+      "metadata": {"type": "intervention_prediction", "confounders": ["crime severity", "community trust"], "mechanism": "deterrence and increased enforcement"}
+    },
+    {
+      "id": "causal_016",
+      "description": "Coffee consumption correlates with heart disease. But coffee drinkers also smoke more. Is coffee harmful?",
+      "input": {
+        "observation": "Coffee drinkers have 20% higher heart disease rates",
+        "confounder": "Smoking prevalence higher among coffee drinkers",
+        "question": "Does coffee cause heart disease?",
+        "mode": "linear"
+      },
+      "expected": "confounded",
+      "difficulty": "medium",
+      "metadata": {"type": "confounding", "confounders": ["smoking", "stress levels", "sleep patterns"]}
+    },
+    {
+      "id": "causal_017",
+      "description": "People who take vitamins are healthier. But they also exercise more and eat better. What is the causal path?",
+      "input": {
+        "observation": "Vitamin users have better health outcomes",
+        "question": "Direct effect of vitamins, or mediated by lifestyle?",
+        "mode": "linear"
+      },
+      "expected": "mediated",
+      "difficulty": "hard",
+      "metadata": {"type": "mediator_analysis", "mediators": ["health consciousness", "exercise", "diet quality"], "direct_effect": "small or none"}
+    },
+    {
+      "id": "causal_018",
+      "description": "Counterfactual: Company revenue dropped 30% after hiring a new CEO. If they had kept the old CEO, would revenue have dropped?",
+      "input": {
+        "actual": {"new_CEO": true, "revenue_change": -30},
+        "counterfactual": {"new_CEO": false, "revenue_change": "?"},
+        "context": "Economic recession began same quarter as CEO change",
+        "mode": "linear"
+      },
+      "expected": "likely yes",
+      "difficulty": "hard",
+      "metadata": {"type": "counterfactual", "confounder": "economic conditions"}
+    },
+    {
+      "id": "causal_019",
+      "description": "Elite college graduates earn more. Does attending an elite college cause higher earnings?",
+      "input": {
+        "observation": "Elite college grads earn 40% more on average",
+        "question": "Causal effect of elite college attendance?",
+        "evidence": "Students accepted to elite colleges who chose state schools earn similarly to elite grads",
+        "mode": "linear"
+      },
+      "expected": "no",
+      "difficulty": "hard",
+      "metadata": {"type": "selection_bias", "confounders": ["student ability", "family connections", "motivation"], "natural_experiment": true}
+    },
+    {
+      "id": "causal_020",
+      "description": "Social media use correlates with depression in teens. Does social media cause depression?",
+      "input": {
+        "observation": "Heavy social media users report higher depression rates",
+        "question": "Direction of causation?",
+        "mode": "linear"
+      },
+      "expected": "bidirectional",
+      "difficulty": "hard",
+      "metadata": {"type": "reverse_causation", "feedback_loop": true, "mechanism": "depression increases social media use; social media may worsen depression"}
+    },
+    {
+      "id": "causal_021",
+      "description": "Among hospitalized patients, those who receive flowers recover faster. Should hospitals provide flowers to all patients?",
+      "input": {
+        "observation": "Patients with flowers in their room recover 2 days faster on average",
+        "intervention": "Provide flowers to all patients",
+        "question": "Will recovery times improve?",
+        "mode": "linear"
+      },
+      "expected": "unlikely",
+      "difficulty": "medium",
+      "metadata": {"type": "collider_bias", "mechanism": "patients with visitors (who bring flowers) have better social support"}
+    },
+    {
+      "id": "causal_022",
+      "description": "Red wine consumption correlates with longevity. Does red wine extend lifespan?",
+      "input": {
+        "observation": "Moderate red wine drinkers live 3 years longer on average",
+        "question": "Does red wine cause longevity?",
+        "mode": "linear"
+      },
+      "expected": "confounded",
+      "difficulty": "medium",
+      "metadata": {"type": "confounding", "confounders": ["socioeconomic status", "Mediterranean diet", "exercise habits", "healthcare access"]}
+    },
+    {
+      "id": "causal_023",
+      "description": "Identify the causal chain: Poverty → Stress → Poor Health Decisions → Disease. Where should we intervene?",
+      "input": {
+        "causal_chain": ["poverty", "chronic stress", "poor health decisions", "disease"],
+        "question": "Most effective intervention point?",
+        "mode": "linear"
+      },
+      "expected": "poverty",
+      "difficulty": "hard",
+      "metadata": {"type": "causal_chain", "optimal_intervention": "root cause", "mechanism": "upstream interventions have cascading effects"}
+    },
+    {
+      "id": "causal_024",
+      "description": "Performance reviews correlate with salary. But high performers get better reviews and were already paid more. What causes what?",
+      "input": {
+        "observation": "Good reviews correlate with high salary (r=0.7)",
+        "question": "Does review cause salary, salary cause review, or both caused by performance?",
+        "mode": "linear"
+      },
+      "expected": "common cause",
+      "difficulty": "hard",
+      "metadata": {"type": "confounding", "common_cause": "underlying job performance", "mechanism": "performance drives both reviews and compensation"}
+    },
+    {
+      "id": "causal_025",
+      "description": "Birth order correlates with IQ (first-borns score higher). Does birth order cause intelligence differences?",
+      "input": {
+        "observation": "First-born children score 3 points higher on IQ tests on average",
+        "question": "Does birth order cause IQ differences?",
+        "evidence": ["only children score similar to first-borns", "effect disappears when controlling for family size"],
+        "mode": "linear"
+      },
+      "expected": "confounded",
+      "difficulty": "hard",
+      "metadata": {"type": "confounding", "confounders": ["family size", "parental attention", "socioeconomic factors"], "mechanism": "family resources and attention vary with family size"}
     }
   ]
 }

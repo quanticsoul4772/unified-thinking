@@ -137,6 +137,284 @@
       "expected": 0.69,
       "difficulty": "medium",
       "metadata": {"type": "bayesian_update", "tolerance": 0.05}
+    },
+    {
+      "id": "bayes_011",
+      "description": "A rare disease affects 0.1% of population. A test has 95% sensitivity and 90% specificity. You test positive. What is P(disease)?",
+      "input": {
+        "prior": 0.001,
+        "sensitivity": 0.95,
+        "specificity": 0.90,
+        "observation": "positive test",
+        "mode": "linear"
+      },
+      "expected": 0.0094,
+      "difficulty": "hard",
+      "metadata": {"type": "base_rate_fallacy", "tolerance": 0.001}
+    },
+    {
+      "id": "bayes_012",
+      "description": "You have two coins: fair (50% heads) and biased (70% heads). You pick one at random and flip heads. What is P(biased coin)?",
+      "input": {
+        "coins": [
+          {"type": "fair", "p_heads": 0.50},
+          {"type": "biased", "p_heads": 0.70}
+        ],
+        "observation": "heads",
+        "mode": "linear"
+      },
+      "expected": 0.583,
+      "difficulty": "medium",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_013",
+      "description": "Sequential update: P(H) = 0.5 initially. First evidence: P(E1|H) = 0.8, P(E1|¬H) = 0.3. Second evidence: P(E2|H) = 0.9, P(E2|¬H) = 0.2. After both, what is P(H)?",
+      "input": {
+        "prior": 0.5,
+        "evidence_1": {"likelihood_h": 0.8, "likelihood_not_h": 0.3},
+        "evidence_2": {"likelihood_h": 0.9, "likelihood_not_h": 0.2},
+        "mode": "linear"
+      },
+      "expected": 0.923,
+      "difficulty": "hard",
+      "metadata": {"type": "sequential_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_014",
+      "description": "Airport security scanner has 99.9% true positive rate and 98% true negative rate. 0.5% of passengers are threats. Scanner alarms. What is P(threat)?",
+      "input": {
+        "prior": 0.005,
+        "sensitivity": 0.999,
+        "specificity": 0.98,
+        "observation": "alarm",
+        "mode": "linear"
+      },
+      "expected": 0.200,
+      "difficulty": "hard",
+      "metadata": {"type": "false_positive_scenario", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_015",
+      "description": "Email filter: 80% of spam contains word 'free', 5% of legitimate email contains 'free'. 40% of all email is spam. Email has 'free'. What is P(spam)?",
+      "input": {
+        "prior_spam": 0.40,
+        "p_free_given_spam": 0.80,
+        "p_free_given_legitimate": 0.05,
+        "observation": "contains 'free'",
+        "mode": "linear"
+      },
+      "expected": 0.914,
+      "difficulty": "medium",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_016",
+      "description": "Three cards: both sides red (RR), both sides black (BB), one red one black (RB). You draw a card and see red on top. What is P(other side is red)?",
+      "input": {
+        "cards": ["RR", "BB", "RB"],
+        "observation": "red side visible",
+        "query": "P(other side red)",
+        "mode": "linear"
+      },
+      "expected": 0.667,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_017",
+      "description": "Drug test: 98% accurate for users, 95% accurate for non-users. 3% of population uses drugs. Tested negative. What is P(user)?",
+      "input": {
+        "prior": 0.03,
+        "sensitivity": 0.98,
+        "specificity": 0.95,
+        "observation": "negative test",
+        "mode": "linear"
+      },
+      "expected": 0.0012,
+      "difficulty": "medium",
+      "metadata": {"type": "false_negative_scenario", "tolerance": 0.001}
+    },
+    {
+      "id": "bayes_018",
+      "description": "Monty Hall: 3 doors, car behind one, goats behind two. You pick door 1. Host opens door 3 showing goat. What is P(car behind door 2)?",
+      "input": {
+        "doors": 3,
+        "initial_pick": 1,
+        "host_reveals": 3,
+        "revealed": "goat",
+        "mode": "linear"
+      },
+      "expected": 0.667,
+      "difficulty": "hard",
+      "metadata": {"type": "conditional_probability", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_019",
+      "description": "Weather forecast: P(rain tomorrow) = 0.4. Weather app has 80% accuracy. App says rain. What is P(rain)?",
+      "input": {
+        "prior": 0.40,
+        "p_correct_prediction": 0.80,
+        "observation": "app predicts rain",
+        "mode": "linear"
+      },
+      "expected": 0.727,
+      "difficulty": "easy",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_020",
+      "description": "Taxi problem: 85% of cabs are blue, 15% are green. Witness identifies green cab in accident (80% reliable at night). What is P(cab was green)?",
+      "input": {
+        "p_green": 0.15,
+        "p_blue": 0.85,
+        "witness_accuracy": 0.80,
+        "witness_says": "green",
+        "mode": "linear"
+      },
+      "expected": 0.414,
+      "difficulty": "hard",
+      "metadata": {"type": "base_rate_fallacy", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_021",
+      "description": "Blood test for infection: 90% sensitivity, 85% specificity. 20% of patients have infection. Test positive. What is P(infection)?",
+      "input": {
+        "prior": 0.20,
+        "sensitivity": 0.90,
+        "specificity": 0.85,
+        "observation": "positive",
+        "mode": "linear"
+      },
+      "expected": 0.600,
+      "difficulty": "medium",
+      "metadata": {"type": "medical_diagnostic", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_022",
+      "description": "Likelihood ratio: Prior odds 1:3 (P=0.25). Likelihood ratio of evidence is 5:1. What is posterior probability?",
+      "input": {
+        "prior_odds": 0.333,
+        "likelihood_ratio": 5.0,
+        "mode": "linear"
+      },
+      "expected": 0.625,
+      "difficulty": "medium",
+      "metadata": {"type": "likelihood_ratio", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_023",
+      "description": "Quality control: 2% of products are defective. Inspector catches 95% of defects but has 3% false alarm rate. Inspector approves item. What is P(defective)?",
+      "input": {
+        "prior": 0.02,
+        "sensitivity": 0.95,
+        "false_alarm_rate": 0.03,
+        "observation": "approved (not flagged)",
+        "mode": "linear"
+      },
+      "expected": 0.0010,
+      "difficulty": "hard",
+      "metadata": {"type": "false_negative_scenario", "tolerance": 0.001}
+    },
+    {
+      "id": "bayes_024",
+      "description": "DNA match: Random match probability is 1 in 100,000. Prior probability suspect is guilty: 1 in 10,000. DNA matches. What is P(guilty)?",
+      "input": {
+        "prior": 0.0001,
+        "p_match_given_guilty": 0.99,
+        "p_match_given_innocent": 0.00001,
+        "observation": "DNA match",
+        "mode": "linear"
+      },
+      "expected": 0.909,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_025",
+      "description": "Cancer screening: 1% have cancer. Test is 90% sensitive, 92% specific. Test positive twice independently. What is P(cancer)?",
+      "input": {
+        "prior": 0.01,
+        "sensitivity": 0.90,
+        "specificity": 0.92,
+        "observations": ["positive", "positive"],
+        "mode": "linear"
+      },
+      "expected": 0.561,
+      "difficulty": "hard",
+      "metadata": {"type": "sequential_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_026",
+      "description": "Unfair coin: P(heads) is either 0.3 or 0.7 with equal prior. You flip and get 3 heads, 1 tail. What is P(coin is 0.7-biased)?",
+      "input": {
+        "hypothesis_1": {"p_heads": 0.3, "prior": 0.5},
+        "hypothesis_2": {"p_heads": 0.7, "prior": 0.5},
+        "observations": ["H", "H", "H", "T"],
+        "mode": "linear"
+      },
+      "expected": 0.945,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_027",
+      "description": "Polygraph test: 85% accurate for lying, 75% accurate for truth-telling. Estimated 10% of people lie in this context. Test says lying. What is P(actually lying)?",
+      "input": {
+        "prior": 0.10,
+        "sensitivity": 0.85,
+        "specificity": 0.75,
+        "observation": "test indicates lying",
+        "mode": "linear"
+      },
+      "expected": 0.275,
+      "difficulty": "medium",
+      "metadata": {"type": "base_rate_fallacy", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_028",
+      "description": "Insurance fraud: 5% of claims are fraudulent. Detection algorithm flags 92% of fraud, and 8% of legitimate claims. Claim is flagged. What is P(fraudulent)?",
+      "input": {
+        "prior": 0.05,
+        "sensitivity": 0.92,
+        "specificity": 0.92,
+        "observation": "flagged",
+        "mode": "linear"
+      },
+      "expected": 0.378,
+      "difficulty": "medium",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_029",
+      "description": "Urn problem: Urn A has 7 red, 3 white balls. Urn B has 3 red, 7 white balls. You pick urn at random, draw 2 balls with replacement, get red both times. What is P(Urn A)?",
+      "input": {
+        "urn_a": {"red": 7, "white": 3},
+        "urn_b": {"red": 3, "white": 7},
+        "observations": ["red", "red"],
+        "with_replacement": true,
+        "mode": "linear"
+      },
+      "expected": 0.844,
+      "difficulty": "hard",
+      "metadata": {"type": "bayesian_update", "tolerance": 0.01}
+    },
+    {
+      "id": "bayes_030",
+      "description": "Conditional independence: P(A) = 0.5, P(B|A) = 0.8, P(C|A) = 0.6, P(B|¬A) = 0.3, P(C|¬A) = 0.4. Observe B and C. What is P(A)?",
+      "input": {
+        "prior_a": 0.5,
+        "p_b_given_a": 0.8,
+        "p_b_given_not_a": 0.3,
+        "p_c_given_a": 0.6,
+        "p_c_given_not_a": 0.4,
+        "observations": ["B", "C"],
+        "conditional_independence": true,
+        "mode": "linear"
+      },
+      "expected": 0.800,
+      "difficulty": "hard",
+      "metadata": {"type": "conditional_independence", "tolerance": 0.01}
     }
   ]
 }
