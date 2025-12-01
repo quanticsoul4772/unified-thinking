@@ -161,7 +161,7 @@ func TestToStructuredError(t *testing.T) {
 	regularErr := errors.New("regular error")
 	result = ToStructuredError(regularErr)
 	if result == nil {
-		t.Error("ToStructuredError should wrap regular errors")
+		t.Fatal("ToStructuredError should wrap regular errors")
 	}
 	if result.Code != ErrInvalidOperation {
 		t.Errorf("Expected generic code, got %s", result.Code)

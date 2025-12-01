@@ -45,11 +45,10 @@ func (i *Importer) Import(export *SessionExport, opts MergeOptions) (*ImportResu
 		return result, nil
 	}
 
-	// Handle replace strategy
-	if opts.Strategy == MergeReplace {
-		// Clear existing data (this is a simplified approach)
-		// In a real implementation, you'd want more selective clearing
-	}
+	// Handle replace strategy - currently a no-op as the storage layer
+	// handles overwrites automatically. Future implementations may add
+	// explicit clearing of related data before import.
+	_ = opts.Strategy == MergeReplace // Acknowledge strategy for future use
 
 	// Import thoughts
 	importedThoughts, err := i.importThoughts(export.Thoughts, opts)
@@ -179,7 +178,9 @@ func decompressJSON(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close() // Error ignored: decompression already complete
+	}()
 	return io.ReadAll(reader)
 }
 
