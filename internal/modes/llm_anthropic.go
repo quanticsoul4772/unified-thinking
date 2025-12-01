@@ -284,7 +284,7 @@ func (a *AnthropicLLMClient) makeRequest(ctx context.Context, reqBody anthropicR
 	if err != nil {
 		return "", fmt.Errorf("API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -347,9 +347,10 @@ func extractJSON(s string) string {
 		if inString {
 			continue
 		}
-		if c == '{' || c == '[' {
+		switch c {
+		case '{', '[':
 			depth++
-		} else if c == '}' || c == ']' {
+		case '}', ']':
 			depth--
 			if depth == 0 && c == endChar {
 				return s[start : i+1]
