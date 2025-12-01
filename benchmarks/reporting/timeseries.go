@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -113,7 +114,15 @@ func LoadFromFile(path string) (*TimeSeries, error) {
 	// Sanitize path to prevent directory traversal
 	cleanPath := filepath.Clean(path)
 
-	data, err := os.ReadFile(cleanPath) // #nosec G304 - Benchmark data files only, path sanitized
+	// Validate path contains only safe characters and no traversal
+	if filepath.IsAbs(cleanPath) {
+		return nil, fmt.Errorf("absolute paths not allowed")
+	}
+	if strings.Contains(cleanPath, "..") {
+		return nil, fmt.Errorf("path traversal not allowed")
+	}
+
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Return empty time series if file doesn't exist
