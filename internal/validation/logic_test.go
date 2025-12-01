@@ -745,7 +745,7 @@ func TestModusTollens(t *testing.T) {
 				"not Q",
 			},
 			conclusion:   "not P",
-			wantProvable: false, // Implementation's string matching doesn't handle this well
+			wantProvable: true, // Now supported with NOT prefix handling
 		},
 		{
 			name: "modus tollens with 'no' - hard to prove",
