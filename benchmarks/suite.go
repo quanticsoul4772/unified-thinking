@@ -6,12 +6,25 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
 // LoadSuite loads a benchmark suite from a JSON file
 func LoadSuite(path string) (*BenchmarkSuite, error) {
-	data, err := os.ReadFile(path)
+	// Sanitize path to prevent directory traversal
+	cleanPath := filepath.Clean(path)
+
+	// Validate path contains only safe characters and no traversal
+	if filepath.IsAbs(cleanPath) {
+		return nil, fmt.Errorf("absolute paths not allowed")
+	}
+	if strings.Contains(cleanPath, "..") {
+		return nil, fmt.Errorf("path traversal not allowed")
+	}
+
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read suite file: %w", err)
 	}
