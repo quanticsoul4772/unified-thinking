@@ -249,17 +249,15 @@ func NewUnifiedServer(
 	// Initialize Phase 2-3 handlers
 	s.initializeAdvancedHandlers()
 
-	// Initialize Graph-of-Thoughts
-	s.graphController = modes.NewGraphController(store)
-
-	// Initialize Anthropic LLM client (required for GoT)
+	// Initialize Graph-of-Thoughts (optional - requires ANTHROPIC_API_KEY)
 	llmClient, err := modes.NewAnthropicLLMClient()
-	if err != nil {
-		log.Fatalf("Graph-of-Thoughts requires ANTHROPIC_API_KEY: %v", err)
+	if err == nil {
+		s.graphController = modes.NewGraphController(store)
+		s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
+		log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
+	} else {
+		log.Printf("Graph-of-Thoughts disabled: %v", err)
 	}
-	log.Println("Graph-of-Thoughts using Anthropic Claude API")
-
-	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
 
 	return s
 }
@@ -981,8 +979,10 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		handlers.RegisterSimilarityTools(mcpServer, simHandler)
 	}
 
-	// Register Graph-of-Thoughts tools (8 tools)
-	handlers.RegisterGoTTools(mcpServer, s.gotHandler)
+	// Register Graph-of-Thoughts tools (8 tools) - only if ANTHROPIC_API_KEY is set
+	if s.gotHandler != nil {
+		handlers.RegisterGoTTools(mcpServer, s.gotHandler)
+	}
 }
 
 type ThinkRequest struct {
