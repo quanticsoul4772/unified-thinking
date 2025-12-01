@@ -159,7 +159,7 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (63 total):
+**Available Tools** (66 total):
 
 **Core Thinking Tools** (11 tools):
 1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
@@ -253,6 +253,11 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 61. `get-recommendations` - Get adaptive recommendations based on similar past problems
 62. `search-trajectories` - Search past reasoning sessions to learn from successes and failures
 63. `analyze-trajectory` - Perform retrospective analysis of completed session (strengths, weaknesses, improvements, lessons learned)
+
+**Knowledge Graph Tools** (3 tools):
+64. `store-entity` - Store an entity in the knowledge graph with semantic indexing
+65. `search-knowledge-graph` - Search for entities using semantic similarity or graph traversal
+66. `create-relationship` - Create typed relationships between entities (CAUSES, ENABLES, etc.)
 
 ## Storage Architecture
 

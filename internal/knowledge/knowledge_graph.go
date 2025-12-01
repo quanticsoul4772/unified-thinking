@@ -13,7 +13,7 @@ import (
 // KnowledgeGraph combines Neo4j graph database with chromem-go vector search
 type KnowledgeGraph struct {
 	graphStore     *GraphStore
-	vectorStore    *VectorStore
+	VectorStore    *VectorStore // Exported for metrics access
 	embeddingCache *EmbeddingCache
 	neo4jClient    *Neo4jClient
 	database       string
@@ -67,7 +67,7 @@ func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
 
 	kg := &KnowledgeGraph{
 		graphStore:     graphStore,
-		vectorStore:    vectorStore,
+		VectorStore:    vectorStore,
 		embeddingCache: embeddingCache,
 		neo4jClient:    neo4jClient,
 		database:       cfg.Neo4jConfig.Database,
@@ -84,8 +84,8 @@ func (kg *KnowledgeGraph) Close(ctx context.Context) error {
 		return nil
 	}
 
-	if kg.vectorStore != nil {
-		if err := kg.vectorStore.Close(); err != nil {
+	if kg.VectorStore != nil {
+		if err := kg.VectorStore.Close(); err != nil {
 			return err
 		}
 	}
@@ -114,8 +114,8 @@ func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, conte
 	}
 
 	// Generate and cache embedding
-	if kg.vectorStore != nil && kg.vectorStore.embedder != nil {
-		embedding, err := kg.vectorStore.embedder.Embed(ctx, content)
+	if kg.VectorStore != nil && kg.VectorStore.embedder != nil {
+		embedding, err := kg.VectorStore.embedder.Embed(ctx, content)
 		if err != nil {
 			log.Printf("[WARN] Failed to generate embedding for entity %s: %v", entity.ID, err)
 		} else {
@@ -126,7 +126,7 @@ func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, conte
 				"label":       entity.Label,
 			}
 
-			if err := kg.vectorStore.AddDocument(ctx, "entities", entity.ID, content, metadata); err != nil {
+			if err := kg.VectorStore.AddDocument(ctx, "entities", entity.ID, content, metadata); err != nil {
 				log.Printf("[WARN] Failed to add entity to vector store: %v", err)
 			}
 
@@ -137,8 +137,8 @@ func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, conte
 					EntityLabel: entity.Label,
 					EntityType:  string(entity.Type),
 					Embedding:   embedding,
-					Model:       kg.vectorStore.embedder.Model(),
-					Provider:    kg.vectorStore.embedder.Provider(),
+					Model:       kg.VectorStore.embedder.Model(),
+					Provider:    kg.VectorStore.embedder.Provider(),
 					Dimension:   len(embedding),
 				}
 
@@ -166,11 +166,11 @@ func (kg *KnowledgeGraph) SearchSemantic(ctx context.Context, query string, limi
 		return nil, fmt.Errorf("knowledge graph not enabled")
 	}
 
-	if kg.vectorStore == nil {
+	if kg.VectorStore == nil {
 		return nil, fmt.Errorf("vector store not configured")
 	}
 
-	return kg.vectorStore.SearchSimilarWithThreshold(ctx, "entities", query, limit, minSimilarity)
+	return kg.VectorStore.SearchSimilarWithThreshold(ctx, "entities", query, limit, minSimilarity)
 }
 
 // SearchGraph performs graph traversal to find related entities

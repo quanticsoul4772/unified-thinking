@@ -99,6 +99,7 @@ import (
 	"unified-thinking/internal/contextbridge"
 	"unified-thinking/internal/embeddings"
 	"unified-thinking/internal/integration"
+	"unified-thinking/internal/knowledge"
 	"unified-thinking/internal/memory"
 	"unified-thinking/internal/metacognition"
 	"unified-thinking/internal/modes"
@@ -162,6 +163,13 @@ type UnifiedServer struct {
 	episodicMemoryHandler *handlers.EpisodicMemoryHandler
 	// Context bridge for cross-session context retrieval
 	contextBridge *contextbridge.ContextBridge
+	// Knowledge graph for semantic memory and entity relationships (optional, set via SetKnowledgeGraph)
+	knowledgeGraph *knowledge.KnowledgeGraph
+}
+
+// SetKnowledgeGraph sets the knowledge graph instance (optional)
+func (s *UnifiedServer) SetKnowledgeGraph(kg *knowledge.KnowledgeGraph) {
+	s.knowledgeGraph = kg
 }
 
 func NewUnifiedServer(
@@ -1457,6 +1465,7 @@ type MetricsResponse struct {
 	ContextBridge      map[string]interface{} `json:"context_bridge,omitempty"`
 	Probabilistic      map[string]interface{} `json:"probabilistic,omitempty"`
 	ThompsonSamplingRL map[string]interface{} `json:"thompson_sampling_rl,omitempty"`
+	KnowledgeGraph     map[string]interface{} `json:"knowledge_graph,omitempty"`
 }
 
 type RecentBranchesResponse struct {
@@ -1533,6 +1542,29 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 		}
 	} else {
 		log.Println("[DEBUG] Not using SQLite storage - RL not available")
+	}
+
+	// Include knowledge graph metrics if enabled
+	if s.knowledgeGraph != nil && s.knowledgeGraph.IsEnabled() {
+		log.Println("[DEBUG] Knowledge graph enabled, collecting metrics...")
+		kgMetrics := make(map[string]interface{})
+		kgMetrics["enabled"] = true
+
+		// Get embedding cache stats
+		if cacheStats, err := s.knowledgeGraph.GetEmbeddingCacheStats(); err == nil {
+			kgMetrics["embedding_cache"] = cacheStats
+		}
+
+		// Get vector store collections
+		if vs := s.knowledgeGraph.VectorStore; vs != nil {
+			if collections, err := vs.ListCollections(); err == nil {
+				kgMetrics["vector_collections"] = len(collections)
+				kgMetrics["collection_names"] = collections
+			}
+		}
+
+		response.KnowledgeGraph = kgMetrics
+		log.Println("[DEBUG] KG metrics added to response")
 	}
 
 	return &mcp.CallToolResult{
