@@ -45,7 +45,7 @@ func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
 	defer cancel()
 
 	if err := InitializeSchema(ctx, neo4jClient, cfg.Neo4jConfig.Database); err != nil {
-		neo4jClient.Close(ctx)
+		_ = neo4jClient.Close(ctx)
 		return nil, fmt.Errorf("failed to initialize Neo4j schema: %w", err)
 	}
 
@@ -55,7 +55,7 @@ func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
 	// Initialize vector store
 	vectorStore, err := NewVectorStore(cfg.VectorConfig)
 	if err != nil {
-		neo4jClient.Close(ctx)
+		_ = neo4jClient.Close(ctx)
 		return nil, fmt.Errorf("failed to create vector store: %w", err)
 	}
 

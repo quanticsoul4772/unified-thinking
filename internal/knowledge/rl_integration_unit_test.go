@@ -634,12 +634,8 @@ func TestRecordStrategyOutcome(t *testing.T) {
 				t.Errorf("RecordStrategyOutcome() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			// For enabled KG without errors, verify storage
-			if tt.enabled && tt.setupMock != nil && mockKG.storeErr == nil {
-				// Problem entity and strategy entity should be stored
-				// We can't verify directly since the method doesn't expose internals
-				// but we can check the test doesn't panic
-			}
+			// For enabled KG without errors, test completes without panic
+			// (No assertions needed - successful execution validates behavior)
 		})
 	}
 }

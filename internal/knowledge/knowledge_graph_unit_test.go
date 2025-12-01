@@ -9,69 +9,6 @@ import (
 	"unified-thinking/internal/embeddings"
 )
 
-// mockGraphStore is a mock implementation of graph storage operations
-type mockGraphStore struct {
-	entities      map[string]*Entity
-	relationships map[string]*Relationship
-	createErr     error
-	getErr        error
-	queryErr      error
-}
-
-func newMockGraphStore() *mockGraphStore {
-	return &mockGraphStore{
-		entities:      make(map[string]*Entity),
-		relationships: make(map[string]*Relationship),
-	}
-}
-
-func (m *mockGraphStore) CreateEntity(ctx context.Context, entity *Entity) error {
-	if m.createErr != nil {
-		return m.createErr
-	}
-	m.entities[entity.ID] = entity
-	return nil
-}
-
-func (m *mockGraphStore) GetEntity(ctx context.Context, entityID string) (*Entity, error) {
-	if m.getErr != nil {
-		return nil, m.getErr
-	}
-	entity, ok := m.entities[entityID]
-	if !ok {
-		return nil, errors.New("entity not found")
-	}
-	return entity, nil
-}
-
-func (m *mockGraphStore) CreateRelationship(ctx context.Context, rel *Relationship) error {
-	if m.createErr != nil {
-		return m.createErr
-	}
-	m.relationships[rel.ID] = rel
-	return nil
-}
-
-func (m *mockGraphStore) QueryEntitiesWithinHops(ctx context.Context, entityID string, maxHops int, relTypes []RelationshipType) ([]*Entity, error) {
-	if m.queryErr != nil {
-		return nil, m.queryErr
-	}
-	// Simple mock: return entities connected by relationships
-	var result []*Entity
-	for _, rel := range m.relationships {
-		if rel.FromID == entityID {
-			if entity, ok := m.entities[rel.ToID]; ok {
-				result = append(result, entity)
-			}
-		} else if rel.ToID == entityID {
-			if entity, ok := m.entities[rel.FromID]; ok {
-				result = append(result, entity)
-			}
-		}
-	}
-	return result, nil
-}
-
 // mockVectorStore is a mock implementation of vector search
 type mockVectorStore struct {
 	documents   map[string]chromem.Document
@@ -132,20 +69,6 @@ func (m *mockVectorStore) SearchSimilarWithThreshold(ctx context.Context, collec
 
 func (m *mockVectorStore) Close() error {
 	return nil
-}
-
-// Helper to create a mock-based KnowledgeGraph for testing
-func newMockKnowledgeGraph(enabled bool) *KnowledgeGraph {
-	mockEmbedder := embeddings.NewMockEmbedder(512)
-
-	kg := &KnowledgeGraph{
-		VectorStore: &VectorStore{
-			embedder: mockEmbedder,
-		},
-		enabled: enabled,
-	}
-
-	return kg
 }
 
 // TestKnowledgeGraph_Close tests the Close method

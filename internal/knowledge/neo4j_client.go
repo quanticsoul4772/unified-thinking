@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j/config"
 )
 
 // Neo4jClient manages connections to Neo4j database
@@ -51,7 +52,7 @@ func NewNeo4jClient(cfg Neo4jConfig) (*Neo4jClient, error) {
 	driver, err := neo4j.NewDriverWithContext(
 		cfg.URI,
 		neo4j.BasicAuth(cfg.Username, cfg.Password, ""),
-		func(config *neo4j.Config) {
+		func(config *config.Config) {
 			config.MaxConnectionPoolSize = 50
 			config.ConnectionAcquisitionTimeout = cfg.Timeout
 			config.SocketConnectTimeout = cfg.Timeout
@@ -72,7 +73,7 @@ func NewNeo4jClient(cfg Neo4jConfig) (*Neo4jClient, error) {
 	defer cancel()
 
 	if err := driver.VerifyConnectivity(ctx); err != nil {
-		driver.Close(ctx)
+		_ = driver.Close(ctx)
 		return nil, fmt.Errorf("failed to verify Neo4j connectivity: %w", err)
 	}
 
@@ -93,7 +94,7 @@ func (c *Neo4jClient) ExecuteWrite(ctx context.Context, database string, work ne
 		DatabaseName: database,
 		AccessMode:   neo4j.AccessModeWrite,
 	})
-	defer session.Close(ctx)
+	defer func() { _ = session.Close(ctx) }()
 
 	return session.ExecuteWrite(ctx, work)
 }
@@ -104,7 +105,7 @@ func (c *Neo4jClient) ExecuteRead(ctx context.Context, database string, work neo
 		DatabaseName: database,
 		AccessMode:   neo4j.AccessModeRead,
 	})
-	defer session.Close(ctx)
+	defer func() { _ = session.Close(ctx) }()
 
 	return session.ExecuteRead(ctx, work)
 }
@@ -115,7 +116,7 @@ func (c *Neo4jClient) Run(ctx context.Context, database string, query string, pa
 		DatabaseName: database,
 		AccessMode:   neo4j.AccessModeWrite,
 	})
-	defer session.Close(ctx)
+	defer func() { _ = session.Close(ctx) }()
 
 	return session.Run(ctx, query, params)
 }

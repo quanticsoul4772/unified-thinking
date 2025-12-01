@@ -49,6 +49,8 @@ func (le *LLMExtractor) ExtractWithPrompt(ctx context.Context, content string, p
 }
 
 // buildExtractionPrompt creates the LLM prompt for entity extraction
+//
+//nolint:unused // Placeholder for future LLM integration
 func buildExtractionPrompt(content string) string {
 	return fmt.Sprintf(`Extract entities and relationships from the following text.
 
@@ -80,7 +82,9 @@ Return a JSON object with this structure:
 }`, content)
 }
 
-// parseL LMResponse parses the LLM's JSON response into extraction result
+// parseLLMResponse parses the LLM's JSON response into extraction result
+//
+//nolint:unused // Placeholder for future LLM integration
 func parseLLMResponse(responseJSON string) (*ExtractionResult, error) {
 	var parsed struct {
 		Entities []struct {

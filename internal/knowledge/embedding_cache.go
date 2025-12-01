@@ -124,7 +124,7 @@ func (ec *EmbeddingCache) GetByType(entityType string, limit int) ([]*EntityEmbe
 	if err != nil {
 		return nil, fmt.Errorf("failed to query embeddings by type: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	embeddings := []*EntityEmbedding{}
 	for rows.Next() {
@@ -194,7 +194,7 @@ func (ec *EmbeddingCache) GetCacheStats() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	byType := make(map[string]int)
 	for rows.Next() {

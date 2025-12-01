@@ -168,7 +168,7 @@ func (vs *VectorStore) ListCollections() ([]string, error) {
 
 // DeleteCollection removes a collection
 func (vs *VectorStore) DeleteCollection(name string) error {
-	vs.db.DeleteCollection(name)
+	_ = vs.db.DeleteCollection(name)
 	return nil
 }
 

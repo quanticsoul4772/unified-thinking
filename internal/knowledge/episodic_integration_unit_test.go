@@ -358,12 +358,3 @@ func TestExtractFromTrajectory_EdgeCases(t *testing.T) {
 		})
 	}
 }
-
-// Helper function to generate test steps
-func generateSteps(count int) []string {
-	steps := make([]string, count)
-	for i := 0; i < count; i++ {
-		steps[i] = "Step " + string(rune(i))
-	}
-	return steps
-}

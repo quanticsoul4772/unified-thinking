@@ -170,7 +170,7 @@ func (rcr *RLContextRetriever) RecordStrategyOutcome(ctx context.Context, proble
 		Type:  EntityTypeStrategy,
 	}
 
-	rcr.kg.StoreEntity(ctx, strategyEntity, strategy)
+	_ = rcr.kg.StoreEntity(ctx, strategyEntity, strategy)
 
 	// Create relationship
 	relType := RelationshipEnables

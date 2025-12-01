@@ -105,8 +105,8 @@ func (te *TrajectoryExtractor) ExtractFromTrajectory(ctx context.Context, trajec
 			Type:  EntityTypeConcept,
 		}
 
-		te.kg.StoreEntity(ctx, fromEntity, rel.From)
-		te.kg.StoreEntity(ctx, toEntity, rel.To)
+		_ = te.kg.StoreEntity(ctx, fromEntity, rel.From)
+		_ = te.kg.StoreEntity(ctx, toEntity, rel.To)
 
 		// Create relationship
 		relationship := &Relationship{
