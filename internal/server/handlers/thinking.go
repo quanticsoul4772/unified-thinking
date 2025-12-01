@@ -7,6 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/streaming"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
@@ -90,6 +91,9 @@ type HistoryResponse struct {
 
 // HandleThink processes a thinking request
 func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequest, input ThinkRequest) (*mcp.CallToolResult, *ThinkResponse, error) {
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "think")
+
 	// Set default confidence if not provided
 	if input.Confidence == 0 {
 		input.Confidence = 0.8
@@ -106,6 +110,21 @@ func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequ
 		KeyPoints:         input.KeyPoints,
 		ForceRebellion:    input.ForceRebellion,
 		CrossRefs:         input.CrossRefs,
+	}
+
+	// Determine total steps based on mode and options
+	totalSteps := 2 // base: process + metadata
+	if input.RequireValidation {
+		totalSteps++
+	}
+
+	// Report mode selection (step 1)
+	if reporter.IsEnabled() {
+		modeName := input.Mode
+		if modeName == "" {
+			modeName = "linear"
+		}
+		_ = reporter.ReportStep(1, totalSteps, "mode-select", "Selecting mode: "+modeName)
 	}
 
 	// Select mode
@@ -129,9 +148,19 @@ func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequ
 		return nil, nil, err
 	}
 
+	// Report thought processing complete (step 2)
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(2, totalSteps, "process", "Thought processed: "+result.ThoughtID)
+	}
+
 	// Validate if required
 	isValid := false
 	if input.RequireValidation {
+		// Report validation step
+		if reporter.IsEnabled() {
+			_ = reporter.ReportStep(3, totalSteps, "validate", "Validating thought logic...")
+		}
+
 		thought, _ := h.storage.GetThought(result.ThoughtID)
 		if thought != nil {
 			validationResult, _ := h.validator.ValidateThought(thought)

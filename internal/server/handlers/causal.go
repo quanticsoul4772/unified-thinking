@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/reasoning"
+	"unified-thinking/internal/streaming"
 	"unified-thinking/internal/types"
 )
 
@@ -95,9 +97,26 @@ func (h *CausalHandler) HandleBuildCausalGraph(
 	req *mcp.CallToolRequest,
 	input BuildCausalGraphRequest,
 ) (*mcp.CallToolResult, *BuildCausalGraphResponse, error) {
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "build-causal-graph")
+	observationCount := len(input.Observations)
+	totalSteps := observationCount + 2 // parse observations + build links + finalize
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(1, totalSteps, "parse", fmt.Sprintf("Parsing %d observations...", observationCount))
+	}
+
 	graph, err := h.causalReasoner.BuildCausalGraph(input.Description, input.Observations)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		varCount := len(graph.Variables)
+		linkCount := len(graph.Links)
+		_ = reporter.ReportStep(totalSteps, totalSteps, "complete", fmt.Sprintf("Built graph: %d variables, %d links", varCount, linkCount))
 	}
 
 	// Generate metadata for Claude orchestration

@@ -7,6 +7,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/modes"
+	"unified-thinking/internal/streaming"
 )
 
 // GoTHandler handles Graph-of-Thoughts operations
@@ -97,12 +98,23 @@ func (h *GoTHandler) HandleGenerate(ctx context.Context, req *mcp.CallToolReques
 		return nil, nil, fmt.Errorf("k must be positive")
 	}
 
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "got-generate")
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(0, request.K, "initialize", fmt.Sprintf("Generating %d continuations for graph %s", request.K, request.GraphID))
+	}
+
 	genReq := modes.GenerateRequest{
 		SourceVertexIDs: request.SourceIDs,
 		K:               request.K,
 		Problem:         request.Problem,
 		MaxDepth:        0, // Use config default
 	}
+
+	// Inject reporter into context for the controller to use
+	ctx = streaming.WithReporter(ctx, reporter)
 
 	vertices, err := h.controller.Generate(ctx, request.GraphID, h.llm, genReq)
 	if err != nil {
@@ -121,6 +133,17 @@ func (h *GoTHandler) HandleGenerate(ctx context.Context, req *mcp.CallToolReques
 			Confidence: v.Confidence,
 			Score:      v.Score,
 		}
+
+		// Report each vertex generation
+		if reporter.IsEnabled() {
+			_ = reporter.ReportStep(i+1, len(vertices), "generate", fmt.Sprintf("Generated vertex %s", v.ID))
+			_ = reporter.ReportPartialResult("vertex", newVertices[i])
+		}
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(len(vertices), len(vertices), "complete", fmt.Sprintf("Generated %d vertices", len(vertices)))
 	}
 
 	response := &GenerateResponse{
@@ -156,14 +179,40 @@ func (h *GoTHandler) HandleAggregate(ctx context.Context, req *mcp.CallToolReque
 		return nil, nil, fmt.Errorf("need at least 2 vertices to aggregate")
 	}
 
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "got-aggregate")
+	sourceCount := len(request.VertexIDs)
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(0, sourceCount+1, "initialize", fmt.Sprintf("Aggregating %d vertices", sourceCount))
+	}
+
+	// Report collecting phase
+	if reporter.IsEnabled() {
+		for i, vid := range request.VertexIDs {
+			_ = reporter.ReportStep(i+1, sourceCount+1, "collect", fmt.Sprintf("Collecting vertex %s", vid))
+		}
+	}
+
 	aggReq := modes.AggregateRequest{
 		VertexIDs: request.VertexIDs,
 		Problem:   request.Problem,
 	}
 
+	// Report merge phase
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(sourceCount, sourceCount+1, "merge", "Merging vertices into unified insight")
+	}
+
 	vertex, err := h.controller.Aggregate(ctx, request.GraphID, h.llm, aggReq)
 	if err != nil {
 		return nil, nil, fmt.Errorf("aggregation failed: %w", err)
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(sourceCount+1, sourceCount+1, "complete", fmt.Sprintf("Created aggregated vertex %s", vertex.ID))
 	}
 
 	response := &AggregateResponse{
@@ -177,6 +226,11 @@ func (h *GoTHandler) HandleAggregate(ctx context.Context, req *mcp.CallToolReque
 			Score:      vertex.Score,
 		},
 		SourceCount: len(request.VertexIDs),
+	}
+
+	// Report final result as partial data
+	if reporter.IsEnabled() {
+		_ = reporter.ReportPartialResult("aggregated", response.AggregatedVertex)
 	}
 
 	return &mcp.CallToolResult{Content: toJSONContent(response)}, response, nil

@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"unified-thinking/internal/analysis"
 	"unified-thinking/internal/reasoning"
+	"unified-thinking/internal/streaming"
 	"unified-thinking/internal/types"
 )
 
@@ -91,9 +93,27 @@ func (h *TemporalHandler) HandleAnalyzePerspectives(
 	req *mcp.CallToolRequest,
 	input AnalyzePerspectivesRequest,
 ) (*mcp.CallToolResult, *AnalyzePerspectivesResponse, error) {
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "analyze-perspectives")
+	stakeholderCount := len(input.StakeholderHints)
+	if stakeholderCount == 0 {
+		stakeholderCount = 3 // Default stakeholders if none specified
+	}
+	totalSteps := stakeholderCount + 1 // stakeholders + conflicts analysis
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(1, totalSteps, "analyze", fmt.Sprintf("Analyzing %d stakeholder perspectives...", stakeholderCount))
+	}
+
 	perspectives, err := h.perspectiveAnalyzer.AnalyzePerspectives(input.Situation, input.StakeholderHints)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(totalSteps, totalSteps, "complete", fmt.Sprintf("Identified %d perspectives", len(perspectives)))
 	}
 
 	// Generate metadata for Claude orchestration

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"unified-thinking/internal/streaming"
 )
 
 // WorkflowType defines the type of workflow execution pattern
@@ -237,6 +239,15 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 		Metadata:    make(map[string]interface{}),
 	}
 
+	// Get progress reporter from context if available
+	reporter := streaming.GetReporter(ctx)
+
+	// Report workflow start
+	if reporter.IsEnabled() {
+		totalSteps := len(workflow.Steps)
+		_ = reporter.ReportStep(0, totalSteps, "initialize", "Starting workflow: "+workflow.Name)
+	}
+
 	// Execute based on workflow type
 	switch workflow.Type {
 	case WorkflowSequential:
@@ -254,7 +265,16 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 	if err != nil {
 		result.Status = "failed"
 		result.ErrorMessage = err.Error()
+		// Report failure
+		if reporter.IsEnabled() {
+			_ = reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "failed", "Workflow failed: "+err.Error())
+		}
 		return result, err
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "complete", "Workflow completed successfully")
 	}
 
 	result.Status = "success"
@@ -263,10 +283,22 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 
 // executeSequential executes workflow steps in sequence
 func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow, input map[string]interface{}, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
-	for _, step := range workflow.Steps {
+	reporter := streaming.GetReporter(ctx)
+	totalSteps := len(workflow.Steps)
+
+	for i, step := range workflow.Steps {
 		// Check condition if present
 		if step.Condition != nil && !o.evaluateCondition(step.Condition, reasoningCtx) {
+			// Report skipped step
+			if reporter.IsEnabled() {
+				_ = reporter.ReportStep(i+1, totalSteps, step.ID, "Skipped (condition not met)")
+			}
 			continue
+		}
+
+		// Report step start
+		if reporter.IsEnabled() {
+			_ = reporter.ReportStep(i+1, totalSteps, step.ID, "Executing: "+step.Tool)
 		}
 
 		// Execute step
@@ -282,6 +314,11 @@ func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow
 		}
 
 		result.StepResults[step.ID] = stepResult
+
+		// Report step completion with partial data if enabled
+		if reporter.IsEnabled() {
+			_ = reporter.ReportPartialResult(step.ID, stepResult)
+		}
 	}
 
 	return nil
@@ -346,6 +383,9 @@ func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, 
 
 // executeConditional executes workflow with conditional branching
 func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflow, input map[string]interface{}, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
+	reporter := streaming.GetReporter(ctx)
+	totalSteps := len(workflow.Steps)
+
 	// Build dependency graph
 	dependencies := make(map[string][]string)
 	for _, step := range workflow.Steps {
@@ -354,6 +394,7 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 
 	// Execute steps respecting dependencies
 	executed := make(map[string]bool)
+	executedCount := 0
 	for len(executed) < len(workflow.Steps) {
 		progress := false
 
@@ -378,8 +419,18 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 			// Check condition
 			if step.Condition != nil && !o.evaluateCondition(step.Condition, reasoningCtx) {
 				executed[step.ID] = true
+				executedCount++
+				// Report skipped step
+				if reporter.IsEnabled() {
+					_ = reporter.ReportStep(executedCount, totalSteps, step.ID, "Skipped (condition not met)")
+				}
 				progress = true
 				continue
+			}
+
+			// Report step start
+			if reporter.IsEnabled() {
+				_ = reporter.ReportStep(executedCount+1, totalSteps, step.ID, "Executing: "+step.Tool)
 			}
 
 			// Execute step
@@ -396,7 +447,13 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 
 			result.StepResults[step.ID] = stepResult
 			executed[step.ID] = true
+			executedCount++
 			progress = true
+
+			// Report step completion with partial data
+			if reporter.IsEnabled() {
+				_ = reporter.ReportPartialResult(step.ID, stepResult)
+			}
 		}
 
 		if !progress {
