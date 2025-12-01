@@ -764,7 +764,7 @@ make benchmark
 | `internal/knowledge/extraction` | 71.7% |
 | `cmd/server` | 70.6% |
 | `internal/contextbridge` | 70.6% |
-| `internal/knowledge` | 65.0% (Neo4j) / 14.1% (short) |
+| `internal/knowledge` | 64.9% (requires Neo4j) |
 
 ## troubleshooting
 
