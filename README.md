@@ -4,7 +4,7 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-78.3%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
-[![Tools](https://img.shields.io/badge/tools-66-blue)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tools](https://img.shields.io/badge/tools-75-blue)](https://github.com/quanticsoul4772/unified-thinking)
 [![Benchmarks](https://img.shields.io/badge/benchmarks-114%20problems-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
@@ -33,6 +33,7 @@ make build
 - **reflection mode**: metacognitive reflection on previous reasoning with insight extraction
 - **backtracking mode**: checkpoint-based reasoning with ability to restore previous states
 - **auto mode**: automatic mode selection based on input content
+- **graph mode**: arbitrary graph structures with thought aggregation, refinement, and cyclic reasoning (Graph-of-Thoughts)
 
 ### core capabilities
 
@@ -50,7 +51,7 @@ make build
 
 ### advanced cognitive reasoning
 
-the server includes 66 specialized tools across 14 major categories:
+the server includes 75 specialized tools across 15 major categories:
 
 #### probabilistic reasoning (4 tools)
 - bayesian inference with mathematically correct two-likelihood updates (P(E|H) and P(E|¬H))
@@ -127,6 +128,24 @@ the server includes 66 specialized tools across 14 major categories:
 - **create-relationship** - create typed relationships (CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, etc.)
 - **Automatic extraction** - entities automatically extracted from reasoning sessions and stored in knowledge graph
 - **Persistent vector storage** - chromem-go collections persist to disk (survive restarts)
+
+#### thought similarity search (1 tool)
+- **search-similar-thoughts** - semantic search over past thoughts using Voyage AI embeddings
+- finds semantically similar reasoning chains for reuse
+- reduces redundant computation through pattern matching
+
+#### graph-of-thoughts (8 tools)
+- **got-initialize** - start new graph with initial thought
+- **got-generate** - create k diverse continuations using Anthropic Claude API
+- **got-aggregate** - merge parallel reasoning paths via LLM synthesis
+- **got-refine** - iteratively improve thoughts through self-critique (max 3 iterations)
+- **got-score** - multi-criteria quality evaluation (confidence, validity, relevance, novelty, depth)
+- **got-prune** - remove low-quality vertices below threshold
+- **got-get-state** - retrieve current graph state with all vertices
+- **got-finalize** - mark terminal vertices and extract conclusions
+- **Multiple parents** - vertices can have multiple parents (key advantage over tree-of-thoughts)
+- **Cyclic reasoning** - supports feedback loops from conclusions to premises
+- **LLM-powered** - uses Claude Sonnet 4.5 for generation, synthesis, and refinement
 
 #### context bridge (automatic)
 - **cross-session context retrieval** - automatically surfaces similar past reasoning trajectories
@@ -314,7 +333,8 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
         "NEO4J_URI": "neo4j+s://your-instance.databases.neo4j.io",
         "NEO4J_USERNAME": "neo4j",
         "NEO4J_PASSWORD": "your-neo4j-password",
-        "NEO4J_DATABASE": "neo4j"
+        "NEO4J_DATABASE": "neo4j",
+        "ANTHROPIC_API_KEY": "your-anthropic-api-key-here"
       }
     }
   }
@@ -333,6 +353,7 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
         "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "ANTHROPIC_API_KEY": "your-anthropic-api-key-here",
         "NEO4J_ENABLED": "true",
         "NEO4J_URI": "neo4j+s://your-instance.databases.neo4j.io",
         "NEO4J_USERNAME": "neo4j",
@@ -378,14 +399,32 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
 - `NEO4J_TIMEOUT_MS`: Connection timeout in milliseconds (default: `5000`)
 - `VECTOR_STORE_PATH`: Persistent chromem-go vector storage path (defaults to `{SQLITE_PATH}_vectors`)
 
+**Graph-of-Thoughts** (LLM-powered graph reasoning):
+- `ANTHROPIC_API_KEY`: Anthropic API key (REQUIRED for GoT tools, server fails if missing)
+- `GOT_MODEL`: Model to use (default: `claude-sonnet-4-5-20250929`)
+
 **Important Notes**:
 - **Trajectory persistence requires SQLite**: Set `STORAGE_TYPE=sqlite` to enable episodic memory persistence
 - **Knowledge graph requires Neo4j + Voyage AI**: Both `NEO4J_ENABLED=true` and `VOYAGE_API_KEY` must be set
+- **Graph-of-Thoughts requires Anthropic API**: Server will not start without `ANTHROPIC_API_KEY`
 - **Restart required**: Changes to configuration require restarting Claude Desktop to take effect
 
 ## recent updates
 
-### new features (latest: knowledge graph integration)
+### new features (latest: graph-of-thoughts)
+
+- **graph-of-thoughts (GoT)** (3 commits, 2,029 lines):
+  - arbitrary graph structures vs tree-only (key advantage: multiple parents per thought)
+  - 8 new MCP tools: got-initialize, got-generate, got-aggregate, got-refine, got-score, got-prune, got-get-state, got-finalize
+  - LLM-powered operations using Anthropic Claude Sonnet 4.5 API
+  - generate: creates k diverse continuations from active vertices
+  - aggregate: synthesizes parallel reasoning paths into unified insights
+  - refine: iterative self-improvement through critique (max 3 iterations)
+  - score: multi-criteria evaluation (confidence 25%, validity 30%, relevance 25%, novelty 10%, depth 10%)
+  - prune: removes low-quality thoughts while preserving roots and terminals
+  - cyclic reasoning: supports feedback loops from conclusions back to premises
+  - research-backed: 61-69% error reduction vs tree-of-thoughts on sorting tasks
+  - test suite: 25 unit tests validating graph operations and LLM integration
 
 - **knowledge graph with neo4j + chromem-go** (16 commits, 6,744 lines):
   - automatic entity extraction from reasoning sessions (always enabled when Neo4j available)
