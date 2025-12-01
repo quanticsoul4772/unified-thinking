@@ -107,6 +107,7 @@ import (
 	"unified-thinking/internal/processing"
 	"unified-thinking/internal/reasoning"
 	"unified-thinking/internal/server/handlers"
+	"unified-thinking/internal/similarity"
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
@@ -168,6 +169,8 @@ type UnifiedServer struct {
 	contextBridge *contextbridge.ContextBridge
 	// Knowledge graph for semantic memory and entity relationships (optional, set via SetKnowledgeGraph)
 	knowledgeGraph *knowledge.KnowledgeGraph
+	// Thought similarity searcher for semantic search (optional)
+	thoughtSearcher *similarity.ThoughtSearcher
 }
 
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
@@ -295,6 +298,12 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 
 	// Initialize semantic auto mode detection
 	s.initializeSemanticAutoMode()
+
+}
+
+// SetThoughtSearcher sets the thought similarity searcher
+func (s *UnifiedServer) SetThoughtSearcher(searcher *similarity.ThoughtSearcher) {
+	s.thoughtSearcher = searcher
 }
 
 // initializeEpisodicMemory initializes the episodic reasoning memory system
@@ -949,6 +958,12 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	if s.knowledgeGraph != nil && s.knowledgeGraph.IsEnabled() {
 		kgHandler := handlers.NewKnowledgeHandlers(s.knowledgeGraph)
 		handlers.RegisterKnowledgeGraphTools(mcpServer, kgHandler)
+	}
+
+	// Register thought similarity tools - only if embedder available
+	if s.thoughtSearcher != nil {
+		simHandler := handlers.NewSimilarityHandler(s.thoughtSearcher)
+		handlers.RegisterSimilarityTools(mcpServer, simHandler)
 	}
 }
 

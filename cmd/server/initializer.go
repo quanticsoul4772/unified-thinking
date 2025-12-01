@@ -11,6 +11,7 @@ import (
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
 	"unified-thinking/internal/server"
+	"unified-thinking/internal/similarity"
 	"unified-thinking/internal/storage"
 	"unified-thinking/internal/validation"
 )
@@ -116,6 +117,13 @@ func InitializeServer() (*ServerComponents, error) {
 	if components.KnowledgeGraph != nil && components.KnowledgeGraph.IsEnabled() {
 		components.Server.SetKnowledgeGraph(components.KnowledgeGraph)
 		log.Println("Knowledge graph enabled and configured")
+	}
+
+	// Initialize thought similarity searcher (if embedder available)
+	if components.Embedder != nil {
+		thoughtSearcher := similarity.NewThoughtSearcher(store, components.Embedder)
+		components.Server.SetThoughtSearcher(thoughtSearcher)
+		log.Println("Thought similarity search enabled")
 	}
 
 	// Initialize orchestrator
