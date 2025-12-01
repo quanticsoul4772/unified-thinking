@@ -34,11 +34,10 @@ jobs:
 
       - name: Fix SARIF schema issues
         run: |
-          # Remove artifactChanges property completely (not allowed by GitHub SARIF schema)
-          # Also fix fixes[].artifactChanges and fixes[].description issues
+          # Remove fixes array entirely - gosec SARIF fixes are incompatible with GitHub schema
           if [ -f gosec-results.sarif ]; then
-            jq 'walk(if type == "object" then del(.artifactChanges) else . end)' gosec-results.sarif > gosec-results.sarif.tmp && mv gosec-results.sarif.tmp gosec-results.sarif
-            echo "SARIF artifactChanges removed for GitHub compatibility"
+            jq '(.runs[].results[] | select(.fixes != null)) |= del(.fixes)' gosec-results.sarif > gosec-results.sarif.tmp && mv gosec-results.sarif.tmp gosec-results.sarif
+            echo "SARIF fixes array removed for GitHub compatibility"
           fi
 
       - name: Upload SARIF file
