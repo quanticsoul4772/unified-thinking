@@ -39,10 +39,10 @@ func NewAnthropicLLMClient() (*AnthropicLLMClient, error) {
 }
 
 type anthropicRequest struct {
-	Model     string              `json:"model"`
-	MaxTokens int                 `json:"max_tokens"`
-	Messages  []anthropicMessage  `json:"messages"`
-	System    string              `json:"system,omitempty"`
+	Model     string             `json:"model"`
+	MaxTokens int                `json:"max_tokens"`
+	Messages  []anthropicMessage `json:"messages"`
+	System    string             `json:"system,omitempty"`
 }
 
 type anthropicMessage struct {
@@ -82,7 +82,8 @@ Format your response as a JSON array of strings, one per continuation. Example:
 
 	// Parse JSON array from response
 	var continuations []string
-	if err := json.Unmarshal([]byte(response), &continuations); err != nil {
+	jsonStr := extractJSON(response)
+	if err := json.Unmarshal([]byte(jsonStr), &continuations); err != nil {
 		return nil, fmt.Errorf("failed to parse continuations as JSON array: %w", err)
 	}
 
@@ -157,9 +158,10 @@ Example format:
 		return 0, nil, err
 	}
 
-	// Parse JSON scores
+	// Parse JSON scores - extract JSON object from response
 	var scores map[string]float64
-	if err := json.Unmarshal([]byte(response), &scores); err != nil {
+	jsonStr := extractJSON(response)
+	if err := json.Unmarshal([]byte(jsonStr), &scores); err != nil {
 		return 0, nil, fmt.Errorf("failed to parse scores as JSON object: %w", err)
 	}
 
@@ -206,7 +208,8 @@ Example: ["Key point 1", "Key point 2", "Key point 3"]`
 
 	// Parse JSON array
 	var keyPoints []string
-	if err := json.Unmarshal([]byte(response), &keyPoints); err != nil {
+	jsonStr := extractJSON(response)
+	if err := json.Unmarshal([]byte(jsonStr), &keyPoints); err != nil {
 		return nil, fmt.Errorf("failed to parse key points as JSON array: %w", err)
 	}
 
@@ -301,5 +304,70 @@ func (a *AnthropicLLMClient) makeRequest(ctx context.Context, reqBody anthropicR
 		return "", fmt.Errorf("empty response from API")
 	}
 
-	return apiResp.Content[0].Text, nil
+	return stripMarkdownCodeBlocks(apiResp.Content[0].Text), nil
+}
+
+// extractJSON extracts the first valid JSON object or array from a string
+func extractJSON(s string) string {
+	s = strings.TrimSpace(s)
+	startObj := strings.Index(s, "{")
+	startArr := strings.Index(s, "[")
+
+	start := -1
+	endChar := byte('}')
+	if startObj >= 0 && (startArr < 0 || startObj < startArr) {
+		start = startObj
+		endChar = '}'
+	} else if startArr >= 0 {
+		start = startArr
+		endChar = ']'
+	}
+
+	if start < 0 {
+		return s
+	}
+
+	depth := 0
+	inString := false
+	escape := false
+	for i := start; i < len(s); i++ {
+		if escape {
+			escape = false
+			continue
+		}
+		c := s[i]
+		if c == '\\' && inString {
+			escape = true
+			continue
+		}
+		if c == '"' {
+			inString = !inString
+			continue
+		}
+		if inString {
+			continue
+		}
+		if c == '{' || c == '[' {
+			depth++
+		} else if c == '}' || c == ']' {
+			depth--
+			if depth == 0 && c == endChar {
+				return s[start : i+1]
+			}
+		}
+	}
+	return s[start:]
+}
+
+// stripMarkdownCodeBlocks removes markdown code fences from LLM responses
+func stripMarkdownCodeBlocks(s string) string {
+	s = strings.TrimSpace(s)
+	lines := strings.Split(s, "\n")
+	if len(lines) > 0 && strings.HasPrefix(lines[0], "```") {
+		lines = lines[1:]
+	}
+	if len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "```" {
+		lines = lines[:len(lines)-1]
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
