@@ -251,7 +251,15 @@ func NewUnifiedServer(
 
 	// Initialize Graph-of-Thoughts
 	s.graphController = modes.NewGraphController(store)
-	s.gotHandler = handlers.NewGoTHandler(s.graphController, modes.NewMockLLMClient())
+
+	// Initialize Anthropic LLM client (required for GoT)
+	llmClient, err := modes.NewAnthropicLLMClient()
+	if err != nil {
+		log.Fatalf("Graph-of-Thoughts requires ANTHROPIC_API_KEY: %v", err)
+	}
+	log.Println("Graph-of-Thoughts using Anthropic Claude API")
+
+	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
 
 	return s
 }
