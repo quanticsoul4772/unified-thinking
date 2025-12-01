@@ -92,7 +92,7 @@ func (ts *TimeSeries) DetectRegression(suiteName string, currentAccuracy float64
 func (ts *TimeSeries) SaveToFile(path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
