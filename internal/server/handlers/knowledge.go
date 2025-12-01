@@ -20,6 +20,70 @@ func NewKnowledgeHandlers(kg *knowledge.KnowledgeGraph) *KnowledgeHandlers {
 	return &KnowledgeHandlers{kg: kg}
 }
 
+// RegisterKnowledgeGraphTools registers all knowledge graph MCP tools
+func RegisterKnowledgeGraphTools(mcpServer *mcp.Server, kh *KnowledgeHandlers) {
+	// Tool 64: store-entity
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "store-entity",
+		Description: `Store an entity in the knowledge graph with semantic indexing.
+
+Stores entities in both Neo4j graph database and chromem-go vector search for hybrid retrieval.
+
+**Parameters:**
+- entity_id (required): Unique entity identifier
+- label (required): Human-readable entity label
+- type (required): Entity type (Concept, Person, Tool, File, Decision, Strategy, Problem)
+- content (required): Content for semantic search embedding
+- description (optional): Detailed description
+- metadata (optional): Additional metadata as JSON object
+
+**Returns:** entity_id, status, cached, created_at
+
+**Example:** {"entity_id": "optimization-1", "label": "Database Optimization", "type": "Concept", "content": "Techniques for optimizing database query performance"}`,
+	}, kh.HandleStoreEntity)
+
+	// Tool 65: search-knowledge-graph
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "search-knowledge-graph",
+		Description: `Search for entities using semantic similarity or graph traversal.
+
+**Parameters:**
+- query (required): Search query
+- search_type (required): "semantic" or "hybrid"
+- limit (optional): Max results (default: 10)
+- max_hops (optional): For hybrid search, max graph hops (default: 1)
+- min_similarity (optional): Minimum similarity threshold 0.0-1.0 (default: 0.7)
+
+**Returns:** results array, result_count, search_type, latency_ms
+
+**Search Types:**
+- semantic: Vector similarity search only (fast, finds semantically similar entities)
+- hybrid: Semantic search + graph traversal (finds similar + connected entities)
+
+**Example:** {"query": "database performance", "search_type": "semantic", "limit": 5, "min_similarity": 0.7}`,
+	}, kh.HandleSearchKnowledgeGraph)
+
+	// Tool 66: create-relationship
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "create-relationship",
+		Description: `Create a typed relationship between entities in the knowledge graph.
+
+**Parameters:**
+- relationship_id (required): Unique relationship identifier
+- from_id (required): Source entity ID
+- to_id (required): Target entity ID
+- type (required): Relationship type (CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, RELATES_TO)
+- strength (required): Relationship strength 0.0-1.0
+- confidence (required): Confidence in relationship 0.0-1.0
+- source (optional): Source of relationship (e.g., "trajectory_extraction", "manual")
+- metadata (optional): Additional metadata as JSON object
+
+**Returns:** relationship_id, status, created_at
+
+**Example:** {"relationship_id": "rel-1", "from_id": "optimization-1", "to_id": "performance-1", "type": "ENABLES", "strength": 0.9, "confidence": 0.95}`,
+	}, kh.HandleCreateRelationship)
+}
+
 // StoreEntityRequest represents the store-entity tool request
 type StoreEntityRequest struct {
 	EntityID    string                 `json:"entity_id"`
@@ -39,12 +103,12 @@ type StoreEntityResponse struct {
 }
 
 // HandleStoreEntity implements the store-entity MCP tool
-func (kh *KnowledgeHandlers) HandleStoreEntity(request *StoreEntityRequest) (*mcp.CallToolResult, *StoreEntityResponse, error) {
+func (kh *KnowledgeHandlers) HandleStoreEntity(ctx context.Context, req *mcp.CallToolRequest, request StoreEntityRequest) (*mcp.CallToolResult, *StoreEntityResponse, error) {
 	if !kh.kg.IsEnabled() {
 		return nil, nil, fmt.Errorf("knowledge graph not enabled")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	entity := &knowledge.Entity{
@@ -55,7 +119,7 @@ func (kh *KnowledgeHandlers) HandleStoreEntity(request *StoreEntityRequest) (*mc
 		Metadata:    request.Metadata,
 	}
 
-	if err := kh.kg.StoreEntity(ctx, entity, request.Content); err != nil {
+	if err := kh.kg.StoreEntity(opCtx, entity, request.Content); err != nil {
 		return nil, nil, fmt.Errorf("failed to store entity: %w", err)
 	}
 
@@ -87,13 +151,13 @@ type SearchKnowledgeGraphResponse struct {
 }
 
 // HandleSearchKnowledgeGraph implements the search-knowledge-graph MCP tool
-func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(request *SearchKnowledgeGraphRequest) (*mcp.CallToolResult, *SearchKnowledgeGraphResponse, error) {
+func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(ctx context.Context, req *mcp.CallToolRequest, request SearchKnowledgeGraphRequest) (*mcp.CallToolResult, *SearchKnowledgeGraphResponse, error) {
 	if !kh.kg.IsEnabled() {
 		return nil, nil, fmt.Errorf("knowledge graph not enabled")
 	}
 
 	start := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	var results []*knowledge.Entity
@@ -102,13 +166,13 @@ func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(request *SearchKnowledge
 	switch request.SearchType {
 	case "semantic":
 		// Semantic search only
-		searchResults, searchErr := kh.kg.SearchSemantic(ctx, request.Query, request.Limit, request.MinSimilarity)
+		searchResults, searchErr := kh.kg.SearchSemantic(opCtx, request.Query, request.Limit, request.MinSimilarity)
 		if searchErr != nil {
 			return nil, nil, fmt.Errorf("semantic search failed: %w", searchErr)
 		}
 
 		for _, sr := range searchResults {
-			entity, getErr := kh.kg.GetEntity(ctx, sr.ID)
+			entity, getErr := kh.kg.GetEntity(opCtx, sr.ID)
 			if getErr == nil {
 				results = append(results, entity)
 			}
@@ -116,7 +180,7 @@ func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(request *SearchKnowledge
 
 	case "hybrid":
 		// Combined semantic + graph search
-		results, err = kh.kg.HybridSearch(ctx, request.Query, request.Limit, request.MaxHops)
+		results, err = kh.kg.HybridSearch(opCtx, request.Query, request.Limit, request.MaxHops)
 		if err != nil {
 			return nil, nil, fmt.Errorf("hybrid search failed: %w", err)
 		}
@@ -155,12 +219,12 @@ type CreateRelationshipResponse struct {
 }
 
 // HandleCreateRelationship implements the create-relationship MCP tool
-func (kh *KnowledgeHandlers) HandleCreateRelationship(request *CreateRelationshipRequest) (*mcp.CallToolResult, *CreateRelationshipResponse, error) {
+func (kh *KnowledgeHandlers) HandleCreateRelationship(ctx context.Context, req *mcp.CallToolRequest, request CreateRelationshipRequest) (*mcp.CallToolResult, *CreateRelationshipResponse, error) {
 	if !kh.kg.IsEnabled() {
 		return nil, nil, fmt.Errorf("knowledge graph not enabled")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	rel := &knowledge.Relationship{
@@ -174,7 +238,7 @@ func (kh *KnowledgeHandlers) HandleCreateRelationship(request *CreateRelationshi
 		Metadata:   request.Metadata,
 	}
 
-	if err := kh.kg.CreateRelationship(ctx, rel); err != nil {
+	if err := kh.kg.CreateRelationship(opCtx, rel); err != nil {
 		return nil, nil, fmt.Errorf("failed to create relationship: %w", err)
 	}
 

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
+	"strconv"
 
 	"unified-thinking/internal/contextbridge"
 	"unified-thinking/internal/embeddings"
+	"unified-thinking/internal/knowledge"
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
 	"unified-thinking/internal/server"
@@ -15,16 +18,17 @@ import (
 
 // ServerComponents holds all initialized server components
 type ServerComponents struct {
-	Storage       storage.Storage
-	LinearMode    *modes.LinearMode
-	TreeMode      *modes.TreeMode
-	DivergentMode *modes.DivergentMode
-	AutoMode      *modes.AutoMode
-	Validator     *validation.LogicValidator
-	Embedder      embeddings.Embedder
-	ContextBridge *contextbridge.ContextBridge
-	Server        *server.UnifiedServer
-	Orchestrator  *orchestration.Orchestrator
+	Storage        storage.Storage
+	LinearMode     *modes.LinearMode
+	TreeMode       *modes.TreeMode
+	DivergentMode  *modes.DivergentMode
+	AutoMode       *modes.AutoMode
+	Validator      *validation.LogicValidator
+	Embedder       embeddings.Embedder
+	ContextBridge  *contextbridge.ContextBridge
+	KnowledgeGraph *knowledge.KnowledgeGraph
+	Server         *server.UnifiedServer
+	Orchestrator   *orchestration.Orchestrator
 }
 
 // InitializeServer creates and initializes all server components.
@@ -108,6 +112,13 @@ func InitializeServer() (*ServerComponents, error) {
 	}
 	log.Println("Created unified server")
 
+	// Initialize knowledge graph (if enabled)
+	components.KnowledgeGraph = initializeKnowledgeGraph(store, components.Embedder)
+	if components.KnowledgeGraph != nil && components.KnowledgeGraph.IsEnabled() {
+		components.Server.SetKnowledgeGraph(components.KnowledgeGraph)
+		log.Println("Knowledge graph enabled and configured")
+	}
+
 	// Initialize orchestrator
 	executor := server.NewServerToolExecutor(components.Server)
 	components.Orchestrator = orchestration.NewOrchestratorWithExecutor(executor)
@@ -142,6 +153,56 @@ func initializeContextBridge(
 
 	matcher := contextbridge.NewMatcher(adapter, similarity, extractor)
 	return contextbridge.New(config, matcher, extractor, embedder)
+}
+
+// initializeKnowledgeGraph creates and configures the knowledge graph
+func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedder) *knowledge.KnowledgeGraph {
+	// Check if knowledge graph is enabled
+	enabled := os.Getenv("NEO4J_ENABLED")
+	if enabled != "true" {
+		log.Println("Knowledge graph disabled (NEO4J_ENABLED != true)")
+		return &knowledge.KnowledgeGraph{} // Return disabled instance
+	}
+
+	// Get SQLite database for embedding cache
+	var sqliteDB *sql.DB
+	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
+		sqliteDB = sqliteStore.DB()
+	} else {
+		log.Println("Knowledge graph requires SQLite storage (using in-memory storage)")
+		return &knowledge.KnowledgeGraph{}
+	}
+
+	// Validate embedder
+	if embedder == nil {
+		log.Println("Knowledge graph requires embedder (VOYAGE_API_KEY not set)")
+		return &knowledge.KnowledgeGraph{}
+	}
+
+	// Configure Neo4j
+	neo4jCfg := knowledge.DefaultConfig()
+
+	// Configure vector store
+	vectorCfg := knowledge.VectorStoreConfig{
+		PersistPath: "", // In-memory for now
+		Embedder:    embedder,
+	}
+
+	// Create knowledge graph
+	kgCfg := knowledge.KnowledgeGraphConfig{
+		Neo4jConfig:  neo4jCfg,
+		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
+		Enabled:      true,
+	}
+
+	kg, err := knowledge.NewKnowledgeGraph(kgCfg)
+	if err != nil {
+		log.Printf("Failed to initialize knowledge graph: %v", err)
+		return &knowledge.KnowledgeGraph{}
+	}
+
+	return kg
 }
 
 // Cleanup closes all server resources

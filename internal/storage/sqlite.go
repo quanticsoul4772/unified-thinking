@@ -1496,6 +1496,11 @@ func (s *SQLiteStorage) GetAllTrajectoriesJSON() (map[string]string, error) {
 	return result, rows.Err()
 }
 
+// DB returns the underlying *sql.DB for advanced operations (e.g., knowledge graph embedding cache)
+func (s *SQLiteStorage) DB() *sql.DB {
+	return s.db
+}
+
 // Close releases database resources
 func (s *SQLiteStorage) Close() error {
 	// Close prepared statements (ignore errors in cleanup)

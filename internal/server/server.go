@@ -926,6 +926,12 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 
 	// Register episodic memory tools (Phase 2)
 	handlers.RegisterEpisodicMemoryTools(mcpServer, s.episodicMemoryHandler)
+
+	// Register knowledge graph tools (Phase 4) - only if enabled
+	if s.knowledgeGraph != nil && s.knowledgeGraph.IsEnabled() {
+		kgHandler := handlers.NewKnowledgeHandlers(s.knowledgeGraph)
+		handlers.RegisterKnowledgeGraphTools(mcpServer, kgHandler)
+	}
 }
 
 type ThinkRequest struct {
