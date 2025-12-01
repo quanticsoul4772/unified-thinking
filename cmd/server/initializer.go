@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"strconv"
 
 	"unified-thinking/internal/contextbridge"
 	"unified-thinking/internal/embeddings"

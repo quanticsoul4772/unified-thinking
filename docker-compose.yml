@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: unified-thinking-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
