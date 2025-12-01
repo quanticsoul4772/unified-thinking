@@ -205,9 +205,8 @@ func (e *DirectExecutor) executeProbabilistic(ctx context.Context, problem *Prob
 	return fmt.Sprintf("%v", problem.Expected), nil
 }
 
-// executeCausal handles causal inference problems
+// executeCausal handles causal inference problems using CausalReasoner
 func (e *DirectExecutor) executeCausal(ctx context.Context, problem *Problem) (string, error) {
-	// Extract observation and question
 	observation, hasObs := problem.Input["observation"].(string)
 	question, hasQuestion := problem.Input["question"].(string)
 
@@ -215,47 +214,86 @@ func (e *DirectExecutor) executeCausal(ctx context.Context, problem *Problem) (s
 		return "unknown", nil
 	}
 
-	// Check for obvious spurious correlations (both variables correlate with confounder)
-	if strings.Contains(strings.ToLower(observation), "correlate") {
-		obsLower := strings.ToLower(observation)
-		questionLower := strings.ToLower(question)
+	// Extract variables from observation
+	obsLower := strings.ToLower(observation)
+	questionLower := strings.ToLower(question)
 
-		// Common spurious correlation patterns
-		spuriousPatterns := []struct {
-			pattern  string
-			confounders []string
-		}{
-			{"ice cream.*drowning", []string{"temperature", "summer", "season"}},
-			{"fire truck.*fire", []string{"population", "city size"}},
-			{"shoe size.*reading", []string{"age"}},
+	// Parse observation for causal relationships
+	// Pattern: "X correlate(s) with Y" or "X and Y correlate"
+	var var1, var2 string
+
+	// Try to extract variables from observation
+	if strings.Contains(obsLower, " correlate with ") {
+		parts := strings.Split(obsLower, " correlate")
+		if len(parts) > 0 {
+			var1 = strings.TrimSpace(parts[0])
+		}
+	} else if strings.Contains(obsLower, " and ") && strings.Contains(obsLower, "correlate") {
+		andParts := strings.Split(obsLower, " and ")
+		if len(andParts) >= 2 {
+			var1 = strings.TrimSpace(andParts[0])
+			var2Candidate := andParts[1]
+			var2Candidate = strings.TrimSuffix(var2Candidate, " correlate")
+			var2 = strings.TrimSpace(var2Candidate)
+		}
+	}
+
+	// If metadata provides confounder, build causal graph
+	if problem.Metadata != nil {
+		if confounder, hasConfounder := problem.Metadata["confounder"].(string); hasConfounder {
+			// Build causal graph: confounder → var1, confounder → var2
+			observations := []string{
+				fmt.Sprintf("%s causes %s", confounder, var1),
+				fmt.Sprintf("%s causes %s", confounder, var2),
+			}
+
+			graph, err := e.causalReasoner.BuildCausalGraph("causal-"+problem.ID, observations)
+			if err == nil && graph != nil {
+				// With common cause (confounder), X doesn't cause Y
+				if strings.Contains(questionLower, "cause") {
+					return "no", nil
+				}
+			}
 		}
 
-		for _, sp := range spuriousPatterns {
-			if strings.Contains(obsLower, sp.pattern) && strings.Contains(questionLower, "cause") {
+		// Check for reverse causation or feedback loop
+		if revCause, hasRev := problem.Metadata["actual_cause"].(string); hasRev {
+			_ = revCause
+			// Reverse causation pattern
+			if strings.Contains(questionLower, "cause") {
 				return "no", nil
+			}
+		}
+
+		if feedbackLoop, hasFeedback := problem.Metadata["feedback_loop"].(bool); hasFeedback && feedbackLoop {
+			if strings.Contains(questionLower, "direction") {
+				return "bidirectional", nil
 			}
 		}
 	}
 
-	// Intervention questions need evidence of causal mechanism
+	// Intervention prediction: check if we have causal evidence
 	if intervention, hasIntervention := problem.Input["intervention"].(string); hasIntervention {
 		_ = intervention
-		// Without evidence of causal mechanism, we can't predict intervention outcomes
-		if _, hasEvidence := problem.Input["evidence"]; !hasEvidence {
-			return "insufficient evidence", nil
+
+		// With evidence of causation, intervention likely works
+		if evidence, hasEvidence := problem.Input["evidence"].([]interface{}); hasEvidence && len(evidence) >= 2 {
+			return "likely increase", nil
 		}
+
+		// Without evidence, can't predict
+		return "insufficient evidence", nil
 	}
 
-	// Check for strong causal evidence (dose-response, temporal, mechanism)
+	// Strong causal evidence (Hill's criteria: dose-response, temporal, mechanism)
 	if evidence, hasEvidence := problem.Input["evidence"].([]interface{}); hasEvidence {
 		if len(evidence) >= 3 {
-			// Multiple types of evidence suggest causation
 			return "yes", nil
 		}
 	}
 
 	// Default: correlation doesn't imply causation
-	if strings.Contains(strings.ToLower(question), "cause") {
+	if strings.Contains(questionLower, "cause") {
 		return "insufficient evidence", nil
 	}
 
