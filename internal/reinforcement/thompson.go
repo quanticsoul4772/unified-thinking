@@ -19,7 +19,7 @@ type ThompsonSelector struct {
 func NewThompsonSelector(seed int64) *ThompsonSelector {
 	return &ThompsonSelector{
 		strategies: make(map[string]*Strategy),
-		rng:        rand.New(rand.NewSource(seed)),
+		rng:        rand.New(rand.NewSource(seed)), // #nosec G404 - Thompson Sampling RL algorithm, not security-sensitive
 	}
 }
 
