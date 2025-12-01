@@ -1,12 +1,17 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"unified-thinking/internal/embeddings"
 )
 
 func TestInitializeServer(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Test default initialization (memory storage, no embedder)
 	components, err := InitializeServer()
 	if err != nil {
@@ -45,6 +50,10 @@ func TestInitializeServer(t *testing.T) {
 }
 
 func TestInitializeServer_WithMockEmbedder(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Set environment to enable embeddings with mock
 	t.Setenv("VOYAGE_API_KEY", "mock-key-for-testing")
 	t.Setenv("EMBEDDINGS_MODEL", "mock-model")
@@ -62,6 +71,10 @@ func TestInitializeServer_WithMockEmbedder(t *testing.T) {
 }
 
 func TestInitializeServer_SQLiteStorage(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Create temporary database for testing
 	tmpDir := t.TempDir()
 	dbPath := tmpDir + "/test.db"
@@ -84,6 +97,10 @@ func TestInitializeServer_SQLiteStorage(t *testing.T) {
 }
 
 func TestInitializeServer_Cleanup(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() failed: %v", err)
@@ -115,6 +132,10 @@ func TestServerComponents_NilStorage(t *testing.T) {
 }
 
 func TestInitializeContextBridge_WithEmbedder(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	tmpDir := t.TempDir()
 	dbPath := tmpDir + "/test.db"
 
@@ -135,6 +156,10 @@ func TestInitializeContextBridge_WithEmbedder(t *testing.T) {
 }
 
 func TestInitializeContextBridge_WithoutEmbedder(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	tmpDir := t.TempDir()
 	dbPath := tmpDir + "/test.db"
 
@@ -156,6 +181,10 @@ func TestInitializeContextBridge_WithoutEmbedder(t *testing.T) {
 }
 
 func TestInitializeContextBridge_Disabled(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	tmpDir := t.TempDir()
 	dbPath := tmpDir + "/test.db"
 
@@ -174,6 +203,10 @@ func TestInitializeContextBridge_Disabled(t *testing.T) {
 }
 
 func TestInitializeContextBridge_MemoryStorage(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	t.Setenv("STORAGE_TYPE", "memory")
 	t.Setenv("CONTEXT_BRIDGE_ENABLED", "true")
 
@@ -196,6 +229,10 @@ func TestRegisterPredefinedWorkflows_NilOrchestrator(t *testing.T) {
 }
 
 func TestRegisterPredefinedWorkflows_ValidOrchestrator(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() failed: %v", err)
@@ -232,6 +269,10 @@ func TestRegisterPredefinedWorkflows_ValidOrchestrator(t *testing.T) {
 }
 
 func TestInitializeServer_WithMockEmbedderForTesting(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// This test demonstrates how to inject a mock embedder
 	// Useful pattern for integration tests
 

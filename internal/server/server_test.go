@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -15,8 +16,13 @@ import (
 	"unified-thinking/internal/validation"
 )
 
-// setupTestServer creates a fully initialized server for testing
-func setupTestServer() *UnifiedServer {
+// setupTestServer creates a fully initialized server for testing.
+// Skips the test if ANTHROPIC_API_KEY is not set (required for GoT).
+func setupTestServer(t *testing.T) *UnifiedServer {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
 	tree := modes.NewTreeMode(store)
@@ -26,8 +32,7 @@ func setupTestServer() *UnifiedServer {
 
 	srv, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
 	if err != nil {
-		// In tests, panic is acceptable for setup failures
-		panic(fmt.Sprintf("setupTestServer failed: %v", err))
+		t.Fatalf("setupTestServer failed: %v", err)
 	}
 	return srv
 }
@@ -52,7 +57,7 @@ func (s *stubExecutor) ExecuteTool(_ context.Context, toolName string, input map
 }
 
 func TestHandleThink_LinearMode(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	input := ThinkRequest{
@@ -84,7 +89,7 @@ func TestHandleThink_LinearMode(t *testing.T) {
 }
 
 func TestHandleThink_TreeMode(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	input := ThinkRequest{
@@ -109,7 +114,7 @@ func TestHandleThink_TreeMode(t *testing.T) {
 }
 
 func TestHandleThink_DivergentMode(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	input := ThinkRequest{
@@ -155,7 +160,7 @@ func TestHandleThink_AutoMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := setupTestServer()
+			server := setupTestServer(t)
 			ctx := context.Background()
 
 			input := ThinkRequest{
@@ -177,7 +182,7 @@ func TestHandleThink_AutoMode(t *testing.T) {
 }
 
 func TestHandleThink_ValidationErrors(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -223,7 +228,7 @@ func TestHandleThink_ValidationErrors(t *testing.T) {
 }
 
 func TestHandleHistory(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create some thoughts first
@@ -253,7 +258,7 @@ func TestHandleHistory(t *testing.T) {
 }
 
 func TestHandleListBranches(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create some branches with explicit branch IDs to ensure separate branches
@@ -278,7 +283,7 @@ func TestHandleListBranches(t *testing.T) {
 }
 
 func TestHandleFocusBranch(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a branch
@@ -305,7 +310,7 @@ func TestHandleFocusBranch(t *testing.T) {
 }
 
 func TestHandleValidate(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a thought
@@ -333,7 +338,7 @@ func TestHandleValidate(t *testing.T) {
 }
 
 func TestHandleProve(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	proveReq := ProveRequest{
@@ -356,7 +361,7 @@ func TestHandleProve(t *testing.T) {
 }
 
 func TestHandleSearch(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create thoughts with specific content
@@ -392,7 +397,7 @@ func TestHandleSearch(t *testing.T) {
 }
 
 func TestHandleGetMetrics(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create some data
@@ -416,7 +421,7 @@ func TestHandleGetMetrics(t *testing.T) {
 }
 
 func TestHandleRecentBranches(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create and access multiple branches
@@ -448,7 +453,7 @@ func TestHandleRecentBranches(t *testing.T) {
 }
 
 func TestHandleThink_WithValidation(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	input := ThinkRequest{
@@ -471,7 +476,7 @@ func TestHandleThink_WithValidation(t *testing.T) {
 }
 
 func TestConcurrentThinkOperations(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Test concurrent think operations
@@ -507,7 +512,7 @@ func TestConcurrentThinkOperations(t *testing.T) {
 
 // TestHandleDetectBiases_WithFallacies tests the integrated bias and fallacy detection
 func TestHandleDetectBiases_WithFallacies(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a thought with content that should trigger both biases and fallacies
@@ -604,7 +609,7 @@ func TestHandleDetectBiases_WithFallacies(t *testing.T) {
 
 // TestHandleDetectBiases_BranchAnalysis tests bias/fallacy detection on a branch
 func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a branch with multiple thoughts
@@ -670,7 +675,7 @@ func TestHandleDetectBiases_BranchAnalysis(t *testing.T) {
 }
 
 func TestHandleExecuteWorkflow_Success(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 
@@ -735,7 +740,7 @@ func TestHandleExecuteWorkflow_Success(t *testing.T) {
 }
 
 func TestHandleExecuteWorkflow_ToolError(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{err: errors.New("tool failure")}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 
@@ -787,7 +792,7 @@ func TestHandleExecuteWorkflow_ToolError(t *testing.T) {
 }
 
 func TestHandleListWorkflows_NotInitialized(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	server.orchestrator = nil
 
 	ctx := context.Background()
@@ -798,7 +803,7 @@ func TestHandleListWorkflows_NotInitialized(t *testing.T) {
 }
 
 func TestHandleListWorkflows_ReturnsRegistered(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 
@@ -841,7 +846,7 @@ func TestHandleListWorkflows_ReturnsRegistered(t *testing.T) {
 }
 
 func TestHandleRegisterWorkflow(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 	server.SetOrchestrator(orch)

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -11,6 +12,10 @@ import (
 )
 
 func TestRegisterTools(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Setup test server
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
@@ -45,6 +50,10 @@ func TestRegisterTools(t *testing.T) {
 }
 
 func TestSetOrchestrator(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
 	tree := modes.NewTreeMode(store)
@@ -73,6 +82,10 @@ func TestSetOrchestrator(t *testing.T) {
 }
 
 func TestInitializeAdvancedHandlers(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
 	tree := modes.NewTreeMode(store)

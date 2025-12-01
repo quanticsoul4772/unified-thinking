@@ -13,6 +13,10 @@ import (
 
 // TestAutoValidationTriggering tests that low-confidence thoughts trigger auto-validation
 func TestAutoValidationTriggering(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Enable debug mode for testing
 	_ = os.Setenv("DEBUG", "true")
 	defer func() { _ = os.Unsetenv("DEBUG") }()

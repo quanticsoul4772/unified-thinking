@@ -252,18 +252,14 @@ func NewUnifiedServer(
 	// Initialize Phase 2-3 handlers
 	s.initializeAdvancedHandlers()
 
-	// Initialize Graph-of-Thoughts (optional - requires ANTHROPIC_API_KEY)
+	// Initialize Graph-of-Thoughts (requires ANTHROPIC_API_KEY)
 	s.graphController = modes.NewGraphController(store)
 	llmClient, err := modes.NewAnthropicLLMClient()
 	if err != nil {
-		// Graph-of-Thoughts is optional - log warning and continue without it
-		log.Printf("WARNING: Graph-of-Thoughts disabled: %v", err)
-		// Create a nil-safe handler that returns errors for GoT operations
-		s.gotHandler = nil
-	} else {
-		log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
-		s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
+		return nil, fmt.Errorf("failed to initialize Graph-of-Thoughts: %w", err)
 	}
+	log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
+	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
 
 	return s, nil
 }
@@ -987,10 +983,8 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		handlers.RegisterSimilarityTools(mcpServer, simHandler)
 	}
 
-	// Register Graph-of-Thoughts tools (8 tools) - only if GoT is enabled
-	if s.gotHandler != nil {
-		handlers.RegisterGoTTools(mcpServer, s.gotHandler)
-	}
+	// Register Graph-of-Thoughts tools (8 tools)
+	handlers.RegisterGoTTools(mcpServer, s.gotHandler)
 
 	// Register Claude Code optimization tools (5 tools)
 	handlers.RegisterClaudeCodeTools(mcpServer, s.claudeCodeHandler)

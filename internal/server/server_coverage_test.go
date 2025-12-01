@@ -187,6 +187,10 @@ func TestConvertCrossRefs(t *testing.T) {
 // =============================================================================
 
 func TestNewUnifiedServer(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	t.Run("creates server with all handlers initialized", func(t *testing.T) {
 		store := storage.NewMemoryStorage()
 		linear := modes.NewLinearMode(store)
@@ -304,7 +308,7 @@ func TestInitializeSemanticAutoMode(t *testing.T) {
 		// Ensure no API key is set
 		os.Unsetenv("VOYAGE_API_KEY")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		// The function should not panic and auto mode should work without embedder
 		if server.auto == nil {
 			t.Error("auto mode should still be initialized")
@@ -316,7 +320,7 @@ func TestInitializeSemanticAutoMode(t *testing.T) {
 		os.Setenv("VOYAGE_API_KEY", "test-api-key")
 		defer os.Unsetenv("VOYAGE_API_KEY")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		if server.auto == nil {
 			t.Error("auto mode should be initialized")
 		}
@@ -329,7 +333,7 @@ func TestInitializeSemanticAutoMode(t *testing.T) {
 		defer os.Unsetenv("VOYAGE_API_KEY")
 		defer os.Unsetenv("EMBEDDINGS_MODEL")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		if server.auto == nil {
 			t.Error("auto mode should be initialized")
 		}
@@ -341,7 +345,7 @@ func TestInitializeSemanticAutoMode(t *testing.T) {
 // =============================================================================
 
 func TestSetOrchestratorMethod(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 
@@ -361,7 +365,7 @@ func TestSetOrchestratorMethod(t *testing.T) {
 // =============================================================================
 
 func TestHandlerErrorPaths(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleBranchHistory with nonexistent branch", func(t *testing.T) {
@@ -435,7 +439,7 @@ func TestHandlerErrorPaths(t *testing.T) {
 // =============================================================================
 
 func TestCalibrationHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleRecordPrediction validation errors", func(t *testing.T) {
@@ -520,7 +524,7 @@ func TestCalibrationHandlers(t *testing.T) {
 }
 
 func TestHallucinationHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleVerifyThought missing thought_id", func(t *testing.T) {
@@ -545,7 +549,7 @@ func TestHallucinationHandlers(t *testing.T) {
 // =============================================================================
 
 func TestAdvancedHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleDualProcessThink", func(t *testing.T) {
@@ -675,7 +679,7 @@ func TestAdvancedHandlers(t *testing.T) {
 // =============================================================================
 
 func TestTemporalCausalHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleAnalyzePerspectives", func(t *testing.T) {
@@ -849,7 +853,7 @@ func TestTemporalCausalHandlers(t *testing.T) {
 // =============================================================================
 
 func TestProbabilisticDecisionHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleProbabilisticReasoning create", func(t *testing.T) {
@@ -987,7 +991,7 @@ func TestProbabilisticDecisionHandlers(t *testing.T) {
 // =============================================================================
 
 func TestMetacognitionHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleSelfEvaluate", func(t *testing.T) {
@@ -1042,7 +1046,7 @@ func TestMetacognitionHandlers(t *testing.T) {
 // =============================================================================
 
 func TestIntegrationHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleSynthesizeInsights", func(t *testing.T) {
@@ -1102,7 +1106,7 @@ func TestIntegrationHandlers(t *testing.T) {
 // =============================================================================
 
 func TestCaseBasedReasoningHandlers(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleRetrieveCases", func(t *testing.T) {
@@ -1235,7 +1239,7 @@ func TestAutoValidationThreshold(t *testing.T) {
 		os.Setenv("AUTO_VALIDATION_THRESHOLD", "0.3")
 		defer os.Unsetenv("AUTO_VALIDATION_THRESHOLD")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		ctx := context.Background()
 
 		// With threshold at 0.3, confidence 0.4 should NOT trigger auto-validation
@@ -1255,7 +1259,7 @@ func TestAutoValidationThreshold(t *testing.T) {
 		os.Setenv("AUTO_VALIDATION_THRESHOLD", "invalid")
 		defer os.Unsetenv("AUTO_VALIDATION_THRESHOLD")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		ctx := context.Background()
 
 		req := ThinkRequest{
@@ -1274,7 +1278,7 @@ func TestAutoValidationThreshold(t *testing.T) {
 		os.Setenv("AUTO_VALIDATION_THRESHOLD", "1.5")
 		defer os.Unsetenv("AUTO_VALIDATION_THRESHOLD")
 
-		server := setupTestServer()
+		server := setupTestServer(t)
 		ctx := context.Background()
 
 		req := ThinkRequest{
@@ -1295,7 +1299,7 @@ func TestAutoValidationThreshold(t *testing.T) {
 // =============================================================================
 
 func TestHandlerModes(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleThink with reflection mode", func(t *testing.T) {
@@ -1371,7 +1375,7 @@ func TestHandlerModes(t *testing.T) {
 // =============================================================================
 
 func TestWorkflowExecutionErrors(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	exec := &stubExecutor{}
 	orch := orchestration.NewOrchestratorWithExecutor(exec)
 	server.SetOrchestrator(orch)
@@ -1399,7 +1403,7 @@ func TestWorkflowExecutionErrors(t *testing.T) {
 // =============================================================================
 
 func TestPublicInterfaceMethods(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("ProcessThought linear mode", func(t *testing.T) {
@@ -1712,7 +1716,7 @@ func TestPublicInterfaceMethods(t *testing.T) {
 // =============================================================================
 
 func TestRestoreCheckpointAndPagination(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleRestoreCheckpoint", func(t *testing.T) {
@@ -1777,7 +1781,7 @@ func TestRestoreCheckpointAndPagination(t *testing.T) {
 // =============================================================================
 
 func TestHallucinationVerificationComplete(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("handleVerifyThought with valid thought", func(t *testing.T) {
@@ -1844,7 +1848,7 @@ func TestHallucinationVerificationComplete(t *testing.T) {
 // =============================================================================
 
 func TestProbabilisticReasoningOperations(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("update operation", func(t *testing.T) {
@@ -1907,7 +1911,7 @@ func TestProbabilisticReasoningOperations(t *testing.T) {
 // =============================================================================
 
 func TestDetectContradictionsAdditionalPaths(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("with branch ID", func(t *testing.T) {
@@ -1955,7 +1959,7 @@ func TestDetectContradictionsAdditionalPaths(t *testing.T) {
 // =============================================================================
 
 func TestBranchBasedOperations(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a branch with thoughts
@@ -1994,7 +1998,7 @@ func TestBranchBasedOperations(t *testing.T) {
 // =============================================================================
 
 func TestCalibrationSuccessPaths(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("record prediction success", func(t *testing.T) {
@@ -2083,7 +2087,7 @@ func TestPaginateThoughts(t *testing.T) {
 // =============================================================================
 
 func TestHistoryAllModes(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create thoughts for filtering
@@ -2163,7 +2167,7 @@ func TestHistoryAllModes(t *testing.T) {
 // =============================================================================
 
 func TestProcessThoughtModes(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	t.Run("tree mode", func(t *testing.T) {
@@ -2202,7 +2206,7 @@ func TestProcessThoughtModes(t *testing.T) {
 // =============================================================================
 
 func TestSearchWithModeFilter(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create thoughts
@@ -2239,7 +2243,7 @@ func TestSearchWithModeFilter(t *testing.T) {
 // =============================================================================
 
 func TestFocusBranchSuccess(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create two branches
@@ -2291,7 +2295,7 @@ func TestFocusBranchSuccess(t *testing.T) {
 // =============================================================================
 
 func TestBranchHistorySuccess(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create a branch with multiple thoughts
@@ -2330,6 +2334,10 @@ func TestBranchHistorySuccess(t *testing.T) {
 // =============================================================================
 
 func TestInitializeEpisodicMemoryPaths(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// This test exercises the initializeEpisodicMemory function by creating
 	// servers with different storage configurations
 
@@ -2356,7 +2364,7 @@ func TestInitializeEpisodicMemoryPaths(t *testing.T) {
 // =============================================================================
 
 func TestHistoryCompletePaths(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create thoughts in different modes
@@ -2402,7 +2410,7 @@ func TestHistoryCompletePaths(t *testing.T) {
 }
 
 func TestHistoryFiltering(t *testing.T) {
-	server := setupTestServer()
+	server := setupTestServer(t)
 	ctx := context.Background()
 
 	// Create thoughts in different modes

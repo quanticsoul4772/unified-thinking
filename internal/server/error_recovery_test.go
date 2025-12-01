@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
@@ -226,6 +227,10 @@ func (m *MockFailingStorage) StoreRelationship(relationship *types.Relationship)
 }
 
 func TestUnifiedServer_ErrorRecovery_StorageFailures(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	tests := []struct {
 		name           string
 		storageFailure string
@@ -347,6 +352,10 @@ func TestUnifiedServer_ErrorRecovery_StorageFailures(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_InvalidInputs(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Create working storage for this test
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
@@ -445,6 +454,10 @@ func TestUnifiedServer_ErrorRecovery_InvalidInputs(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_TimeoutHandling(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
 	treeMode := modes.NewTreeMode(storage)
@@ -507,6 +520,10 @@ func TestUnifiedServer_ErrorRecovery_TimeoutHandling(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_ConcurrentFailures(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
 	treeMode := modes.NewTreeMode(storage)
@@ -562,6 +579,10 @@ func TestUnifiedServer_ErrorRecovery_ConcurrentFailures(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_ResourceExhaustion(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
 	treeMode := modes.NewTreeMode(storage)
@@ -627,6 +648,10 @@ func TestUnifiedServer_ErrorRecovery_ResourceExhaustion(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_NetworkFailures(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
 	treeMode := modes.NewTreeMode(storage)
@@ -712,6 +737,10 @@ func TestUnifiedServer_ErrorRecovery_NetworkFailures(t *testing.T) {
 }
 
 func TestUnifiedServer_ErrorRecovery_Cleanup(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Test proper cleanup even when errors occur
 	storage := &MockFailingStorage{
 		failOnClose: true, // Storage close will fail

@@ -40,7 +40,7 @@ Real-time progress updates for long-running tools via MCP `notifications/progres
 **Technical Debt Fixes**:
 - Removed `panic()` calls from streaming code - replaced with safe error handling utilities
 - Converted `log.Fatal` in server.go to proper error propagation
-- Made Graph-of-Thoughts optional (graceful degradation without `ANTHROPIC_API_KEY`)
+- Graph-of-Thoughts now fails fast if `ANTHROPIC_API_KEY` is missing
 
 ---
 

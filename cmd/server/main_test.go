@@ -61,6 +61,10 @@ func (m *MockStorage) GetMetrics() *storage.Metrics { return nil }
 func (m *MockStorage) Close() error { m.closed = true; return nil }
 
 func TestMainInitialization(t *testing.T) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+
 	// Save original env vars
 	originalDebug := os.Getenv("DEBUG")
 	defer func() {
@@ -365,6 +369,10 @@ func BenchmarkWorkflowRegistration(b *testing.B) {
 }
 
 func BenchmarkServerCreation(b *testing.B) {
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		b.Skip("ANTHROPIC_API_KEY not set, skipping benchmark requiring full server")
+	}
+
 	store := &MockStorage{}
 
 	linearMode := modes.NewLinearMode(store)
