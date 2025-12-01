@@ -535,6 +535,7 @@ Add to Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json` on W
 - `NEO4J_DATABASE`: Neo4j database name (default: `neo4j`)
 - `NEO4J_TIMEOUT_MS`: Connection timeout in milliseconds (default: 5000)
 - `NEO4J_ENABLED`: Enable knowledge graph integration (`true` or `false`, default: false)
+- `VECTOR_STORE_PATH`: Persistent storage path for chromem-go vector database (optional, defaults to `{SQLITE_PATH}_vectors`)
 
 **Context Bridge Environment Variables** (for cross-session context retrieval):
 - `CONTEXT_BRIDGE_ENABLED`: Enable context bridge (`true` or `false`, default: false)

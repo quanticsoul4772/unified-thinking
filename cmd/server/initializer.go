@@ -181,10 +181,25 @@ func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedde
 	// Configure Neo4j
 	neo4jCfg := knowledge.DefaultConfig()
 
-	// Configure vector store
+	// Configure vector store with persistence
+	vectorPersistPath := os.Getenv("VECTOR_STORE_PATH")
+	if vectorPersistPath == "" {
+		// Default: Use same directory as SQLite database
+		if sqlitePath := os.Getenv("SQLITE_PATH"); sqlitePath != "" {
+			// Replace .db extension with _vectors
+			vectorPersistPath = sqlitePath[:len(sqlitePath)-3] + "_vectors"
+		}
+	}
+
 	vectorCfg := knowledge.VectorStoreConfig{
-		PersistPath: "", // In-memory for now
+		PersistPath: vectorPersistPath,
 		Embedder:    embedder,
+	}
+
+	if vectorPersistPath != "" {
+		log.Printf("Knowledge graph vector store persistence: %s", vectorPersistPath)
+	} else {
+		log.Println("Knowledge graph vector store using in-memory only (will not persist)")
 	}
 
 	// Create knowledge graph
