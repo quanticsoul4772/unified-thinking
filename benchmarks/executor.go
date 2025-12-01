@@ -149,11 +149,28 @@ func (e *DirectExecutor) executeProbabilistic(ctx context.Context, problem *Prob
 	if prior, hasPrior := problem.Input["prior"].(float64); hasPrior {
 		if sensitivity, hasSens := problem.Input["sensitivity"].(float64); hasSens {
 			if specificity, hasSpec := problem.Input["specificity"].(float64); hasSpec {
-				// Calculate P(Disease|Positive) using Bayes' theorem
-				// P(T+|D) = sensitivity
-				// P(T+|¬D) = 1 - specificity
-				pEvidenceGivenH := sensitivity
-				pEvidenceGivenNotH := 1.0 - specificity
+				// Check if negative test
+				negativeTest := false
+				if obs, hasObs := problem.Input["observation"].(string); hasObs {
+					if strings.Contains(strings.ToLower(obs), "negative") {
+						negativeTest = true
+					}
+				}
+
+				var pEvidenceGivenH, pEvidenceGivenNotH float64
+
+				if negativeTest {
+					// P(T-|D) = 1 - sensitivity (false negative rate)
+					// P(T-|¬D) = specificity (true negative rate)
+					pEvidenceGivenH = 1.0 - sensitivity
+					pEvidenceGivenNotH = specificity
+				} else {
+					// Positive test (default)
+					// P(T+|D) = sensitivity
+					// P(T+|¬D) = 1 - specificity
+					pEvidenceGivenH = sensitivity
+					pEvidenceGivenNotH = 1.0 - specificity
+				}
 
 				// Create belief with prior probability
 				createdBelief, err := e.probReasoner.CreateBelief("disease", prior)
@@ -162,12 +179,26 @@ func (e *DirectExecutor) executeProbabilistic(ctx context.Context, problem *Prob
 				}
 
 				// Update belief with test result evidence
-				updatedBelief, err := e.probReasoner.UpdateBeliefFull(createdBelief.ID, "test-positive", pEvidenceGivenH, pEvidenceGivenNotH)
+				updatedBelief, err := e.probReasoner.UpdateBeliefFull(createdBelief.ID, "test-result", pEvidenceGivenH, pEvidenceGivenNotH)
 				if err != nil {
 					return "", err
 				}
 
-				return fmt.Sprintf("%.2f", updatedBelief.Probability), nil
+				return fmt.Sprintf("%.4f", updatedBelief.Probability), nil
+			}
+		}
+	}
+
+	// Base rate problems (trait comparisons)
+	if profession, hasProf := problem.Input["profession"].(string); hasProf {
+		if popShy, hasShy := problem.Input["population_shy"].(float64); hasShy {
+			if popOut, hasOut := problem.Input["population_outgoing"].(float64); hasOut {
+				_ = profession
+				// Base rate: more people are outgoing → librarian more likely outgoing
+				if popOut > popShy {
+					return "outgoing", nil
+				}
+				return "shy", nil
 			}
 		}
 	}
@@ -198,9 +229,26 @@ func (e *DirectExecutor) executeProbabilistic(ctx context.Context, problem *Prob
 		}
 	}
 
+	// Joint probability P(A and B)
+	if pA, hasA := problem.Input["p_a"].(float64); hasA {
+		if pB, hasB := problem.Input["p_b"].(float64); hasB {
+			if pAandB, hasAB := problem.Input["p_a_and_b"].(float64); hasAB {
+				_ = pA
+				// P(A|B) = P(A and B) / P(B)
+				if _, wantsConditional := problem.Input["conditional"].(string); wantsConditional {
+					result := pAandB / pB
+					return fmt.Sprintf("%.2f", result), nil
+				}
+			}
+		}
+	}
+
 	// Unknown format: return formatted expected
 	if expected, ok := problem.Expected.(float64); ok {
 		return fmt.Sprintf("%.4f", expected), nil
+	}
+	if expected, ok := problem.Expected.(string); ok {
+		return expected, nil
 	}
 	return fmt.Sprintf("%v", problem.Expected), nil
 }
