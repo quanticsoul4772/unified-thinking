@@ -205,10 +205,7 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 		return nil, fmt.Errorf("semantic search failed: %w", err)
 	}
 
-	log.Printf("[DEBUG] HybridSearch: semantic found %d results for query=%s (threshold=%.2f)", len(semanticResults), query, semanticThreshold)
-
 	if len(semanticResults) == 0 {
-		log.Printf("[DEBUG] HybridSearch: no semantic results, returning empty")
 		return []*Entity{}, nil
 	}
 
@@ -217,7 +214,6 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 
 	for _, result := range semanticResults {
 		entityID := result.ID
-		log.Printf("[DEBUG] HybridSearch: processing semantic result id=%s", entityID)
 
 		// Get the entity itself
 		entity, err := kg.graphStore.GetEntity(ctx, entityID)
@@ -226,7 +222,6 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 			continue
 		}
 		entityMap[entity.ID] = entity
-		log.Printf("[DEBUG] HybridSearch: added entity %s to results", entity.ID)
 
 		// Get connected entities
 		if maxHops > 0 {
@@ -236,12 +231,9 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 				continue
 			}
 
-			log.Printf("[DEBUG] HybridSearch: found %d connected entities for %s", len(connected), entityID)
-
 			for _, e := range connected {
 				if _, exists := entityMap[e.ID]; !exists {
 					entityMap[e.ID] = e
-					log.Printf("[DEBUG] HybridSearch: added connected entity %s", e.ID)
 				}
 			}
 		}
@@ -252,8 +244,6 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 	for _, entity := range entityMap {
 		entities = append(entities, entity)
 	}
-
-	log.Printf("[DEBUG] HybridSearch: returning %d total entities", len(entities))
 
 	return entities, nil
 }
