@@ -28,7 +28,7 @@ func NewAnthropicLLMClient() (*AnthropicLLMClient, error) {
 
 	model := os.Getenv("GOT_MODEL")
 	if model == "" {
-		model = "claude-3-5-sonnet-20241022" // Latest Sonnet
+		model = "claude-sonnet-4-5-20250929" // Sonnet 4.5
 	}
 
 	return &AnthropicLLMClient{
