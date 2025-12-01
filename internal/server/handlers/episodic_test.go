@@ -12,7 +12,7 @@ func TestNewEpisodicMemoryHandler(t *testing.T) {
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	if handler == nil {
 		t.Fatal("NewEpisodicMemoryHandler returned nil")
@@ -35,7 +35,7 @@ func TestEpisodicMemoryHandler_HandleStartSession(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	tests := []struct {
 		name    string
@@ -110,7 +110,7 @@ func TestEpisodicMemoryHandler_HandleCompleteSession(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -190,7 +190,7 @@ func TestEpisodicMemoryHandler_HandleGetRecommendations(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	tests := []struct {
 		name    string
@@ -252,7 +252,7 @@ func TestEpisodicMemoryHandler_HandleSearchTrajectories(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -337,7 +337,7 @@ func TestEpisodicMemoryHandler_HandleAnalyzeTrajectory(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -433,7 +433,7 @@ func TestEpisodicMemoryHandler_Integration(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -499,7 +499,7 @@ func TestEpisodicMemoryHandler_SessionLifecycle(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -633,7 +633,7 @@ func TestEpisodicMemoryHandler_HandleAnalyzeTrajectory_WithValidTrajectory(t *te
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -672,7 +672,7 @@ func TestEpisodicMemoryHandler_HandleGetRecommendations_DetailedContext(t *testi
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 
@@ -713,7 +713,7 @@ func TestEpisodicMemoryHandler_HandleSearchTrajectories_AllFilters(t *testing.T)
 	store := memory.NewEpisodicMemoryStore()
 	tracker := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
-	handler := NewEpisodicMemoryHandler(store, tracker, learner)
+	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
 	ctx := context.Background()
 

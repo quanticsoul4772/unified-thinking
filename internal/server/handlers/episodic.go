@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"unified-thinking/internal/knowledge"
 	"unified-thinking/internal/memory"
 )
 
@@ -17,15 +18,24 @@ type EpisodicMemoryHandler struct {
 	tracker       *memory.SessionTracker
 	learner       *memory.LearningEngine
 	retrospective *memory.RetrospectiveAnalyzer
+	kg            *knowledge.KnowledgeGraph
+	extractor     *knowledge.TrajectoryExtractor
 }
 
 // NewEpisodicMemoryHandler creates a new episodic memory handler
-func NewEpisodicMemoryHandler(store *memory.EpisodicMemoryStore, tracker *memory.SessionTracker, learner *memory.LearningEngine) *EpisodicMemoryHandler {
+func NewEpisodicMemoryHandler(store *memory.EpisodicMemoryStore, tracker *memory.SessionTracker, learner *memory.LearningEngine, kg *knowledge.KnowledgeGraph) *EpisodicMemoryHandler {
+	var extractor *knowledge.TrajectoryExtractor
+	if kg != nil && kg.IsEnabled() {
+		extractor = knowledge.NewTrajectoryExtractor(kg, false) // false = no LLM for now
+	}
+
 	return &EpisodicMemoryHandler{
 		store:         store,
 		tracker:       tracker,
 		learner:       learner,
 		retrospective: memory.NewRetrospectiveAnalyzer(store),
+		kg:            kg,
+		extractor:     extractor,
 	}
 }
 
@@ -147,6 +157,22 @@ func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, param
 	trajectory, err := h.tracker.CompleteSession(ctx, req.SessionID, outcome)
 	if err != nil {
 		return nil, err
+	}
+
+	// Extract entities to knowledge graph (automatic, always enabled when KG available)
+	if h.extractor != nil {
+		steps := make([]string, 0, len(trajectory.Steps))
+		for _, step := range trajectory.Steps {
+			// Extract tool name and mode from step
+			stepDesc := fmt.Sprintf("%s (mode: %s)", step.Tool, step.Mode)
+			steps = append(steps, stepDesc)
+		}
+
+		if err := h.extractor.ExtractFromTrajectory(ctx, trajectory.ID, trajectory.Problem.Description, steps); err != nil {
+			log.Printf("[WARN] Failed to extract trajectory to knowledge graph: %v", err)
+		} else {
+			log.Printf("[DEBUG] Extracted trajectory %s to knowledge graph", trajectory.ID)
+		}
 	}
 
 	// Trigger pattern learning (async would be better in production)

@@ -339,8 +339,8 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	// Create learning engine
 	learner := memory.NewLearningEngine(store)
 
-	// Create episodic memory handler
-	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(store, tracker, learner)
+	// Create episodic memory handler (with knowledge graph for automatic entity extraction)
+	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(store, tracker, learner, s.knowledgeGraph)
 }
 
 // initializeSemanticAutoMode sets up semantic mode detection for auto mode
