@@ -583,8 +583,17 @@ func (v *LogicValidator) tryModusTollens(premises []string, conclusion string) [
 					// Check if premise2 is negation of consequent
 					hasNegation := false
 
-					// Simple check: if removing " not " from premise2 gives us the consequent
-					if strings.Contains(normalized2, " not ") {
+					// Check for negation: "NOT X" or "X is not Y" or "not X"
+					if strings.HasPrefix(normalized2, "not ") {
+						// "NOT fire" → "fire"
+						cleaned := strings.TrimPrefix(normalized2, "not ")
+						cleaned = strings.TrimSpace(cleaned)
+						if cleaned == normalizedConsequent ||
+							strings.Contains(cleaned, normalizedConsequent) ||
+							strings.Contains(normalizedConsequent, cleaned) {
+							hasNegation = true
+						}
+					} else if strings.Contains(normalized2, " not ") {
 						cleaned := strings.ReplaceAll(normalized2, " not ", " ")
 						// e.g., "ground is not wet" → "ground is wet"
 						if cleaned == normalizedConsequent ||
@@ -601,7 +610,21 @@ func (v *LogicValidator) tryModusTollens(premises []string, conclusion string) [
 						// Simple check: if removing negation from conclusion gives us antecedent
 						conclusionNegatesAntecedent := false
 
-						if strings.Contains(lowerConc, " does not ") || strings.Contains(lowerConc, " not ") {
+						// Handle "NOT X" prefix
+						if strings.HasPrefix(lowerConc, "not ") {
+							cleaned := strings.TrimPrefix(lowerConc, "not ")
+							cleaned = strings.TrimSpace(cleaned)
+
+							antecedentNormalized := strings.TrimSpace(antecedent)
+
+							if cleaned == antecedentNormalized ||
+								cleaned+"s" == antecedentNormalized ||
+								cleaned == antecedentNormalized+"s" ||
+								strings.Contains(antecedentNormalized, cleaned) ||
+								strings.Contains(cleaned, antecedentNormalized) {
+								conclusionNegatesAntecedent = true
+							}
+						} else if strings.Contains(lowerConc, " does not ") || strings.Contains(lowerConc, " not ") {
 							// Remove all negation words and "it"
 							cleaned := lowerConc
 							cleaned = strings.ReplaceAll(cleaned, " does not ", " ")
