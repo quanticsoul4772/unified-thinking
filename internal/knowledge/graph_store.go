@@ -3,6 +3,7 @@ package knowledge
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -31,6 +32,18 @@ func (s *GraphStore) CreateEntity(ctx context.Context, entity *Entity) error {
 	}
 	entity.UpdatedAt = now
 
+	// Serialize metadata to JSON string (Neo4j doesn't support nested maps)
+	var metadataJSON string
+	if entity.Metadata != nil {
+		metadataBytes, err := json.Marshal(entity.Metadata)
+		if err != nil {
+			return fmt.Errorf("failed to marshal metadata: %w", err)
+		}
+		metadataJSON = string(metadataBytes)
+	} else {
+		metadataJSON = "{}"
+	}
+
 	query := `
 		CREATE (e:Entity {
 			id: $id,
@@ -51,7 +64,7 @@ func (s *GraphStore) CreateEntity(ctx context.Context, entity *Entity) error {
 		"description": entity.Description,
 		"created_at":  entity.CreatedAt,
 		"updated_at":  entity.UpdatedAt,
-		"metadata":    entity.Metadata,
+		"metadata":    metadataJSON,
 	}
 
 	_, err := s.client.ExecuteWrite(ctx, s.database, func(tx neo4j.ManagedTransaction) (interface{}, error) {
@@ -98,8 +111,12 @@ func (s *GraphStore) GetEntity(ctx context.Context, entityID string) (*Entity, e
 				UpdatedAt:   record.Values[5].(int64),
 			}
 
-			if metadata, ok := record.Values[6].(map[string]interface{}); ok {
-				entity.Metadata = metadata
+			// Deserialize metadata from JSON string
+			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
+				var metadata map[string]interface{}
+				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
+					entity.Metadata = metadata
+				}
 			}
 
 			return entity, nil
@@ -161,8 +178,12 @@ func (s *GraphStore) QueryEntitiesByType(ctx context.Context, entityType EntityT
 				UpdatedAt:   record.Values[5].(int64),
 			}
 
-			if metadata, ok := record.Values[6].(map[string]interface{}); ok {
-				entity.Metadata = metadata
+			// Deserialize metadata from JSON string
+			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
+				var metadata map[string]interface{}
+				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
+					entity.Metadata = metadata
+				}
 			}
 
 			entities = append(entities, entity)
@@ -189,6 +210,18 @@ func (s *GraphStore) CreateRelationship(ctx context.Context, rel *Relationship) 
 		rel.CreatedAt = now
 	}
 
+	// Serialize metadata to JSON string (Neo4j doesn't support nested maps)
+	var metadataJSON string
+	if rel.Metadata != nil {
+		metadataBytes, err := json.Marshal(rel.Metadata)
+		if err != nil {
+			return fmt.Errorf("failed to marshal metadata: %w", err)
+		}
+		metadataJSON = string(metadataBytes)
+	} else {
+		metadataJSON = "{}"
+	}
+
 	query := `
 		MATCH (from:Entity {id: $from_id})
 		MATCH (to:Entity {id: $to_id})
@@ -211,7 +244,7 @@ func (s *GraphStore) CreateRelationship(ctx context.Context, rel *Relationship) 
 		"confidence": rel.Confidence,
 		"source":     rel.Source,
 		"created_at": rel.CreatedAt,
-		"metadata":   rel.Metadata,
+		"metadata":   metadataJSON,
 	}
 
 	_, err := s.client.ExecuteWrite(ctx, s.database, func(tx neo4j.ManagedTransaction) (interface{}, error) {
@@ -392,8 +425,12 @@ func (s *GraphStore) QueryEntitiesWithinHops(ctx context.Context, entityID strin
 				UpdatedAt:   record.Values[5].(int64),
 			}
 
-			if metadata, ok := record.Values[6].(map[string]interface{}); ok {
-				entity.Metadata = metadata
+			// Deserialize metadata from JSON string
+			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
+				var metadata map[string]interface{}
+				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
+					entity.Metadata = metadata
+				}
 			}
 
 			entities = append(entities, entity)
@@ -452,8 +489,12 @@ func (s *GraphStore) SearchEntities(ctx context.Context, searchTerm string, limi
 				UpdatedAt:   record.Values[5].(int64),
 			}
 
-			if metadata, ok := record.Values[6].(map[string]interface{}); ok {
-				entity.Metadata = metadata
+			// Deserialize metadata from JSON string
+			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
+				var metadata map[string]interface{}
+				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
+					entity.Metadata = metadata
+				}
 			}
 
 			entities = append(entities, entity)

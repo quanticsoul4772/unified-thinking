@@ -217,8 +217,8 @@ func TestKnowledgeGraph_SemanticSearch(t *testing.T) {
 		}
 	}
 
-	// Semantic search for "database performance"
-	results, err := kg.SearchSemantic(ctx, "database performance optimization", 5, 0.5)
+	// Semantic search for "database performance" (limit to 3 since we only stored 3 entities)
+	results, err := kg.SearchSemantic(ctx, "database performance optimization", 3, 0.5)
 	if err != nil {
 		t.Fatalf("SearchSemantic failed: %v", err)
 	}
@@ -315,8 +315,8 @@ func TestKnowledgeGraph_HybridSearch(t *testing.T) {
 		t.Fatalf("CreateRelationship r2 failed: %v", err)
 	}
 
-	// Hybrid search: semantic + 1 hop graph traversal
-	results, err := kg.HybridSearch(ctx, "database performance", 5, 1)
+	// Hybrid search: semantic + 1 hop graph traversal (limit to 3 since we only stored 3 entities)
+	results, err := kg.HybridSearch(ctx, "database performance", 3, 1)
 	if err != nil {
 		t.Fatalf("HybridSearch failed: %v", err)
 	}

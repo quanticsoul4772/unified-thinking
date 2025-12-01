@@ -137,8 +137,8 @@ func TestTrajectoryExtractor_ExtractStrategies(t *testing.T) {
 		t.Fatalf("ExtractStrategies failed: %v", err)
 	}
 
-	// Verify strategy entities were created
-	strategyResults, err := kg.SearchSemantic(ctx, "authentication JWT bcrypt", 10, 0.5)
+	// Verify strategy entities were created (limit to 3 to match stored entities)
+	strategyResults, err := kg.SearchSemantic(ctx, "authentication JWT bcrypt", 3, 0.5)
 	if err != nil {
 		t.Fatalf("SearchSemantic failed: %v", err)
 	}
