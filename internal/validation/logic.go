@@ -103,6 +103,14 @@ func (v *LogicValidator) Prove(premises []string, conclusion string) *ProofResul
 		}
 	}
 
+	// Try categorical syllogism (All A are B, All B are C → All A are C)
+	if !isProvable {
+		if cs := v.tryCategoricalSyllogism(premises, conclusion); cs != nil {
+			steps = append(steps, cs...)
+			isProvable = true
+		}
+	}
+
 	// Try universal instantiation
 	if !isProvable {
 		if ui := v.tryUniversalInstantiation(premises, conclusion); ui != nil {
@@ -291,6 +299,102 @@ func (v *LogicValidator) detectFallacy(content string) string {
 	}
 
 	return ""
+}
+
+// tryCategoricalSyllogism: All A are B, All B are C → All A are C (Barbara form)
+func (v *LogicValidator) tryCategoricalSyllogism(premises []string, conclusion string) []string {
+	// Parse conclusion: "All X are Y"
+	lowerConc := strings.ToLower(conclusion)
+	var concSubject, concPredicate string
+
+	for _, univ := range universals {
+		if strings.HasPrefix(lowerConc, univ) {
+			rest := strings.TrimPrefix(lowerConc, univ)
+			for _, connector := range []string{" are ", " is ", " have ", " can "} {
+				if strings.Contains(rest, connector) {
+					parts := strings.SplitN(rest, connector, 2)
+					if len(parts) == 2 {
+						concSubject = strings.TrimSpace(parts[0])
+						concPredicate = strings.TrimSpace(parts[1])
+						break
+					}
+				}
+			}
+			if concSubject != "" && concPredicate != "" {
+				break
+			}
+		}
+	}
+
+	if concSubject == "" || concPredicate == "" {
+		return nil
+	}
+
+	// Find two premises: "All X are M" and "All M are Y"
+	var premise1Str, premise2Str string
+	var middleTerm string
+
+	for _, p1 := range premises {
+		lower1 := strings.ToLower(p1)
+		for _, univ := range universals {
+			if strings.HasPrefix(lower1, univ) {
+				rest1 := strings.TrimPrefix(lower1, univ)
+				for _, connector := range []string{" are ", " is ", " have ", " can "} {
+					if strings.Contains(rest1, connector) {
+						parts1 := strings.SplitN(rest1, connector, 2)
+						if len(parts1) == 2 {
+							subj1 := strings.TrimSpace(parts1[0])
+							pred1 := strings.TrimSpace(parts1[1])
+
+							// Check if this premise has concSubject as subject
+							if subj1 == concSubject || strings.Contains(concSubject, subj1) || strings.Contains(subj1, concSubject) {
+								// pred1 should be the middle term
+								middleTerm = pred1
+								premise1Str = p1
+
+								// Now find premise with middleTerm as subject and concPredicate as predicate
+								for _, p2 := range premises {
+									if p2 == p1 {
+										continue
+									}
+									lower2 := strings.ToLower(p2)
+									for _, univ2 := range universals {
+										if strings.HasPrefix(lower2, univ2) {
+											rest2 := strings.TrimPrefix(lower2, univ2)
+											for _, connector2 := range []string{" are ", " is ", " have ", " can "} {
+												if strings.Contains(rest2, connector2) {
+													parts2 := strings.SplitN(rest2, connector2, 2)
+													if len(parts2) == 2 {
+														subj2 := strings.TrimSpace(parts2[0])
+														pred2 := strings.TrimSpace(parts2[1])
+
+														// Check if subj2 matches middleTerm and pred2 matches concPredicate
+														if (subj2 == middleTerm || strings.Contains(middleTerm, subj2) || strings.Contains(subj2, middleTerm)) &&
+															(pred2 == concPredicate || strings.Contains(concPredicate, pred2) || strings.Contains(pred2, concPredicate)) {
+															premise2Str = p2
+															return []string{
+																"Apply Categorical Syllogism (Barbara):",
+																fmt.Sprintf("  Major premise: %s", premise2Str),
+																fmt.Sprintf("  Minor premise: %s", premise1Str),
+																fmt.Sprintf("  Middle term: %s", middleTerm),
+																fmt.Sprintf("  Therefore: %s", conclusion),
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // tryModusPonens: If P then Q, P, therefore Q
