@@ -111,6 +111,14 @@ func (v *LogicValidator) Prove(premises []string, conclusion string) *ProofResul
 		}
 	}
 
+	// Try negative syllogism (No A are B, Some C are A → Some C are not B)
+	if !isProvable {
+		if ns := v.tryNegativeSyllogism(premises, conclusion); ns != nil {
+			steps = append(steps, ns...)
+			isProvable = true
+		}
+	}
+
 	// Try universal instantiation
 	if !isProvable {
 		if ui := v.tryUniversalInstantiation(premises, conclusion); ui != nil {
@@ -379,6 +387,67 @@ func (v *LogicValidator) tryCategoricalSyllogism(premises []string, conclusion s
 																fmt.Sprintf("  Middle term: %s", middleTerm),
 																fmt.Sprintf("  Therefore: %s", conclusion),
 															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// tryNegativeSyllogism: No A are B, Some C are A → Some C are not B (Ferio)
+func (v *LogicValidator) tryNegativeSyllogism(premises []string, conclusion string) []string {
+	conclusionLower := strings.ToLower(conclusion)
+
+	for _, p1 := range premises {
+		lower1 := strings.ToLower(p1)
+		if strings.HasPrefix(lower1, "no ") {
+			rest1 := strings.TrimPrefix(lower1, "no ")
+			for _, connector := range []string{" are ", " is "} {
+				if strings.Contains(rest1, connector) {
+					parts1 := strings.SplitN(rest1, connector, 2)
+					if len(parts1) == 2 {
+						term1 := strings.TrimSpace(parts1[0])  // e.g., "cats"
+						term2 := strings.TrimSpace(parts1[1])  // e.g., "dogs"
+
+						// Look for "Some/All X are term1" in other premises
+						for _, p2 := range premises {
+							if p2 == p1 {
+								continue
+							}
+							lower2 := strings.ToLower(p2)
+
+							// Check for "Some X are term1" or "All X are term1"
+							for _, quant := range []string{"some ", "all "} {
+								if strings.HasPrefix(lower2, quant) {
+									rest2 := strings.TrimPrefix(lower2, quant)
+									for _, conn2 := range []string{" are ", " is "} {
+										if strings.Contains(rest2, conn2) {
+											parts2 := strings.SplitN(rest2, conn2, 2)
+											if len(parts2) == 2 {
+												subj2 := strings.TrimSpace(parts2[0])  // e.g., "pets"
+												pred2 := strings.TrimSpace(parts2[1])  // e.g., "cats"
+
+												// Check if pred2 matches term1
+												if pred2 == term1 || strings.Contains(pred2, term1) || strings.Contains(term1, pred2) {
+													// Conclusion should be: "Some/No subj2 are (not) term2"
+													if (strings.Contains(conclusionLower, subj2) && strings.Contains(conclusionLower, term2)) &&
+														(strings.Contains(conclusionLower, "not") || strings.Contains(conclusionLower, "no ")) {
+														return []string{
+															fmt.Sprintf("Apply Negative Syllogism (Ferio/Celarent):"),
+															fmt.Sprintf("  No %s are %s", term1, term2),
+															fmt.Sprintf("  %s %s are %s", strings.Title(quant), subj2, term1),
+															fmt.Sprintf("  Therefore: %s", conclusion),
 														}
 													}
 												}
