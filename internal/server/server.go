@@ -171,6 +171,9 @@ type UnifiedServer struct {
 	knowledgeGraph *knowledge.KnowledgeGraph
 	// Thought similarity searcher for semantic search (optional)
 	thoughtSearcher *similarity.ThoughtSearcher
+	// Graph-of-Thoughts controller
+	graphController *modes.GraphController
+	gotHandler      *handlers.GoTHandler
 }
 
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
@@ -245,6 +248,10 @@ func NewUnifiedServer(
 
 	// Initialize Phase 2-3 handlers
 	s.initializeAdvancedHandlers()
+
+	// Initialize Graph-of-Thoughts
+	s.graphController = modes.NewGraphController(store)
+	s.gotHandler = handlers.NewGoTHandler(s.graphController, modes.NewMockLLMClient())
 
 	return s
 }
@@ -965,6 +972,9 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		simHandler := handlers.NewSimilarityHandler(s.thoughtSearcher)
 		handlers.RegisterSimilarityTools(mcpServer, simHandler)
 	}
+
+	// Register Graph-of-Thoughts tools (8 tools)
+	handlers.RegisterGoTTools(mcpServer, s.gotHandler)
 }
 
 type ThinkRequest struct {
