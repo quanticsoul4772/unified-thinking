@@ -397,7 +397,12 @@ func (c *MCPClient) CallTool(toolName string, args map[string]interface{}) (*Too
 	for attempt := 0; attempt <= config.maxRetries; attempt++ {
 		if attempt > 0 {
 			// Exponential backoff: 100ms, 200ms, 400ms
-			delay := config.initialDelay * time.Duration(1<<uint(attempt-1))
+			// Cap shift to prevent overflow (max 30 prevents int overflow)
+			shift := attempt - 1
+			if shift > 30 {
+				shift = 30
+			}
+			delay := config.initialDelay * time.Duration(1<<shift)
 			time.Sleep(delay)
 		}
 
