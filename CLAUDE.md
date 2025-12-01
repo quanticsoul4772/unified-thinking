@@ -4,7 +4,7 @@ Guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 75 cognitive reasoning tools.
+Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 80 cognitive reasoning tools.
 
 **Module**: `unified-thinking` | **Entry**: `cmd/server/main.go` | **SDK**: `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -25,8 +25,10 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 | `internal/memory/` | Episodic memory with trajectory storage and pattern learning |
 | `internal/embeddings/` | Voyage AI semantic embeddings (voyage-3-lite, 512d) |
 | `internal/contextbridge/` | Cross-session context retrieval with caching |
-| `internal/server/` | MCP server with 75 tools, 23 handler modules |
+| `internal/server/` | MCP server with 80 tools, 24 handler modules |
 | `internal/similarity/` | Thought similarity search via embeddings |
+| `internal/claudecode/` | Claude Code optimizations: format, errors, session, presets |
+| `internal/streaming/` | MCP progress notifications for long-running tools |
 
 ### Thinking Modes
 
@@ -65,7 +67,7 @@ make clean              # Remove bin/
 
 **Test Coverage**: 84.3% overall, 102 test files, 1,300+ tests. Key: types (100%), metrics (100%), config (97.3%), reasoning (94.8%), modes (90.5%).
 
-## MCP Tools (75 total)
+## MCP Tools (80 total)
 
 ### Core (11)
 `think`, `history`, `list-branches`, `focus-branch`, `branch-history`, `recent-branches`, `validate`, `prove`, `check-syntax`, `search`, `get-metrics`
@@ -121,6 +123,79 @@ make clean              # Remove bin/
 ### Graph-of-Thoughts (8)
 `got-initialize`, `got-generate`, `got-aggregate`, `got-refine`, `got-score`, `got-prune`, `got-get-state`, `got-finalize`
 
+### Claude Code Optimization (5)
+`export-session`, `import-session`, `list-presets`, `run-preset`, `format-response`
+
+## Claude Code Optimization
+
+Tools and features specifically designed to optimize unified-thinking usage within Claude Code.
+
+### Response Formatting
+
+Set `RESPONSE_FORMAT` env var to control token usage:
+- **full** (default): Complete response with all metadata
+- **compact**: 40-60% reduction - removes context_bridge, flattens next_tools, truncates arrays to 5 items
+- **minimal**: 80%+ reduction - essential fields only, arrays truncated to 3 items
+
+Or use `format-response` tool for per-request control.
+
+### Session Export/Import
+
+Preserve reasoning context across sessions:
+- **export-session**: Export thoughts, branches, decisions, causal graphs to portable JSON (with optional gzip compression)
+- **import-session**: Restore with merge strategies: `replace`, `merge`, `append`
+
+### Workflow Presets
+
+8 built-in presets for common development tasks:
+
+| Preset | Category | Steps | Description |
+|--------|----------|-------|-------------|
+| `code-review` | code | 5 | Multi-aspect code review |
+| `debug-analysis` | code | 4 | Causal debugging with hypothesis generation |
+| `refactoring-plan` | code | 4 | Safe refactoring with impact analysis |
+| `architecture-decision` | architecture | 5 | ADR-style decision workflow |
+| `research-synthesis` | research | 4 | Graph-of-Thoughts research aggregation |
+| `test-strategy` | testing | 4 | Test coverage planning |
+| `documentation-gen` | documentation | 4 | Multi-perspective documentation |
+| `incident-investigation` | operations | 5 | Post-incident analysis with timeline mapping |
+
+Use `list-presets` to view available presets, `run-preset` to execute (supports dry_run and step_by_step modes).
+
+### Structured Errors
+
+Tool errors include recovery guidance:
+```json
+{
+  "code": "MISSING_REQUIRED",
+  "message": "preset_id is required",
+  "details": "The preset_id parameter must specify which preset to run",
+  "recovery_suggestions": ["Use list-presets to see available presets"],
+  "related_tools": ["list-presets"],
+  "example": {"tool": "run-preset", "input": {"preset_id": "code-review", ...}}
+}
+```
+
+### Streaming Progress Notifications
+
+Long-running tools support real-time progress updates via MCP `notifications/progress`. Clients providing a `progressToken` receive step-by-step updates.
+
+**Streaming-Enabled Tools:**
+
+| Priority | Tools |
+|----------|-------|
+| P0 (Essential) | `execute-workflow`, `run-preset`, `got-generate` |
+| P1 (Important) | `got-aggregate`, `think`, `perform-cbr-cycle` |
+| P2 (Enhancement) | `synthesize-insights`, `analyze-perspectives`, `build-causal-graph`, `evaluate-hypotheses` |
+
+**Features:**
+- Rate-limited notifications (100ms default) to prevent flooding
+- Step changes bypass rate limit for immediate feedback
+- No-op when client doesn't provide `progressToken` (backward compatible)
+- Per-tool configuration for interval, partial data, auto-progress
+
+See [docs/STREAMING.md](./docs/STREAMING.md) for detailed documentation.
+
 ## Storage Architecture
 
 ### In-Memory (Default)
@@ -166,6 +241,7 @@ Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`):
 | `SQLITE_PATH` | - | Database file path |
 | `DEBUG` | `false` | Enable debug logging |
 | `AUTO_VALIDATION_THRESHOLD` | `0.5` | Auto-validation confidence threshold |
+| `RESPONSE_FORMAT` | `full` | Response format: `full`, `compact` (40-60% reduction), `minimal` (80%+ reduction) |
 | `EMBEDDINGS_ENABLED` | `false` | Enable semantic embeddings |
 | `VOYAGE_API_KEY` | - | Voyage AI API key |
 | `EMBEDDINGS_MODEL` | `voyage-3-lite` | `voyage-3-lite` (512d), `voyage-3` (1024d), `voyage-3-large` (2048d) |

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -99,7 +100,7 @@ func InitializeServer() (*ServerComponents, error) {
 	}
 
 	// Create unified server
-	components.Server = server.NewUnifiedServer(
+	unifiedServer, err := server.NewUnifiedServer(
 		store,
 		components.LinearMode,
 		components.TreeMode,
@@ -107,6 +108,10 @@ func InitializeServer() (*ServerComponents, error) {
 		components.AutoMode,
 		components.Validator,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create unified server: %w", err)
+	}
+	components.Server = unifiedServer
 	if components.ContextBridge != nil {
 		components.Server.SetContextBridge(components.ContextBridge)
 	}

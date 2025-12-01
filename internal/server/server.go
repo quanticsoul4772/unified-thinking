@@ -109,6 +109,7 @@ import (
 	"unified-thinking/internal/server/handlers"
 	"unified-thinking/internal/similarity"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/streaming"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
@@ -174,6 +175,8 @@ type UnifiedServer struct {
 	// Graph-of-Thoughts controller
 	graphController *modes.GraphController
 	gotHandler      *handlers.GoTHandler
+	// Claude Code optimization handler
+	claudeCodeHandler *handlers.ClaudeCodeHandler
 }
 
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
@@ -199,7 +202,7 @@ func NewUnifiedServer(
 	divergent *modes.DivergentMode,
 	auto *modes.AutoMode,
 	validator *validation.LogicValidator,
-) *UnifiedServer {
+) (*UnifiedServer, error) {
 	// Initialize core reasoning engines
 	probabilisticReasoner := reasoning.NewProbabilisticReasoner()
 	evidenceAnalyzer := analysis.NewEvidenceAnalyzer()
@@ -249,16 +252,20 @@ func NewUnifiedServer(
 	// Initialize Phase 2-3 handlers
 	s.initializeAdvancedHandlers()
 
-	// Initialize Graph-of-Thoughts (requires ANTHROPIC_API_KEY)
+	// Initialize Graph-of-Thoughts (optional - requires ANTHROPIC_API_KEY)
 	s.graphController = modes.NewGraphController(store)
 	llmClient, err := modes.NewAnthropicLLMClient()
 	if err != nil {
-		log.Fatalf("Graph-of-Thoughts requires ANTHROPIC_API_KEY: %v", err)
+		// Graph-of-Thoughts is optional - log warning and continue without it
+		log.Printf("WARNING: Graph-of-Thoughts disabled: %v", err)
+		// Create a nil-safe handler that returns errors for GoT operations
+		s.gotHandler = nil
+	} else {
+		log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
+		s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
 	}
-	log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
-	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
 
-	return s
+	return s, nil
 }
 
 // initializeAdvancedHandlers initializes Phase 2-3 reasoning handlers
@@ -311,6 +318,8 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 	// Initialize semantic auto mode detection
 	s.initializeSemanticAutoMode()
 
+	// Initialize Claude Code handler
+	s.claudeCodeHandler = handlers.NewClaudeCodeHandler(s.storage)
 }
 
 // SetThoughtSearcher sets the thought similarity searcher
@@ -978,8 +987,13 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 		handlers.RegisterSimilarityTools(mcpServer, simHandler)
 	}
 
-	// Register Graph-of-Thoughts tools (8 tools)
-	handlers.RegisterGoTTools(mcpServer, s.gotHandler)
+	// Register Graph-of-Thoughts tools (8 tools) - only if GoT is enabled
+	if s.gotHandler != nil {
+		handlers.RegisterGoTTools(mcpServer, s.gotHandler)
+	}
+
+	// Register Claude Code optimization tools (5 tools)
+	handlers.RegisterClaudeCodeTools(mcpServer, s.claudeCodeHandler)
 }
 
 type ThinkRequest struct {
@@ -1883,9 +1897,23 @@ func (s *UnifiedServer) handleSynthesizeInsights(
 	req *mcp.CallToolRequest,
 	input SynthesizeInsightsRequest,
 ) (*mcp.CallToolResult, *SynthesizeInsightsResponse, error) {
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "synthesize-insights")
+	totalSteps := len(input.Inputs) + 2 // inputs + synergies/conflicts + integrated view
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(1, totalSteps, "analyze", fmt.Sprintf("Analyzing %d inputs...", len(input.Inputs)))
+	}
+
 	synthesis, err := s.synthesizer.SynthesizeInsights(input.Inputs, input.Context)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(totalSteps, totalSteps, "complete", "Synthesis complete")
 	}
 
 	response := &SynthesizeInsightsResponse{
@@ -2459,6 +2487,16 @@ func (s *UnifiedServer) handleGenerateHypotheses(ctx context.Context, req *mcp.C
 
 // handleEvaluateHypotheses evaluates and ranks hypotheses
 func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.CallToolRequest, input handlers.EvaluateHypothesesRequest) (*mcp.CallToolResult, *handlers.EvaluateHypothesesResponse, error) {
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "evaluate-hypotheses")
+	hypothesisCount := len(input.Hypotheses)
+	totalSteps := hypothesisCount + 2 // evaluate each + rank + complete
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(1, totalSteps, "evaluate", fmt.Sprintf("Evaluating %d hypotheses...", hypothesisCount))
+	}
+
 	params := make(map[string]interface{})
 	data, err := json.Marshal(input)
 	if err != nil {
@@ -2471,6 +2509,11 @@ func (s *UnifiedServer) handleEvaluateHypotheses(ctx context.Context, req *mcp.C
 	result, err := s.abductiveHandler.HandleEvaluateHypotheses(ctx, params)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(totalSteps, totalSteps, "complete", "Hypotheses ranked")
 	}
 
 	var response handlers.EvaluateHypothesesResponse

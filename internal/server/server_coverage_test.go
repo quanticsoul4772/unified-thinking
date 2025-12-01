@@ -195,7 +195,10 @@ func TestNewUnifiedServer(t *testing.T) {
 		auto := modes.NewAutoMode(linear, tree, divergent)
 		validator := validation.NewLogicValidator()
 
-		server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+		server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+		if err != nil {
+			t.Fatalf("Failed to create server: %v", err)
+		}
 
 		// Verify all core components are initialized
 		if server.storage == nil {
@@ -2338,7 +2341,10 @@ func TestInitializeEpisodicMemoryPaths(t *testing.T) {
 		auto := modes.NewAutoMode(linear, tree, divergent)
 		validator := validation.NewLogicValidator()
 
-		server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+		server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+		if err != nil {
+			t.Fatalf("Failed to create server: %v", err)
+		}
 		if server.episodicMemoryHandler == nil {
 			t.Error("episodic memory handler should be initialized")
 		}

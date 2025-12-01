@@ -2474,6 +2474,257 @@ Perform retrospective analysis of a completed reasoning session.
 
 ---
 
+## Knowledge Graph Tools
+
+### store-entity
+
+Store an entity in the knowledge graph with semantic indexing.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entity_id` | string | Yes | Unique entity identifier |
+| `label` | string | Yes | Human-readable entity label |
+| `type` | string | Yes | Entity type (Concept, Person, Tool, File, Decision, Strategy, Problem) |
+| `content` | string | Yes | Content for semantic search embedding |
+| `description` | string | No | Detailed description |
+| `metadata` | object | No | Additional metadata |
+
+---
+
+### search-knowledge-graph
+
+Search for entities using semantic similarity or graph traversal.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Search query |
+| `search_type` | string | Yes | "semantic" or "hybrid" |
+| `limit` | integer | No | Max results (default: 10) |
+| `max_hops` | integer | No | For hybrid search, max graph hops (default: 1) |
+| `min_similarity` | float | No | Minimum similarity threshold (default: 0.7) |
+
+---
+
+### create-relationship
+
+Create a typed relationship between entities in the knowledge graph.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `relationship_id` | string | Yes | Unique relationship identifier |
+| `from_id` | string | Yes | Source entity ID |
+| `to_id` | string | Yes | Target entity ID |
+| `type` | string | Yes | Relationship type (CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, RELATES_TO) |
+| `strength` | float | Yes | Relationship strength 0.0-1.0 |
+| `confidence` | float | Yes | Confidence in relationship 0.0-1.0 |
+
+---
+
+## Similarity Tools
+
+### search-similar-thoughts
+
+Search for thoughts similar to a query using semantic embeddings.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Text to find similar thoughts |
+| `limit` | integer | No | Maximum results (default: 5) |
+| `min_similarity` | float | No | Threshold 0-1 (default: 0.5) |
+
+---
+
+## Graph-of-Thoughts Tools
+
+### got-initialize
+
+Initialize a new Graph-of-Thoughts graph with an initial thought.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Unique identifier for this graph |
+| `initial_thought` | string | Yes | Starting thought content |
+| `config` | object | No | GraphConfig with limits |
+
+---
+
+### got-generate
+
+Generate k diverse continuations from active or specified vertices.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `k` | integer | Yes | Number of continuations per source (1-10) |
+| `problem` | string | Yes | Original problem context |
+| `source_ids` | array | No | Specific vertices to expand from (default: active) |
+
+---
+
+### got-aggregate
+
+Merge multiple parallel reasoning paths into a unified insight.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `vertex_ids` | array | Yes | Array of vertices to merge (min: 2) |
+| `problem` | string | Yes | Original problem context |
+
+---
+
+### got-refine
+
+Iteratively improve a thought through self-critique.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `vertex_id` | string | Yes | Vertex to refine |
+| `problem` | string | Yes | Original problem context |
+
+---
+
+### got-score
+
+Evaluate thought quality with multi-criteria breakdown.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `vertex_id` | string | Yes | Vertex to score |
+| `problem` | string | Yes | Original problem context |
+
+---
+
+### got-prune
+
+Remove low-quality vertices below threshold (preserves roots and terminals).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `threshold` | float | No | Minimum score to keep (default: config.PruneThreshold) |
+
+---
+
+### got-get-state
+
+Get current graph state with all vertices and metadata.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+
+---
+
+### got-finalize
+
+Mark terminal vertices and retrieve final conclusions.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `graph_id` | string | Yes | Graph identifier |
+| `terminal_ids` | array | Yes | Array of final conclusion vertex IDs |
+
+---
+
+## Claude Code Optimization Tools
+
+### export-session
+
+Export current reasoning session to a portable JSON format for backup, sharing, or later restoration.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `session_id` | string | No | Session identifier (default: "default") |
+| `include_decisions` | boolean | No | Include decision records (default: true) |
+| `include_causal_graphs` | boolean | No | Include causal graph data (default: true) |
+| `compress` | boolean | No | Gzip compress the output (default: false) |
+
+---
+
+### import-session
+
+Import a previously exported reasoning session with merge strategy control.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `export_data` | string | Yes | JSON string from export-session |
+| `merge_strategy` | string | No | "replace" (clear existing), "merge" (update/add), "append" (keep existing, add new) |
+| `validate_only` | boolean | No | Check validity without importing (default: false) |
+| `preserve_timestamps` | boolean | No | Keep original timestamps (default: true) |
+
+---
+
+### list-presets
+
+List available workflow presets for common development tasks.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `category` | string | No | Filter by category (code, architecture, research, testing, documentation, operations) |
+
+---
+
+### run-preset
+
+Execute a workflow preset with provided inputs.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `preset_id` | string | Yes | ID of the preset to run |
+| `input` | object | Yes | Input values matching preset's input_schema |
+| `dry_run` | boolean | No | Preview steps without executing (default: false) |
+| `step_by_step` | boolean | No | Pause after each step (default: false) |
+
+---
+
+### format-response
+
+Apply format optimization to reduce response size.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `response` | any | Yes | The response object to format |
+| `level` | string | No | Format level - "full" (default), "compact" (40-60% reduction), "minimal" (80%+ reduction) |
+
+---
+
 ## Error Handling
 
 All tools return errors in the following format:
@@ -2496,5 +2747,5 @@ Common error types:
 
 - **Server Version**: 1.0.0
 - **MCP SDK Version**: 0.8.0
-- **Total Tools**: 63
-- **Last Updated**: 2025-01-15
+- **Total Tools**: 80
+- **Last Updated**: 2025-12-01

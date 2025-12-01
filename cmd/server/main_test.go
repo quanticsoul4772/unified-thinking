@@ -141,7 +141,10 @@ func TestMainInitialization(t *testing.T) {
 			}
 
 			// Test server creation
-			srv := server.NewUnifiedServer(store, linearMode, treeMode, divergentMode, autoMode, validator)
+			srv, err := server.NewUnifiedServer(store, linearMode, treeMode, divergentMode, autoMode, validator)
+			if err != nil {
+				t.Fatalf("Failed to create unified server: %v", err)
+			}
 			if srv == nil {
 				t.Error("Failed to create unified server")
 			}
@@ -372,7 +375,10 @@ func BenchmarkServerCreation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		srv := server.NewUnifiedServer(store, linearMode, treeMode, divergentMode, autoMode, validator)
+		srv, err := server.NewUnifiedServer(store, linearMode, treeMode, divergentMode, autoMode, validator)
+		if err != nil {
+			b.Fatalf("Failed to create server: %v", err)
+		}
 		if srv == nil {
 			b.Fatal("Failed to create server")
 		}

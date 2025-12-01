@@ -19,7 +19,10 @@ func TestRegisterTools(t *testing.T) {
 	auto := modes.NewAutoMode(linear, tree, divergent)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Create a mock MCP server
 	mcpServer := mcp.NewServer(&mcp.Implementation{
@@ -49,7 +52,10 @@ func TestSetOrchestrator(t *testing.T) {
 	auto := modes.NewAutoMode(linear, tree, divergent)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Test that we can set it without error
 	executor := NewServerToolExecutor(server)
@@ -74,7 +80,10 @@ func TestInitializeAdvancedHandlers(t *testing.T) {
 	auto := modes.NewAutoMode(linear, tree, divergent)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// initializeAdvancedHandlers is called in NewUnifiedServer, so handlers should already be initialized
 	// We can verify this indirectly by checking that server creation succeeded

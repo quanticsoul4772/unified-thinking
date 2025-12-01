@@ -4,6 +4,46 @@ Detailed change history for the Unified Thinking Server.
 
 ---
 
+## Claude Code Optimization
+
+**New Package**: `internal/claudecode/`
+
+Optimizations specifically designed for Claude Code integration.
+
+**Features**:
+- **Response Formatting** (`format/`): Compact (40-60% token reduction) and minimal (80%+ reduction) response modes via `RESPONSE_FORMAT` env var or `format-response` tool
+- **Session Export/Import** (`session/`): Preserve reasoning context across sessions with JSON export (optional gzip) and merge strategies (`replace`, `merge`, `append`)
+- **Workflow Presets** (`presets/`): 8 built-in presets for common development tasks (code-review, debug-analysis, architecture-decision, etc.)
+- **Structured Errors** (`errors/`): Tool errors include recovery guidance, related tools, and usage examples
+
+**5 MCP Tools**: `export-session`, `import-session`, `list-presets`, `run-preset`, `format-response`
+
+---
+
+## Streaming Progress Notifications
+
+**New Package**: `internal/streaming/`
+
+Real-time progress updates for long-running tools via MCP `notifications/progress`.
+
+**Features**:
+- Rate-limited notifications (100ms default) to prevent flooding
+- Step changes bypass rate limit for immediate feedback
+- Backward compatible (no-op when client doesn't provide `progressToken`)
+- Per-tool configuration for interval, partial data, auto-progress
+
+**Priority Tools**:
+- P0 (Essential): `execute-workflow`, `run-preset`, `got-generate`
+- P1 (Important): `got-aggregate`, `think`, `perform-cbr-cycle`
+- P2 (Enhancement): `synthesize-insights`, `analyze-perspectives`, `build-causal-graph`, `evaluate-hypotheses`
+
+**Technical Debt Fixes**:
+- Removed `panic()` calls from streaming code - replaced with safe error handling utilities
+- Converted `log.Fatal` in server.go to proper error propagation
+- Made Graph-of-Thoughts optional (graceful degradation without `ANTHROPIC_API_KEY`)
+
+---
+
 ## Knowledge Graph Integration
 
 **16 commits, 6,744 LOC**

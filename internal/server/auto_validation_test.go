@@ -25,7 +25,10 @@ func TestAutoValidationTriggering(t *testing.T) {
 	auto := modes.NewAutoMode(linear, tree, divergent)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	server, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Test case 1: Low confidence (< 0.5) should trigger auto-validation
 	t.Run("LowConfidenceTriggersAutoValidation", func(t *testing.T) {

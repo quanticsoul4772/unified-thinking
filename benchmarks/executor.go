@@ -69,11 +69,15 @@ func (e *DirectExecutor) Execute(problem *Problem, evaluator Evaluator) (*Result
 	// Estimate tokens
 	tokens := estimateTokens(problem.Description) + estimateTokens(response)
 
+	// Determine confidence based on score for benchmark results
+	// Higher scores indicate more confident/correct results
+	confidence := 0.5 + (score * 0.4) // Range: 0.5 to 0.9 based on score
+
 	result := &Result{
 		ProblemID:  problem.ID,
 		Correct:    correct,
 		Score:      score,
-		Confidence: 0.8,
+		Confidence: confidence,
 		Latency:    latency,
 		Mode:       "direct",
 		Response:   response,

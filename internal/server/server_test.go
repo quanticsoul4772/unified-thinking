@@ -24,7 +24,12 @@ func setupTestServer() *UnifiedServer {
 	auto := modes.NewAutoMode(linear, tree, divergent)
 	validator := validation.NewLogicValidator()
 
-	return NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	srv, err := NewUnifiedServer(store, linear, tree, divergent, auto, validator)
+	if err != nil {
+		// In tests, panic is acceptable for setup failures
+		panic(fmt.Sprintf("setupTestServer failed: %v", err))
+	}
+	return srv
 }
 
 type stubExecutor struct {

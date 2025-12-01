@@ -304,7 +304,10 @@ func TestUnifiedServer_ErrorRecovery_StorageFailures(t *testing.T) {
 			validator := validation.NewLogicValidator()
 
 			// Create server
-			server := NewUnifiedServer(failingStorage, linearMode, treeMode, divergentMode, autoMode, validator)
+			server, err := NewUnifiedServer(failingStorage, linearMode, treeMode, divergentMode, autoMode, validator)
+			if err != nil {
+				t.Fatalf("Failed to create server: %v", err)
+			}
 			if server == nil {
 				t.Fatal("Failed to create server with failing storage")
 			}
@@ -329,14 +332,14 @@ func TestUnifiedServer_ErrorRecovery_StorageFailures(t *testing.T) {
 			}
 
 			// Test cleanup
-			err := failingStorage.Close()
+			closeErr := failingStorage.Close()
 			if tt.storageFailure == "close" {
-				if err == nil {
+				if closeErr == nil {
 					t.Error("Expected close error but got none")
 				}
 			} else {
-				if err != nil {
-					t.Errorf("Unexpected close error: %v", err)
+				if closeErr != nil {
+					t.Errorf("Unexpected close error: %v", closeErr)
 				}
 			}
 		})
@@ -352,7 +355,10 @@ func TestUnifiedServer_ErrorRecovery_InvalidInputs(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	tests := []struct {
 		name        string
@@ -446,7 +452,10 @@ func TestUnifiedServer_ErrorRecovery_TimeoutHandling(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	tests := []struct {
 		name    string
@@ -505,7 +514,10 @@ func TestUnifiedServer_ErrorRecovery_ConcurrentFailures(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Test concurrent access with failures
 	done := make(chan bool, 10)
@@ -557,7 +569,10 @@ func TestUnifiedServer_ErrorRecovery_ResourceExhaustion(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Test with large data structures that might cause memory issues
 	largeContent := string(make([]byte, 1000000)) // 1MB string
@@ -619,7 +634,10 @@ func TestUnifiedServer_ErrorRecovery_NetworkFailures(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Simulate network-like failures
 	tests := []struct {
@@ -705,7 +723,10 @@ func TestUnifiedServer_ErrorRecovery_Cleanup(t *testing.T) {
 	autoMode := modes.NewAutoMode(linearMode, treeMode, divergentMode)
 	validator := validation.NewLogicValidator()
 
-	server := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	server, err := NewUnifiedServer(storage, linearMode, treeMode, divergentMode, autoMode, validator)
+	if err != nil {
+		t.Fatalf("Failed to create server: %v", err)
+	}
 
 	// Test cleanup with failing storage
 	defer func() {
