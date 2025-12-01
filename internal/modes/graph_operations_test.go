@@ -3,15 +3,65 @@ package modes
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"unified-thinking/internal/storage"
 )
 
+// testLLMClient provides deterministic responses for testing
+type testLLMClient struct{}
+
+func (t *testLLMClient) Generate(ctx context.Context, prompt string, k int) ([]string, error) {
+	results := make([]string, k)
+	for i := 0; i < k; i++ {
+		results[i] = fmt.Sprintf("Test continuation %d from: %s", i+1, truncateTest(prompt, 30))
+	}
+	return results, nil
+}
+
+func (t *testLLMClient) Aggregate(ctx context.Context, thoughts []string, problem string) (string, error) {
+	return fmt.Sprintf("Aggregated %d thoughts", len(thoughts)), nil
+}
+
+func (t *testLLMClient) Refine(ctx context.Context, thought string, problem string, refinementCount int) (string, error) {
+	return fmt.Sprintf("Refined v%d: %s", refinementCount+1, thought), nil
+}
+
+func (t *testLLMClient) Score(ctx context.Context, thought string, problem string, criteria map[string]float64) (float64, map[string]float64, error) {
+	breakdown := map[string]float64{
+		"confidence":   0.8,
+		"validity":     0.9,
+		"relevance":    0.7,
+		"novelty":      0.6,
+		"depth_factor": 0.8,
+	}
+	overall := 0.76
+	return overall, breakdown, nil
+}
+
+func (t *testLLMClient) ExtractKeyPoints(ctx context.Context, thought string) ([]string, error) {
+	return []string{"Test key point 1", "Test key point 2"}, nil
+}
+
+func (t *testLLMClient) CalculateNovelty(ctx context.Context, thought string, siblings []string) (float64, error) {
+	if len(siblings) == 0 {
+		return 1.0, nil
+	}
+	return 0.7, nil
+}
+
+func truncateTest(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
 func TestGenerate(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	state, _ := gc.Initialize("test-graph", "Initial problem", nil)
 
@@ -42,7 +92,7 @@ func TestGenerate(t *testing.T) {
 func TestGenerate_MultipleRounds(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	state, _ := gc.Initialize("test-graph", "Initial problem", nil)
 
@@ -72,7 +122,7 @@ func TestGenerate_MultipleRounds(t *testing.T) {
 func TestAggregate(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	state, _ := gc.Initialize("test-graph", "Initial problem", nil)
 
@@ -112,7 +162,7 @@ func TestAggregate(t *testing.T) {
 func TestAggregate_MinPaths(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	config := DefaultGraphConfig()
 	config.AggregateMinPaths = 2
@@ -137,7 +187,7 @@ func TestAggregate_MinPaths(t *testing.T) {
 func TestRefine(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	state, _ := gc.Initialize("test-graph", "Initial problem", nil)
 	rootID := state.RootIDs[0]
@@ -172,7 +222,7 @@ func TestRefine(t *testing.T) {
 func TestRefine_MaxRefinements(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	config := DefaultGraphConfig()
 	config.MaxRefinements = 2
@@ -199,7 +249,7 @@ func TestRefine_MaxRefinements(t *testing.T) {
 func TestScore(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	gc := NewGraphController(store)
-	llm := NewMockLLMClient()
+	llm := &testLLMClient{}
 
 	state, _ := gc.Initialize("test-graph", "Initial problem", nil)
 	rootID := state.RootIDs[0]
