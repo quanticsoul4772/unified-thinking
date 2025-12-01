@@ -481,7 +481,7 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
 - cleaned up test files and improved edge case coverage
 - maintained backward compatibility while improving internals
 
-## available tools (66 total)
+## available tools (75 total)
 
 ### core thinking tools (11 tools)
 
@@ -670,6 +670,87 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
     }
     ```
 
+### thought similarity search (1 tool)
+
+67. **search-similar-thoughts** - semantic search over past thoughts using embeddings
+    ```json
+    {
+      "query": "database optimization strategies",
+      "limit": 5,
+      "min_similarity": 0.5
+    }
+    ```
+
+### graph-of-thoughts tools (8 tools)
+
+68. **got-initialize** - start new graph with initial thought
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "initial_thought": "Initial analysis of the problem",
+      "config": {"max_vertices": 50, "max_depth": 7}
+    }
+    ```
+
+69. **got-generate** - create k diverse continuations using Claude Sonnet 4.5
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "k": 3,
+      "problem": "Original problem description"
+    }
+    ```
+
+70. **got-aggregate** - merge parallel reasoning paths via LLM synthesis
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "vertex_ids": ["vertex-1", "vertex-2", "vertex-3"],
+      "problem": "Original problem description"
+    }
+    ```
+
+71. **got-refine** - iteratively improve thoughts through self-critique
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "vertex_id": "vertex-to-refine",
+      "problem": "Original problem description"
+    }
+    ```
+
+72. **got-score** - multi-criteria quality evaluation
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "vertex_id": "vertex-to-score",
+      "problem": "Original problem description"
+    }
+    ```
+
+73. **got-prune** - remove low-quality vertices
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "threshold": 0.4
+    }
+    ```
+
+74. **got-get-state** - retrieve current graph state
+    ```json
+    {
+      "graph_id": "problem-solving"
+    }
+    ```
+
+75. **got-finalize** - mark terminal vertices and extract conclusions
+    ```json
+    {
+      "graph_id": "problem-solving",
+      "terminal_ids": ["best-vertex-1", "best-vertex-2"]
+    }
+    ```
+
 ## architecture
 
 ```
@@ -836,8 +917,11 @@ make benchmark
 
 ### key features
 
-- 66 specialized mcp tools across 14 categories
-- 6 thinking modes with automatic mode selection
+- 75 specialized mcp tools across 15 categories
+- 7 thinking modes with automatic mode selection
+- graph-of-thoughts with LLM-powered generation, aggregation, and refinement
+- multiple parents per thought vertex (key advantage over tree-of-thoughts)
+- thought similarity search using semantic embeddings
 - dual-process reasoning (fast vs slow thinking)
 - checkpoint-based backtracking
 - probabilistic bayesian inference
