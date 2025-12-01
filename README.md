@@ -49,7 +49,7 @@ make build
 
 ### advanced cognitive reasoning
 
-the server includes 63 specialized tools across 13 major categories:
+the server includes 66 specialized tools across 14 major categories:
 
 #### probabilistic reasoning (4 tools)
 - bayesian inference with mathematically correct two-likelihood updates (P(E|H) and P(E|¬H))
@@ -118,6 +118,14 @@ the server includes 63 specialized tools across 13 major categories:
 - trajectory search (learn from historical successes and failures)
 - retrospective analysis (comprehensive post-session analysis with actionable improvements)
 - **Semantic embeddings** - optional hybrid search combining hash-based and vector similarity (Voyage AI)
+- **Automatic knowledge graph population** - reasoning sessions automatically extract entities to knowledge graph
+
+#### knowledge graph & semantic memory (3 tools)
+- **store-entity** - store entities in Neo4j with semantic indexing via chromem-go vector search
+- **search-knowledge-graph** - hybrid search combining semantic similarity (Voyage AI) + graph traversal (Neo4j)
+- **create-relationship** - create typed relationships (CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, etc.)
+- **Automatic extraction** - entities automatically extracted from reasoning sessions and stored in knowledge graph
+- **Persistent vector storage** - chromem-go collections persist to disk (survive restarts)
 
 #### context bridge (automatic)
 - **cross-session context retrieval** - automatically surfaces similar past reasoning trajectories
@@ -285,9 +293,9 @@ Persistent storage for thoughts and trajectories across sessions:
 }
 ```
 
-### full configuration (sqlite + semantic embeddings)
+### full configuration (sqlite + semantic embeddings + knowledge graph)
 
-Complete setup with persistence and semantic similarity search:
+Complete setup with persistence, semantic similarity, and knowledge graph:
 
 **macOS / Linux:**
 ```json
@@ -300,7 +308,12 @@ Complete setup with persistence and semantic similarity search:
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
-        "EMBEDDINGS_MODEL": "voyage-3-lite"
+        "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "NEO4J_ENABLED": "true",
+        "NEO4J_URI": "neo4j+s://your-instance.databases.neo4j.io",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "your-neo4j-password",
+        "NEO4J_DATABASE": "neo4j"
       }
     }
   }
@@ -318,7 +331,12 @@ Complete setup with persistence and semantic similarity search:
         "STORAGE_TYPE": "sqlite",
         "SQLITE_PATH": "C:\\Users\\YourName\\AppData\\Roaming\\Claude\\unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key-here",
-        "EMBEDDINGS_MODEL": "voyage-3-lite"
+        "EMBEDDINGS_MODEL": "voyage-3-lite",
+        "NEO4J_ENABLED": "true",
+        "NEO4J_URI": "neo4j+s://your-instance.databases.neo4j.io",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "your-neo4j-password",
+        "NEO4J_DATABASE": "neo4j"
       }
     }
   }
@@ -350,13 +368,37 @@ Complete setup with persistence and semantic similarity search:
 - `CONTEXT_BRIDGE_CACHE_TTL`: Cache time-to-live (default: `15m`)
 - `CONTEXT_BRIDGE_TIMEOUT`: Timeout per enrichment (default: `2s`)
 
+**Knowledge Graph** (Neo4j integration for semantic memory):
+- `NEO4J_ENABLED`: Enable knowledge graph integration (`true` or `false`, default: `false`)
+- `NEO4J_URI`: Neo4j connection URI (e.g., `neo4j+s://your-instance.databases.neo4j.io`)
+- `NEO4J_USERNAME`: Neo4j username (default: `neo4j`)
+- `NEO4J_PASSWORD`: Neo4j password (JWT token for Aura, or password for self-hosted)
+- `NEO4J_DATABASE`: Database name (default: `neo4j`)
+- `NEO4J_TIMEOUT_MS`: Connection timeout in milliseconds (default: `5000`)
+- `VECTOR_STORE_PATH`: Persistent chromem-go vector storage path (defaults to `{SQLITE_PATH}_vectors`)
+
 **Important Notes**:
 - **Trajectory persistence requires SQLite**: Set `STORAGE_TYPE=sqlite` to enable episodic memory persistence
+- **Knowledge graph requires Neo4j + Voyage AI**: Both `NEO4J_ENABLED=true` and `VOYAGE_API_KEY` must be set
 - **Restart required**: Changes to configuration require restarting Claude Desktop to take effect
 
 ## recent updates
 
-### new features
+### new features (latest: knowledge graph integration)
+
+- **knowledge graph with neo4j + chromem-go** (16 commits, 6,744 lines):
+  - automatic entity extraction from reasoning sessions (always enabled when Neo4j available)
+  - hybrid search combining semantic similarity (Voyage AI) + graph traversal (Neo4j)
+  - persistent vector storage (chromem-go persists to disk, survives restarts)
+  - 3 new MCP tools: store-entity, search-knowledge-graph, create-relationship
+  - 7 entity types: Concept, Person, Tool, File, Decision, Strategy, Problem
+  - 7 relationship types: CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, RELATES_TO, HAS_OBSERVATION, USED_IN_CONTEXT
+  - regex-based entity extraction (10 patterns) with LLM integration ready
+  - integration with Thompson Sampling RL and episodic memory
+  - comprehensive test suite: 21 integration tests (100% pass rate with Neo4j)
+  - production-verified with Neo4j Aura cloud instances
+
+### previous features
 - **context bridge for cross-session learning**: automatic retrieval of similar past reasoning trajectories
   - hybrid similarity: 70% embedding cosine similarity + 30% concept jaccard similarity
   - graceful degradation: continues with concept-only matching if embeddings fail
@@ -399,7 +441,7 @@ Complete setup with persistence and semantic similarity search:
 - cleaned up test files and improved edge case coverage
 - maintained backward compatibility while improving internals
 
-## available tools (63 total)
+## available tools (66 total)
 
 ### core thinking tools (11 tools)
 
@@ -547,10 +589,46 @@ Complete setup with persistence and semantic similarity search:
     }
     ```
 
-60. **complete-reasoning-session** - complete session, calculate quality metrics, trigger pattern learning
+60. **complete-reasoning-session** - complete session, calculate quality metrics, trigger pattern learning, **automatically extract entities to knowledge graph**
 61. **get-recommendations** - get adaptive recommendations based on similar past problems
 62. **search-trajectories** - search past reasoning sessions to learn from successes and failures
 63. **analyze-trajectory** - perform retrospective analysis of completed session (strengths, weaknesses, improvements)
+
+### knowledge graph tools (3 tools)
+
+64. **store-entity** - store entities in knowledge graph with semantic indexing
+    ```json
+    {
+      "entity_id": "concept-optimization",
+      "label": "Database Optimization",
+      "type": "Concept",
+      "content": "Techniques for optimizing database queries...",
+      "description": "Core optimization strategies",
+      "metadata": {"category": "performance"}
+    }
+    ```
+
+65. **search-knowledge-graph** - hybrid semantic + graph traversal search
+    ```json
+    {
+      "query": "database performance",
+      "search_type": "semantic|graph|hybrid",
+      "limit": 10,
+      "max_hops": 2,
+      "min_similarity": 0.5
+    }
+    ```
+
+66. **create-relationship** - create typed relationships between entities
+    ```json
+    {
+      "from_id": "entity-1",
+      "to_id": "entity-2",
+      "type": "CAUSES|ENABLES|CONTRADICTS|BUILDS_UPON",
+      "strength": 0.9,
+      "confidence": 0.95
+    }
+    ```
 
 ## architecture
 
@@ -596,6 +674,19 @@ unified-thinking/
 │   │   ├── matcher.go      # trajectory similarity matching
 │   │   ├── similarity.go   # hybrid similarity calculation
 │   │   └── config.go       # feature configuration
+│   ├── knowledge/          # knowledge graph integration
+│   │   ├── neo4j_client.go      # Neo4j connection management
+│   │   ├── graph_store.go       # entity/relationship CRUD
+│   │   ├── vector_store.go      # chromem-go semantic search
+│   │   ├── embedding_cache.go   # SQLite-based embedding cache
+│   │   ├── knowledge_graph.go   # unified hybrid search API
+│   │   ├── episodic_integration.go  # automatic extraction from trajectories
+│   │   ├── rl_integration.go    # Thompson Sampling RL context
+│   │   ├── schema.go            # Neo4j schema definitions
+│   │   └── extraction/          # entity extraction pipeline
+│   │       ├── regex_extractor.go   # pattern-based extraction
+│   │       ├── llm_extractor.go     # LLM-based extraction (ready)
+│   │       └── hybrid_extractor.go  # intelligent routing
 │   └── server/             # mcp server implementation
 │       └── handlers/       # specialized tool handlers (21 files)
 ```
@@ -615,6 +706,7 @@ the server implements a modular cognitive architecture with specialized packages
 - **memory**: episodic memory for session tracking, pattern learning, and adaptive recommendations
 - **embeddings**: semantic embedding generation with Voyage AI for similarity search
 - **contextbridge**: automatic cross-session context retrieval with hybrid similarity matching
+- **knowledge**: Neo4j graph database + chromem-go vector search for semantic memory and entity relationships
 
 all components are thread-safe, composable, and maintain backward compatibility.
 
@@ -646,7 +738,7 @@ make test-coverage
 make benchmark
 ```
 
-**test coverage**: 84.3% overall | 100% pass rate
+**test coverage**: 78.3% overall | 100% pass rate | 135 test files
 
 ### coverage by package
 
@@ -656,9 +748,9 @@ make benchmark
 | `internal/metrics` | 100.0% | excellent |
 | `internal/config` | 97.3% | excellent |
 | `internal/modes` | 90.5% | excellent |
-| `internal/reasoning` | 89.3% | excellent |
+| `internal/reasoning` | 94.8% | excellent |
 | `internal/analysis` | 89.3% | excellent |
-| `internal/memory` | 88.9% | excellent |
+| `internal/memory` | 91.0% | excellent |
 | `internal/validation` | 88.8% | excellent |
 | `internal/orchestration` | 87.7% | excellent |
 | `internal/metacognition` | 87.2% | excellent |
@@ -666,10 +758,12 @@ make benchmark
 | `internal/server` | 79.3% | good |
 | `internal/server/handlers` | 79.0% | good |
 | `internal/integration` | 78.7% | good |
-| `internal/storage` | 78.4% | good |
+| `internal/storage` | 87.9% | excellent |
 | `internal/embeddings` | 75.6% | acceptable |
 | `cmd/server` | 70.6% | acceptable |
 | `internal/contextbridge` | 70.6% | acceptable |
+| `internal/knowledge` | 65.0% (Neo4j) / 14.1% (short) | acceptable |
+| `internal/knowledge/extraction` | 71.7% | good |
 
 ## troubleshooting
 
@@ -702,7 +796,7 @@ make benchmark
 
 ### key features
 
-- 63 specialized mcp tools across 13 categories
+- 66 specialized mcp tools across 14 categories
 - 6 thinking modes with automatic mode selection
 - dual-process reasoning (fast vs slow thinking)
 - checkpoint-based backtracking
@@ -718,9 +812,13 @@ make benchmark
 - episodic memory with session tracking and pattern learning
 - adaptive recommendations based on historical reasoning sessions
 - retrospective analysis for continuous improvement
+- knowledge graph integration (Neo4j + chromem-go)
+- automatic entity extraction from reasoning sessions
+- hybrid semantic + graph traversal search
 - pluggable storage (in-memory or sqlite)
+- persistent vector storage with chromem-go
 - thread-safe operations
-- comprehensive test coverage
+- comprehensive test coverage (135 test files, 78.3% overall)
 
 ### implementation highlights
 
@@ -733,6 +831,11 @@ make benchmark
 - automatic schema migrations
 - graceful fallback handling
 - resource limits to prevent dos
+- neo4j property graph model with cypher queries
+- chromem-go pure go vector database (no cgo)
+- persistent vector collections (survive restarts)
+- automatic entity extraction with regex patterns
+- hybrid similarity search (semantic + graph)
 
 ## Contributing
 
