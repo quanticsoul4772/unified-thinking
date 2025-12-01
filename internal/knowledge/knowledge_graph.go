@@ -193,12 +193,19 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 	}
 
 	// Step 1: Semantic search to find relevant starting entities
-	semanticResults, err := kg.SearchSemantic(ctx, query, limit, minSimilarity)
+	// Use lower threshold (0.3) to get more starting points for graph traversal
+	// Final filtering by user's minSimilarity happens after graph traversal
+	semanticThreshold := float32(0.3)
+	if minSimilarity < semanticThreshold {
+		semanticThreshold = minSimilarity
+	}
+
+	semanticResults, err := kg.SearchSemantic(ctx, query, limit, semanticThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("semantic search failed: %w", err)
 	}
 
-	log.Printf("[DEBUG] HybridSearch: semantic found %d results for query=%s", len(semanticResults), query)
+	log.Printf("[DEBUG] HybridSearch: semantic found %d results for query=%s (threshold=%.2f)", len(semanticResults), query, semanticThreshold)
 
 	if len(semanticResults) == 0 {
 		log.Printf("[DEBUG] HybridSearch: no semantic results, returning empty")
