@@ -164,8 +164,8 @@ func (c *MCPClient) Start() error {
 		return fmt.Errorf("server binary not accessible: %w", err)
 	}
 
-	// Create command
-	c.cmd = exec.Command(c.serverPath)
+	// Create command (serverPath validated: absolute path + file exists)
+	c.cmd = exec.Command(c.serverPath) // #nosec G204
 	c.cmd.Env = append(os.Environ(), c.env...)
 
 	// Setup pipes
