@@ -101,7 +101,7 @@ jobs:
           go build -v -o bin/unified-thinking-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/server
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: unified-thinking-${{ matrix.goos }}-${{ matrix.goarch }}
           path: bin/unified-thinking-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
