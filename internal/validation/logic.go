@@ -119,6 +119,14 @@ func (v *LogicValidator) Prove(premises []string, conclusion string) *ProofResul
 		}
 	}
 
+	// Try negative instantiation (No A are B, C is B → C is not A)
+	if !isProvable {
+		if ni := v.tryNegativeInstantiation(premises, conclusion); ni != nil {
+			steps = append(steps, ni...)
+			isProvable = true
+		}
+	}
+
 	// Try universal instantiation
 	if !isProvable {
 		if ui := v.tryUniversalInstantiation(premises, conclusion); ui != nil {
@@ -455,6 +463,60 @@ func (v *LogicValidator) tryNegativeSyllogism(premises []string, conclusion stri
 															fmt.Sprintf("  Therefore: %s", conclusion),
 														}
 													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// tryNegativeInstantiation: No A are B, C is B → C is not A
+func (v *LogicValidator) tryNegativeInstantiation(premises []string, conclusion string) []string {
+	for _, p1 := range premises {
+		lower1 := strings.ToLower(p1)
+		if strings.HasPrefix(lower1, "no ") {
+			rest1 := strings.TrimPrefix(lower1, "no ")
+			for _, connector := range []string{" are ", " is "} {
+				if strings.Contains(rest1, connector) {
+					parts1 := strings.SplitN(rest1, connector, 2)
+					if len(parts1) == 2 {
+						termA := strings.TrimSpace(parts1[0]) // e.g., "fish"
+						termB := strings.TrimSpace(parts1[1]) // e.g., "mammals"
+
+						// Look for "C is/are B"
+						for _, p2 := range premises {
+							if p2 == p1 {
+								continue
+							}
+			lower2 := strings.ToLower(p2)
+							for _, conn := range []string{" are ", " is "} {
+								if strings.Contains(lower2, conn) {
+									parts2 := strings.SplitN(lower2, conn, 2)
+									if len(parts2) == 2 {
+										termC := strings.TrimSpace(parts2[0]) // e.g., "whales"
+										pred2 := strings.TrimSpace(parts2[1]) // e.g., "mammals"
+
+										// Check if pred2 matches termB
+										if pred2 == termB || strings.Contains(pred2, termB) || strings.Contains(termB, pred2) {
+											// Conclusion should be "C is not A"
+											conclusionLower := strings.ToLower(conclusion)
+											if strings.Contains(conclusionLower, termC) &&
+												strings.Contains(conclusionLower, termA) &&
+												(strings.Contains(conclusionLower, " not ") || strings.Contains(conclusionLower, "not ")) {
+												return []string{
+													"Apply Negative Instantiation:",
+													fmt.Sprintf("  No %s are %s", termA, termB),
+													fmt.Sprintf("  %s are %s", termC, termB),
+													fmt.Sprintf("  Therefore: %s", conclusion),
 												}
 											}
 										}
