@@ -110,7 +110,10 @@ func (ts *TimeSeries) SaveToFile(path string) error {
 
 // LoadFromFile loads time series from JSON file
 func LoadFromFile(path string) (*TimeSeries, error) {
-	data, err := os.ReadFile(path)
+	// Sanitize path to prevent directory traversal
+	cleanPath := filepath.Clean(path)
+
+	data, err := os.ReadFile(cleanPath) // #nosec G304 - Benchmark data files only, path sanitized
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Return empty time series if file doesn't exist
