@@ -1,9 +1,10 @@
 # Unified Thinking Server
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Test Coverage](https://img.shields.io/badge/coverage-80.9%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![Test Coverage](https://img.shields.io/badge/coverage-78.3%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
+[![Tools](https://img.shields.io/badge/tools-66-blue)](https://github.com/quanticsoul4772/unified-thinking)
 [![Benchmarks](https://img.shields.io/badge/benchmarks-114%20problems-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
 A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation.
@@ -116,7 +117,7 @@ the server includes 66 specialized tools across 14 major categories:
 - pattern learning (recognizes successful approaches across sessions)
 - adaptive recommendations (suggests proven strategies based on similar past problems)
 - trajectory search (learn from historical successes and failures)
-- retrospective analysis (comprehensive post-session analysis with actionable improvements)
+- retrospective analysis (post-session analysis with actionable improvements)
 - **Semantic embeddings** - optional hybrid search combining hash-based and vector similarity (Voyage AI)
 - **Automatic knowledge graph population** - reasoning sessions automatically extract entities to knowledge graph
 
@@ -395,7 +396,7 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
   - 7 relationship types: CAUSES, ENABLES, CONTRADICTS, BUILDS_UPON, RELATES_TO, HAS_OBSERVATION, USED_IN_CONTEXT
   - regex-based entity extraction (10 patterns) with LLM integration ready
   - integration with Thompson Sampling RL and episodic memory
-  - comprehensive test suite: 21 integration tests (100% pass rate with Neo4j)
+  - test suite: 21 integration tests (100% pass rate with Neo4j)
   - production-verified with Neo4j Aura cloud instances
 
 ### previous features
@@ -414,7 +415,7 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
   - transparent fallback to hash-based search when embeddings disabled
 
 ### performance improvements
-- **production optimizations**: comprehensive performance tuning completed
+- **production optimizations**: performance tuning completed
   - tier 1-3 optimizations: memory allocation patterns, locking efficiency, hot path optimization
   - production profiling: identified and resolved critical bottlenecks
   - improved memory allocation and eliminated redundant locking
@@ -437,7 +438,7 @@ Complete setup with persistence, semantic similarity, and knowledge graph:
 
 ### code quality
 - 73% test coverage for embeddings package
-- comprehensive integration tests for embedding similarity path
+- integration tests for embedding similarity path
 - cleaned up test files and improved edge case coverage
 - maintained backward compatibility while improving internals
 
@@ -742,28 +743,28 @@ make benchmark
 
 ### coverage by package
 
-| package | coverage | status |
-|---------|----------|--------|
-| `internal/types` | 100.0% | excellent |
-| `internal/metrics` | 100.0% | excellent |
-| `internal/config` | 97.3% | excellent |
-| `internal/modes` | 90.5% | excellent |
-| `internal/reasoning` | 94.8% | excellent |
-| `internal/analysis` | 89.3% | excellent |
-| `internal/memory` | 91.0% | excellent |
-| `internal/validation` | 88.8% | excellent |
-| `internal/orchestration` | 87.7% | excellent |
-| `internal/metacognition` | 87.2% | excellent |
-| `internal/processing` | 83.3% | good |
-| `internal/server` | 79.3% | good |
-| `internal/server/handlers` | 79.0% | good |
-| `internal/integration` | 78.7% | good |
-| `internal/storage` | 87.9% | excellent |
-| `internal/embeddings` | 75.6% | acceptable |
-| `cmd/server` | 70.6% | acceptable |
-| `internal/contextbridge` | 70.6% | acceptable |
-| `internal/knowledge` | 65.0% (Neo4j) / 14.1% (short) | acceptable |
-| `internal/knowledge/extraction` | 71.7% | good |
+| package | coverage |
+|---------|----------|
+| `internal/types` | 100.0% |
+| `internal/metrics` | 100.0% |
+| `internal/config` | 97.3% |
+| `internal/reasoning` | 94.8% |
+| `internal/memory` | 91.0% |
+| `internal/modes` | 90.5% |
+| `internal/analysis` | 89.3% |
+| `internal/validation` | 88.8% |
+| `internal/storage` | 87.9% |
+| `internal/orchestration` | 87.7% |
+| `internal/metacognition` | 87.2% |
+| `internal/processing` | 83.3% |
+| `internal/server` | 79.3% |
+| `internal/server/handlers` | 79.0% |
+| `internal/integration` | 78.7% |
+| `internal/embeddings` | 75.6% |
+| `internal/knowledge/extraction` | 71.7% |
+| `cmd/server` | 70.6% |
+| `internal/contextbridge` | 70.6% |
+| `internal/knowledge` | 65.0% (Neo4j) / 14.1% (short) |
 
 ## troubleshooting
 
@@ -818,7 +819,7 @@ make benchmark
 - pluggable storage (in-memory or sqlite)
 - persistent vector storage with chromem-go
 - thread-safe operations
-- comprehensive test coverage (135 test files, 78.3% overall)
+- test coverage: 135 test files, 78.3% overall
 
 ### implementation highlights
 
