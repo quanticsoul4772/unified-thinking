@@ -170,6 +170,24 @@ func TestKnowledgeGraph_SemanticSearch(t *testing.T) {
 	}
 	defer sqliteDB.Close()
 
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
 		Embedder: mockEmbedder,
@@ -217,8 +235,9 @@ func TestKnowledgeGraph_SemanticSearch(t *testing.T) {
 		}
 	}
 
-	// Semantic search for "database performance" (limit to 3 since we only stored 3 entities)
-	results, err := kg.SearchSemantic(ctx, "database performance optimization", 3, 0.5)
+	// Semantic search for "database performance"
+	// Note: Using threshold -1.0 to accept all results (MockEmbedder generates random embeddings)
+	results, err := kg.SearchSemantic(ctx, "database performance optimization", 3, -1.0)
 	if err != nil {
 		t.Fatalf("SearchSemantic failed: %v", err)
 	}
@@ -251,6 +270,31 @@ func TestKnowledgeGraph_HybridSearch(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
 		Embedder: mockEmbedder,
@@ -259,6 +303,7 @@ func TestKnowledgeGraph_HybridSearch(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -315,8 +360,9 @@ func TestKnowledgeGraph_HybridSearch(t *testing.T) {
 		t.Fatalf("CreateRelationship r2 failed: %v", err)
 	}
 
-	// Hybrid search: semantic + 1 hop graph traversal (limit to 3 since we only stored 3 entities)
-	results, err := kg.HybridSearch(ctx, "database performance", 3, 1)
+	// Hybrid search: semantic + 1 hop graph traversal
+	// Note: Using threshold -1.0 to accept all results (MockEmbedder generates random embeddings)
+	results, err := kg.HybridSearchWithThreshold(ctx, "database performance", 3, 1, -1.0)
 	if err != nil {
 		t.Fatalf("HybridSearch failed: %v", err)
 	}

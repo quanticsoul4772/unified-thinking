@@ -109,6 +109,17 @@ func (vs *VectorStore) SearchSimilar(ctx context.Context, collectionName string,
 		return nil, fmt.Errorf("collection not found: %s", collectionName)
 	}
 
+	// Cap limit to actual collection size (chromem-go requirement)
+	docCount := collection.Count()
+	if limit > docCount {
+		limit = docCount
+	}
+
+	// If collection is empty, return empty results
+	if limit == 0 {
+		return []chromem.Result{}, nil
+	}
+
 	// Generate query embedding
 	queryEmbedding, err := vs.embedder.Embed(ctx, query)
 	if err != nil {

@@ -2,9 +2,11 @@ package knowledge
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
+	_ "modernc.org/sqlite"
 	"unified-thinking/internal/embeddings"
 )
 
@@ -21,6 +23,31 @@ func TestRLContextRetriever_GetSimilarProblems(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	// Setup knowledge graph
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
@@ -30,6 +57,7 @@ func TestRLContextRetriever_GetSimilarProblems(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -47,8 +75,8 @@ func TestRLContextRetriever_GetSimilarProblems(t *testing.T) {
 		t.Fatalf("ClearAllData failed: %v", err)
 	}
 
-	// Create RL context retriever
-	retriever := NewRLContextRetriever(kg)
+	// Create RL context retriever with low threshold for MockEmbedder (random embeddings)
+	retriever := NewRLContextRetrieverWithThreshold(kg, 0.0)
 
 	// Store test problem entities
 	testProblems := []struct {
@@ -109,6 +137,31 @@ func TestRLContextRetriever_GetStrategyPerformance(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
 		Embedder: mockEmbedder,
@@ -117,6 +170,7 @@ func TestRLContextRetriever_GetStrategyPerformance(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -133,7 +187,8 @@ func TestRLContextRetriever_GetStrategyPerformance(t *testing.T) {
 		t.Fatalf("ClearAllData failed: %v", err)
 	}
 
-	retriever := NewRLContextRetriever(kg)
+	// Create RL context retriever with low threshold for MockEmbedder (random embeddings)
+	retriever := NewRLContextRetrieverWithThreshold(kg, 0.0)
 
 	// Store problems with strategy metadata
 	problems := []*Entity{
@@ -216,6 +271,31 @@ func TestRLContextRetriever_RecordStrategyOutcome(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
 		Embedder: mockEmbedder,
@@ -224,6 +304,7 @@ func TestRLContextRetriever_RecordStrategyOutcome(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -240,7 +321,8 @@ func TestRLContextRetriever_RecordStrategyOutcome(t *testing.T) {
 		t.Fatalf("ClearAllData failed: %v", err)
 	}
 
-	retriever := NewRLContextRetriever(kg)
+	// Create RL context retriever with low threshold for MockEmbedder (random embeddings)
+	retriever := NewRLContextRetrieverWithThreshold(kg, 0.0)
 
 	// Test RecordStrategyOutcome
 	problem := "Optimize database queries"

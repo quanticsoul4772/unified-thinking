@@ -2,9 +2,11 @@ package knowledge
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
+	_ "modernc.org/sqlite"
 	"unified-thinking/internal/embeddings"
 )
 
@@ -21,6 +23,31 @@ func TestTrajectoryExtractor_ExtractFromTrajectory(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	// Setup knowledge graph
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
@@ -30,6 +57,7 @@ func TestTrajectoryExtractor_ExtractFromTrajectory(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -97,6 +125,31 @@ func TestTrajectoryExtractor_ExtractStrategies(t *testing.T) {
 	}
 	defer neo4jClient.Close(context.Background())
 
+	// Setup SQLite for cache
+	sqliteDB, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open SQLite: %v", err)
+	}
+	defer sqliteDB.Close()
+
+	// Create entity_embeddings table
+	_, err = sqliteDB.Exec(`
+		CREATE TABLE entity_embeddings (
+			entity_id TEXT PRIMARY KEY,
+			entity_label TEXT NOT NULL,
+			entity_type TEXT NOT NULL,
+			embedding BLOB NOT NULL,
+			model TEXT NOT NULL,
+			provider TEXT NOT NULL,
+			dimension INTEGER NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+
 	mockEmbedder := embeddings.NewMockEmbedder(512)
 	vectorCfg := VectorStoreConfig{
 		Embedder: mockEmbedder,
@@ -105,6 +158,7 @@ func TestTrajectoryExtractor_ExtractStrategies(t *testing.T) {
 	kgCfg := KnowledgeGraphConfig{
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
+		SQLiteDB:     sqliteDB,
 		Enabled:      true,
 	}
 
@@ -137,8 +191,9 @@ func TestTrajectoryExtractor_ExtractStrategies(t *testing.T) {
 		t.Fatalf("ExtractStrategies failed: %v", err)
 	}
 
-	// Verify strategy entities were created (limit to 3 to match stored entities)
-	strategyResults, err := kg.SearchSemantic(ctx, "authentication JWT bcrypt", 3, 0.5)
+	// Verify strategy entities were created
+	// Note: Using threshold -1.0 to accept all results (MockEmbedder generates random embeddings)
+	strategyResults, err := kg.SearchSemantic(ctx, "authentication JWT bcrypt", 3, -1.0)
 	if err != nil {
 		t.Fatalf("SearchSemantic failed: %v", err)
 	}

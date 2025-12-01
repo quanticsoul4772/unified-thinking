@@ -183,12 +183,17 @@ func (kg *KnowledgeGraph) SearchGraph(ctx context.Context, entityID string, maxH
 
 // HybridSearch combines semantic and graph search
 func (kg *KnowledgeGraph) HybridSearch(ctx context.Context, query string, limit int, maxHops int) ([]*Entity, error) {
+	return kg.HybridSearchWithThreshold(ctx, query, limit, maxHops, 0.7)
+}
+
+// HybridSearchWithThreshold combines semantic and graph search with configurable threshold
+func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query string, limit int, maxHops int, minSimilarity float32) ([]*Entity, error) {
 	if !kg.enabled {
 		return nil, fmt.Errorf("knowledge graph not enabled")
 	}
 
 	// Step 1: Semantic search to find relevant starting entities
-	semanticResults, err := kg.SearchSemantic(ctx, query, limit, 0.7)
+	semanticResults, err := kg.SearchSemantic(ctx, query, limit, minSimilarity)
 	if err != nil {
 		return nil, fmt.Errorf("semantic search failed: %w", err)
 	}

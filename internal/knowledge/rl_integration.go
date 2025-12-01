@@ -10,12 +10,24 @@ import (
 
 // RLContextRetriever retrieves contextual information from knowledge graph for RL strategy selection
 type RLContextRetriever struct {
-	kg *KnowledgeGraph
+	kg                *KnowledgeGraph
+	similarityThreshold float32
 }
 
-// NewRLContextRetriever creates a new RL context retriever
+// NewRLContextRetriever creates a new RL context retriever with default similarity threshold (0.7)
 func NewRLContextRetriever(kg *KnowledgeGraph) *RLContextRetriever {
-	return &RLContextRetriever{kg: kg}
+	return &RLContextRetriever{
+		kg:                kg,
+		similarityThreshold: 0.7,
+	}
+}
+
+// NewRLContextRetrieverWithThreshold creates retriever with custom similarity threshold (for testing)
+func NewRLContextRetrieverWithThreshold(kg *KnowledgeGraph, threshold float32) *RLContextRetriever {
+	return &RLContextRetriever{
+		kg:                kg,
+		similarityThreshold: threshold,
+	}
 }
 
 // GetSimilarProblems retrieves similar past problems using semantic search
@@ -25,7 +37,7 @@ func (rcr *RLContextRetriever) GetSimilarProblems(ctx context.Context, problemDe
 	}
 
 	// Semantic search for similar problems
-	results, err := rcr.kg.SearchSemantic(ctx, problemDesc, limit, 0.7)
+	results, err := rcr.kg.SearchSemantic(ctx, problemDesc, limit, rcr.similarityThreshold)
 	if err != nil {
 		log.Printf("[WARN] Knowledge graph semantic search failed: %v", err)
 		return nil, nil
