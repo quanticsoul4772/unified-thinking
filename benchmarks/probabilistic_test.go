@@ -19,7 +19,7 @@ func TestProbabilisticReasoning(t *testing.T) {
 	// Create storage and executor
 	store := storage.NewMemoryStorage()
 	executor := NewDirectExecutor(store)
-	evaluator := evaluators.NewContainsEvaluator()
+	evaluator := evaluators.NewNumericEvaluator()
 
 	// Run benchmark suite
 	run, err := RunSuite(suite, evaluator, executor)

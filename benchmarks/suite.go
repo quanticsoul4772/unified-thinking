@@ -21,6 +21,13 @@ func LoadSuite(path string) (*BenchmarkSuite, error) {
 		return nil, fmt.Errorf("failed to parse suite JSON: %w", err)
 	}
 
+	// Populate problem.Category from suite.Category
+	for _, problem := range suite.Problems {
+		if problem.Category == "" {
+			problem.Category = suite.Category
+		}
+	}
+
 	return &suite, nil
 }
 

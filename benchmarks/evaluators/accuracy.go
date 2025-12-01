@@ -81,3 +81,68 @@ func (e *ContainsEvaluator) Evaluate(response interface{}, expected interface{})
 func (e *ContainsEvaluator) Name() string {
 	return "contains"
 }
+
+// NumericEvaluator checks if numeric response is within tolerance of expected
+type NumericEvaluator struct {
+	tolerance float64
+}
+
+// NewNumericEvaluator creates a new numeric evaluator with default tolerance 0.05
+func NewNumericEvaluator() *NumericEvaluator {
+	return &NumericEvaluator{tolerance: 0.05}
+}
+
+// Evaluate compares numeric response to expected within tolerance
+func (e *NumericEvaluator) Evaluate(response interface{}, expected interface{}) (bool, float64, error) {
+	// Convert response to float
+	var responseVal float64
+	switch r := response.(type) {
+	case float64:
+		responseVal = r
+	case string:
+		// Try parsing string as float
+		var parsed float64
+		if _, err := fmt.Sscanf(r, "%f", &parsed); err == nil {
+			responseVal = parsed
+		} else {
+			return false, 0.0, fmt.Errorf("response string cannot be parsed as float: %s", r)
+		}
+	default:
+		return false, 0.0, fmt.Errorf("response must be number or string, got %T", response)
+	}
+
+	// Convert expected to float
+	var expectedVal float64
+	switch exp := expected.(type) {
+	case float64:
+		expectedVal = exp
+	case string:
+		var parsed float64
+		if _, err := fmt.Sscanf(exp, "%f", &parsed); err == nil {
+			expectedVal = parsed
+		} else {
+			return false, 0.0, fmt.Errorf("expected string cannot be parsed as float: %s", exp)
+		}
+	default:
+		return false, 0.0, fmt.Errorf("expected must be number or string, got %T", expected)
+	}
+
+	// Check if within tolerance
+	diff := responseVal - expectedVal
+	if diff < 0 {
+		diff = -diff
+	}
+
+	correct := diff <= e.tolerance
+	score := 0.0
+	if correct {
+		score = 1.0
+	}
+
+	return correct, score, nil
+}
+
+// Name returns the evaluator name
+func (e *NumericEvaluator) Name() string {
+	return "numeric"
+}
