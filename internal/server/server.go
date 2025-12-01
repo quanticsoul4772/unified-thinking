@@ -161,6 +161,9 @@ type UnifiedServer struct {
 	causalTemporalIntegration *integration.CausalTemporalIntegration
 	// Episodic memory system (Phase 2)
 	episodicMemoryHandler *handlers.EpisodicMemoryHandler
+	episodicMemoryStore   *memory.EpisodicMemoryStore
+	sessionTracker        *memory.SessionTracker
+	learningEngine        *memory.LearningEngine
 	// Context bridge for cross-session context retrieval
 	contextBridge *contextbridge.ContextBridge
 	// Knowledge graph for semantic memory and entity relationships (optional, set via SetKnowledgeGraph)
@@ -170,6 +173,17 @@ type UnifiedServer struct {
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
 func (s *UnifiedServer) SetKnowledgeGraph(kg *knowledge.KnowledgeGraph) {
 	s.knowledgeGraph = kg
+
+	// Reinitialize episodic memory handler to include knowledge graph for automatic extraction
+	if s.episodicMemoryStore != nil && s.sessionTracker != nil && s.learningEngine != nil {
+		s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(
+			s.episodicMemoryStore,
+			s.sessionTracker,
+			s.learningEngine,
+			kg,
+		)
+		log.Println("[DEBUG] Reinitialized episodic memory handler with knowledge graph")
+	}
 }
 
 func NewUnifiedServer(
@@ -334,13 +348,17 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	}
 
 	// Create session tracker
-	tracker := memory.NewSessionTracker(store)
+	s.sessionTracker = memory.NewSessionTracker(store)
 
 	// Create learning engine
-	learner := memory.NewLearningEngine(store)
+	s.learningEngine = memory.NewLearningEngine(store)
+
+	// Store episodic memory store as field for later access
+	s.episodicMemoryStore = store
 
 	// Create episodic memory handler (with knowledge graph for automatic entity extraction)
-	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(store, tracker, learner, s.knowledgeGraph)
+	// Note: knowledgeGraph may be nil here - will be reinitialized in SetKnowledgeGraph
+	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(s.episodicMemoryStore, s.sessionTracker, s.learningEngine, s.knowledgeGraph)
 }
 
 // initializeSemanticAutoMode sets up semantic mode detection for auto mode
