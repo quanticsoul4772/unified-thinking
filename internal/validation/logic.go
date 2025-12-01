@@ -443,10 +443,15 @@ func (v *LogicValidator) tryNegativeSyllogism(premises []string, conclusion stri
 													// Conclusion should be: "Some/No subj2 are (not) term2"
 													if (strings.Contains(conclusionLower, subj2) && strings.Contains(conclusionLower, term2)) &&
 														(strings.Contains(conclusionLower, "not") || strings.Contains(conclusionLower, "no ")) {
+														// Capitalize quantifier
+														quantCap := quant
+														if len(quant) > 0 {
+															quantCap = strings.ToUpper(quant[:1]) + quant[1:]
+														}
 														return []string{
-															fmt.Sprintf("Apply Negative Syllogism (Ferio/Celarent):"),
+															"Apply Negative Syllogism (Ferio/Celarent):",
 															fmt.Sprintf("  No %s are %s", term1, term2),
-															fmt.Sprintf("  %s %s are %s", strings.Title(quant), subj2, term1),
+															fmt.Sprintf("  %s%s are %s", quantCap, subj2, term1),
 															fmt.Sprintf("  Therefore: %s", conclusion),
 														}
 													}
