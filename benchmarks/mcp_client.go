@@ -156,6 +156,14 @@ func NewMCPClient(serverPath string, env []string, configs ...Config) (*MCPClien
 
 // Start spawns the server process and establishes stdio communication
 func (c *MCPClient) Start() error {
+	// Validate server path before execution
+	if !filepath.IsAbs(c.serverPath) {
+		return fmt.Errorf("server path must be absolute: %s", c.serverPath)
+	}
+	if _, err := os.Stat(c.serverPath); err != nil {
+		return fmt.Errorf("server binary not accessible: %w", err)
+	}
+
 	// Create command
 	c.cmd = exec.Command(c.serverPath)
 	c.cmd.Env = append(os.Environ(), c.env...)
