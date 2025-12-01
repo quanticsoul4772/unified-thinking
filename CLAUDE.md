@@ -15,7 +15,7 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 **Key Components**:
 - `internal/types/` - Core data structures (Thought, Branch, Insight, CrossRef, Validation) + Builder patterns + 50+ cognitive reasoning types
 - `internal/storage/` - Pluggable storage layer with in-memory (default) and SQLite backends (Storage interface for testability)
-- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, reflection, backtracking, auto) + Mode registry
+- `internal/modes/` - Thinking mode implementations (linear, tree, divergent, reflection, backtracking, auto, graph-of-thoughts) + Mode registry + LLM client interface
 - `internal/processing/` - Dual-process reasoning (System 1 fast vs System 2 deliberate)
 - `internal/validation/` - Logical validation, proof checking, fallacy detection, symbolic constraint solving
 - `internal/reasoning/` - Probabilistic inference, decision analysis, causal reasoning, temporal reasoning, abductive reasoning, case-based reasoning
@@ -26,8 +26,9 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 - `internal/memory/` - Episodic reasoning memory system with trajectory storage, pattern learning, adaptive recommendations, and semantic embeddings integration
 - `internal/embeddings/` - Semantic embeddings for episodic memory using Voyage AI (voyage-3-lite model, 512 dimensions)
 - `internal/contextbridge/` - Cross-session context retrieval with signature matching, LRU caching, and metrics
-- `internal/server/` - MCP server implementation with 63 registered tools
-- `internal/server/handlers/` - 21 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, causal, decision, dual_process, episodic, hallucination, helpers, metacognition, metadata, probabilistic, symbolic, temporal, unknown_unknowns)
+- `internal/server/` - MCP server implementation with 75 registered tools
+- `internal/server/handlers/` - 23 specialized handler modules (thinking, branches, validation, search, enhanced, abductive, backtracking, calibration, case_based, causal, decision, dual_process, episodic, hallucination, helpers, metacognition, metadata, probabilistic, symbolic, temporal, unknown_unknowns, similarity, got)
+- `internal/similarity/` - Thought similarity search using semantic embeddings
 
 **MCP SDK**: Uses `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -39,6 +40,7 @@ The Unified Thinking Server is a Go-based MCP (Model Context Protocol) server th
 4. **Reflection Mode** (`modes/reflection.go`) - Metacognitive reflection on previous reasoning with insight extraction
 5. **Backtracking Mode** (`modes/backtracking.go`) - Checkpoint-based reasoning with restore capabilities
 6. **Auto Mode** (`modes/auto.go`) - Automatic mode selection based on input content analysis
+7. **Graph Mode** (`modes/graph*.go`) - Graph-of-Thoughts reasoning with arbitrary graph structures, thought aggregation, refinement, and cyclic reasoning
 
 The Auto Mode uses semantic embeddings (when VOYAGE_API_KEY is set) or keyword detection to select the best thinking mode:
 
@@ -159,7 +161,7 @@ mcp.AddTool(mcpServer, &mcp.Tool{
 
 Each handler returns structured JSON via `toJSONContent(responseData)`.
 
-**Available Tools** (66 total):
+**Available Tools** (75 total):
 
 **Core Thinking Tools** (11 tools):
 1. `think` - Main thinking tool (supports all modes: linear, tree, divergent, reflection, backtracking, auto)
@@ -258,6 +260,19 @@ Each handler returns structured JSON via `toJSONContent(responseData)`.
 64. `store-entity` - Store an entity in the knowledge graph with semantic indexing
 65. `search-knowledge-graph` - Search for entities using semantic similarity or graph traversal
 66. `create-relationship` - Create typed relationships between entities (CAUSES, ENABLES, etc.)
+
+**Thought Similarity Search** (1 tool):
+67. `search-similar-thoughts` - Semantic search over past thoughts using Voyage AI embeddings
+
+**Graph-of-Thoughts Tools** (8 tools):
+68. `got-initialize` - Start new graph with initial thought
+69. `got-generate` - Create k diverse continuations using Anthropic Claude API
+70. `got-aggregate` - Merge parallel reasoning paths via LLM synthesis
+71. `got-refine` - Iteratively improve thoughts through self-critique (max 3 iterations)
+72. `got-score` - Multi-criteria quality evaluation (confidence, validity, relevance, novelty, depth)
+73. `got-prune` - Remove low-quality vertices below threshold
+74. `got-get-state` - Retrieve current graph state with all vertices
+75. `got-finalize` - Mark terminal vertices and extract conclusions
 
 ## Storage Architecture
 
@@ -665,6 +680,48 @@ When Claude Desktop starts, it will:
 25. `internal/orchestration/interface.go` - ToolExecutor abstraction for workflow steps
 
 ## Recent Updates
+
+### Graph-of-Thoughts Implementation (Commits d3db19c, 23bd01d, 173c1a2, 8f0a9ad, fde0129)
+
+**Feature**: Full Graph-of-Thoughts reasoning mode with LLM-powered operations
+
+**Files Created** (9 files, 2,029 LOC):
+- `internal/modes/graph_types.go` - ThoughtVertex, ThoughtEdge, GraphState, GraphConfig types
+- `internal/modes/graph.go` - GraphController with state management (282 lines)
+- `internal/modes/graph_operations.go` - Generate, Aggregate, Refine, Score, Prune operations (278 lines)
+- `internal/modes/llm_client.go` - LLM interface for extensibility (61 lines)
+- `internal/modes/llm_anthropic.go` - Anthropic Claude API client (319 lines)
+- `internal/modes/graph_test.go` - 11 controller unit tests (241 lines)
+- `internal/modes/graph_operations_test.go` - 14 operation tests with local test mock (294 lines)
+- `internal/server/handlers/got.go` - 8 MCP tool handlers (346 lines)
+- `internal/similarity/thought_search.go` - Semantic thought search (114 lines)
+
+**Key Features**:
+- **Multiple parents per vertex**: Key GoT advantage over tree-of-thoughts
+- **LLM-powered operations**: Uses Anthropic Claude Sonnet 4.5 for generation, synthesis, refinement
+- **No mocking in production**: Server requires ANTHROPIC_API_KEY (fails with log.Fatalf if missing)
+- **Generate**: Creates k diverse continuations from active vertices
+- **Aggregate**: Synthesizes parallel reasoning paths into unified insights
+- **Refine**: Iterative self-critique and improvement (max 3 iterations)
+- **Score**: Multi-criteria evaluation (confidence 25%, validity 30%, relevance 25%, novelty 10%, depth 10%)
+- **Prune**: Removes low-quality vertices while preserving roots and terminals
+- **Cyclic reasoning**: Supports feedback loops from conclusions to premises
+
+**Integration**:
+- Added to `UnifiedServer` with GraphController and GoTHandler
+- 8 tools registered in `RegisterTools()`
+- Tool count: 67 → 75 (+8)
+- Uses dominikbraun/graph library for directed graph structure
+
+**Test Coverage**:
+- 25 unit tests (all passing)
+- Tests validate: initialization, vertex/edge operations, multi-parent support, generation, aggregation, refinement, scoring, pruning
+- Local test mock used only in test files
+
+**Research Backing**:
+- Based on "Graph of Thoughts" research paper
+- 61-69% error reduction vs tree-of-thoughts on sorting tasks
+- 31% token cost reduction through efficient exploration
 
 ### Code Quality Improvements
 
