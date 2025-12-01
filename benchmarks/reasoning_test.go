@@ -20,7 +20,7 @@ func TestLogicReasoning(t *testing.T) {
 	// Create storage and executor
 	store := storage.NewMemoryStorage()
 	executor := NewDirectExecutor(store)
-	evaluator := evaluators.NewContainsEvaluator()
+	evaluator := evaluators.NewExactMatchEvaluator()
 
 	// Run benchmark suite
 	run, err := RunSuite(suite, evaluator, executor)

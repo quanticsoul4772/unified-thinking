@@ -102,7 +102,39 @@ func (e *DirectExecutor) executeLogic(ctx context.Context, problem *Problem) (st
 		premiseStrs[i] = fmt.Sprintf("%v", p)
 	}
 
-	// Use logic validator to prove
+	// If conclusion is "?", we need to derive an answer, not validate
+	if conclusion == "?" {
+		// Simple disjunctive syllogism: "A OR B", "NOT A" → B
+		if len(premiseStrs) == 2 {
+			p1 := strings.ToLower(premiseStrs[0])
+			p2 := strings.ToLower(premiseStrs[1])
+
+			// Pattern: "X OR Y"
+			if strings.Contains(p1, " or ") {
+				parts := strings.Split(p1, " or ")
+				if len(parts) == 2 {
+					option1 := strings.TrimSpace(parts[0])
+					option2 := strings.TrimSpace(parts[1])
+
+					// Pattern: "NOT X"
+					if strings.Contains(p2, "not ") {
+						negated := strings.TrimSpace(strings.Replace(p2, "not ", "", 1))
+						if strings.Contains(option1, negated) {
+							return option2, nil
+						}
+						if strings.Contains(option2, negated) {
+							return option1, nil
+						}
+					}
+				}
+			}
+		}
+
+		// Couldn't derive answer
+		return "unknown", nil
+	}
+
+	// Use logic validator to prove conclusion
 	result := e.validator.Prove(premiseStrs, conclusion)
 
 	if result.IsProvable {
