@@ -89,7 +89,7 @@ const (
 	// ErrNetworkFailed indicates a network operation failed
 	ErrNetworkFailed = "ERR_4005_NETWORK_FAILED"
 	// ErrAPIKeyMissing indicates a required API key is not configured
-	ErrAPIKeyMissing = "ERR_4006_API_KEY_MISSING"
+	ErrAPIKeyMissing = "ERR_4006_API_KEY_MISSING" // #nosec G101 -- error code constant, not a credential
 	// ErrExternalTimeout indicates an external service timed out
 	ErrExternalTimeout = "ERR_4007_EXTERNAL_TIMEOUT"
 )
