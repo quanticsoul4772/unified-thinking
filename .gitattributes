@@ -12,9 +12,9 @@ Makefile linguist-vendored
 .github/** linguist-vendored
 
 # Exclude configuration files
-*.yml linguist-vendored
-*.yaml linguist-vendored
 .golangci.yml linguist-vendored
+# Add other specific config files here if needed, e.g.:
+# another-config.yml linguist-vendored
 
 # Exclude local settings
 .claude/** linguist-vendored
