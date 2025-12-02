@@ -18,3 +18,6 @@ Makefile linguist-vendored
 
 # Exclude local settings
 .claude/** linguist-vendored
+
+# Exclude documentation (optional - depends on preference)
+*.md linguist-documentation
