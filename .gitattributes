@@ -1,0 +1,20 @@
+# Linguist overrides for GitHub language statistics
+# See: https://github.com/github-linguist/linguist/blob/master/docs/overrides.md
+
+# Exclude benchmark data files (test fixtures, not source code)
+benchmarks/datasets/** linguist-vendored
+
+# Exclude build scripts and CI configuration
+Makefile linguist-vendored
+*.sh linguist-vendored
+*.bat linguist-vendored
+*.ps1 linguist-vendored
+.github/** linguist-vendored
+
+# Exclude configuration files
+*.yml linguist-vendored
+*.yaml linguist-vendored
+.golangci.yml linguist-vendored
+
+# Exclude local settings
+.claude/** linguist-vendored
