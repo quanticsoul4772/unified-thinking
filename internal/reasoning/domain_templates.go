@@ -78,12 +78,6 @@ var commonStopWords = map[string]bool{
 	"use": true, "used": true, "using": true, "work": true, "working": true, "works": true,
 }
 
-// technicalPatterns contains regex-like patterns for technical terms
-var technicalPatterns = []string{
-	// Acronyms and version numbers (OAuth 2.0, API, REST, etc.)
-	// We'll detect these via case patterns
-}
-
 // domainKeywords maps keywords to domains for detection
 var domainKeywords = map[Domain][]string{
 	DomainDebugging: {

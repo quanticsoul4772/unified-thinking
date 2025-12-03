@@ -774,7 +774,6 @@ func (ar *AbductiveReasoner) findCommonThemes(observations []*Observation) []str
 
 		// Count meaningful single words
 		seenWords := make(map[string]bool)
-		meaningfulWords := make([]string, 0)
 		for _, word := range words {
 			// Clean the word
 			word = strings.Trim(word, "\"'()[]{}*-_")
@@ -787,7 +786,6 @@ func (ar *AbductiveReasoner) findCommonThemes(observations []*Observation) []str
 			if !seenWords[word] {
 				seenWords[word] = true
 				wordCount[word]++
-				meaningfulWords = append(meaningfulWords, word)
 			}
 		}
 
