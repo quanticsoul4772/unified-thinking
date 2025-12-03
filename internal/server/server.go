@@ -1420,7 +1420,7 @@ func (s *UnifiedServer) handleValidate(ctx context.Context, req *mcp.CallToolReq
 	if s.calibrationHandler != nil {
 		// Map validation result to calibration outcome
 		// A valid thought with high confidence is considered "correct"
-		actualConfidence := thought.Confidence
+		var actualConfidence float64
 		if validationResult.IsValid {
 			actualConfidence = 0.9 // High confidence for valid thoughts
 		} else {

@@ -405,7 +405,7 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 		// Collect example problems solved with this pattern
 		examples := make([]string, 0, 3)
 		trajectoryIDs := make([]string, 0, len(pattern.Trajectories))
-		var minConf, maxConf float64 = 1.0, 0.0
+		minConf, maxConf := 1.0, 0.0
 		totalSteps := 0
 
 		for i, traj := range pattern.Trajectories {
