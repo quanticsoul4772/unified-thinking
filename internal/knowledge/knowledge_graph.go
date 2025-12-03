@@ -22,10 +22,10 @@ type KnowledgeGraph struct {
 
 // KnowledgeGraphConfig holds knowledge graph configuration
 type KnowledgeGraphConfig struct {
-	Neo4jConfig     Neo4jConfig
-	VectorConfig    VectorStoreConfig
-	SQLiteDB        *sql.DB // For embedding cache
-	Enabled         bool
+	Neo4jConfig  Neo4jConfig
+	VectorConfig VectorStoreConfig
+	SQLiteDB     *sql.DB // For embedding cache
+	Enabled      bool
 }
 
 // NewKnowledgeGraph creates a new knowledge graph instance

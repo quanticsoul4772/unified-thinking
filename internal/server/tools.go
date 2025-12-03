@@ -17,6 +17,7 @@ var ToolDefinitions = []mcp.Tool{
 - confidence: 0.0-1.0 (default: 0.8)
 - key_points: Array of key observations
 - branch_id: For tree mode continuation
+- format_level: Response size control - "full" (default), "compact" (40-60% smaller), "minimal" (80% smaller)
 
 **Returns:** thought_id, mode, confidence, metadata with:
 - suggested_next_tools: Recommended next steps
@@ -36,7 +37,7 @@ var ToolDefinitions = []mcp.Tool{
 3. Documented Reasoning: think → obsidian:create-note
 4. Validated Chain: think → validate → think (iterate)
 
-**Example:** {"content": "Analyze database performance", "mode": "linear", "confidence": 0.7}`,
+**Example:** {"content": "Analyze database performance", "mode": "linear", "confidence": 0.7, "format_level": "compact"}`,
 	},
 	{
 		Name:        "history",

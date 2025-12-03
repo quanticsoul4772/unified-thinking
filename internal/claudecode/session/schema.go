@@ -15,7 +15,7 @@ const SchemaVersion = "1.0"
 // SessionExport represents a complete exported session
 type SessionExport struct {
 	// Schema information
-	Version   string    `json:"version"`
+	Version    string    `json:"version"`
 	ExportedAt time.Time `json:"exported_at"`
 
 	// Session identification
@@ -65,15 +65,15 @@ func DefaultExportOptions() ExportOptions {
 
 // DecisionExport represents an exported decision
 type DecisionExport struct {
-	ID             string                   `json:"id"`
-	Question       string                   `json:"question"`
-	Options        []OptionExport           `json:"options"`
-	Criteria       []CriterionExport        `json:"criteria"`
-	SelectedOption string                   `json:"selected_option,omitempty"`
-	Confidence     float64                  `json:"confidence"`
-	Reasoning      string                   `json:"reasoning,omitempty"`
-	CreatedAt      time.Time                `json:"created_at"`
-	Metadata       map[string]any           `json:"metadata,omitempty"`
+	ID             string            `json:"id"`
+	Question       string            `json:"question"`
+	Options        []OptionExport    `json:"options"`
+	Criteria       []CriterionExport `json:"criteria"`
+	SelectedOption string            `json:"selected_option,omitempty"`
+	Confidence     float64           `json:"confidence"`
+	Reasoning      string            `json:"reasoning,omitempty"`
+	CreatedAt      time.Time         `json:"created_at"`
+	Metadata       map[string]any    `json:"metadata,omitempty"`
 }
 
 // OptionExport represents an exported decision option

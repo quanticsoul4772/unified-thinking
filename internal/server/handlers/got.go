@@ -26,17 +26,17 @@ func NewGoTHandler(controller *modes.GraphController, llm modes.LLMClient) *GoTH
 
 // InitializeRequest for got-initialize
 type InitializeRequest struct {
-	GraphID        string              `json:"graph_id"`
-	InitialThought string              `json:"initial_thought"`
+	GraphID        string             `json:"graph_id"`
+	InitialThought string             `json:"initial_thought"`
 	Config         *modes.GraphConfig `json:"config,omitempty"`
 }
 
 // InitializeResponse for got-initialize
 type InitializeResponse struct {
-	GraphID   string              `json:"graph_id"`
-	RootID    string              `json:"root_id"`
-	Status    string              `json:"status"`
-	Config    *modes.GraphConfig `json:"config"`
+	GraphID string             `json:"graph_id"`
+	RootID  string             `json:"root_id"`
+	Status  string             `json:"status"`
+	Config  *modes.GraphConfig `json:"config"`
 }
 
 // HandleInitialize creates a new GoT graph
@@ -73,10 +73,10 @@ type GenerateRequest struct {
 
 // GenerateResponse for got-generate
 type GenerateResponse struct {
-	GraphID       string                 `json:"graph_id"`
-	NewVertices   []VertexInfo          `json:"new_vertices"`
-	Count         int                    `json:"count"`
-	ActiveCount   int                    `json:"active_count"`
+	GraphID     string       `json:"graph_id"`
+	NewVertices []VertexInfo `json:"new_vertices"`
+	Count       int          `json:"count"`
+	ActiveCount int          `json:"active_count"`
 }
 
 // VertexInfo represents vertex metadata
@@ -245,9 +245,9 @@ type RefineRequest struct {
 
 // RefineResponse for got-refine
 type RefineResponse struct {
-	GraphID        string     `json:"graph_id"`
-	RefinedVertex  VertexInfo `json:"refined_vertex"`
-	RefinementCount int       `json:"refinement_count"`
+	GraphID         string     `json:"graph_id"`
+	RefinedVertex   VertexInfo `json:"refined_vertex"`
+	RefinementCount int        `json:"refinement_count"`
 }
 
 // HandleRefine iteratively improves a thought
@@ -294,8 +294,8 @@ type ScoreRequest struct {
 
 // ScoreResponse for got-score
 type ScoreResponse struct {
-	GraphID   string  `json:"graph_id"`
-	VertexID  string  `json:"vertex_id"`
+	GraphID   string               `json:"graph_id"`
+	VertexID  string               `json:"vertex_id"`
 	Breakdown modes.ScoreBreakdown `json:"breakdown"`
 }
 
@@ -335,10 +335,10 @@ type PruneRequest struct {
 
 // PruneResponse for got-prune
 type PruneResponse struct {
-	GraphID       string `json:"graph_id"`
-	RemovedCount  int    `json:"removed_count"`
-	RemainingCount int   `json:"remaining_count"`
-	Threshold     float64 `json:"threshold"`
+	GraphID        string  `json:"graph_id"`
+	RemovedCount   int     `json:"removed_count"`
+	RemainingCount int     `json:"remaining_count"`
+	Threshold      float64 `json:"threshold"`
 }
 
 // HandlePrune removes low-quality vertices
@@ -371,14 +371,14 @@ type GetStateRequest struct {
 
 // GetStateResponse for got-get-state
 type GetStateResponse struct {
-	GraphID       string       `json:"graph_id"`
-	VertexCount   int          `json:"vertex_count"`
-	EdgeCount     int          `json:"edge_count"`
-	RootIDs       []string     `json:"root_ids"`
-	ActiveIDs     []string     `json:"active_ids"`
-	TerminalIDs   []string     `json:"terminal_ids"`
-	Vertices      []VertexInfo `json:"vertices"`
-	Config        *modes.GraphConfig `json:"config"`
+	GraphID     string             `json:"graph_id"`
+	VertexCount int                `json:"vertex_count"`
+	EdgeCount   int                `json:"edge_count"`
+	RootIDs     []string           `json:"root_ids"`
+	ActiveIDs   []string           `json:"active_ids"`
+	TerminalIDs []string           `json:"terminal_ids"`
+	Vertices    []VertexInfo       `json:"vertices"`
+	Config      *modes.GraphConfig `json:"config"`
 }
 
 // HandleGetState retrieves current graph state
@@ -464,6 +464,154 @@ func (h *GoTHandler) HandleFinalize(ctx context.Context, req *mcp.CallToolReques
 		GraphID:     request.GraphID,
 		TerminalIDs: request.TerminalIDs,
 		Conclusions: conclusions,
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(response)}, response, nil
+}
+
+// ExploreRequest for got-explore (auto-orchestrated workflow)
+type ExploreRequest struct {
+	GraphID        string         `json:"graph_id"`
+	InitialThought string         `json:"initial_thought"`
+	Problem        string         `json:"problem"`
+	Config         *ExploreConfig `json:"config,omitempty"`
+}
+
+// ExploreConfig controls the exploration workflow
+type ExploreConfig struct {
+	K              int     `json:"k,omitempty"`               // Continuations per step (default: 3)
+	MaxIterations  int     `json:"max_iterations,omitempty"`  // Max exploration cycles (default: 2)
+	PruneThreshold float64 `json:"prune_threshold,omitempty"` // Score threshold for pruning (default: 0.3)
+	RefineTopN     int     `json:"refine_top_n,omitempty"`    // Refine top N vertices (default: 1)
+	ScoreAll       bool    `json:"score_all,omitempty"`       // Score all vertices, not just active
+}
+
+// ExploreResponse for got-explore
+type ExploreResponse struct {
+	GraphID         string            `json:"graph_id"`
+	Problem         string            `json:"problem"`
+	Iterations      int               `json:"iterations"`
+	TotalGenerated  int               `json:"total_generated"`
+	TotalPruned     int               `json:"total_pruned"`
+	TotalRefined    int               `json:"total_refined"`
+	BestVertices    []VertexInfo      `json:"best_vertices"`
+	Conclusions     []VertexInfo      `json:"conclusions"`
+	ExplorationPath []ExplorationStep `json:"exploration_path"`
+}
+
+// ExplorationStep records a single step in the exploration workflow
+type ExplorationStep struct {
+	Step        int    `json:"step"`
+	Action      string `json:"action"`
+	VertexCount int    `json:"vertex_count"`
+	Details     string `json:"details"`
+}
+
+// HandleExplore orchestrates a complete GoT workflow automatically
+func (h *GoTHandler) HandleExplore(ctx context.Context, req *mcp.CallToolRequest, request ExploreRequest) (*mcp.CallToolResult, *ExploreResponse, error) {
+	if request.GraphID == "" {
+		return nil, nil, fmt.Errorf("graph_id is required")
+	}
+	if request.InitialThought == "" {
+		return nil, nil, fmt.Errorf("initial_thought is required")
+	}
+	if request.Problem == "" {
+		return nil, nil, fmt.Errorf("problem is required")
+	}
+
+	// Create progress reporter for streaming notifications
+	reporter := streaming.CreateReporter(req, "got-explore")
+
+	// Report start
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(0, 100, "initialize", fmt.Sprintf("Starting Graph-of-Thoughts exploration for: %s", request.Problem))
+	}
+
+	// Convert handler config to modes config
+	var modesConfig *modes.ExploreConfig
+	if request.Config != nil {
+		modesConfig = &modes.ExploreConfig{
+			K:              request.Config.K,
+			MaxIterations:  request.Config.MaxIterations,
+			PruneThreshold: request.Config.PruneThreshold,
+			RefineTopN:     request.Config.RefineTopN,
+			ScoreAll:       request.Config.ScoreAll,
+		}
+	}
+
+	exploreReq := modes.ExploreRequest{
+		InitialThought: request.InitialThought,
+		Problem:        request.Problem,
+		Config:         modesConfig,
+	}
+
+	// Inject reporter into context for the controller to use
+	ctx = streaming.WithReporter(ctx, reporter)
+
+	result, err := h.controller.Explore(ctx, request.GraphID, h.llm, exploreReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("exploration failed: %w", err)
+	}
+
+	// Report each step as it was recorded
+	if reporter.IsEnabled() {
+		for i, step := range result.ExplorationPath {
+			progress := int(float64(i+1) / float64(len(result.ExplorationPath)) * 100)
+			_ = reporter.ReportStep(progress, 100, step.Action, step.Details)
+		}
+	}
+
+	// Convert vertices to VertexInfo
+	bestVertices := make([]VertexInfo, len(result.BestVertices))
+	for i, v := range result.BestVertices {
+		bestVertices[i] = VertexInfo{
+			ID:         v.ID,
+			Content:    v.Content,
+			Type:       string(v.Type),
+			Depth:      v.Depth,
+			Confidence: v.Confidence,
+			Score:      v.Score,
+		}
+	}
+
+	conclusions := make([]VertexInfo, len(result.Conclusions))
+	for i, v := range result.Conclusions {
+		conclusions[i] = VertexInfo{
+			ID:         v.ID,
+			Content:    v.Content,
+			Type:       string(v.Type),
+			Depth:      v.Depth,
+			Confidence: v.Confidence,
+			Score:      v.Score,
+		}
+	}
+
+	// Convert exploration path
+	explorationPath := make([]ExplorationStep, len(result.ExplorationPath))
+	for i, step := range result.ExplorationPath {
+		explorationPath[i] = ExplorationStep{
+			Step:        step.Step,
+			Action:      step.Action,
+			VertexCount: step.VertexCount,
+			Details:     step.Details,
+		}
+	}
+
+	// Report completion
+	if reporter.IsEnabled() {
+		_ = reporter.ReportStep(100, 100, "complete", fmt.Sprintf("Exploration complete: %d conclusions from %d generated vertices", len(conclusions), result.TotalGenerated))
+	}
+
+	response := &ExploreResponse{
+		GraphID:         result.GraphID,
+		Problem:         result.Problem,
+		Iterations:      result.Iterations,
+		TotalGenerated:  result.TotalGenerated,
+		TotalPruned:     result.TotalPruned,
+		TotalRefined:    result.TotalRefined,
+		BestVertices:    bestVertices,
+		Conclusions:     conclusions,
+		ExplorationPath: explorationPath,
 	}
 
 	return &mcp.CallToolResult{Content: toJSONContent(response)}, response, nil
@@ -579,4 +727,42 @@ func RegisterGoTTools(mcpServer *mcp.Server, handler *GoTHandler) {
 
 **Example:** {"graph_id": "sorting-problem", "terminal_ids": ["v10", "v15"]}`,
 	}, handler.HandleFinalize)
+
+	mcp.AddTool(mcpServer, &mcp.Tool{
+		Name: "got-explore",
+		Description: `Auto-orchestrated Graph-of-Thoughts exploration workflow.
+
+Combines initialize → generate → score → prune → refine → finalize into a single tool call.
+Reduces the typical 6+ tool calls to just 1 call for common exploration patterns.
+
+**Parameters:**
+- graph_id (required): Unique identifier for this graph
+- initial_thought (required): Starting thought content
+- problem (required): Problem context for the exploration
+- config (optional): ExploreConfig with:
+  - k: Continuations per step (default: 3)
+  - max_iterations: Max exploration cycles (default: 2)
+  - prune_threshold: Score threshold for pruning (default: 0.3)
+  - refine_top_n: Refine top N vertices (default: 1)
+  - score_all: Score all vertices, not just active (default: false)
+
+**Returns:**
+- graph_id: Identifier of the created graph
+- problem: The problem that was explored
+- iterations: Number of exploration cycles completed
+- total_generated: Total vertices generated
+- total_pruned: Total vertices pruned
+- total_refined: Total vertices refined
+- best_vertices: Top-scoring vertices
+- conclusions: Final conclusions (same as best_vertices)
+- exploration_path: Step-by-step record of actions taken
+
+**Example:**
+{
+  "graph_id": "debug-flaky-ci",
+  "initial_thought": "CI tests fail intermittently, need to identify root cause",
+  "problem": "Debug flaky CI tests",
+  "config": {"k": 3, "max_iterations": 2}
+}`,
+	}, handler.HandleExplore)
 }

@@ -181,3 +181,87 @@ func TestHandleGetCalibrationReport_Empty(t *testing.T) {
 		t.Fatalf("report total predictions = %d, want 0", resp.Report.TotalPredictions)
 	}
 }
+
+// Tests for auto-recording functionality (Phase 1.2 implementation)
+
+func TestAutoRecordPrediction(t *testing.T) {
+	handler := NewCalibrationHandler()
+
+	err := handler.AutoRecordPrediction("thought-auto-1", 0.8, "linear")
+	if err != nil {
+		t.Errorf("AutoRecordPrediction failed: %v", err)
+	}
+
+	// Verify the prediction was recorded
+	tracker := handler.GetTracker()
+	report := tracker.GetCalibrationReport()
+
+	if report.TotalPredictions != 1 {
+		t.Errorf("Expected 1 prediction, got %d", report.TotalPredictions)
+	}
+}
+
+func TestAutoRecordOutcome(t *testing.T) {
+	handler := NewCalibrationHandler()
+
+	// First record a prediction
+	err := handler.AutoRecordPrediction("thought-auto-2", 0.8, "linear")
+	if err != nil {
+		t.Fatalf("AutoRecordPrediction failed: %v", err)
+	}
+
+	// Then record an outcome
+	err = handler.AutoRecordOutcome("thought-auto-2", true, 0.9, "validation")
+	if err != nil {
+		t.Errorf("AutoRecordOutcome failed: %v", err)
+	}
+
+	// Verify the outcome was recorded
+	tracker := handler.GetTracker()
+	report := tracker.GetCalibrationReport()
+
+	if report.TotalOutcomes != 1 {
+		t.Errorf("Expected 1 outcome, got %d", report.TotalOutcomes)
+	}
+}
+
+func TestAutoRecordFullWorkflow(t *testing.T) {
+	handler := NewCalibrationHandler()
+
+	// Simulate think → validate workflow
+	err := handler.AutoRecordPrediction("thought-workflow", 0.75, "tree")
+	if err != nil {
+		t.Fatalf("AutoRecordPrediction failed: %v", err)
+	}
+
+	// Simulate validation result (invalid thought)
+	err = handler.AutoRecordOutcome("thought-workflow", false, 0.3, "validation")
+	if err != nil {
+		t.Fatalf("AutoRecordOutcome failed: %v", err)
+	}
+
+	// Check calibration report
+	report := handler.GetTracker().GetCalibrationReport()
+
+	if report.TotalPredictions != 1 {
+		t.Errorf("Expected 1 prediction, got %d", report.TotalPredictions)
+	}
+	if report.TotalOutcomes != 1 {
+		t.Errorf("Expected 1 outcome, got %d", report.TotalOutcomes)
+	}
+}
+
+func TestGetTracker(t *testing.T) {
+	handler := NewCalibrationHandler()
+
+	tracker := handler.GetTracker()
+	if tracker == nil {
+		t.Error("GetTracker should not return nil")
+	}
+
+	// Tracker should be the same instance
+	tracker2 := handler.GetTracker()
+	if tracker != tracker2 {
+		t.Error("GetTracker should return the same instance")
+	}
+}

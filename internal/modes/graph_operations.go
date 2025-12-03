@@ -4,6 +4,8 @@ package modes
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -267,6 +269,331 @@ func (gc *GraphController) Prune(ctx context.Context, stateID string, threshold 
 	return removed, nil
 }
 
+// ExploreRequest encapsulates the auto-orchestrated exploration parameters
+type ExploreRequest struct {
+	InitialThought string         `json:"initial_thought"`
+	Problem        string         `json:"problem"`
+	Config         *ExploreConfig `json:"config,omitempty"`
+}
+
+// ExploreConfig controls the exploration workflow
+type ExploreConfig struct {
+	K               int     `json:"k"`                // Continuations per step (default: 3)
+	MaxIterations   int     `json:"max_iterations"`   // Max exploration cycles (default: 1)
+	PruneThreshold  float64 `json:"prune_threshold"`  // Score threshold for pruning (default: 0.3)
+	RefineTopN      int     `json:"refine_top_n"`     // Refine top N vertices (default: 1)
+	ScoreAll        bool    `json:"score_all"`        // Score all vertices, not just active (default: false)
+	UseFastScoring  bool    `json:"use_fast_scoring"` // Use local heuristics instead of LLM for scoring (default: true)
+	SkipRefine      bool    `json:"skip_refine"`      // Skip the refinement step to save LLM calls (default: false)
+	ParallelScoring bool    `json:"parallel_scoring"` // Parallelize LLM scoring calls (default: true)
+}
+
+// ExploreResult contains the orchestrated exploration results
+type ExploreResult struct {
+	GraphID         string            `json:"graph_id"`
+	Problem         string            `json:"problem"`
+	Iterations      int               `json:"iterations"`
+	TotalGenerated  int               `json:"total_generated"`
+	TotalPruned     int               `json:"total_pruned"`
+	TotalRefined    int               `json:"total_refined"`
+	BestVertices    []*ThoughtVertex  `json:"best_vertices"`
+	Conclusions     []*ThoughtVertex  `json:"conclusions"`
+	ExplorationPath []ExplorationStep `json:"exploration_path"`
+}
+
+// ExplorationStep records a single step in the exploration workflow
+type ExplorationStep struct {
+	Step        int    `json:"step"`
+	Action      string `json:"action"`       // "generate", "score", "prune", "refine", "finalize"
+	VertexCount int    `json:"vertex_count"` // Vertices affected
+	Details     string `json:"details"`      // Human-readable description
+}
+
+// DefaultExploreConfig returns sensible defaults for exploration
+// Optimized for speed by default - uses local scoring to avoid LLM API calls
+func DefaultExploreConfig() *ExploreConfig {
+	return &ExploreConfig{
+		K:               3,
+		MaxIterations:   1, // Reduced from 2 to minimize API calls
+		PruneThreshold:  0.3,
+		RefineTopN:      1,
+		ScoreAll:        false,
+		UseFastScoring:  true,  // Use local heuristics by default for speed
+		SkipRefine:      false, // Refinement adds value, keep it
+		ParallelScoring: true,  // Parallelize LLM calls when UseFastScoring=false
+	}
+}
+
+// ThoroughExploreConfig returns config for thorough exploration with LLM scoring
+// Use this when quality matters more than speed
+func ThoroughExploreConfig() *ExploreConfig {
+	return &ExploreConfig{
+		K:               3,
+		MaxIterations:   2,
+		PruneThreshold:  0.3,
+		RefineTopN:      2,
+		ScoreAll:        false,
+		UseFastScoring:  false, // Use LLM for accurate scoring
+		SkipRefine:      false,
+		ParallelScoring: true, // Still parallelize for speed
+	}
+}
+
+// Explore orchestrates a complete Graph-of-Thoughts workflow automatically
+// This combines: initialize → generate → score → prune → refine → finalize
+func (gc *GraphController) Explore(ctx context.Context, graphID string, llm LLMClient, req ExploreRequest) (*ExploreResult, error) {
+	config := req.Config
+	if config == nil {
+		config = DefaultExploreConfig()
+	}
+
+	// Validate inputs
+	if graphID == "" {
+		return nil, fmt.Errorf("graph_id is required")
+	}
+	if req.InitialThought == "" {
+		return nil, fmt.Errorf("initial_thought is required")
+	}
+	if req.Problem == "" {
+		return nil, fmt.Errorf("problem is required")
+	}
+
+	result := &ExploreResult{
+		GraphID:         graphID,
+		Problem:         req.Problem,
+		ExplorationPath: []ExplorationStep{},
+	}
+	stepNum := 0
+
+	// Step 1: Initialize the graph
+	graphConfig := DefaultGraphConfig()
+	graphConfig.PruneThreshold = config.PruneThreshold
+
+	state, err := gc.Initialize(graphID, req.InitialThought, graphConfig)
+	if err != nil {
+		return nil, fmt.Errorf("initialization failed: %w", err)
+	}
+
+	stepNum++
+	result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+		Step:        stepNum,
+		Action:      "initialize",
+		VertexCount: 1,
+		Details:     fmt.Sprintf("Created graph with initial thought: %s...", truncateStr(req.InitialThought, 50)),
+	})
+
+	// Exploration loop
+	for iteration := 0; iteration < config.MaxIterations; iteration++ {
+		// Step 2: Generate k diverse continuations
+		genReq := GenerateRequest{
+			K:       config.K,
+			Problem: req.Problem,
+		}
+
+		generated, err := gc.Generate(ctx, graphID, llm, genReq)
+		if err != nil {
+			return nil, fmt.Errorf("generation failed at iteration %d: %w", iteration, err)
+		}
+		result.TotalGenerated += len(generated)
+		result.Iterations = iteration + 1
+
+		stepNum++
+		result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+			Step:        stepNum,
+			Action:      "generate",
+			VertexCount: len(generated),
+			Details:     fmt.Sprintf("Iteration %d: Generated %d continuations", iteration+1, len(generated)),
+		})
+
+		if len(generated) == 0 {
+			break // No more to generate
+		}
+
+		// Step 3: Score all active vertices
+		verticesToScore := state.ActiveIDs
+		if config.ScoreAll {
+			verticesToScore = make([]string, 0, len(state.Vertices))
+			for id := range state.Vertices {
+				verticesToScore = append(verticesToScore, id)
+			}
+		}
+
+		scoredCount := 0
+		scoringMethod := "llm"
+
+		if config.UseFastScoring {
+			// Fast local scoring - no LLM calls, ~1ms per vertex
+			scoringMethod = "fast"
+			for _, vertexID := range verticesToScore {
+				if vertex, ok := state.Vertices[vertexID]; ok {
+					vertex.Score = fastScoreVertex(vertex, req.Problem)
+					scoredCount++
+				}
+			}
+		} else if config.ParallelScoring && len(verticesToScore) > 1 {
+			// Parallel LLM scoring - significantly faster than sequential
+			scoringMethod = "llm-parallel"
+			var wg sync.WaitGroup
+			var mu sync.Mutex
+			results := make(map[string]bool)
+
+			for _, vertexID := range verticesToScore {
+				wg.Add(1)
+				go func(vID string) {
+					defer wg.Done()
+					scoreReq := ScoreRequest{
+						VertexID: vID,
+						Problem:  req.Problem,
+					}
+					_, err := gc.Score(ctx, graphID, llm, scoreReq)
+					mu.Lock()
+					results[vID] = (err == nil)
+					mu.Unlock()
+				}(vertexID)
+			}
+			wg.Wait()
+
+			for _, success := range results {
+				if success {
+					scoredCount++
+				}
+			}
+		} else {
+			// Sequential LLM scoring (slowest)
+			for _, vertexID := range verticesToScore {
+				scoreReq := ScoreRequest{
+					VertexID: vertexID,
+					Problem:  req.Problem,
+				}
+				if _, err := gc.Score(ctx, graphID, llm, scoreReq); err == nil {
+					scoredCount++
+				}
+			}
+		}
+
+		stepNum++
+		result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+			Step:        stepNum,
+			Action:      "score",
+			VertexCount: scoredCount,
+			Details:     fmt.Sprintf("Scored %d vertices (%s)", scoredCount, scoringMethod),
+		})
+
+		// Step 4: Prune low-quality vertices
+		pruned, err := gc.Prune(ctx, graphID, config.PruneThreshold)
+		if err != nil {
+			return nil, fmt.Errorf("pruning failed: %w", err)
+		}
+		result.TotalPruned += pruned
+
+		if pruned > 0 {
+			stepNum++
+			result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+				Step:        stepNum,
+				Action:      "prune",
+				VertexCount: pruned,
+				Details:     fmt.Sprintf("Pruned %d vertices below threshold %.2f", pruned, config.PruneThreshold),
+			})
+		}
+
+		// Refresh state after pruning
+		state, _ = gc.GetState(graphID)
+
+		// Step 5: Refine top N vertices (skip if SkipRefine is true)
+		if !config.SkipRefine {
+			topVertices := getTopScoredVertices(state, config.RefineTopN)
+			refinedCount := 0
+			for _, vertex := range topVertices {
+				refReq := RefineRequest{
+					VertexID: vertex.ID,
+					Problem:  req.Problem,
+				}
+				if _, err := gc.Refine(ctx, graphID, llm, refReq); err == nil {
+					refinedCount++
+				}
+			}
+			result.TotalRefined += refinedCount
+
+			if refinedCount > 0 {
+				stepNum++
+				result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+					Step:        stepNum,
+					Action:      "refine",
+					VertexCount: refinedCount,
+					Details:     fmt.Sprintf("Refined %d top-scoring vertices", refinedCount),
+				})
+			}
+
+			// Refresh state after refinement
+			state, _ = gc.GetState(graphID)
+		}
+	}
+
+	// Step 6: Finalize - select best vertices as conclusions
+	state, _ = gc.GetState(graphID)
+	bestVertices := getTopScoredVertices(state, 3) // Top 3 as conclusions
+
+	terminalIDs := make([]string, len(bestVertices))
+	for i, v := range bestVertices {
+		terminalIDs[i] = v.ID
+	}
+
+	if len(terminalIDs) > 0 {
+		_ = gc.SetTerminalVertices(graphID, terminalIDs)
+	}
+
+	stepNum++
+	result.ExplorationPath = append(result.ExplorationPath, ExplorationStep{
+		Step:        stepNum,
+		Action:      "finalize",
+		VertexCount: len(bestVertices),
+		Details:     fmt.Sprintf("Finalized with %d best conclusions", len(bestVertices)),
+	})
+
+	result.BestVertices = bestVertices
+	result.Conclusions = bestVertices
+
+	return result, nil
+}
+
+// getTopScoredVertices returns the n highest-scored vertices
+func getTopScoredVertices(state *GraphState, n int) []*ThoughtVertex {
+	if state == nil || len(state.Vertices) == 0 {
+		return []*ThoughtVertex{}
+	}
+
+	// Collect all vertices with scores
+	vertices := make([]*ThoughtVertex, 0, len(state.Vertices))
+	for _, v := range state.Vertices {
+		if v.Score > 0 {
+			vertices = append(vertices, v)
+		}
+	}
+
+	// Sort by score descending (simple bubble sort for small n)
+	for i := 0; i < len(vertices); i++ {
+		for j := i + 1; j < len(vertices); j++ {
+			if vertices[j].Score > vertices[i].Score {
+				vertices[i], vertices[j] = vertices[j], vertices[i]
+			}
+		}
+	}
+
+	// Return top n
+	if n > len(vertices) {
+		n = len(vertices)
+	}
+	return vertices[:n]
+}
+
+// truncateStr truncates a string to maxLen with ellipsis
+func truncateStr(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
 // Helper function
 func containsStr(slice []string, item string) bool {
 	for _, s := range slice {
@@ -275,4 +602,75 @@ func containsStr(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// fastScoreVertex applies local heuristics to score a vertex without LLM calls
+// This provides reasonable scoring in ~1ms vs ~15-30s for LLM scoring
+func fastScoreVertex(vertex *ThoughtVertex, problem string) float64 {
+	if vertex == nil || vertex.Content == "" {
+		return 0.0
+	}
+
+	content := strings.ToLower(vertex.Content)
+	problemLower := strings.ToLower(problem)
+	score := 0.5 // Base score
+
+	// Length bonus: prefer substantive thoughts (100-500 chars optimal)
+	length := len(vertex.Content)
+	if length >= 100 && length <= 500 {
+		score += 0.15
+	} else if length >= 50 && length <= 800 {
+		score += 0.08
+	} else if length < 20 {
+		score -= 0.2 // Penalize very short
+	}
+
+	// Relevance: keyword overlap with problem
+	problemWords := strings.Fields(problemLower)
+	matchCount := 0
+	for _, word := range problemWords {
+		if len(word) > 3 && strings.Contains(content, word) {
+			matchCount++
+		}
+	}
+	if len(problemWords) > 0 {
+		relevance := float64(matchCount) / float64(len(problemWords))
+		score += relevance * 0.2
+	}
+
+	// Structure indicators: lists, steps, examples
+	structureIndicators := []string{
+		"1.", "2.", "first", "second", "then", "next",
+		"because", "therefore", "however", "example",
+		"specifically", "consider", "approach",
+	}
+	structureCount := 0
+	for _, indicator := range structureIndicators {
+		if strings.Contains(content, indicator) {
+			structureCount++
+		}
+	}
+	score += float64(structureCount) * 0.03
+	if score > 1.0 {
+		score = 0.95
+	}
+
+	// Depth factor based on graph position
+	if vertex.Depth > 0 {
+		depthBonus := float64(vertex.Depth) * 0.05
+		if depthBonus > 0.15 {
+			depthBonus = 0.15
+		}
+		score += depthBonus
+	}
+
+	// Normalize to 0-1 range
+	if score < 0 {
+		score = 0.1
+	}
+	if score > 1 {
+		score = 0.98
+	}
+
+	return score
 }

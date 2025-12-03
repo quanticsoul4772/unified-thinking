@@ -35,10 +35,10 @@ func NewClaudeCodeHandler(store storage.Storage) *ClaudeCodeHandler {
 
 // ExportSessionRequest parameters for export-session tool
 type ExportSessionRequest struct {
-	SessionID          string `json:"session_id"`
-	IncludeDecisions   bool   `json:"include_decisions,omitempty"`
+	SessionID           string `json:"session_id"`
+	IncludeDecisions    bool   `json:"include_decisions,omitempty"`
 	IncludeCausalGraphs bool   `json:"include_causal_graphs,omitempty"`
-	Compress           bool   `json:"compress,omitempty"`
+	Compress            bool   `json:"compress,omitempty"`
 }
 
 // ExportSessionResponse result from export-session tool

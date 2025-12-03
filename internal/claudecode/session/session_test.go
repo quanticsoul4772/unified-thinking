@@ -219,7 +219,7 @@ func TestParseMergeStrategy(t *testing.T) {
 		{"replace", MergeReplace},
 		{"merge", MergeMerge},
 		{"append", MergeAppend},
-		{"", MergeMerge},       // default
+		{"", MergeMerge},        // default
 		{"invalid", MergeMerge}, // default
 	}
 

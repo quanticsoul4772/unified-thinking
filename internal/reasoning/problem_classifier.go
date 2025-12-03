@@ -311,6 +311,34 @@ func (pc *ProblemClassifier) detectCreativeProblem(problemLower string) *Classif
 	indicators := make([]string, 0)
 	creativityScore := 0
 
+	// Check for technical/domain contexts that should NOT be classified as creative
+	// These are structured domains where "design" and "new" have technical meanings
+	technicalContexts := []string{
+		// Architecture domain
+		"architecture", "microservice", "api", "interface", "system",
+		"component", "module", "service", "integration", "infrastructure",
+		// Debugging domain
+		"debug", "bug", "error", "fix", "crash", "trace", "exception",
+		// Research domain
+		"research", "study", "analyze", "experiment", "methodology",
+		// Proof domain
+		"prove", "theorem", "lemma", "proof", "verify", "formal",
+	}
+
+	hasTechnicalContext := false
+	for _, ctx := range technicalContexts {
+		if strings.Contains(problemLower, ctx) {
+			hasTechnicalContext = true
+			break
+		}
+	}
+
+	// If technical context is present, don't classify as creative
+	// Let it fall through to decomposable (which will get domain-aware decomposition)
+	if hasTechnicalContext {
+		return nil
+	}
+
 	// Semantic pattern: Requests for novelty
 	noveltyTerms := []string{
 		"new", "novel", "original", "creative",

@@ -15,9 +15,9 @@ import (
 
 // DirectExecutor executes problems directly against storage (for testing)
 type DirectExecutor struct {
-	storage       storage.Storage
-	validator     *validation.LogicValidator
-	probReasoner  *reasoning.ProbabilisticReasoner
+	storage        storage.Storage
+	validator      *validation.LogicValidator
+	probReasoner   *reasoning.ProbabilisticReasoner
 	causalReasoner *reasoning.CausalReasoner
 }
 

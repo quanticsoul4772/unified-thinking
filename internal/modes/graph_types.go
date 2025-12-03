@@ -21,11 +21,11 @@ const (
 type EdgeType string
 
 const (
-	EdgeTypeDerivesFrom  EdgeType = "derives_from"  // Parent-child derivation
-	EdgeTypeAggregates   EdgeType = "aggregates"    // Merges multiple thoughts
-	EdgeTypeRefines      EdgeType = "refines"       // Iterative improvement
-	EdgeTypeContradicts  EdgeType = "contradicts"   // Conflicting thoughts
-	EdgeTypeSupports     EdgeType = "supports"      // Supporting evidence
+	EdgeTypeDerivesFrom EdgeType = "derives_from" // Parent-child derivation
+	EdgeTypeAggregates  EdgeType = "aggregates"   // Merges multiple thoughts
+	EdgeTypeRefines     EdgeType = "refines"      // Iterative improvement
+	EdgeTypeContradicts EdgeType = "contradicts"  // Conflicting thoughts
+	EdgeTypeSupports    EdgeType = "supports"     // Supporting evidence
 )
 
 // ThoughtVertex represents a thought node in the graph
@@ -33,12 +33,12 @@ type ThoughtVertex struct {
 	ID           string                 `json:"id"`
 	Content      string                 `json:"content"`
 	Type         ThoughtType            `json:"type"`
-	Confidence   float64                `json:"confidence"`   // 0.0-1.0
-	Score        float64                `json:"score"`        // Quality score 0.0-1.0
-	Depth        int                    `json:"depth"`        // Distance from root
-	ParentIDs    []string               `json:"parent_ids"`   // Multiple parents allowed
-	ChildIDs     []string               `json:"child_ids"`    // Children
-	KeyPoints    []string               `json:"key_points"`   // Extracted insights
+	Confidence   float64                `json:"confidence"`    // 0.0-1.0
+	Score        float64                `json:"score"`         // Quality score 0.0-1.0
+	Depth        int                    `json:"depth"`         // Distance from root
+	ParentIDs    []string               `json:"parent_ids"`    // Multiple parents allowed
+	ChildIDs     []string               `json:"child_ids"`     // Children
+	KeyPoints    []string               `json:"key_points"`    // Extracted insights
 	RefinedCount int                    `json:"refined_count"` // Refinement iterations
 	CreatedAt    time.Time              `json:"created_at"`
 	Metadata     map[string]interface{} `json:"metadata,omitempty"`
@@ -50,22 +50,22 @@ type ThoughtEdge struct {
 	FromID    string    `json:"from_id"`
 	ToID      string    `json:"to_id"`
 	Type      EdgeType  `json:"type"`
-	Weight    float64   `json:"weight"`    // Relationship strength 0.0-1.0
+	Weight    float64   `json:"weight"` // Relationship strength 0.0-1.0
 	CreatedAt time.Time `json:"created_at"`
 }
 
 // GraphState encapsulates the entire thought graph
 type GraphState struct {
-	ID          string                            `json:"id"`
+	ID          string                              `json:"id"`
 	Graph       graph.Graph[string, *ThoughtVertex] `json:"-"` // Don't serialize graph directly
-	Vertices    map[string]*ThoughtVertex         `json:"vertices"`
-	Edges       map[string]*ThoughtEdge           `json:"edges"`
-	RootIDs     []string                          `json:"root_ids"`     // Initial thoughts
-	ActiveIDs   []string                          `json:"active_ids"`   // Current frontier
-	TerminalIDs []string                          `json:"terminal_ids"` // Final conclusions
-	Config      *GraphConfig                      `json:"config"`
-	CreatedAt   time.Time                         `json:"created_at"`
-	UpdatedAt   time.Time                         `json:"updated_at"`
+	Vertices    map[string]*ThoughtVertex           `json:"vertices"`
+	Edges       map[string]*ThoughtEdge             `json:"edges"`
+	RootIDs     []string                            `json:"root_ids"`     // Initial thoughts
+	ActiveIDs   []string                            `json:"active_ids"`   // Current frontier
+	TerminalIDs []string                            `json:"terminal_ids"` // Final conclusions
+	Config      *GraphConfig                        `json:"config"`
+	CreatedAt   time.Time                           `json:"created_at"`
+	UpdatedAt   time.Time                           `json:"updated_at"`
 }
 
 // GraphConfig controls graph behavior and limits

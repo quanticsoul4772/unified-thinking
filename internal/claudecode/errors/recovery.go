@@ -2,9 +2,9 @@ package errors
 
 // RecoveryGenerator provides recovery suggestions for common error scenarios
 type RecoveryGenerator struct {
-	suggestions map[string][]string
+	suggestions  map[string][]string
 	relatedTools map[string][]string
-	examples    map[string]map[string]any
+	examples     map[string]map[string]any
 }
 
 // NewRecoveryGenerator creates a new RecoveryGenerator with default suggestions
@@ -83,7 +83,7 @@ func (g *RecoveryGenerator) registerDefaults() {
 		[]string{"make-decision"},
 		map[string]any{"tool": "make-decision", "params": map[string]any{
 			"question": "Your decision question",
-			"options": []map[string]any{{"name": "Option A"}, {"name": "Option B"}},
+			"options":  []map[string]any{{"name": "Option A"}, {"name": "Option B"}},
 		}},
 	)
 

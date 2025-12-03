@@ -36,8 +36,8 @@ func TestNewConfig(t *testing.T) {
 
 func TestGetToolConfig(t *testing.T) {
 	tests := []struct {
-		name       string
-		toolName   string
+		name        string
+		toolName    string
 		wantEnabled bool
 	}{
 		{"execute-workflow is P0", "execute-workflow", true},

@@ -4,7 +4,7 @@ Guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 80 cognitive reasoning tools.
+Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 81 cognitive reasoning tools.
 
 **Module**: `unified-thinking` | **Entry**: `cmd/server/main.go` | **SDK**: `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -67,7 +67,7 @@ make clean              # Remove bin/
 
 **Test Coverage**: 84.3% overall, 102 test files, 1,300+ tests. Key: types (100%), metrics (100%), config (97.3%), reasoning (94.8%), modes (90.5%).
 
-## MCP Tools (80 total)
+## MCP Tools (81 total)
 
 ### Core (11)
 `think`, `history`, `list-branches`, `focus-branch`, `branch-history`, `recent-branches`, `validate`, `prove`, `check-syntax`, `search`, `get-metrics`
@@ -120,8 +120,8 @@ make clean              # Remove bin/
 ### Similarity (1)
 `search-similar-thoughts`
 
-### Graph-of-Thoughts (8)
-`got-initialize`, `got-generate`, `got-aggregate`, `got-refine`, `got-score`, `got-prune`, `got-get-state`, `got-finalize`
+### Graph-of-Thoughts (9)
+`got-initialize`, `got-generate`, `got-aggregate`, `got-refine`, `got-score`, `got-prune`, `got-get-state`, `got-finalize`, `got-explore`
 
 ### Claude Code Optimization (5)
 `export-session`, `import-session`, `list-presets`, `run-preset`, `format-response`
@@ -195,6 +195,90 @@ Long-running tools support real-time progress updates via MCP `notifications/pro
 - Per-tool configuration for interval, partial data, auto-progress
 
 See [docs/STREAMING.md](./docs/STREAMING.md) for detailed documentation.
+
+### Graph-of-Thoughts Exploration
+
+The `got-explore` tool orchestrates a complete GoT workflow in a single call, reducing 6+ tool calls to 1:
+
+```json
+{
+  "initial_thought": "How to optimize database query performance?",
+  "problem": "Slow queries affecting user experience",
+  "config": {
+    "k": 3,
+    "max_iterations": 1,
+    "prune_threshold": 0.3,
+    "refine_top_n": 1,
+    "use_fast_scoring": true
+  }
+}
+```
+
+**Configuration Options**:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `k` | 3 | Number of diverse continuations per vertex |
+| `max_iterations` | 1 | Exploration depth (more = slower but deeper) |
+| `prune_threshold` | 0.3 | Minimum score to keep vertices |
+| `refine_top_n` | 1 | How many top vertices to refine |
+| `score_all` | false | Score all vertices vs just generated ones |
+| `use_fast_scoring` | true | Use local heuristics (fast) vs LLM scoring (quality) |
+| `skip_refine` | false | Skip refinement step entirely |
+| `parallel_scoring` | true | Parallel LLM scoring when not using fast scoring |
+
+**Performance Modes**:
+- **Default** (~5 seconds): Fast local scoring, single iteration
+- **Thorough** (slower): LLM scoring, multiple iterations - use `ThoroughExploreConfig`
+
+**Workflow Steps**:
+1. Initialize graph with initial thought
+2. Generate k diverse continuations
+3. Score all vertices (fast heuristics or LLM)
+4. Prune low-quality thoughts
+5. Refine top-scoring vertices
+6. Repeat for max_iterations
+7. Finalize and return conclusions
+
+### Domain-Aware Problem Decomposition
+
+The `decompose-problem` tool now supports domain-specific templates:
+
+| Domain | Steps | Keywords |
+|--------|-------|----------|
+| `debugging` | 6 | debug, bug, error, fix, crash, trace, exception |
+| `proof` | 7 | prove, theorem, lemma, axiom, formal, verify |
+| `architecture` | 6 | architect, design, system, component, module, api |
+| `research` | 7 | research, study, analyze, explore, benchmark |
+| `general` | 5 | Default for unclassified problems |
+
+**Usage**:
+```json
+{
+  "problem": "Debug the flaky test in CI",
+  "domain": "debugging"  // Optional: auto-detected if not specified
+}
+```
+
+**Response includes**:
+- `detected_domain`: Domain used for decomposition
+- `domain_was_explicit`: Whether domain was specified or auto-detected
+- Domain-specific subproblems and dependencies
+
+### Enhanced Episodic Memory
+
+The `get-recommendations` tool now returns:
+- **Specific tool sequences** from similar successful trajectories
+- **Concrete examples** with success rates
+- **Approach warnings** for historically unsuccessful patterns
+
+### Auto-Calibrated Bias Detection
+
+The `detect-biases` tool now tracks historical false positive rates and suppresses low-confidence detections. Requires minimum sample size before calibration activates.
+
+### Automatic Confidence Tracking
+
+Predictions are automatically recorded on `think` calls and outcomes recorded on `validate` calls, enabling passive calibration improvement.
 
 ## Storage Architecture
 
@@ -301,7 +385,7 @@ Pearl's framework: DAGs, graph surgery (do-calculus), counterfactuals, intervent
 
 **Modes**: `internal/modes/auto.go`, `registry.go`, `linear.go`, `tree.go`, `divergent.go`, `graph*.go`
 
-**Reasoning**: `internal/reasoning/probabilistic.go`, `causal.go`, `decision.go`, `temporal.go`
+**Reasoning**: `internal/reasoning/probabilistic.go`, `causal.go`, `decision.go`, `temporal.go`, `domain_templates.go`
 
 **Validation**: `internal/validation/logic.go`, `fallacies.go`
 

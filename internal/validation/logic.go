@@ -425,8 +425,8 @@ func (v *LogicValidator) tryNegativeSyllogism(premises []string, conclusion stri
 				if strings.Contains(rest1, connector) {
 					parts1 := strings.SplitN(rest1, connector, 2)
 					if len(parts1) == 2 {
-						term1 := strings.TrimSpace(parts1[0])  // e.g., "cats"
-						term2 := strings.TrimSpace(parts1[1])  // e.g., "dogs"
+						term1 := strings.TrimSpace(parts1[0]) // e.g., "cats"
+						term2 := strings.TrimSpace(parts1[1]) // e.g., "dogs"
 
 						// Look for "Some/All X are term1" in other premises
 						for _, p2 := range premises {
@@ -443,8 +443,8 @@ func (v *LogicValidator) tryNegativeSyllogism(premises []string, conclusion stri
 										if strings.Contains(rest2, conn2) {
 											parts2 := strings.SplitN(rest2, conn2, 2)
 											if len(parts2) == 2 {
-												subj2 := strings.TrimSpace(parts2[0])  // e.g., "pets"
-												pred2 := strings.TrimSpace(parts2[1])  // e.g., "cats"
+												subj2 := strings.TrimSpace(parts2[0]) // e.g., "pets"
+												pred2 := strings.TrimSpace(parts2[1]) // e.g., "cats"
 
 												// Check if pred2 matches term1
 												if pred2 == term1 || strings.Contains(pred2, term1) || strings.Contains(term1, pred2) {
@@ -497,7 +497,7 @@ func (v *LogicValidator) tryNegativeInstantiation(premises []string, conclusion 
 							if p2 == p1 {
 								continue
 							}
-			lower2 := strings.ToLower(p2)
+							lower2 := strings.ToLower(p2)
 							for _, conn := range []string{" are ", " is "} {
 								if strings.Contains(lower2, conn) {
 									parts2 := strings.SplitN(lower2, conn, 2)

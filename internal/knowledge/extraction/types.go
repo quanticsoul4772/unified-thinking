@@ -25,14 +25,14 @@ type ExtractedRelationship struct {
 
 // ExtractionResult contains all extracted entities and relationships
 type ExtractionResult struct {
-	Entities      []*ExtractedEntity      `json:"entities"`
-	Relationships []*ExtractedRelationship `json:"relationships"`
-	TotalEntities int                     `json:"total_entities"`
-	TotalRelationships int                `json:"total_relationships"`
-	RegexEntities int                     `json:"regex_entities"`
-	LLMEntities   int                     `json:"llm_entities"`
-	CacheHit      bool                    `json:"cache_hit"`
-	LatencyMs     int64                   `json:"latency_ms"`
+	Entities           []*ExtractedEntity       `json:"entities"`
+	Relationships      []*ExtractedRelationship `json:"relationships"`
+	TotalEntities      int                      `json:"total_entities"`
+	TotalRelationships int                      `json:"total_relationships"`
+	RegexEntities      int                      `json:"regex_entities"`
+	LLMEntities        int                      `json:"llm_entities"`
+	CacheHit           bool                     `json:"cache_hit"`
+	LatencyMs          int64                    `json:"latency_ms"`
 }
 
 // Extractor interface for entity and relationship extraction

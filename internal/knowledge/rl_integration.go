@@ -10,14 +10,14 @@ import (
 
 // RLContextRetriever retrieves contextual information from knowledge graph for RL strategy selection
 type RLContextRetriever struct {
-	kg                *KnowledgeGraph
+	kg                  *KnowledgeGraph
 	similarityThreshold float32
 }
 
 // NewRLContextRetriever creates a new RL context retriever with default similarity threshold (0.7)
 func NewRLContextRetriever(kg *KnowledgeGraph) *RLContextRetriever {
 	return &RLContextRetriever{
-		kg:                kg,
+		kg:                  kg,
 		similarityThreshold: 0.7,
 	}
 }
@@ -25,7 +25,7 @@ func NewRLContextRetriever(kg *KnowledgeGraph) *RLContextRetriever {
 // NewRLContextRetrieverWithThreshold creates retriever with custom similarity threshold (for testing)
 func NewRLContextRetrieverWithThreshold(kg *KnowledgeGraph, threshold float32) *RLContextRetriever {
 	return &RLContextRetriever{
-		kg:                kg,
+		kg:                  kg,
 		similarityThreshold: threshold,
 	}
 }

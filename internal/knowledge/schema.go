@@ -25,11 +25,11 @@ const (
 type RelationshipType string
 
 const (
-	RelationshipCauses       RelationshipType = "CAUSES"
-	RelationshipEnables      RelationshipType = "ENABLES"
-	RelationshipContradicts  RelationshipType = "CONTRADICTS"
-	RelationshipBuildsUpon   RelationshipType = "BUILDS_UPON"
-	RelationshipRelatesTo    RelationshipType = "RELATES_TO"
+	RelationshipCauses         RelationshipType = "CAUSES"
+	RelationshipEnables        RelationshipType = "ENABLES"
+	RelationshipContradicts    RelationshipType = "CONTRADICTS"
+	RelationshipBuildsUpon     RelationshipType = "BUILDS_UPON"
+	RelationshipRelatesTo      RelationshipType = "RELATES_TO"
 	RelationshipHasObservation RelationshipType = "HAS_OBSERVATION"
 	RelationshipUsedInContext  RelationshipType = "USED_IN_CONTEXT"
 )
@@ -51,7 +51,7 @@ type Relationship struct {
 	FromID     string                 `json:"from_id"`
 	ToID       string                 `json:"to_id"`
 	Type       RelationshipType       `json:"type"`
-	Strength   float64                `json:"strength"` // 0.0 to 1.0
+	Strength   float64                `json:"strength"`   // 0.0 to 1.0
 	Confidence float64                `json:"confidence"` // 0.0 to 1.0
 	Source     string                 `json:"source,omitempty"`
 	CreatedAt  int64                  `json:"created_at"`

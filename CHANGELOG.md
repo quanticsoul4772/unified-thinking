@@ -4,6 +4,53 @@ Detailed change history for the Unified Thinking Server.
 
 ---
 
+## Performance & Quality Improvements (2024-12-03)
+
+### `got-explore` Performance Fix
+
+**Problem**: `got-explore` was taking ~4 minutes per call, causing MCP client timeouts.
+
+**Root Cause**: Sequential LLM API calls (10+ requests per exploration).
+
+**Solution**:
+- Added fast local heuristic scoring as default (`UseFastScoring: true`)
+- Added parallel LLM scoring option (`ParallelScoring: true`)
+- Reduced default iterations from 2 to 1
+- Added `ThoroughExploreConfig()` for when quality matters more than speed
+
+**Result**: ~5 seconds vs ~4 minutes (98% reduction)
+
+**New Config Options** (`ExploreConfig`):
+```go
+UseFastScoring  bool // Use local heuristics instead of LLM (default: true)
+SkipRefine      bool // Skip refinement step (default: false)
+ParallelScoring bool // Parallel LLM scoring if not using fast scoring (default: true)
+```
+
+### Domain-Aware Problem Classification Fix
+
+**Problem**: Architecture problems ("Design the microservice architecture...") incorrectly classified as "creative".
+
+**Root Cause**: "design" and "new" keywords in problem triggered creative detection before domain detection.
+
+**Solution**: Added technical context whitelist in `detectCreativeProblem()` that bypasses creative classification for:
+- Architecture: architecture, microservice, api, interface, system, component, module, service, integration, infrastructure
+- Debugging: debug, bug, error, fix, crash, trace, exception
+- Research: research, study, analyze, experiment, methodology
+- Proof: prove, theorem, lemma, proof, verify, formal
+
+**Files Modified**:
+- `internal/reasoning/problem_classifier.go` - Technical context detection
+- `internal/reasoning/problem_classifier_test.go` - 11 new test cases
+
+### Code Quality
+
+- Applied `gofmt -w .` across entire codebase
+- Removed development artifacts (`IMPLEMENTATION_PLAN.md`)
+- All 30 packages pass tests
+
+---
+
 ## Claude Code Optimization
 
 **New Package**: `internal/claudecode/`

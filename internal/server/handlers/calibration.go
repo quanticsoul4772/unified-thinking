@@ -19,6 +19,38 @@ func NewCalibrationHandler() *CalibrationHandler {
 	}
 }
 
+// GetTracker returns the underlying calibration tracker for auto-recording
+func (h *CalibrationHandler) GetTracker() *validation.CalibrationTracker {
+	return h.tracker
+}
+
+// AutoRecordPrediction records a prediction automatically after a think call
+func (h *CalibrationHandler) AutoRecordPrediction(thoughtID string, confidence float64, mode string) error {
+	prediction := &validation.Prediction{
+		ThoughtID:  thoughtID,
+		Confidence: confidence,
+		Mode:       mode,
+		Metadata: map[string]interface{}{
+			"auto_recorded": true,
+		},
+	}
+	return h.tracker.RecordPrediction(prediction)
+}
+
+// AutoRecordOutcome records an outcome automatically after validation
+func (h *CalibrationHandler) AutoRecordOutcome(thoughtID string, wasCorrect bool, actualConfidence float64, source string) error {
+	outcome := &validation.Outcome{
+		ThoughtID:        thoughtID,
+		WasCorrect:       wasCorrect,
+		ActualConfidence: actualConfidence,
+		Source:           validation.OutcomeSource(source),
+		Metadata: map[string]interface{}{
+			"auto_recorded": true,
+		},
+	}
+	return h.tracker.RecordOutcome(outcome)
+}
+
 // RecordPredictionRequest is the request for recording a prediction
 type RecordPredictionRequest struct {
 	ThoughtID  string                 `json:"thought_id"`

@@ -11,13 +11,21 @@ import (
 
 // BiasDetector identifies cognitive biases in reasoning
 type BiasDetector struct {
-	mu      sync.RWMutex
-	counter int
+	mu          sync.RWMutex
+	counter     int
+	calibration *BiasCalibration
 }
 
 // NewBiasDetector creates a new bias detector
 func NewBiasDetector() *BiasDetector {
-	return &BiasDetector{}
+	return &BiasDetector{
+		calibration: NewBiasCalibration(),
+	}
+}
+
+// GetCalibration returns the calibration tracker for external access
+func (bd *BiasDetector) GetCalibration() *BiasCalibration {
+	return bd.calibration
 }
 
 // DetectBiases analyzes thought for cognitive biases
@@ -36,35 +44,68 @@ func (bd *BiasDetector) detectBiasesInternal(thought *types.Thought) []*types.Co
 
 	// Check for confirmation bias
 	if bias := bd.detectConfirmationBias(thought.ID, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	// Check for anchoring bias
 	if bias := bd.detectAnchoringBias(thought.ID, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	// Check for availability bias
 	if bias := bd.detectAvailabilityBias(thought.ID, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	// Check for sunk cost fallacy
 	if bias := bd.detectSunkCostFallacy(thought.ID, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	// Check for overconfidence bias
 	if bias := bd.detectOverconfidenceBias(thought, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	// Check for recency bias
 	if bias := bd.detectRecencyBias(thought.ID, content); bias != nil {
-		biases = append(biases, bias)
+		if !bd.shouldSuppress(bias) {
+			bd.recordDetection(bias)
+			biases = append(biases, bias)
+		}
 	}
 
 	return biases
+}
+
+// shouldSuppress checks if a bias should be suppressed based on calibration
+func (bd *BiasDetector) shouldSuppress(bias *types.CognitiveBias) bool {
+	if bd.calibration == nil {
+		return false
+	}
+	return bd.calibration.ShouldSuppress(bias.BiasType, bias.Severity)
+}
+
+// recordDetection records a bias detection for calibration
+func (bd *BiasDetector) recordDetection(bias *types.CognitiveBias) {
+	if bd.calibration != nil {
+		bd.calibration.RecordDetection(bias)
+	}
 }
 
 // DetectBiasesInBranch analyzes branch for cognitive biases

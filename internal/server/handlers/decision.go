@@ -58,7 +58,8 @@ type MakeDecisionResponse struct {
 
 // DecomposeProblemRequest represents a problem decomposition request
 type DecomposeProblemRequest struct {
-	Problem string `json:"problem"`
+	Problem string  `json:"problem"`
+	Domain  *string `json:"domain,omitempty"` // Optional: "debugging", "proof", "architecture", "research", or auto-detect
 }
 
 // DecomposeProblemResponse represents a problem decomposition response
@@ -66,6 +67,8 @@ type DecomposeProblemResponse struct {
 	Decomposition        *types.ProblemDecomposition `json:"decomposition,omitempty"`
 	CanDecompose         bool                        `json:"can_decompose"`
 	ProblemType          string                      `json:"problem_type,omitempty"`
+	DetectedDomain       string                      `json:"detected_domain,omitempty"`     // Phase 2.3: Domain that was used
+	DomainWasExplicit    bool                        `json:"domain_was_explicit,omitempty"` // Phase 2.3: Whether domain was specified or detected
 	ClassificationReason string                      `json:"reason,omitempty"`
 	Approach             string                      `json:"approach,omitempty"`
 	SuggestedTools       []string                    `json:"suggested_tools,omitempty"`
@@ -144,21 +147,55 @@ func (h *DecisionHandler) HandleDecomposeProblem(ctx context.Context, req *mcp.C
 		}, response, nil
 	}
 
-	// Problem IS decomposable - proceed with normal decomposition
-	decomposition, err := h.problemDecomposer.DecomposeProblem(input.Problem)
+	// Problem IS decomposable - proceed with domain-aware decomposition
+
+	// Convert explicit domain string to reasoning.Domain if provided
+	var explicitDomain *reasoning.Domain
+	if input.Domain != nil && *input.Domain != "" {
+		domain := reasoning.Domain(*input.Domain)
+		// Validate domain
+		validDomains := reasoning.GetAllDomains()
+		isValid := false
+		for _, d := range validDomains {
+			if d == domain {
+				isValid = true
+				break
+			}
+		}
+		if isValid {
+			explicitDomain = &domain
+		}
+	}
+
+	// Use domain-aware decomposition
+	decomposition, err := h.problemDecomposer.DecomposeProblemWithDomain(input.Problem, explicitDomain)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Extract domain from metadata
+	detectedDomain := ""
+	domainWasExplicit := false
+	if decomposition.Metadata != nil {
+		if d, ok := decomposition.Metadata["domain"].(string); ok {
+			detectedDomain = d
+		}
+		if e, ok := decomposition.Metadata["domain_detected"].(bool); ok {
+			domainWasExplicit = !e
+		}
 	}
 
 	// Generate metadata for Claude orchestration
 	metadata := h.metadataGen.GenerateDecomposeProblemMetadata(decomposition)
 
 	response := &DecomposeProblemResponse{
-		CanDecompose:  true,
-		ProblemType:   string(reasoning.ProblemTypeDecomposable),
-		Decomposition: decomposition,
-		Status:        "success",
-		Metadata:      metadata,
+		CanDecompose:      true,
+		ProblemType:       string(reasoning.ProblemTypeDecomposable),
+		Decomposition:     decomposition,
+		DetectedDomain:    detectedDomain,
+		DomainWasExplicit: domainWasExplicit,
+		Status:            "success",
+		Metadata:          metadata,
 	}
 
 	return &mcp.CallToolResult{

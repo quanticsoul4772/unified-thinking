@@ -863,3 +863,429 @@ func testContains(s, substr string) bool {
 	}
 	return false
 }
+
+// Phase 2.1: Enhanced GetRecommendations tests
+
+func TestGetRecommendations_EnhancedToolSequences(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store multiple successful trajectories with the same tool sequence
+	for i := 0; i < 3; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("success_%d", i),
+			Domain:    "software-engineering",
+			Problem: &ProblemDescription{
+				Domain:      "software-engineering",
+				ProblemType: "debugging",
+				Description: fmt.Sprintf("Debug memory issue %d", i),
+			},
+			Approach: &ApproachDescription{
+				Strategy:     "systematic-linear",
+				ToolSequence: []string{"think", "build-causal-graph", "validate"},
+			},
+			Steps: []*ReasoningStep{
+				{StepNumber: 1, Tool: "think", Mode: "linear", Confidence: 0.8},
+				{StepNumber: 2, Tool: "build-causal-graph", Confidence: 0.75},
+				{StepNumber: 3, Tool: "validate", Confidence: 0.85},
+			},
+			Outcome: &OutcomeDescription{
+				Status:     "success",
+				Confidence: 0.85,
+			},
+			Quality:      &QualityMetrics{OverallQuality: 0.8},
+			SuccessScore: 0.85,
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Create recommendation context
+	recCtx := &RecommendationContext{
+		CurrentProblem: &ProblemDescription{
+			Domain:      "software-engineering",
+			ProblemType: "debugging",
+		},
+		SimilarTrajectories: []*TrajectoryMatch{},
+	}
+
+	// Get trajectories and add as similar
+	allTrajs := store.GetAllTrajectories()
+	for _, traj := range allTrajs {
+		recCtx.SimilarTrajectories = append(recCtx.SimilarTrajectories, &TrajectoryMatch{
+			Trajectory:      traj,
+			SimilarityScore: 0.9,
+		})
+	}
+
+	recommendations, err := store.GetRecommendations(ctx, recCtx)
+	if err != nil {
+		t.Fatalf("GetRecommendations failed: %v", err)
+	}
+
+	if len(recommendations) == 0 {
+		t.Fatal("Expected recommendations, got none")
+	}
+
+	// Find the tool_sequence recommendation
+	var toolSeqRec *Recommendation
+	for _, rec := range recommendations {
+		if rec.Type == "tool_sequence" {
+			toolSeqRec = rec
+			break
+		}
+	}
+
+	if toolSeqRec == nil {
+		t.Fatal("Expected tool_sequence recommendation")
+	}
+
+	// Verify enhanced fields
+	if len(toolSeqRec.ToolSequence) == 0 {
+		t.Error("Expected ToolSequence to be populated")
+	}
+
+	if len(toolSeqRec.ExampleProblems) == 0 {
+		t.Error("Expected ExampleProblems to be populated")
+	}
+
+	if toolSeqRec.PatternID == "" {
+		t.Error("Expected PatternID to be set")
+	}
+
+	if toolSeqRec.AverageSteps == 0 {
+		t.Error("Expected AverageSteps to be calculated")
+	}
+
+	// Verify the suggestion is descriptive, not just a list
+	if !testContains(toolSeqRec.Suggestion, "Recommended") && !testContains(toolSeqRec.Suggestion, "Use sequence") {
+		t.Errorf("Expected descriptive suggestion, got: %s", toolSeqRec.Suggestion)
+	}
+}
+
+func TestGetRecommendations_WarningsWithRootCause(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store failed trajectories with short sequences (missing validation)
+	for i := 0; i < 3; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("failed_%d", i),
+			Domain:    "software-engineering",
+			Problem: &ProblemDescription{
+				Domain:      "software-engineering",
+				ProblemType: "debugging",
+				Description: fmt.Sprintf("Failed attempt %d", i),
+			},
+			Approach: &ApproachDescription{
+				Strategy:     "quick-fix",
+				ToolSequence: []string{"think"},
+			},
+			Steps: []*ReasoningStep{
+				{StepNumber: 1, Tool: "think", Mode: "linear", Confidence: 0.4},
+			},
+			Outcome: &OutcomeDescription{
+				Status:     "failure",
+				Confidence: 0.3,
+			},
+			SuccessScore: 0.2,
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Create recommendation context
+	recCtx := &RecommendationContext{
+		CurrentProblem: &ProblemDescription{
+			Domain:      "software-engineering",
+			ProblemType: "debugging",
+		},
+		SimilarTrajectories: []*TrajectoryMatch{},
+	}
+
+	allTrajs := store.GetAllTrajectories()
+	for _, traj := range allTrajs {
+		recCtx.SimilarTrajectories = append(recCtx.SimilarTrajectories, &TrajectoryMatch{
+			Trajectory:      traj,
+			SimilarityScore: 0.9,
+		})
+	}
+
+	recommendations, err := store.GetRecommendations(ctx, recCtx)
+	if err != nil {
+		t.Fatalf("GetRecommendations failed: %v", err)
+	}
+
+	// Find the warning recommendation
+	var warningRec *Recommendation
+	for _, rec := range recommendations {
+		if rec.Type == "warning" {
+			warningRec = rec
+			break
+		}
+	}
+
+	if warningRec == nil {
+		t.Fatal("Expected warning recommendation from failed trajectories")
+	}
+
+	// Verify root cause analysis
+	if warningRec.FailureRootCause == "" {
+		t.Error("Expected FailureRootCause to be populated")
+	}
+
+	// Reasoning should include root cause
+	if !testContains(warningRec.Reasoning, "Failed") && !testContains(warningRec.Reasoning, "similar cases") {
+		t.Errorf("Expected reasoning to mention failure, got: %s", warningRec.Reasoning)
+	}
+}
+
+func TestGetRecommendations_GroupsByPattern(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+	ctx := context.Background()
+
+	// Store trajectories with TWO different tool sequences
+	// Each trajectory needs unique SessionID and ProblemID to avoid overwrites
+	// Pattern 1: think -> validate
+	for i := 0; i < 2; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("pattern1_sess_%d", i),
+			ProblemID: fmt.Sprintf("pattern1_prob_%d", i),
+			Domain:    "test",
+			Problem: &ProblemDescription{
+				Domain:      "test",
+				Description: fmt.Sprintf("Pattern 1 problem %d", i),
+			},
+			Approach: &ApproachDescription{
+				ToolSequence: []string{"think", "validate"},
+			},
+			Steps: []*ReasoningStep{
+				{StepNumber: 1, Tool: "think"},
+				{StepNumber: 2, Tool: "validate"},
+			},
+			Quality:      &QualityMetrics{OverallQuality: 0.8},
+			SuccessScore: 0.85,
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Pattern 2: decompose-problem -> think -> synthesize-insights
+	for i := 0; i < 2; i++ {
+		traj := &ReasoningTrajectory{
+			SessionID: fmt.Sprintf("pattern2_sess_%d", i),
+			ProblemID: fmt.Sprintf("pattern2_prob_%d", i),
+			Domain:    "test",
+			Problem: &ProblemDescription{
+				Domain:      "test",
+				Description: fmt.Sprintf("Pattern 2 problem %d", i),
+			},
+			Approach: &ApproachDescription{
+				ToolSequence: []string{"decompose-problem", "think", "synthesize-insights"},
+			},
+			Steps: []*ReasoningStep{
+				{StepNumber: 1, Tool: "decompose-problem"},
+				{StepNumber: 2, Tool: "think"},
+				{StepNumber: 3, Tool: "synthesize-insights"},
+			},
+			Quality:      &QualityMetrics{OverallQuality: 0.9},
+			SuccessScore: 0.9,
+		}
+		store.StoreTrajectory(ctx, traj)
+	}
+
+	// Verify all 4 trajectories are stored
+	allTrajs := store.GetAllTrajectories()
+	if len(allTrajs) != 4 {
+		t.Fatalf("Expected 4 trajectories stored, got %d", len(allTrajs))
+	}
+
+	// Create recommendation context with all trajectories
+	recCtx := &RecommendationContext{
+		CurrentProblem:      &ProblemDescription{Domain: "test"},
+		SimilarTrajectories: []*TrajectoryMatch{},
+	}
+
+	for _, traj := range allTrajs {
+		recCtx.SimilarTrajectories = append(recCtx.SimilarTrajectories, &TrajectoryMatch{
+			Trajectory:      traj,
+			SimilarityScore: 0.9,
+		})
+	}
+
+	recommendations, err := store.GetRecommendations(ctx, recCtx)
+	if err != nil {
+		t.Fatalf("GetRecommendations failed: %v", err)
+	}
+
+	// Should have at least 2 tool_sequence recommendations (one per pattern)
+	toolSeqCount := 0
+	patternIDs := make(map[string]bool)
+	for _, rec := range recommendations {
+		if rec.Type == "tool_sequence" {
+			toolSeqCount++
+			if rec.PatternID != "" {
+				patternIDs[rec.PatternID] = true
+			}
+		}
+	}
+
+	if toolSeqCount < 2 {
+		t.Errorf("Expected at least 2 tool_sequence recommendations, got %d", toolSeqCount)
+	}
+
+	if len(patternIDs) < 2 {
+		t.Errorf("Expected at least 2 unique pattern IDs, got %d", len(patternIDs))
+	}
+}
+
+func TestExtractToolSteps(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+
+	traj := &ReasoningTrajectory{
+		Steps: []*ReasoningStep{
+			{StepNumber: 1, Tool: "think", Mode: "linear", Confidence: 0.8, Insights: []string{"Found key insight"}},
+			{StepNumber: 2, Tool: "build-causal-graph", Confidence: 0.7},
+			{StepNumber: 3, Tool: "validate", Confidence: 0.9},
+		},
+	}
+
+	steps := store.extractToolSteps(traj)
+
+	if len(steps) != 3 {
+		t.Fatalf("Expected 3 steps, got %d", len(steps))
+	}
+
+	// Check first step
+	if steps[0].Tool != "think" {
+		t.Errorf("Expected first tool 'think', got '%s'", steps[0].Tool)
+	}
+	if steps[0].Mode != "linear" {
+		t.Errorf("Expected mode 'linear', got '%s'", steps[0].Mode)
+	}
+	if steps[0].Description == "" {
+		t.Error("Expected description to be generated")
+	}
+	if !testContains(steps[0].Description, "Found key insight") {
+		t.Error("Expected insight to be included in description")
+	}
+
+	// Check nil trajectory
+	nilSteps := store.extractToolSteps(nil)
+	if nilSteps != nil {
+		t.Error("Expected nil for nil trajectory")
+	}
+}
+
+func TestAnalyzeFailureRootCause(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+
+	// Test short sequences (insufficient depth)
+	shortTrajs := []*ReasoningTrajectory{
+		{Steps: []*ReasoningStep{{StepNumber: 1, Tool: "think"}}},
+		{Steps: []*ReasoningStep{{StepNumber: 1, Tool: "think"}}},
+	}
+	cause := store.analyzeFailureRootCause(shortTrajs)
+	if !testContains(cause, "Insufficient") {
+		t.Errorf("Expected 'Insufficient' in root cause for short sequences, got: %s", cause)
+	}
+
+	// Test missing validation
+	noValidationTrajs := []*ReasoningTrajectory{
+		{Steps: []*ReasoningStep{
+			{StepNumber: 1, Tool: "think"},
+			{StepNumber: 2, Tool: "make-decision"},
+			{StepNumber: 3, Tool: "synthesize-insights"},
+		}},
+		{Steps: []*ReasoningStep{
+			{StepNumber: 1, Tool: "think"},
+			{StepNumber: 2, Tool: "make-decision"},
+			{StepNumber: 3, Tool: "synthesize-insights"},
+		}},
+	}
+	cause = store.analyzeFailureRootCause(noValidationTrajs)
+	if !testContains(cause, "validation") && !testContains(cause, "Approach") {
+		t.Errorf("Expected validation-related root cause, got: %s", cause)
+	}
+
+	// Test empty list
+	cause = store.analyzeFailureRootCause([]*ReasoningTrajectory{})
+	if cause != "Unknown cause" {
+		t.Errorf("Expected 'Unknown cause' for empty list, got: %s", cause)
+	}
+}
+
+func TestToolSequencesOverlap(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+
+	// Same sequence
+	if !store.toolSequencesOverlap(
+		[]string{"think", "validate"},
+		[]string{"think", "validate"},
+	) {
+		t.Error("Same sequences should overlap")
+	}
+
+	// Partial overlap > 50%
+	if !store.toolSequencesOverlap(
+		[]string{"think", "validate", "make-decision"},
+		[]string{"think", "validate", "synthesize"},
+	) {
+		t.Error("Sequences with >50% overlap should be considered overlapping")
+	}
+
+	// No overlap
+	if store.toolSequencesOverlap(
+		[]string{"think", "validate"},
+		[]string{"build-causal-graph", "simulate-intervention"},
+	) {
+		t.Error("Completely different sequences should not overlap")
+	}
+
+	// Empty sequences
+	if store.toolSequencesOverlap([]string{}, []string{"think"}) {
+		t.Error("Empty sequence should not overlap")
+	}
+}
+
+func TestGenerateStepDescription(t *testing.T) {
+	store := NewEpisodicMemoryStore()
+
+	tests := []struct {
+		step     *ReasoningStep
+		contains string
+	}{
+		{
+			step:     &ReasoningStep{Tool: "think", Mode: "linear"},
+			contains: "linear",
+		},
+		{
+			step:     &ReasoningStep{Tool: "decompose-problem"},
+			contains: "subproblems",
+		},
+		{
+			step:     &ReasoningStep{Tool: "build-causal-graph"},
+			contains: "causal",
+		},
+		{
+			step:     &ReasoningStep{Tool: "validate"},
+			contains: "logical",
+		},
+		{
+			step:     &ReasoningStep{Tool: "unknown-tool"},
+			contains: "Execute",
+		},
+		{
+			step:     nil,
+			contains: "",
+		},
+	}
+
+	for _, tt := range tests {
+		desc := store.generateStepDescription(tt.step)
+		if tt.contains != "" && !testContains(desc, tt.contains) {
+			toolName := "nil"
+			if tt.step != nil {
+				toolName = tt.step.Tool
+			}
+			t.Errorf("Step %s: expected description to contain '%s', got '%s'", toolName, tt.contains, desc)
+		}
+	}
+}

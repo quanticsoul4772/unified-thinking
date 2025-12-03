@@ -68,12 +68,12 @@ func DefaultMergeOptions() MergeOptions {
 
 // Conflict represents a detected conflict during merge
 type Conflict struct {
-	ItemType   string `json:"item_type"` // thought, branch, etc.
-	ItemID     string `json:"item_id"`
-	Field      string `json:"field,omitempty"`
-	ExistingValue any  `json:"existing_value,omitempty"`
-	ImportedValue any  `json:"imported_value,omitempty"`
-	Resolution ConflictResolution `json:"resolution"`
+	ItemType      string             `json:"item_type"` // thought, branch, etc.
+	ItemID        string             `json:"item_id"`
+	Field         string             `json:"field,omitempty"`
+	ExistingValue any                `json:"existing_value,omitempty"`
+	ImportedValue any                `json:"imported_value,omitempty"`
+	Resolution    ConflictResolution `json:"resolution"`
 }
 
 // MergeReport contains details about the merge operation

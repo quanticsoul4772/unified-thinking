@@ -500,6 +500,106 @@ func TestDetectCreativeProblem_NoMatch(t *testing.T) {
 	}
 }
 
+func TestDetectCreativeProblem_TechnicalContextsExcluded(t *testing.T) {
+	pc := NewProblemClassifier()
+
+	// Technical problems with "design" or "new" should NOT be classified as creative
+	// They should fall through to decomposable for domain-aware decomposition
+	tests := []struct {
+		name    string
+		problem string
+	}{
+		{
+			name:    "architecture with design keyword",
+			problem: "Design the microservice architecture and API interfaces for the new payment system",
+		},
+		{
+			name:    "system design",
+			problem: "Design a new system for user authentication",
+		},
+		{
+			name:    "component design",
+			problem: "Design new component interfaces for the module",
+		},
+		{
+			name:    "debugging with new",
+			problem: "Debug the new error in the crash trace",
+		},
+		{
+			name:    "research methodology",
+			problem: "Design new research methodology to analyze the data",
+		},
+		{
+			name:    "infrastructure design",
+			problem: "Design new infrastructure for the service deployment",
+		},
+		{
+			name:    "API design",
+			problem: "Design a new API interface for the integration",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := pc.detectCreativeProblem(tt.problem)
+			if result != nil {
+				t.Errorf("Expected nil (not creative) for technical problem %q, got type %s", tt.problem, result.Type)
+			}
+		})
+	}
+}
+
+func TestClassifyProblem_TechnicalWithDesignKeyword(t *testing.T) {
+	pc := NewProblemClassifier()
+
+	// These technical problems should be classified as decomposable, not creative
+	tests := []struct {
+		name          string
+		problem       string
+		expectedType  ProblemType
+		minConfidence float64
+	}{
+		{
+			name:          "architecture design is decomposable",
+			problem:       "Design the microservice architecture and API interfaces for the new payment system",
+			expectedType:  ProblemTypeDecomposable,
+			minConfidence: 0.7,
+		},
+		{
+			name:          "system design is decomposable",
+			problem:       "Design a new authentication system with component interfaces",
+			expectedType:  ProblemTypeDecomposable,
+			minConfidence: 0.7,
+		},
+		{
+			name:          "api interface design is decomposable",
+			problem:       "Design new API interfaces for the service integration",
+			expectedType:  ProblemTypeDecomposable,
+			minConfidence: 0.7,
+		},
+		{
+			name:          "module design is decomposable",
+			problem:       "Design new module with component architecture",
+			expectedType:  ProblemTypeDecomposable,
+			minConfidence: 0.7,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := pc.ClassifyProblem(tt.problem)
+
+			if result.Type != tt.expectedType {
+				t.Errorf("Expected type %s, got %s for problem: %q", tt.expectedType, result.Type, tt.problem)
+			}
+
+			if result.Confidence < tt.minConfidence {
+				t.Errorf("Expected confidence >= %.2f, got %.2f", tt.minConfidence, result.Confidence)
+			}
+		})
+	}
+}
+
 func TestDetectTacitKnowledge_NoMatch(t *testing.T) {
 	pc := NewProblemClassifier()
 

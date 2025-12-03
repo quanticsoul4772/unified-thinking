@@ -1002,6 +1002,7 @@ type ThinkRequest struct {
 	ChallengeAssumptions bool            `json:"challenge_assumptions,omitempty"`
 	ForceRebellion       bool            `json:"force_rebellion,omitempty"`
 	CrossRefs            []CrossRefInput `json:"cross_refs,omitempty"`
+	FormatLevel          string          `json:"format_level,omitempty"` // "full", "compact", or "minimal"
 }
 
 type CrossRefInput struct {
@@ -1194,6 +1195,15 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 		Metadata:     metadata,
 	}
 
+	// Auto-record prediction for calibration tracking
+	if s.calibrationHandler != nil {
+		if err := s.calibrationHandler.AutoRecordPrediction(result.ThoughtID, result.Confidence, result.Mode); err != nil {
+			if os.Getenv("DEBUG") == "true" {
+				log.Printf("[DEBUG] Auto-record prediction failed: %v", err)
+			}
+		}
+	}
+
 	// Add auto-validation info to response metadata
 	if autoValidationTriggered {
 		if os.Getenv("DEBUG") == "true" {
@@ -1229,15 +1239,16 @@ func (s *UnifiedServer) handleThink(ctx context.Context, req *mcp.CallToolReques
 	}
 
 	return &mcp.CallToolResult{
-		Content: toJSONContent(finalResponse),
+		Content: toJSONContentWithFormat(finalResponse, input.FormatLevel),
 	}, response, nil
 }
 
 type HistoryRequest struct {
-	Mode     string `json:"mode,omitempty"`
-	BranchID string `json:"branch_id,omitempty"`
-	Limit    int    `json:"limit,omitempty"`
-	Offset   int    `json:"offset,omitempty"`
+	Mode        string `json:"mode,omitempty"`
+	BranchID    string `json:"branch_id,omitempty"`
+	Limit       int    `json:"limit,omitempty"`
+	Offset      int    `json:"offset,omitempty"`
+	FormatLevel string `json:"format_level,omitempty"` // "full", "compact", or "minimal"
 }
 
 type HistoryResponse struct {
@@ -1272,7 +1283,7 @@ func (s *UnifiedServer) handleHistory(ctx context.Context, req *mcp.CallToolRequ
 
 	response := &HistoryResponse{Thoughts: thoughts}
 	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
+		Content: toJSONContentWithFormat(response, input.FormatLevel),
 	}, response, nil
 }
 
@@ -1319,7 +1330,8 @@ func (s *UnifiedServer) handleListBranches(ctx context.Context, req *mcp.CallToo
 }
 
 type FocusBranchRequest struct {
-	BranchID string `json:"branch_id"`
+	BranchID    string `json:"branch_id"`
+	FormatLevel string `json:"format_level,omitempty"` // "full", "compact", or "minimal"
 }
 
 type FocusBranchResponse struct {
@@ -1341,7 +1353,7 @@ func (s *UnifiedServer) handleFocusBranch(ctx context.Context, req *mcp.CallTool
 			ActiveBranchID: input.BranchID,
 		}
 		return &mcp.CallToolResult{
-			Content: toJSONContent(response),
+			Content: toJSONContentWithFormat(response, input.FormatLevel),
 		}, response, nil
 	}
 
@@ -1355,7 +1367,7 @@ func (s *UnifiedServer) handleFocusBranch(ctx context.Context, req *mcp.CallTool
 	}
 
 	return &mcp.CallToolResult{
-		Content: toJSONContent(response),
+		Content: toJSONContentWithFormat(response, input.FormatLevel),
 	}, response, nil
 }
 
@@ -1402,6 +1414,23 @@ func (s *UnifiedServer) handleValidate(ctx context.Context, req *mcp.CallToolReq
 	validationResult, err := s.validator.ValidateThought(thought)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Auto-record outcome for calibration tracking
+	if s.calibrationHandler != nil {
+		// Map validation result to calibration outcome
+		// A valid thought with high confidence is considered "correct"
+		actualConfidence := thought.Confidence
+		if validationResult.IsValid {
+			actualConfidence = 0.9 // High confidence for valid thoughts
+		} else {
+			actualConfidence = 0.3 // Low confidence for invalid thoughts
+		}
+		if err := s.calibrationHandler.AutoRecordOutcome(input.ThoughtID, validationResult.IsValid, actualConfidence, "validation"); err != nil {
+			if os.Getenv("DEBUG") == "true" {
+				log.Printf("[DEBUG] Auto-record outcome failed: %v", err)
+			}
+		}
 	}
 
 	response := &ValidateResponse{

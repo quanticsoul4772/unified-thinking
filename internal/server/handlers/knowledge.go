@@ -135,19 +135,19 @@ func (kh *KnowledgeHandlers) HandleStoreEntity(ctx context.Context, req *mcp.Cal
 
 // SearchKnowledgeGraphRequest represents the search-knowledge-graph tool request
 type SearchKnowledgeGraphRequest struct {
-	Query         string `json:"query"`
-	SearchType    string `json:"search_type"` // "semantic", "graph", "hybrid"
-	Limit         int    `json:"limit,omitempty"`
-	MaxHops       int    `json:"max_hops,omitempty"`
+	Query         string  `json:"query"`
+	SearchType    string  `json:"search_type"` // "semantic", "graph", "hybrid"
+	Limit         int     `json:"limit,omitempty"`
+	MaxHops       int     `json:"max_hops,omitempty"`
 	MinSimilarity float32 `json:"min_similarity,omitempty"`
 }
 
 // SearchKnowledgeGraphResponse represents the response
 type SearchKnowledgeGraphResponse struct {
-	Results       []*knowledge.Entity `json:"results"`
-	ResultCount   int                 `json:"result_count"`
-	SearchType    string              `json:"search_type"`
-	LatencyMs     int64               `json:"latency_ms"`
+	Results     []*knowledge.Entity `json:"results"`
+	ResultCount int                 `json:"result_count"`
+	SearchType  string              `json:"search_type"`
+	LatencyMs   int64               `json:"latency_ms"`
 }
 
 // HandleSearchKnowledgeGraph implements the search-knowledge-graph MCP tool
@@ -250,4 +250,3 @@ func (kh *KnowledgeHandlers) HandleCreateRelationship(ctx context.Context, req *
 
 	return &mcp.CallToolResult{Content: toJSONContent(response)}, response, nil
 }
-

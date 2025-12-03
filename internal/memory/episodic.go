@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -183,6 +184,35 @@ type Recommendation struct {
 	SuccessRate     float64                `json:"success_rate"`
 	EstimatedImpact float64                `json:"estimated_impact"`
 	Metadata        map[string]interface{} `json:"metadata"`
+
+	// Enhanced fields for specific tool sequences (Phase 2.1)
+	ToolSequence     []ToolStep `json:"tool_sequence,omitempty"`      // Specific ordered steps
+	ExampleProblems  []string   `json:"example_problems,omitempty"`   // Similar problems solved
+	ConfidenceRange  [2]float64 `json:"confidence_range,omitempty"`   // Min/max confidence achieved
+	AverageSteps     int        `json:"average_steps,omitempty"`      // Typical step count
+	FailureRootCause string     `json:"failure_root_cause,omitempty"` // For warnings
+	Alternatives     []string   `json:"alternatives,omitempty"`       // Alternative approaches to try
+	PatternID        string     `json:"pattern_id,omitempty"`         // ID of matched pattern
+}
+
+// ToolStep represents a specific step in a tool sequence
+type ToolStep struct {
+	StepNumber  int     `json:"step_number"`
+	Tool        string  `json:"tool"`
+	Mode        string  `json:"mode,omitempty"`
+	Description string  `json:"description"`
+	Confidence  float64 `json:"confidence,omitempty"`
+}
+
+// ToolSequencePattern groups similar tool sequences for analysis
+type ToolSequencePattern struct {
+	SequenceHash    string                 `json:"sequence_hash"`
+	Tools           []string               `json:"tools"`
+	Trajectories    []*ReasoningTrajectory `json:"trajectories"`
+	SuccessRate     float64                `json:"success_rate"`
+	AverageQuality  float64                `json:"average_quality"`
+	UsageCount      int                    `json:"usage_count"`
+	ExampleProblems []string               `json:"example_problems"`
 }
 
 // EpisodicMemoryStore manages storage and retrieval of reasoning trajectories
@@ -351,6 +381,7 @@ func (s *EpisodicMemoryStore) RetrieveSimilarHashBased(problem *ProblemDescripti
 }
 
 // GetRecommendations generates adaptive recommendations based on context
+// Enhanced in Phase 2.1 to provide specific tool sequences with success rates
 func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *RecommendationContext) ([]*Recommendation, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -358,34 +389,132 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 	// Initialize with capacity based on typical recommendation count (never return nil)
 	recommendations := make([]*Recommendation, 0, 5)
 
-	// Analyze similar trajectories for patterns
+	// Group similar trajectories by tool sequence patterns
+	successfulPatterns := s.groupByToolSequencePattern(recCtx.SimilarTrajectories, true) // success > 0.7
+	failedPatterns := s.groupByToolSequencePattern(recCtx.SimilarTrajectories, false)    // success < 0.4
+
+	// Generate recommendations from successful patterns (grouped by tool sequence)
+	for _, pattern := range successfulPatterns {
+		if len(pattern.Tools) == 0 {
+			continue
+		}
+
+		// Build specific tool steps from the best trajectory in this pattern
+		toolSteps := s.extractToolSteps(pattern.Trajectories[0])
+
+		// Collect example problems solved with this pattern
+		examples := make([]string, 0, 3)
+		trajectoryIDs := make([]string, 0, len(pattern.Trajectories))
+		var minConf, maxConf float64 = 1.0, 0.0
+		totalSteps := 0
+
+		for i, traj := range pattern.Trajectories {
+			trajectoryIDs = append(trajectoryIDs, traj.ID)
+			if traj.Problem != nil && i < 3 {
+				// Truncate long descriptions
+				desc := traj.Problem.Description
+				if len(desc) > 80 {
+					desc = desc[:77] + "..."
+				}
+				examples = append(examples, desc)
+			}
+			// Track confidence range
+			if traj.Outcome != nil {
+				if traj.Outcome.Confidence < minConf {
+					minConf = traj.Outcome.Confidence
+				}
+				if traj.Outcome.Confidence > maxConf {
+					maxConf = traj.Outcome.Confidence
+				}
+			}
+			totalSteps += len(traj.Steps)
+		}
+		avgSteps := 0
+		if len(pattern.Trajectories) > 0 {
+			avgSteps = totalSteps / len(pattern.Trajectories)
+		}
+
+		// Build descriptive suggestion with specific steps
+		suggestion := s.buildToolSequenceSuggestion(pattern.Tools, toolSteps)
+
+		rec := &Recommendation{
+			Type:            "tool_sequence",
+			Priority:        pattern.SuccessRate * (1.0 + 0.1*float64(pattern.UsageCount)), // Boost by usage count
+			Suggestion:      suggestion,
+			Reasoning:       fmt.Sprintf("Proven sequence: %d similar problems solved with %.0f%% success rate", pattern.UsageCount, pattern.SuccessRate*100),
+			BasedOn:         trajectoryIDs,
+			SuccessRate:     pattern.SuccessRate,
+			EstimatedImpact: pattern.AverageQuality,
+			Metadata:        map[string]interface{}{"pattern_usage": pattern.UsageCount},
+			ToolSequence:    toolSteps,
+			ExampleProblems: examples,
+			ConfidenceRange: [2]float64{minConf, maxConf},
+			AverageSteps:    avgSteps,
+			PatternID:       pattern.SequenceHash,
+		}
+		recommendations = append(recommendations, rec)
+	}
+
+	// Generate warnings from failed patterns with root cause analysis
+	for _, pattern := range failedPatterns {
+		if len(pattern.Tools) == 0 {
+			continue
+		}
+
+		trajectoryIDs := make([]string, 0, len(pattern.Trajectories))
+		for _, traj := range pattern.Trajectories {
+			trajectoryIDs = append(trajectoryIDs, traj.ID)
+		}
+
+		// Analyze root cause from failed trajectories
+		rootCause := s.analyzeFailureRootCause(pattern.Trajectories)
+		alternatives := s.suggestAlternatives(pattern.Tools, successfulPatterns)
+
+		rec := &Recommendation{
+			Type:             "warning",
+			Priority:         0.8 * (1.0 + 0.05*float64(len(pattern.Trajectories))), // Boost by failure count
+			Suggestion:       fmt.Sprintf("Avoid sequence: %v", pattern.Tools),
+			Reasoning:        fmt.Sprintf("Failed in %d similar cases (%.0f%% success rate). %s", pattern.UsageCount, pattern.SuccessRate*100, rootCause),
+			BasedOn:          trajectoryIDs,
+			SuccessRate:      pattern.SuccessRate,
+			EstimatedImpact:  0.0,
+			Metadata:         map[string]interface{}{"failure_count": pattern.UsageCount},
+			ToolSequence:     s.extractToolSteps(pattern.Trajectories[0]),
+			FailureRootCause: rootCause,
+			Alternatives:     alternatives,
+			PatternID:        pattern.SequenceHash,
+		}
+		recommendations = append(recommendations, rec)
+	}
+
+	// Add approach-level recommendations for high-performing strategies
 	for _, match := range recCtx.SimilarTrajectories {
-		if match.Trajectory.SuccessScore > 0.7 {
-			// Recommend successful tool sequences
-			if match.Trajectory.Approach != nil {
+		if match.Trajectory.SuccessScore > 0.85 && match.Trajectory.Approach != nil && match.Trajectory.Approach.Strategy != "" {
+			// Check if we already have a tool_sequence recommendation for this
+			hasToolSeq := false
+			for _, rec := range recommendations {
+				if rec.Type == "tool_sequence" {
+					for _, id := range rec.BasedOn {
+						if id == match.Trajectory.ID {
+							hasToolSeq = true
+							break
+						}
+					}
+				}
+				if hasToolSeq {
+					break
+				}
+			}
+
+			if !hasToolSeq {
 				rec := &Recommendation{
-					Type:            "tool_sequence",
-					Priority:        match.SimilarityScore * match.Trajectory.SuccessScore,
-					Suggestion:      fmt.Sprintf("Consider using: %v", match.Trajectory.Approach.ToolSequence),
-					Reasoning:       fmt.Sprintf("Similar problem solved successfully with %.0f%% success rate", match.Trajectory.SuccessScore*100),
+					Type:            "approach",
+					Priority:        match.SimilarityScore * match.Trajectory.SuccessScore * 0.9, // Slightly lower than tool_sequence
+					Suggestion:      fmt.Sprintf("Consider strategy: %s", match.Trajectory.Approach.Strategy),
+					Reasoning:       fmt.Sprintf("High success (%.0f%%) on similar problem: %s", match.Trajectory.SuccessScore*100, s.truncateDescription(match.Trajectory.Problem)),
 					BasedOn:         []string{match.Trajectory.ID},
 					SuccessRate:     match.Trajectory.SuccessScore,
-					EstimatedImpact: 0.0,
-					Metadata:        make(map[string]interface{}),
-				}
-				recommendations = append(recommendations, rec)
-			}
-		} else if match.Trajectory.SuccessScore < 0.4 {
-			// Warn about failed approaches
-			if match.Trajectory.Approach != nil {
-				rec := &Recommendation{
-					Type:            "warning",
-					Priority:        match.SimilarityScore * 0.8,
-					Suggestion:      fmt.Sprintf("Avoid approach: %s", match.Trajectory.Approach.Strategy),
-					Reasoning:       fmt.Sprintf("Similar problem failed with this approach (%.0f%% success)", match.Trajectory.SuccessScore*100),
-					BasedOn:         []string{match.Trajectory.ID},
-					SuccessRate:     0.0,
-					EstimatedImpact: 0.0,
+					EstimatedImpact: match.Trajectory.Quality.OverallQuality,
 					Metadata:        make(map[string]interface{}),
 				}
 				recommendations = append(recommendations, rec)
@@ -393,12 +522,296 @@ func (s *EpisodicMemoryStore) GetRecommendations(ctx context.Context, recCtx *Re
 		}
 	}
 
-	// Sort by priority
+	// Sort by priority (descending)
 	sort.Slice(recommendations, func(i, j int) bool {
 		return recommendations[i].Priority > recommendations[j].Priority
 	})
 
+	// Limit to top recommendations (avoid overwhelming the user)
+	if len(recommendations) > 7 {
+		recommendations = recommendations[:7]
+	}
+
 	return recommendations, nil
+}
+
+// groupByToolSequencePattern groups trajectories by their tool sequence patterns
+func (s *EpisodicMemoryStore) groupByToolSequencePattern(matches []*TrajectoryMatch, successful bool) []*ToolSequencePattern {
+	patternMap := make(map[string]*ToolSequencePattern)
+
+	for _, match := range matches {
+		traj := match.Trajectory
+
+		// Filter by success criteria
+		if successful && traj.SuccessScore <= 0.7 {
+			continue
+		}
+		if !successful && traj.SuccessScore >= 0.4 {
+			continue
+		}
+
+		if traj.Approach == nil || len(traj.Approach.ToolSequence) == 0 {
+			continue
+		}
+
+		// Compute pattern hash
+		seqHash := computeToolSequenceHash(traj.Approach.ToolSequence)
+
+		if pattern, exists := patternMap[seqHash]; exists {
+			// Add to existing pattern
+			pattern.Trajectories = append(pattern.Trajectories, traj)
+			pattern.UsageCount++
+			// Update aggregate metrics
+			pattern.SuccessRate = (pattern.SuccessRate*float64(pattern.UsageCount-1) + traj.SuccessScore) / float64(pattern.UsageCount)
+			if traj.Quality != nil {
+				pattern.AverageQuality = (pattern.AverageQuality*float64(pattern.UsageCount-1) + traj.Quality.OverallQuality) / float64(pattern.UsageCount)
+			}
+		} else {
+			// Create new pattern
+			quality := 0.0
+			if traj.Quality != nil {
+				quality = traj.Quality.OverallQuality
+			}
+			patternMap[seqHash] = &ToolSequencePattern{
+				SequenceHash:   seqHash,
+				Tools:          traj.Approach.ToolSequence,
+				Trajectories:   []*ReasoningTrajectory{traj},
+				SuccessRate:    traj.SuccessScore,
+				AverageQuality: quality,
+				UsageCount:     1,
+			}
+		}
+	}
+
+	// Convert map to slice and sort by usage count
+	patterns := make([]*ToolSequencePattern, 0, len(patternMap))
+	for _, pattern := range patternMap {
+		patterns = append(patterns, pattern)
+	}
+
+	sort.Slice(patterns, func(i, j int) bool {
+		// Sort by success rate * usage count for best recommendations first
+		scoreI := patterns[i].SuccessRate * float64(patterns[i].UsageCount)
+		scoreJ := patterns[j].SuccessRate * float64(patterns[j].UsageCount)
+		return scoreI > scoreJ
+	})
+
+	return patterns
+}
+
+// extractToolSteps extracts detailed tool steps from a trajectory
+func (s *EpisodicMemoryStore) extractToolSteps(traj *ReasoningTrajectory) []ToolStep {
+	if traj == nil || len(traj.Steps) == 0 {
+		return nil
+	}
+
+	steps := make([]ToolStep, 0, len(traj.Steps))
+	for _, step := range traj.Steps {
+		desc := s.generateStepDescription(step)
+		steps = append(steps, ToolStep{
+			StepNumber:  step.StepNumber,
+			Tool:        step.Tool,
+			Mode:        step.Mode,
+			Description: desc,
+			Confidence:  step.Confidence,
+		})
+	}
+
+	return steps
+}
+
+// generateStepDescription generates a human-readable description for a reasoning step
+func (s *EpisodicMemoryStore) generateStepDescription(step *ReasoningStep) string {
+	if step == nil {
+		return ""
+	}
+
+	// Build description based on tool type and insights
+	desc := ""
+	switch step.Tool {
+	case "think":
+		if step.Mode != "" {
+			desc = fmt.Sprintf("Analyze using %s mode", step.Mode)
+		} else {
+			desc = "Analyze the problem"
+		}
+	case "decompose-problem":
+		desc = "Break down into subproblems"
+	case "build-causal-graph":
+		desc = "Map causal relationships"
+	case "simulate-intervention":
+		desc = "Test intervention effects"
+	case "generate-hypotheses":
+		desc = "Generate possible explanations"
+	case "evaluate-hypotheses":
+		desc = "Evaluate and rank hypotheses"
+	case "detect-biases":
+		desc = "Check for cognitive biases"
+	case "validate":
+		desc = "Validate logical consistency"
+	case "synthesize-insights":
+		desc = "Combine insights across analyses"
+	case "make-decision":
+		desc = "Evaluate options and decide"
+	default:
+		desc = fmt.Sprintf("Execute %s", step.Tool)
+	}
+
+	// Add insights if available
+	if len(step.Insights) > 0 {
+		desc += fmt.Sprintf(" [%s]", step.Insights[0])
+	}
+
+	return desc
+}
+
+// buildToolSequenceSuggestion builds a clear, actionable suggestion for a tool sequence
+func (s *EpisodicMemoryStore) buildToolSequenceSuggestion(tools []string, steps []ToolStep) string {
+	if len(steps) == 0 {
+		return fmt.Sprintf("Use sequence: %v", tools)
+	}
+
+	// Build step-by-step suggestion
+	var suggestion string
+	if len(steps) <= 3 {
+		// Short sequence: list all steps
+		parts := make([]string, 0, len(steps))
+		for _, step := range steps {
+			parts = append(parts, fmt.Sprintf("%d. %s (%s)", step.StepNumber, step.Description, step.Tool))
+		}
+		suggestion = "Recommended steps: " + strings.Join(parts, " → ")
+	} else {
+		// Longer sequence: summarize
+		suggestion = fmt.Sprintf("Recommended %d-step sequence: Start with %s, then %s, and conclude with %s",
+			len(steps),
+			steps[0].Tool,
+			steps[len(steps)/2].Tool,
+			steps[len(steps)-1].Tool)
+	}
+
+	return suggestion
+}
+
+// analyzeFailureRootCause analyzes common failure patterns in trajectories
+func (s *EpisodicMemoryStore) analyzeFailureRootCause(trajectories []*ReasoningTrajectory) string {
+	if len(trajectories) == 0 {
+		return "Unknown cause"
+	}
+
+	// Analyze patterns in failed trajectories
+	lowConfidenceCount := 0
+	shortSequenceCount := 0
+	noValidationCount := 0
+	errorMessages := make(map[string]int)
+
+	for _, traj := range trajectories {
+		// Check for low confidence
+		if traj.Outcome != nil && traj.Outcome.Confidence < 0.5 {
+			lowConfidenceCount++
+		}
+
+		// Check for short sequences (potentially incomplete analysis)
+		if len(traj.Steps) < 3 {
+			shortSequenceCount++
+		}
+
+		// Check for missing validation
+		hasValidation := false
+		for _, step := range traj.Steps {
+			if step.Tool == "validate" || step.Tool == "self-evaluate" {
+				hasValidation = true
+				break
+			}
+			// Track error messages
+			if step.ErrorMessage != "" {
+				errorMessages[step.ErrorMessage]++
+			}
+		}
+		if !hasValidation {
+			noValidationCount++
+		}
+	}
+
+	// Determine primary root cause
+	total := len(trajectories)
+	if float64(shortSequenceCount)/float64(total) > 0.5 {
+		return "Insufficient analysis depth - try more thorough exploration"
+	}
+	if float64(noValidationCount)/float64(total) > 0.6 {
+		return "Missing validation step - add validate or self-evaluate"
+	}
+	if float64(lowConfidenceCount)/float64(total) > 0.5 {
+		return "Low confidence in results - consider alternative approaches"
+	}
+
+	// Check for common error messages
+	for msg, count := range errorMessages {
+		if float64(count)/float64(total) > 0.3 {
+			return fmt.Sprintf("Common error: %s", msg)
+		}
+	}
+
+	return "Approach may not fit this problem type"
+}
+
+// suggestAlternatives suggests alternative tool sequences based on successful patterns
+func (s *EpisodicMemoryStore) suggestAlternatives(failedTools []string, successPatterns []*ToolSequencePattern) []string {
+	alternatives := make([]string, 0, 3)
+
+	for _, pattern := range successPatterns {
+		if len(pattern.Tools) == 0 {
+			continue
+		}
+
+		// Check if this is a different approach (not just a subset/superset)
+		if !s.toolSequencesOverlap(failedTools, pattern.Tools) {
+			alt := fmt.Sprintf("Try: %v (%.0f%% success rate)", pattern.Tools, pattern.SuccessRate*100)
+			alternatives = append(alternatives, alt)
+			if len(alternatives) >= 3 {
+				break
+			}
+		}
+	}
+
+	return alternatives
+}
+
+// toolSequencesOverlap checks if two tool sequences are substantially similar
+func (s *EpisodicMemoryStore) toolSequencesOverlap(seq1, seq2 []string) bool {
+	if len(seq1) == 0 || len(seq2) == 0 {
+		return false
+	}
+
+	// Simple overlap check: >50% common tools means similar
+	common := 0
+	toolSet := make(map[string]bool)
+	for _, t := range seq1 {
+		toolSet[t] = true
+	}
+	for _, t := range seq2 {
+		if toolSet[t] {
+			common++
+		}
+	}
+
+	minLen := len(seq1)
+	if len(seq2) < minLen {
+		minLen = len(seq2)
+	}
+
+	return float64(common)/float64(minLen) > 0.5
+}
+
+// truncateDescription truncates a problem description for display
+func (s *EpisodicMemoryStore) truncateDescription(problem *ProblemDescription) string {
+	if problem == nil {
+		return ""
+	}
+	desc := problem.Description
+	if len(desc) > 60 {
+		return desc[:57] + "..."
+	}
+	return desc
 }
 
 // SetEmbeddingIntegration sets the embedding integration for hybrid search
