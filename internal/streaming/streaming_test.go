@@ -404,6 +404,121 @@ func (m *mockReporter) GetProgressToken() any {
 	return "mock-token"
 }
 
+// === RateLimitedReporter IsEnabled/GetProgressToken Tests ===
+
+func TestRateLimitedReporterIsEnabled(t *testing.T) {
+	// Test with enabled mock
+	mockEnabled := &mockReporter{enabled: true}
+	config := StreamingConfig{Enabled: true, MinInterval: 50 * time.Millisecond}
+	r := NewRateLimitedReporter(mockEnabled, config)
+	assert.True(t, r.IsEnabled())
+
+	// Test with disabled mock
+	mockDisabled := &mockReporter{enabled: false}
+	r2 := NewRateLimitedReporter(mockDisabled, config)
+	assert.False(t, r2.IsEnabled())
+}
+
+func TestRateLimitedReporterGetProgressToken(t *testing.T) {
+	mock := &mockReporter{}
+	config := StreamingConfig{Enabled: true, MinInterval: 50 * time.Millisecond}
+	r := NewRateLimitedReporter(mock, config)
+
+	token := r.GetProgressToken()
+	assert.Equal(t, "mock-token", token)
+}
+
+// === StepReporter IsEnabled Test ===
+
+func TestStepReporterIsEnabled(t *testing.T) {
+	// Test with enabled mock
+	mockEnabled := &mockReporter{enabled: true}
+	steps := []string{"step1", "step2"}
+	sr := NewStepReporter(mockEnabled, steps)
+	assert.True(t, sr.IsEnabled())
+
+	// Test with disabled mock
+	mockDisabled := &mockReporter{enabled: false}
+	sr2 := NewStepReporter(mockDisabled, steps)
+	assert.False(t, sr2.IsEnabled())
+}
+
+// === ProgressError Tests ===
+
+func TestProgressErrorError(t *testing.T) {
+	originalErr := assert.AnError
+	err := &ProgressError{
+		Operation: "report_step",
+		Err:       originalErr,
+	}
+
+	errMsg := err.Error()
+	assert.Contains(t, errMsg, "streaming:")
+	assert.Contains(t, errMsg, "report_step")
+	assert.Contains(t, errMsg, "failed")
+}
+
+func TestProgressErrorUnwrap(t *testing.T) {
+	originalErr := assert.AnError
+	err := &ProgressError{
+		Operation: "test",
+		Err:       originalErr,
+	}
+
+	unwrapped := err.Unwrap()
+	assert.Equal(t, originalErr, unwrapped)
+}
+
+// === CheckReport Tests ===
+
+func TestCheckReportWithError(t *testing.T) {
+	originalErr := assert.AnError
+	result := CheckReport("test_operation", originalErr)
+
+	require.NotNil(t, result)
+	progressErr, ok := result.(*ProgressError)
+	require.True(t, ok, "result should be *ProgressError")
+	assert.Equal(t, "test_operation", progressErr.Operation)
+	assert.Equal(t, originalErr, progressErr.Err)
+}
+
+func TestCheckReportWithNil(t *testing.T) {
+	result := CheckReport("test_operation", nil)
+	assert.Nil(t, result)
+}
+
+// === LogReportError Tests ===
+
+func TestLogReportErrorWithError(t *testing.T) {
+	// LogReportError returns true when error occurs
+	result := LogReportError(assert.AnError)
+	assert.True(t, result)
+}
+
+func TestLogReportErrorWithNil(t *testing.T) {
+	// LogReportError returns false when no error
+	result := LogReportError(nil)
+	assert.False(t, result)
+}
+
+// === ReportPartialResult with data test ===
+
+func TestStreamingContextReportPartialResultWithData(t *testing.T) {
+	mock := &mockReporter{enabled: true}
+	config := StreamingConfig{Enabled: true}
+
+	sc := NewStreamingContext(mock, config, "test-tool")
+
+	// Test with actual data
+	data := map[string]interface{}{
+		"progress": 50,
+		"items":    []string{"a", "b", "c"},
+	}
+	err := sc.ReportPartialResult("step1", data)
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.partialCalls)
+}
+
 // === Benchmark Tests ===
 
 func BenchmarkDefaultReporterReportProgress(b *testing.B) {

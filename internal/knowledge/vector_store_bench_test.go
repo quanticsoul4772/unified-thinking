@@ -104,7 +104,7 @@ func BenchmarkVectorStore_SearchSimilar_Large(b *testing.B) {
 
 // BenchmarkEmbeddingCache_Store benchmarks SQLite embedding cache storage
 func BenchmarkEmbeddingCache_Store(b *testing.B) {
-	db := setupTestDB(b)
+	db := setupBenchDB(b)
 	defer db.Close()
 
 	cache := NewEmbeddingCache(db)
@@ -135,7 +135,7 @@ func BenchmarkEmbeddingCache_Store(b *testing.B) {
 
 // BenchmarkEmbeddingCache_Get benchmarks cache retrieval
 func BenchmarkEmbeddingCache_Get(b *testing.B) {
-	db := setupTestDB(b)
+	db := setupBenchDB(b)
 	defer db.Close()
 
 	cache := NewEmbeddingCache(db)
@@ -167,7 +167,7 @@ func BenchmarkEmbeddingCache_Get(b *testing.B) {
 	}
 }
 
-func setupTestDB(b *testing.B) *sql.DB {
+func setupBenchDB(b *testing.B) *sql.DB {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		b.Fatalf("Failed to open test database: %v", err)

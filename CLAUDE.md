@@ -25,7 +25,7 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 | `internal/memory/` | Episodic memory with trajectory storage and pattern learning |
 | `internal/embeddings/` | Voyage AI semantic embeddings (voyage-3-lite, 512d) |
 | `internal/contextbridge/` | Cross-session context retrieval with caching |
-| `internal/server/` | MCP server with 80 tools, 24 handler modules |
+| `internal/server/` | MCP server with 81 tools, 24 handler modules |
 | `internal/similarity/` | Thought similarity search via embeddings |
 | `internal/claudecode/` | Claude Code optimizations: format, errors, session, presets |
 | `internal/streaming/` | MCP progress notifications for long-running tools |
@@ -65,7 +65,7 @@ make clean              # Remove bin/
 
 **DO NOT run server manually** - Claude Desktop starts it automatically.
 
-**Test Coverage**: 84.3% overall, 102 test files, 1,300+ tests. Key: types (100%), metrics (100%), config (97.3%), reasoning (94.8%), modes (90.5%).
+**Test Coverage**: 72.1% overall, 148 test files across 30 packages. Key: metrics (100%), presets (98.3%), config (97.3%), reinforcement (90.2%), reasoning (89.7%), analysis (89.3%).
 
 ## MCP Tools (81 total)
 

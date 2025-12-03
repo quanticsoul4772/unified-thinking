@@ -188,10 +188,6 @@ var ToolDefinitions = []mcp.Tool{
 
 **Example:** {"problem": "How to improve CI/CD pipeline performance?"}`,
 	},
-	{
-		Name:        "verify-thought",
-		Description: "Verify thought validity and structure",
-	},
 
 	// Metacognition Tools
 	{
