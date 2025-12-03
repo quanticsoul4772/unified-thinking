@@ -2,7 +2,7 @@ module unified-thinking
 
 go 1.24.0
 
-toolchain go1.24.10
+toolchain go1.24.11
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.1.0
