@@ -4,6 +4,73 @@ Detailed change history for the Unified Thinking Server.
 
 ---
 
+## Tool Quality Improvements (2025-12-03)
+
+### 5 Critical Pain Points Fixed
+
+Based on real-world testing with dark matter research funding analysis, identified and fixed 5 tool deficiencies.
+
+#### 1. `analyze-perspectives` - Stakeholder-Specific Viewpoints
+
+**Problem**: All stakeholders returned identical template responses.
+
+**Solution**: Added 30+ stakeholder-specific viewpoint generators with unique framing, questions, and concerns.
+
+**Categories**: Scientist, Policymaker, Taxpayer, Investor, Consumer, Executive, Engineer, Regulator, Academic, Journalist, Environmentalist, Union, Community, Ethicist, Competitor, Patient, Parent, Entrepreneur, Activist, Historian
+
+**Files Modified**: `internal/analysis/perspective.go`
+
+#### 2. `generate-hypotheses` - Multiple Meaningful Hypotheses
+
+**Problem**: Returned single hypothesis with stopword ("matter") as the common theme.
+
+**Solution**:
+- Extended stop words list (200+ words)
+- Added noun phrase extraction
+- Generates 3+ distinct hypothesis types (causal mechanism, common underlying factor, systemic pattern)
+- Each hypothesis includes predictions for validation
+
+**Files Modified**: `internal/reasoning/abductive.go`
+
+#### 3. `build-causal-graph` - Enhanced Causal Pattern Detection
+
+**Problem**: Only captured 16% of causal relationships due to limited keyword patterns.
+
+**Solution**: Expanded causal vocabulary:
+- Attraction/enablement: "attracts", "draws", "enables", "facilitates"
+- Support/funding: "funds", "finances", "supports", "sustains"
+- Conditional: "requires", "needs", "depends on"
+- Correlation: "correlates with", "associated with", "linked to"
+
+**Files Modified**: `internal/reasoning/causal.go`
+
+#### 4. `think` - Confidence Parameter Honored
+
+**Problem**: Input confidence parameter was ignored in output.
+
+**Solution**: Response now returns `max(input_confidence, calculated_confidence)`.
+
+**Files Modified**: `internal/server/handlers/thinking.go`
+
+#### 5. `decompose-problem` - Entity Extraction & Template Parameterization
+
+**Problem**: Returned generic template descriptions regardless of input.
+
+**Solution**:
+- Added `ExtractProblemEntities()` function
+- Extracts: technical terms, stakeholders, constraints, key concepts
+- Domain-specific parameterization (Architecture, Debugging, Research, Proof)
+- Metadata includes `extracted_entities` for transparency
+
+**Example**:
+- Input: "OAuth 2.0, SAML, enterprise customers, API clients, backward compatibility"
+- Before: "Clarify functional requirements..."
+- After: "Clarify functional requirements for OAuth 2.0, SAML, addressing backward compatibility constraints for enterprise customers, api clients"
+
+**Files Modified**: `internal/reasoning/domain_templates.go`
+
+---
+
 ## Performance & Quality Improvements (2024-12-03)
 
 ### `got-explore` Performance Fix

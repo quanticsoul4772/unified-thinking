@@ -196,7 +196,7 @@ var ToolDefinitions = []mcp.Tool{
 	},
 	{
 		Name:        "detect-biases",
-		Description: "Identify cognitive biases AND logical fallacies in reasoning (comprehensive analysis). Required: EITHER thought_id OR branch_id (not both). Detects cognitive biases (confirmation bias, anchoring, availability heuristic, etc.) AND logical fallacies (ad hominem, straw man, affirming the consequent, etc.). Returns separate lists plus a unified 'combined' list. Example: {\"thought_id\": \"thought_123\"}",
+		Description: "Identify cognitive biases AND logical fallacies in reasoning (comprehensive analysis). Required: ONE OF content, thought_id, or branch_id. 'content' allows direct text analysis without storing a thought first. Detects cognitive biases (confirmation bias, anchoring, availability heuristic, sunk cost, overconfidence, recency bias) AND logical fallacies (ad hominem, straw man, affirming the consequent, etc.). Returns separate lists plus a unified 'combined' list. Example: {\"content\": \"Clearly this proves my theory. Obviously everyone knows this is true.\"} or {\"thought_id\": \"thought_123\"}",
 	},
 	{
 		Name:        "detect-blind-spots",

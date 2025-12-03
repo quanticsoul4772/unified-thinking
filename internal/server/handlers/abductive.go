@@ -50,6 +50,7 @@ type HypothesisOutput struct {
 	Parsimony        float64  `json:"parsimony"`
 	PriorProbability float64  `json:"prior_probability"`
 	Assumptions      []string `json:"assumptions,omitempty"`
+	Predictions      []string `json:"predictions,omitempty"`
 }
 
 // HandleGenerateHypotheses generates hypotheses from observations
@@ -104,6 +105,7 @@ func (h *AbductiveHandler) HandleGenerateHypotheses(ctx context.Context, params 
 			Parsimony:        hyp.Parsimony,
 			PriorProbability: hyp.PriorProbability,
 			Assumptions:      hyp.Assumptions,
+			Predictions:      hyp.Predictions,
 		}
 	}
 

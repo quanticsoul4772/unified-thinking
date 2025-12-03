@@ -163,6 +163,31 @@ func (pa *PerspectiveAnalyzer) extractConcerns(situation, stakeholder string) []
 		"counselor": {"client welfare", "confidentiality", "professional boundaries", "therapeutic effectiveness", "ethical practice"},
 		"grief":     {"emotional processing", "loss acknowledgment", "healing timeline", "support systems", "meaning-making"},
 
+		// Technical/IT stakeholders
+		"developer": {"code quality", "maintainability", "technical debt", "testing coverage", "developer experience"},
+		"security":  {"vulnerability exposure", "attack surface", "data protection", "compliance", "access control"},
+		"devops":    {"deployment reliability", "system uptime", "monitoring coverage", "infrastructure costs", "automation"},
+		"architect": {"system scalability", "integration complexity", "architectural patterns", "technical roadmap", "modularity"},
+		"qa":        {"test coverage", "defect risk", "regression potential", "edge cases", "quality metrics"},
+		"product":   {"user value", "market fit", "feature prioritization", "success metrics", "competitive advantage"},
+		"ops":       {"operational burden", "incident response", "system reliability", "runbook coverage", "on-call impact"},
+		"data":      {"data quality", "privacy compliance", "data governance", "analytical value", "data architecture"},
+
+		// Finance/Business stakeholders
+		"finance":     {"cost control", "ROI", "budget impact", "cash flow", "financial risk"},
+		"cfo":         {"capital allocation", "financial sustainability", "shareholder value", "risk exposure", "growth investment"},
+		"procurement": {"vendor risk", "contract terms", "total cost", "supplier relationships", "competitive pricing"},
+		"legal":       {"legal liability", "regulatory compliance", "contractual risk", "intellectual property", "litigation risk"},
+
+		// Leadership/Strategy stakeholders
+		"executive": {"strategic alignment", "competitive position", "organizational impact", "stakeholder value", "opportunity cost"},
+		"cto":       {"technical strategy", "innovation capability", "technology roadmap", "engineering excellence", "technical leadership"},
+		"founder":   {"product-market fit", "company mission", "growth trajectory", "company culture", "vision alignment"},
+
+		// Team/HR stakeholders
+		"hr":        {"employee impact", "organizational culture", "training needs", "talent retention", "workforce planning"},
+		"team lead": {"team workload", "skill development", "team morale", "delivery commitments", "resource allocation"},
+
 		// Default fallback
 		"default": {"impact", "feasibility", "risks", "benefits", "implementation"},
 	}
@@ -233,6 +258,31 @@ func (pa *PerspectiveAnalyzer) extractPriorities(stakeholder string) []string {
 		"nurse":     {"patient advocacy", "holistic wellness", "compassionate care"},
 		"counselor": {"client empowerment", "professional ethics", "therapeutic effectiveness"},
 		"grief":     {"honoring loss", "supporting healing", "facilitating meaning"},
+
+		// Technical/IT stakeholders
+		"developer": {"clean code", "efficient delivery", "maintainable systems"},
+		"security":  {"defense in depth", "data protection", "compliance"},
+		"devops":    {"deployment reliability", "system observability", "automation"},
+		"architect": {"scalable design", "technical coherence", "long-term maintainability"},
+		"qa":        {"quality assurance", "comprehensive testing", "defect prevention"},
+		"product":   {"user satisfaction", "business value", "market success"},
+		"ops":       {"system reliability", "operational efficiency", "incident prevention"},
+		"data":      {"data integrity", "analytical insight", "privacy compliance"},
+
+		// Finance/Business stakeholders
+		"finance":     {"financial sustainability", "cost efficiency", "accurate forecasting"},
+		"cfo":         {"value creation", "capital efficiency", "risk management"},
+		"procurement": {"cost optimization", "vendor quality", "supply chain resilience"},
+		"legal":       {"risk mitigation", "regulatory compliance", "organizational protection"},
+
+		// Leadership/Strategy stakeholders
+		"executive": {"strategic success", "stakeholder value", "organizational excellence"},
+		"cto":       {"technical leadership", "innovation enablement", "engineering culture"},
+		"founder":   {"vision realization", "sustainable growth", "mission impact"},
+
+		// Team/HR stakeholders
+		"hr":        {"employee wellbeing", "organizational health", "talent development"},
+		"team lead": {"team success", "member growth", "delivery excellence"},
 	}
 
 	for key, priorities := range priorityMap {
@@ -285,6 +335,31 @@ func (pa *PerspectiveAnalyzer) extractConstraints(stakeholder string) []string {
 		"nurse":     {"staffing ratios", "time constraints", "institutional policies"},
 		"counselor": {"professional boundaries", "confidentiality", "competency limits"},
 		"grief":     {"individual pace", "cultural variations", "non-linear process"},
+
+		// Technical/IT stakeholders
+		"developer": {"technical constraints", "legacy code", "timeline pressure"},
+		"security":  {"threat landscape", "compliance requirements", "attack surface"},
+		"devops":    {"infrastructure limits", "deployment complexity", "monitoring gaps"},
+		"architect": {"existing systems", "technology constraints", "migration complexity"},
+		"qa":        {"test environment limits", "time constraints", "coverage gaps"},
+		"product":   {"resource constraints", "market timing", "competitive pressure"},
+		"ops":       {"staffing limits", "tooling constraints", "on-call burden"},
+		"data":      {"data quality issues", "privacy regulations", "infrastructure limits"},
+
+		// Finance/Business stakeholders
+		"finance":     {"budget limits", "forecasting uncertainty", "financial regulations"},
+		"cfo":         {"capital constraints", "market conditions", "shareholder expectations"},
+		"procurement": {"contract terms", "vendor limitations", "budget constraints"},
+		"legal":       {"regulatory framework", "legal precedent", "risk tolerance"},
+
+		// Leadership/Strategy stakeholders
+		"executive": {"board expectations", "market dynamics", "organizational inertia"},
+		"cto":       {"technical debt", "talent constraints", "technology evolution"},
+		"founder":   {"runway constraints", "investor expectations", "market timing"},
+
+		// Team/HR stakeholders
+		"hr":        {"policy constraints", "legal requirements", "budget limitations"},
+		"team lead": {"resource constraints", "skill gaps", "competing priorities"},
 	}
 
 	for key, constraints := range constraintMap {
@@ -296,15 +371,320 @@ func (pa *PerspectiveAnalyzer) extractConstraints(stakeholder string) []string {
 	return []string{"practical limitations", "resource constraints", "external dependencies"}
 }
 
-// synthesizeViewpoint creates a coherent viewpoint summary
+// viewpointTemplate defines a stakeholder-specific viewpoint generator
+type viewpointTemplate struct {
+	prefix    string // Opening statement establishing the stakeholder's lens
+	questions string // Key questions this stakeholder would ask
+	suffix    string // Closing framing or recommendation style
+}
+
+// stakeholderViewpoints maps stakeholder types to their unique viewpoint templates
+var stakeholderViewpoints = map[string]viewpointTemplate{
+	// Business stakeholders
+	"user": {
+		prefix:    "As a user, I evaluate this based on how it affects my daily experience and outcomes.",
+		questions: "Will this be easy to use? Is it reliable? Does it respect my time and privacy?",
+		suffix:    "The user community needs clear communication about changes and genuine responsiveness to feedback.",
+	},
+	"customer": {
+		prefix:    "As a customer making a purchase decision, I weigh value against cost and alternatives.",
+		questions: "What am I getting for my money? How does this compare to alternatives? What's the support like?",
+		suffix:    "Customers need transparency about what they're buying and confidence in long-term value.",
+	},
+	"employee": {
+		prefix:    "As an employee, I consider how this affects my work life, growth, and job security.",
+		questions: "How will this change my daily work? Does this align with my career goals? Is my position secure?",
+		suffix:    "The workforce needs clarity about expectations and genuine investment in their development.",
+	},
+	"management": {
+		prefix:    "From a management perspective, I must balance operational efficiency with strategic goals.",
+		questions: "What's the ROI? How does this affect our competitive position? What are the implementation risks?",
+		suffix:    "Leadership must make decisions that serve both short-term performance and long-term sustainability.",
+	},
+	"investor": {
+		prefix:    "As an investor, I analyze risk-adjusted returns and long-term value creation potential.",
+		questions: "What's the expected return? What are the downside risks? How does this affect company valuation?",
+		suffix:    "Investment decisions require clear metrics and transparent reporting of both opportunities and risks.",
+	},
+	"community": {
+		prefix:    "From a community perspective, I consider the broader social and environmental impact.",
+		questions: "How does this affect our neighborhood? Is it equitable? What are the environmental implications?",
+		suffix:    "Communities deserve a voice in decisions that affect their quality of life and shared resources.",
+	},
+	"regulator": {
+		prefix:    "As a regulator, I must ensure compliance with laws and protection of public interests.",
+		questions: "Does this meet legal requirements? Are consumers protected? What precedents does this set?",
+		suffix:    "Regulatory frameworks must balance innovation with accountability and public safety.",
+	},
+	"partner": {
+		prefix:    "As a business partner, I evaluate this through the lens of our mutual success and relationship.",
+		questions: "How does this affect our partnership? Are the terms fair? Can we trust long-term commitment?",
+		suffix:    "Partnerships thrive on clear expectations, shared goals, and equitable value distribution.",
+	},
+
+	// Professional/Academic stakeholders
+	"scientist": {
+		prefix:    "As a scientist, I evaluate this through the lens of empirical evidence and methodological rigor.",
+		questions: "What data supports this claim? Is the methodology sound? Can these results be replicated?",
+		suffix:    "The scientific community requires peer review, transparent methodology, and acknowledgment of uncertainty.",
+	},
+	"researcher": {
+		prefix:    "As a researcher, I examine the theoretical foundations and evidentiary basis.",
+		questions: "What prior work informs this? Where are the knowledge gaps? What hypotheses can we test?",
+		suffix:    "Research integrity demands acknowledgment of limitations and commitment to following evidence.",
+	},
+	"psychologist": {
+		prefix:    "As a psychologist, I consider the cognitive, emotional, and behavioral dimensions.",
+		questions: "How does this affect mental well-being? What psychological factors are at play? What interventions might help?",
+		suffix:    "Psychological understanding requires attention to individual differences and contextual factors.",
+	},
+	"engineer": {
+		prefix:    "As an engineer, I focus on technical feasibility, reliability, and practical implementation.",
+		questions: "Is this technically achievable? What are the failure modes? How do we ensure quality?",
+		suffix:    "Engineering decisions must balance innovation with reliability and maintainability.",
+	},
+	"mathematician": {
+		prefix:    "As a mathematician, I analyze the logical structure and formal properties.",
+		questions: "Is this logically consistent? What can be proven? What are the boundary conditions?",
+		suffix:    "Mathematical rigor demands precision in definitions and completeness in proofs.",
+	},
+
+	// Policy/Economic stakeholders
+	"policymaker": {
+		prefix:    "From a policy perspective, I must balance multiple stakeholder interests and resource constraints.",
+		questions: "What is the societal benefit? How do we measure success? What are the opportunity costs?",
+		suffix:    "Policy decisions require balancing competing interests while maintaining democratic accountability.",
+	},
+	"taxpayer": {
+		prefix:    "As a taxpayer funding this through public money, I want accountability for how resources are used.",
+		questions: "Is this the best use of limited public funds? What practical benefits will citizens see? Are there more pressing priorities?",
+		suffix:    "Public spending decisions must demonstrate clear value and transparent accounting to those who fund them.",
+	},
+	"economist": {
+		prefix:    "As an economist, I analyze incentives, trade-offs, and market dynamics.",
+		questions: "What are the economic incentives? Who bears the costs and who receives the benefits? What market failures might occur?",
+		suffix:    "Economic analysis requires understanding both intended effects and unintended consequences.",
+	},
+
+	// Creative/Artistic stakeholders
+	"artist": {
+		prefix:    "As an artist, I consider aesthetic value, creative expression, and cultural impact.",
+		questions: "Does this enable authentic expression? What emotional resonance does it create? How does it contribute to culture?",
+		suffix:    "Artistic endeavors require freedom of expression and recognition of subjective experience.",
+	},
+	"designer": {
+		prefix:    "As a designer, I evaluate usability, aesthetics, and the human experience.",
+		questions: "Is this intuitive? Does form follow function? How does it feel to use?",
+		suffix:    "Design excellence balances beauty with utility and serves human needs.",
+	},
+
+	// Healthcare/Wellness stakeholders
+	"doctor": {
+		prefix:    "As a physician, I prioritize patient safety and evidence-based practice.",
+		questions: "What does the clinical evidence show? What are the risks and benefits? Does this follow best practices?",
+		suffix:    "Medical decisions must be grounded in evidence while respecting patient autonomy.",
+	},
+	"patient": {
+		prefix:    "As a patient, I'm concerned with my health outcomes and treatment experience.",
+		questions: "Will this help me get better? What are the side effects? How will this affect my daily life?",
+		suffix:    "Patients need clear information to make informed decisions about their own care.",
+	},
+
+	// Philosophical/Ethical stakeholders
+	"philosopher": {
+		prefix:    "As a philosopher, I examine the conceptual foundations and ethical implications.",
+		questions: "What assumptions underlie this? Is it logically coherent? What ethical principles apply?",
+		suffix:    "Philosophical inquiry requires questioning assumptions and pursuing conceptual clarity.",
+	},
+	"ethicist": {
+		prefix:    "As an ethicist, I evaluate the moral dimensions and implications for human welfare.",
+		questions: "Is this morally permissible? Who might be harmed? Are all stakeholders treated fairly?",
+		suffix:    "Ethical analysis demands consideration of all affected parties and long-term consequences.",
+	},
+
+	// Scientific domain stakeholders
+	"physicist": {
+		prefix:    "As a physicist, I evaluate this through the lens of fundamental physical laws and experimental verification.",
+		questions: "What physical mechanisms are at play? Is this consistent with established physics? What experiments could test this?",
+		suffix:    "Physics demands rigorous mathematical formulation and experimental validation before acceptance.",
+	},
+	"experimentalist": {
+		prefix:    "As an experimentalist, I focus on measurable outcomes and reproducible results.",
+		questions: "How can we test this empirically? What are the sources of systematic error? Can others replicate these findings?",
+		suffix:    "Experimental science requires careful controls, quantified uncertainties, and independent replication.",
+	},
+	"theorist": {
+		prefix:    "As a theorist, I analyze the mathematical and conceptual framework underlying this problem.",
+		questions: "Is the theory internally consistent? Does it make falsifiable predictions? How does it connect to established frameworks?",
+		suffix:    "Theoretical work must balance mathematical elegance with empirical grounding and predictive power.",
+	},
+
+	// Policy/Governance stakeholders (additional)
+	"politician": {
+		prefix:    "As a political representative, I consider constituent interests and electoral implications.",
+		questions: "How will this affect my constituents? Is there public support? What are the political trade-offs?",
+		suffix:    "Political decisions must balance expert advice with democratic representation and public sentiment.",
+	},
+	"bureaucrat": {
+		prefix:    "As a public administrator, I focus on implementation feasibility and compliance.",
+		questions: "Is this administratively feasible? What regulations apply? How do we ensure accountability?",
+		suffix:    "Public administration requires balancing efficiency with transparency and due process.",
+	},
+
+	// Public stakeholders (additional)
+	"citizen": {
+		prefix:    "As a citizen, I consider the broader impact on society and my community.",
+		questions: "How does this serve the public good? Is it fair to all members of society? What are the long-term implications?",
+		suffix:    "Citizens deserve transparent information and meaningful input into decisions affecting their lives.",
+	},
+	"activist": {
+		prefix:    "As an activist, I advocate for underrepresented interests and challenge the status quo.",
+		questions: "Whose voices are being ignored? What injustices does this perpetuate? How can we push for better outcomes?",
+		suffix:    "Activism demands holding power accountable while building coalitions for meaningful change.",
+	},
+
+	// Technical/IT stakeholders
+	"developer": {
+		prefix:    "As a developer, I evaluate this from a code quality, maintainability, and implementation perspective.",
+		questions: "Is this technically sound? How will it affect our codebase? What are the testing implications? Will this introduce technical debt?",
+		suffix:    "Development decisions should balance speed of delivery with code quality, maintainability, and developer experience.",
+	},
+	"security": {
+		prefix:    "As a security professional, I assess threats, vulnerabilities, and risk mitigation strategies.",
+		questions: "What attack vectors does this introduce? Are there authentication/authorization concerns? How do we protect sensitive data? What compliance requirements apply?",
+		suffix:    "Security decisions must balance protection with usability while adhering to defense-in-depth principles.",
+	},
+	"devops": {
+		prefix:    "As a DevOps engineer, I focus on deployment, reliability, and operational excellence.",
+		questions: "How will this affect our deployment pipeline? What are the monitoring and alerting needs? How do we ensure high availability?",
+		suffix:    "DevOps practices should enable rapid, reliable deployments while maintaining system stability.",
+	},
+	"architect": {
+		prefix:    "As a software architect, I consider system design, scalability, and long-term technical strategy.",
+		questions: "Does this fit our architectural patterns? How will it scale? What are the integration points? Will this create technical debt?",
+		suffix:    "Architectural decisions shape the system's future; they must balance current needs with long-term evolution.",
+	},
+	"qa": {
+		prefix:    "As a QA engineer, I evaluate testability, quality assurance, and risk of defects.",
+		questions: "How do we test this thoroughly? What edge cases might break? Where are the highest-risk areas? Is there adequate test coverage?",
+		suffix:    "Quality assurance requires systematic testing while balancing thoroughness with time-to-market pressures.",
+	},
+	"product": {
+		prefix:    "As a product manager, I balance user needs, business goals, and technical feasibility.",
+		questions: "Does this solve a real user problem? How does it align with our product strategy? What's the expected impact on key metrics?",
+		suffix:    "Product decisions should be data-informed, user-centric, and aligned with business objectives.",
+	},
+	"ops": {
+		prefix:    "As an operations team member, I focus on system reliability, incident response, and operational burden.",
+		questions: "How will we support this in production? What could go wrong at 3am? Do we have adequate monitoring and runbooks?",
+		suffix:    "Operations sustainability requires designing for observability, resilience, and manageable on-call burden.",
+	},
+	"data": {
+		prefix:    "As a data professional, I consider data quality, governance, privacy, and analytical value.",
+		questions: "How does this affect our data architecture? Are we maintaining data quality? What privacy implications exist? How does this enable analytics?",
+		suffix:    "Data decisions must balance accessibility with governance, and operational needs with analytical value.",
+	},
+
+	// Finance/Business stakeholders
+	"finance": {
+		prefix:    "As a finance professional, I analyze costs, ROI, and financial sustainability.",
+		questions: "What is the total cost of ownership? What's the expected ROI? How does this affect our budget and cash flow? Are there hidden costs?",
+		suffix:    "Financial decisions require rigorous analysis of both immediate costs and long-term financial implications.",
+	},
+	"cfo": {
+		prefix:    "As CFO, I evaluate financial risk, capital allocation, and value creation.",
+		questions: "How does this affect our financial position? What's the payback period? Are we optimizing capital allocation? What financial risks exist?",
+		suffix:    "CFO decisions balance growth investment with financial prudence and shareholder value creation.",
+	},
+	"procurement": {
+		prefix:    "As a procurement professional, I assess vendor relationships, contracts, and total cost.",
+		questions: "Are we getting competitive pricing? What are the contract terms and risks? How does this fit our vendor strategy?",
+		suffix:    "Procurement decisions should optimize total cost of ownership while managing supplier relationships and risks.",
+	},
+	"legal": {
+		prefix:    "As legal counsel, I identify legal risks, contractual issues, and compliance requirements.",
+		questions: "What legal risks does this create? Are we compliant with relevant regulations? What contractual protections do we need?",
+		suffix:    "Legal guidance must protect the organization while enabling business objectives within regulatory frameworks.",
+	},
+
+	// Leadership/Strategy stakeholders
+	"executive": {
+		prefix:    "As an executive, I consider strategic alignment, organizational impact, and stakeholder value.",
+		questions: "Does this align with our strategic vision? What's the opportunity cost? How does this affect our competitive position?",
+		suffix:    "Executive decisions must balance short-term execution with long-term strategic positioning.",
+	},
+	"cto": {
+		prefix:    "As CTO, I evaluate technical strategy, innovation, and technology roadmap alignment.",
+		questions: "Does this advance our technical capabilities? How does it fit our technology roadmap? What innovation opportunities does it create?",
+		suffix:    "CTO decisions shape technological direction while ensuring technical excellence serves business goals.",
+	},
+	"founder": {
+		prefix:    "As a founder, I consider product-market fit, growth potential, and company mission alignment.",
+		questions: "Does this move us closer to our vision? Will this help us grow? Is this consistent with our values and mission?",
+		suffix:    "Founder decisions must balance pragmatic business needs with the original vision and values.",
+	},
+
+	// Team/HR stakeholders
+	"hr": {
+		prefix:    "As an HR professional, I consider employee impact, culture, and organizational health.",
+		questions: "How will this affect our employees? What are the training needs? Does this align with our culture and values?",
+		suffix:    "HR decisions must balance organizational needs with employee well-being and development.",
+	},
+	"team lead": {
+		prefix:    "As a team lead, I balance team productivity, morale, and delivery commitments.",
+		questions: "How will this affect my team's workload? Do we have the skills needed? What support does the team need?",
+		suffix:    "Team leadership requires advocating for team needs while meeting organizational commitments.",
+	},
+}
+
+// synthesizeViewpoint creates a stakeholder-specific viewpoint that genuinely differs by perspective
 func (pa *PerspectiveAnalyzer) synthesizeViewpoint(situation, stakeholder string, concerns []string) string {
-	// Create a perspective-specific interpretation of the situation
-	concernsStr := "unknown concerns"
+	stakeholderLower := strings.ToLower(stakeholder)
+
+	// Format concerns list
+	concernsStr := "various factors"
 	if len(concerns) > 0 {
 		concernsStr = strings.Join(concerns, ", ")
 	}
 
-	return fmt.Sprintf("From the %s perspective, this situation primarily raises concerns about %s. The key question is how to address these issues while balancing competing priorities and constraints.", stakeholder, concernsStr)
+	// Find the best matching viewpoint template
+	var template viewpointTemplate
+	found := false
+	for key, tmpl := range stakeholderViewpoints {
+		if strings.Contains(stakeholderLower, key) {
+			template = tmpl
+			found = true
+			break
+		}
+	}
+
+	// If no specific template, generate a contextual generic one
+	if !found {
+		return pa.generateGenericViewpoint(situation, stakeholder, concerns)
+	}
+
+	// Build the stakeholder-specific viewpoint
+	return fmt.Sprintf("%s My primary concerns center on %s. %s %s",
+		template.prefix,
+		concernsStr,
+		template.questions,
+		template.suffix)
+}
+
+// generateGenericViewpoint creates a varied viewpoint for unknown stakeholder types
+func (pa *PerspectiveAnalyzer) generateGenericViewpoint(situation, stakeholder string, concerns []string) string {
+	concernsStr := "the overall impact"
+	if len(concerns) > 0 {
+		concernsStr = strings.Join(concerns, ", ")
+	}
+
+	// Use the stakeholder name to create some variation even for unknown types
+	return fmt.Sprintf("Speaking as a %s, I bring a distinct perspective shaped by my role and responsibilities. "+
+		"My analysis focuses on %s. "+
+		"The key questions I would raise are: How does this serve my constituents' interests? "+
+		"What are the immediate and long-term implications? How can we ensure accountability? "+
+		"Any path forward must address these concerns while remaining practical and achievable.",
+		stakeholder, concernsStr)
 }
 
 // estimateConfidence estimates confidence in perspective modeling

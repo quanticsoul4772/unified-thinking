@@ -54,6 +54,7 @@ type SelfEvaluateResponse struct {
 type DetectBiasesRequest struct {
 	ThoughtID string `json:"thought_id,omitempty"`
 	BranchID  string `json:"branch_id,omitempty"`
+	Content   string `json:"content,omitempty"` // Direct content analysis without requiring stored thought
 }
 
 // DetectedIssue represents either a bias or fallacy with a unified structure
@@ -132,7 +133,16 @@ func (h *MetacognitionHandler) HandleDetectBiases(ctx context.Context, req *mcp.
 	var err error
 
 	// Get the content to analyze
-	if input.ThoughtID != "" {
+	if input.Content != "" {
+		// Direct content analysis - create a temporary thought object
+		content = input.Content
+		tempThought := &types.Thought{
+			ID:         "direct-content-analysis",
+			Content:    content,
+			Confidence: 0.8, // Default confidence for direct analysis
+		}
+		biases, err = h.biasDetector.DetectBiases(tempThought)
+	} else if input.ThoughtID != "" {
 		thought, getErr := h.storage.GetThought(input.ThoughtID)
 		if getErr != nil {
 			return nil, nil, getErr
@@ -152,7 +162,7 @@ func (h *MetacognitionHandler) HandleDetectBiases(ctx context.Context, req *mcp.
 		}
 		biases, err = h.biasDetector.DetectBiasesInBranch(branch)
 	} else {
-		return nil, nil, fmt.Errorf("either thought_id or branch_id must be provided")
+		return nil, nil, fmt.Errorf("content, thought_id, or branch_id must be provided")
 	}
 
 	if err != nil {
@@ -245,12 +255,24 @@ func ValidateSelfEvaluateRequest(req *SelfEvaluateRequest) error {
 
 // ValidateDetectBiasesRequest validates a DetectBiasesRequest
 func ValidateDetectBiasesRequest(req *DetectBiasesRequest) error {
-	if req.ThoughtID == "" && req.BranchID == "" {
-		return &ValidationError{"request", "either thought_id or branch_id must be provided. Example: {\"thought_id\": \"thought_123\"} or {\"branch_id\": \"branch_456\"}"}
+	if req.ThoughtID == "" && req.BranchID == "" && req.Content == "" {
+		return &ValidationError{"request", "content, thought_id, or branch_id must be provided. Example: {\"content\": \"text to analyze\"} or {\"thought_id\": \"thought_123\"}"}
 	}
 
-	if req.ThoughtID != "" && req.BranchID != "" {
-		return &ValidationError{"request", "only one of thought_id or branch_id should be provided, not both"}
+	// Count how many parameters are provided
+	providedCount := 0
+	if req.ThoughtID != "" {
+		providedCount++
+	}
+	if req.BranchID != "" {
+		providedCount++
+	}
+	if req.Content != "" {
+		providedCount++
+	}
+
+	if providedCount > 1 {
+		return &ValidationError{"request", "only one of content, thought_id, or branch_id should be provided"}
 	}
 
 	if len(req.ThoughtID) > MaxBranchIDLength {
@@ -259,6 +281,10 @@ func ValidateDetectBiasesRequest(req *DetectBiasesRequest) error {
 
 	if len(req.BranchID) > MaxBranchIDLength {
 		return &ValidationError{"branch_id", "branch_id too long"}
+	}
+
+	if len(req.Content) > MaxContentLength {
+		return &ValidationError{"content", "content too long"}
 	}
 
 	return nil

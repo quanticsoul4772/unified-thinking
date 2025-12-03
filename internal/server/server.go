@@ -2069,7 +2069,15 @@ func (s *UnifiedServer) SynthesizeInsights(ctx context.Context, req SynthesizeIn
 
 // DetectBiases identifies cognitive biases
 func (s *UnifiedServer) DetectBiases(ctx context.Context, req handlers.DetectBiasesRequest) ([]*types.CognitiveBias, error) {
-	if req.ThoughtID != "" {
+	if req.Content != "" {
+		// Direct content analysis - create a temporary thought object
+		tempThought := &types.Thought{
+			ID:         "direct-content-analysis",
+			Content:    req.Content,
+			Confidence: 0.8, // Default confidence for direct analysis
+		}
+		return s.biasDetector.DetectBiases(tempThought)
+	} else if req.ThoughtID != "" {
 		thought, err := s.storage.GetThought(req.ThoughtID)
 		if err != nil {
 			return nil, err
@@ -2082,7 +2090,7 @@ func (s *UnifiedServer) DetectBiases(ctx context.Context, req handlers.DetectBia
 		}
 		return s.biasDetector.DetectBiasesInBranch(branch)
 	}
-	return nil, fmt.Errorf("either thought_id or branch_id must be provided")
+	return nil, fmt.Errorf("content, thought_id, or branch_id must be provided")
 }
 
 // AssessEvidence evaluates the quality of evidence

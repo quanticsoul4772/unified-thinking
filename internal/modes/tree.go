@@ -152,6 +152,7 @@ func (m *TreeMode) ProcessThought(ctx context.Context, input ThoughtInput) (*Tho
 		Mode:          string(types.ModeTree),
 		BranchState:   string(branch.State),
 		Priority:      branch.Priority,
+		Confidence:    thought.Confidence, // Preserve input confidence
 		InsightCount:  len(branch.Insights),
 		CrossRefCount: len(branch.CrossRefs),
 	}

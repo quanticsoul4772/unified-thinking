@@ -2,6 +2,7 @@ package reasoning
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -320,50 +321,326 @@ func (pd *ProblemDecomposer) DecomposeProblem(problem string) (*types.ProblemDec
 	return decomposition, nil
 }
 
-// identifySubproblems identifies component subproblems (heuristic approach)
+// identifySubproblems identifies component subproblems using entity-aware templates
 func (pd *ProblemDecomposer) identifySubproblems(problem string) []*types.Subproblem {
-	// In a real implementation, this would use NLP or more sophisticated analysis
-	// For now, we provide a simple template-based approach
+	// Extract key entities from the problem statement
+	entities := pd.extractProblemEntities(problem)
+	entityStr := strings.Join(entities, ", ")
+	if entityStr == "" {
+		entityStr = "the given problem"
+	}
 
-	subproblems := []*types.Subproblem{
+	// Detect domain for appropriate template selection
+	domain := DetectDomain(problem)
+
+	// Generate problem-specific subproblems based on domain and entities
+	var subproblems []*types.Subproblem
+
+	switch domain {
+	case DomainResearch:
+		subproblems = pd.generateResearchSubproblems(problem, entities, entityStr)
+	case DomainDebugging:
+		subproblems = pd.generateDebuggingSubproblems(problem, entities, entityStr)
+	case DomainArchitecture:
+		subproblems = pd.generateArchitectureSubproblems(problem, entities, entityStr)
+	case DomainProof:
+		subproblems = pd.generateProofSubproblems(problem, entities, entityStr)
+	default:
+		subproblems = pd.generateGeneralSubproblems(problem, entities, entityStr)
+	}
+
+	return subproblems
+}
+
+// extractProblemEntities extracts meaningful noun phrases and key terms from the problem
+func (pd *ProblemDecomposer) extractProblemEntities(problem string) []string {
+	entities := make([]string, 0)
+	seen := make(map[string]bool)
+
+	// Common stop words to filter out
+	stopWords := map[string]bool{
+		"the": true, "a": true, "an": true, "is": true, "are": true, "was": true,
+		"were": true, "be": true, "been": true, "being": true, "have": true,
+		"has": true, "had": true, "do": true, "does": true, "did": true,
+		"will": true, "would": true, "could": true, "should": true, "may": true,
+		"might": true, "can": true, "must": true, "shall": true, "to": true,
+		"of": true, "in": true, "for": true, "on": true, "with": true, "at": true,
+		"by": true, "from": true, "up": true, "about": true, "into": true, "over": true,
+		"after": true, "and": true, "or": true, "but": true, "if": true, "then": true,
+		"how": true, "what": true, "why": true, "when": true, "where": true, "which": true,
+		"who": true, "this": true, "that": true, "these": true, "those": true,
+		"it": true, "its": true, "they": true, "their": true, "them": true,
+		"we": true, "our": true, "you": true, "your": true, "i": true, "my": true,
+		"some": true, "any": true, "all": true, "most": true, "many": true, "much": true,
+		"more": true, "less": true, "very": true, "just": true, "only": true,
+	}
+
+	// Normalize and tokenize
+	words := strings.Fields(strings.ToLower(problem))
+
+	// Build bigrams and filter for meaningful phrases
+	for i := 0; i < len(words); i++ {
+		word := strings.Trim(words[i], ".,?!;:\"'()[]{}") // Remove punctuation
+
+		// Skip stop words and short words
+		if len(word) < 3 || stopWords[word] {
+			continue
+		}
+
+		// Check for bigram (two-word phrase) if not at end
+		if i < len(words)-1 {
+			nextWord := strings.Trim(words[i+1], ".,?!;:\"'()[]{}") // Remove punctuation
+			if len(nextWord) >= 3 && !stopWords[nextWord] {
+				bigram := word + " " + nextWord
+				if !seen[bigram] {
+					seen[bigram] = true
+					entities = append(entities, bigram)
+				}
+			}
+		}
+
+		// Also add significant single words (capitalized or domain terms)
+		if !seen[word] {
+			seen[word] = true
+			// Only add single words if they seem significant
+			if isCapitalized(word) || isDomainTerm(word) {
+				entities = append(entities, word)
+			}
+		}
+	}
+
+	// Limit to top 5 most relevant entities
+	if len(entities) > 5 {
+		entities = entities[:5]
+	}
+
+	return entities
+}
+
+// isCapitalized checks if a word appears to be capitalized (proper noun)
+func isCapitalized(word string) bool {
+	// This is called on lowercase words, check original
+	return len(word) > 0 && word[0] >= 'A' && word[0] <= 'Z'
+}
+
+// isDomainTerm checks if a word is a significant domain term
+func isDomainTerm(word string) bool {
+	domainTerms := map[string]bool{
+		"funding": true, "research": true, "analysis": true, "system": true,
+		"data": true, "model": true, "algorithm": true, "architecture": true,
+		"design": true, "implementation": true, "performance": true, "security": true,
+		"testing": true, "debugging": true, "optimization": true, "integration": true,
+		"deployment": true, "science": true, "engineering": true, "technology": true,
+		"physics": true, "chemistry": true, "biology": true, "mathematics": true,
+		"economics": true, "policy": true, "strategy": true, "management": true,
+		"prioritization": true, "allocation": true, "distribution": true,
+	}
+	return domainTerms[word]
+}
+
+// generateResearchSubproblems creates research-specific subproblems
+func (pd *ProblemDecomposer) generateResearchSubproblems(problem string, entities []string, entityStr string) []*types.Subproblem {
+	return []*types.Subproblem{
 		{
 			ID:          fmt.Sprintf("subproblem-%d-1", pd.counter),
-			Description: "Analyze and define the problem scope",
-			Complexity:  "low",
-			Priority:    "high",
+			Description: fmt.Sprintf("Define research questions about %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "critical",
 			Status:      "pending",
 		},
 		{
 			ID:          fmt.Sprintf("subproblem-%d-2", pd.counter),
-			Description: "Gather required information and resources",
-			Complexity:  "medium",
+			Description: fmt.Sprintf("Review existing literature and prior work on %s", entityStr),
+			Complexity:  "high",
 			Priority:    "high",
 			Status:      "pending",
 		},
 		{
 			ID:          fmt.Sprintf("subproblem-%d-3", pd.counter),
-			Description: "Develop potential solutions",
+			Description: fmt.Sprintf("Design methodology to investigate %s", entityStr),
 			Complexity:  "high",
 			Priority:    "high",
 			Status:      "pending",
 		},
 		{
 			ID:          fmt.Sprintf("subproblem-%d-4", pd.counter),
-			Description: "Evaluate and select best approach",
+			Description: fmt.Sprintf("Gather and analyze data related to %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-5", pd.counter),
+			Description: fmt.Sprintf("Synthesize findings and draw conclusions about %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "high",
+			Status:      "pending",
+		},
+	}
+}
+
+// generateDebuggingSubproblems creates debugging-specific subproblems
+func (pd *ProblemDecomposer) generateDebuggingSubproblems(problem string, entities []string, entityStr string) []*types.Subproblem {
+	return []*types.Subproblem{
+		{
+			ID:          fmt.Sprintf("subproblem-%d-1", pd.counter),
+			Description: fmt.Sprintf("Reproduce and isolate the issue in %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "critical",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-2", pd.counter),
+			Description: fmt.Sprintf("Gather diagnostic information about %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-3", pd.counter),
+			Description: fmt.Sprintf("Identify root cause of the %s issue", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-4", pd.counter),
+			Description: fmt.Sprintf("Develop and implement fix for %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-5", pd.counter),
+			Description: fmt.Sprintf("Verify fix and ensure no regression in %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "high",
+			Status:      "pending",
+		},
+	}
+}
+
+// generateArchitectureSubproblems creates architecture-specific subproblems
+func (pd *ProblemDecomposer) generateArchitectureSubproblems(problem string, entities []string, entityStr string) []*types.Subproblem {
+	return []*types.Subproblem{
+		{
+			ID:          fmt.Sprintf("subproblem-%d-1", pd.counter),
+			Description: fmt.Sprintf("Analyze requirements and constraints for %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "critical",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-2", pd.counter),
+			Description: fmt.Sprintf("Identify architectural patterns applicable to %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-3", pd.counter),
+			Description: fmt.Sprintf("Design component structure and interfaces for %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-4", pd.counter),
+			Description: fmt.Sprintf("Evaluate trade-offs and risks in %s architecture", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-5", pd.counter),
+			Description: fmt.Sprintf("Document and communicate the %s architecture", entityStr),
+			Complexity:  "medium",
+			Priority:    "medium",
+			Status:      "pending",
+		},
+	}
+}
+
+// generateProofSubproblems creates proof/verification-specific subproblems
+func (pd *ProblemDecomposer) generateProofSubproblems(problem string, entities []string, entityStr string) []*types.Subproblem {
+	return []*types.Subproblem{
+		{
+			ID:          fmt.Sprintf("subproblem-%d-1", pd.counter),
+			Description: fmt.Sprintf("State the theorem or claim about %s precisely", entityStr),
+			Complexity:  "medium",
+			Priority:    "critical",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-2", pd.counter),
+			Description: fmt.Sprintf("Identify axioms, definitions, and lemmas needed for %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-3", pd.counter),
+			Description: fmt.Sprintf("Construct proof strategy for %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-4", pd.counter),
+			Description: fmt.Sprintf("Execute proof steps and verify each deduction about %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-5", pd.counter),
+			Description: fmt.Sprintf("Review proof completeness and handle edge cases for %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "high",
+			Status:      "pending",
+		},
+	}
+}
+
+// generateGeneralSubproblems creates general problem-solving subproblems with entity context
+func (pd *ProblemDecomposer) generateGeneralSubproblems(problem string, entities []string, entityStr string) []*types.Subproblem {
+	return []*types.Subproblem{
+		{
+			ID:          fmt.Sprintf("subproblem-%d-1", pd.counter),
+			Description: fmt.Sprintf("Analyze and define the scope of %s", entityStr),
+			Complexity:  "low",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-2", pd.counter),
+			Description: fmt.Sprintf("Gather information and resources about %s", entityStr),
+			Complexity:  "medium",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-3", pd.counter),
+			Description: fmt.Sprintf("Develop potential solutions for %s", entityStr),
+			Complexity:  "high",
+			Priority:    "high",
+			Status:      "pending",
+		},
+		{
+			ID:          fmt.Sprintf("subproblem-%d-4", pd.counter),
+			Description: fmt.Sprintf("Evaluate and select best approach for %s", entityStr),
 			Complexity:  "medium",
 			Priority:    "medium",
 			Status:      "pending",
 		},
 		{
 			ID:          fmt.Sprintf("subproblem-%d-5", pd.counter),
-			Description: "Implement and test solution",
+			Description: fmt.Sprintf("Implement and test solution for %s", entityStr),
 			Complexity:  "high",
 			Priority:    "medium",
 			Status:      "pending",
 		},
 	}
-
-	return subproblems
 }
 
 // identifyDependencies identifies dependencies between subproblems

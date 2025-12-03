@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -452,5 +453,132 @@ func TestConcurrentPerspectiveGeneration(t *testing.T) {
 	// Check for errors
 	for err := range errors {
 		t.Errorf("Concurrent generation error: %v", err)
+	}
+}
+
+// TestViewpointsAreDifferent verifies that different stakeholders produce different viewpoints
+// This is a critical test to ensure we don't have identical template responses
+func TestViewpointsAreDifferent(t *testing.T) {
+	pa := NewPerspectiveAnalyzer()
+
+	situation := "Should we fund dark matter research?"
+	stakeholders := []string{"scientist", "policymaker", "taxpayer"}
+
+	perspectives, err := pa.AnalyzePerspectives(situation, stakeholders)
+	if err != nil {
+		t.Fatalf("AnalyzePerspectives() failed: %v", err)
+	}
+
+	if len(perspectives) != len(stakeholders) {
+		t.Fatalf("Expected %d perspectives, got %d", len(stakeholders), len(perspectives))
+	}
+
+	// Collect all viewpoints
+	viewpoints := make(map[string]string)
+	for _, p := range perspectives {
+		viewpoints[p.Stakeholder] = p.Viewpoint
+	}
+
+	// Verify each pair of stakeholders has DIFFERENT viewpoints
+	for i := 0; i < len(stakeholders); i++ {
+		for j := i + 1; j < len(stakeholders); j++ {
+			s1 := stakeholders[i]
+			s2 := stakeholders[j]
+			v1 := viewpoints[s1]
+			v2 := viewpoints[s2]
+
+			if v1 == v2 {
+				t.Errorf("CRITICAL: %s and %s have IDENTICAL viewpoints!\n"+
+					"This defeats the purpose of perspective analysis.\n"+
+					"Viewpoint: %q", s1, s2, v1)
+			}
+		}
+	}
+
+	// Additional check: verify viewpoints contain stakeholder-specific language
+	scientistViewpoint := viewpoints["scientist"]
+	if !containsAny(scientistViewpoint, "scientist", "empirical", "evidence", "methodology", "data") {
+		t.Errorf("Scientist viewpoint lacks scientific language: %q", scientistViewpoint)
+	}
+
+	policymakerViewpoint := viewpoints["policymaker"]
+	if !containsAny(policymakerViewpoint, "policy", "stakeholder", "societal", "interests") {
+		t.Errorf("Policymaker viewpoint lacks policy language: %q", policymakerViewpoint)
+	}
+
+	taxpayerViewpoint := viewpoints["taxpayer"]
+	if !containsAny(taxpayerViewpoint, "taxpayer", "public", "fund", "money", "priorities") {
+		t.Errorf("Taxpayer viewpoint lacks taxpayer language: %q", taxpayerViewpoint)
+	}
+}
+
+// containsAny checks if text contains any of the given substrings (case-insensitive)
+func containsAny(text string, substrings ...string) bool {
+	textLower := strings.ToLower(text)
+	for _, s := range substrings {
+		if strings.Contains(textLower, strings.ToLower(s)) {
+			return true
+		}
+	}
+	return false
+}
+
+func TestSynthesizeViewpointVariety(t *testing.T) {
+	pa := NewPerspectiveAnalyzer()
+	concerns := []string{"resource allocation", "scientific value"}
+	situation := "Research funding decision"
+
+	// Test that different stakeholder types produce different viewpoints
+	stakeholderTypes := []string{
+		"scientist",
+		"policymaker",
+		"taxpayer",
+		"investor",
+		"engineer",
+		"philosopher",
+	}
+
+	viewpoints := make(map[string]string)
+	for _, stakeholder := range stakeholderTypes {
+		viewpoint := pa.synthesizeViewpoint(situation, stakeholder, concerns)
+		viewpoints[stakeholder] = viewpoint
+	}
+
+	// Verify all viewpoints are unique
+	seen := make(map[string]string)
+	for stakeholder, viewpoint := range viewpoints {
+		if prevStakeholder, exists := seen[viewpoint]; exists {
+			t.Errorf("Duplicate viewpoint! %s and %s have identical viewpoints:\n%s",
+				prevStakeholder, stakeholder, viewpoint)
+		}
+		seen[viewpoint] = stakeholder
+	}
+}
+
+func TestGenericViewpointGeneration(t *testing.T) {
+	pa := NewPerspectiveAnalyzer()
+	concerns := []string{"impact", "feasibility"}
+	situation := "Test situation"
+
+	// Test unknown stakeholder types get varied generic viewpoints
+	unknownStakeholder := "alien-observer"
+	viewpoint := pa.generateGenericViewpoint(situation, unknownStakeholder, concerns)
+
+	if viewpoint == "" {
+		t.Error("generateGenericViewpoint returned empty string")
+	}
+
+	// Should include the stakeholder name for variation
+	if !strings.Contains(viewpoint, unknownStakeholder) {
+		t.Errorf("Generic viewpoint should include stakeholder name %q, got: %q",
+			unknownStakeholder, viewpoint)
+	}
+
+	// Should include concerns
+	for _, concern := range concerns {
+		if !strings.Contains(viewpoint, concern) {
+			t.Errorf("Generic viewpoint should include concern %q, got: %q",
+				concern, viewpoint)
+		}
 	}
 }

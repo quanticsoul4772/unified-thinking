@@ -67,20 +67,56 @@ func (cr *CausalReasoner) extractVariables(observations []string) []*types.Causa
 	variableMap := make(map[string]*types.CausalVariable)
 	varCounter := 0
 
-	// Patterns that indicate variables
-	causalPatterns := []struct {
-		pattern string
-		before  string
-		after   string
-	}{
-		{"increases", "cause", "effect"},
-		{"decreases", "cause", "effect"},
-		{"causes", "cause", "effect"},
-		{"leads to", "cause", "effect"},
-		{"results in", "cause", "effect"},
-		{"affects", "cause", "effect"},
-		{"influences", "cause", "effect"},
-		{"depends on", "effect", "cause"},
+	// Comprehensive patterns that indicate causal relationships
+	// Organized by semantic category - must match extractCausalLink patterns
+	causalPatterns := []string{
+		// Direct increase/positive effect
+		"increases", "raises", "boosts", "enhances", "improves", "strengthens",
+		"amplifies", "accelerates", "elevates", "expands", "grows", "heightens",
+
+		// Direct decrease/negative effect
+		"decreases", "reduces", "lowers", "diminishes", "weakens", "shrinks",
+		"declines", "drops", "falls", "contracts", "lessens", "minimizes",
+
+		// Causation verbs
+		"causes", "leads to", "results in", "produces", "generates", "creates",
+		"triggers", "induces", "prompts", "initiates", "drives", "yields",
+
+		// Prevention/blocking
+		"prevents", "blocks", "inhibits", "stops", "halts", "impedes",
+		"hinders", "obstructs", "restricts", "limits", "constrains", "suppresses",
+
+		// Attraction/gathering (e.g., "funding attracts talent")
+		"attracts", "draws", "brings", "pulls", "lures", "entices",
+		"recruits", "gathers", "collects", "acquires",
+
+		// Enablement/facilitation
+		"enables", "allows", "permits", "facilitates", "supports", "helps",
+		"assists", "aids", "empowers", "fosters", "promotes", "encourages",
+
+		// Requirement/dependency
+		"requires", "needs", "demands", "necessitates", "depends on", "relies on",
+		"is contingent on", "presupposes", "assumes",
+
+		// Contribution/influence
+		"contributes to", "influences", "affects", "impacts", "shapes", "determines",
+		"controls", "governs", "regulates", "modulates", "conditions",
+
+		// Correlation patterns
+		"correlates with", "is associated with", "is linked to", "is connected to",
+		"is related to", "corresponds to", "parallels", "mirrors", "tracks",
+
+		// Resource/funding specific
+		"funds", "finances", "sponsors", "invests in", "allocates to", "provides for",
+		"bankrolls", "subsidizes", "underwrites",
+
+		// Competition/displacement
+		"competes with", "displaces", "replaces", "substitutes", "supplants",
+		"crowds out", "undermines", "cannibalizes",
+
+		// Transformation
+		"transforms", "converts", "changes", "alters", "modifies", "adapts",
+		"evolves into", "becomes", "turns into",
 	}
 
 	for _, obs := range observations {
@@ -88,8 +124,8 @@ func (cr *CausalReasoner) extractVariables(observations []string) []*types.Causa
 
 		// Extract variables based on causal patterns
 		for _, pattern := range causalPatterns {
-			if strings.Contains(obsLower, pattern.pattern) {
-				parts := strings.Split(obsLower, pattern.pattern)
+			if strings.Contains(obsLower, pattern) {
+				parts := strings.Split(obsLower, pattern)
 				if len(parts) == 2 {
 					// Extract cause variable
 					causeVar := cr.cleanVariableName(parts[0])
@@ -217,15 +253,59 @@ func (cr *CausalReasoner) identifyCausalLinks(variables []*types.CausalVariable,
 
 // extractCausalLink extracts a causal link from an observation
 func (cr *CausalReasoner) extractCausalLink(obs string, nameToVar map[string]*types.CausalVariable, counter *int) *types.CausalLink {
-	// Patterns with their link types
+	// Comprehensive patterns with their link types
+	// Organized by semantic category for maintainability
 	patterns := []struct {
 		keywords []string
 		linkType string
 	}{
-		{[]string{"increases", "raises", "boosts", "enhances"}, "positive"},
-		{[]string{"decreases", "reduces", "lowers", "diminishes"}, "negative"},
-		{[]string{"causes", "leads to", "results in", "produces"}, "positive"},
-		{[]string{"prevents", "blocks", "inhibits"}, "negative"},
+		// Direct increase/positive effect
+		{[]string{"increases", "raises", "boosts", "enhances", "improves", "strengthens",
+			"amplifies", "accelerates", "elevates", "expands", "grows", "heightens"}, "positive"},
+
+		// Direct decrease/negative effect
+		{[]string{"decreases", "reduces", "lowers", "diminishes", "weakens", "shrinks",
+			"declines", "drops", "falls", "contracts", "lessens", "minimizes"}, "negative"},
+
+		// Causation verbs
+		{[]string{"causes", "leads to", "results in", "produces", "generates", "creates",
+			"triggers", "induces", "prompts", "initiates", "drives", "yields"}, "positive"},
+
+		// Prevention/blocking
+		{[]string{"prevents", "blocks", "inhibits", "stops", "halts", "impedes",
+			"hinders", "obstructs", "restricts", "limits", "constrains", "suppresses"}, "negative"},
+
+		// Attraction/gathering (e.g., "funding attracts talent")
+		{[]string{"attracts", "draws", "brings", "pulls", "lures", "entices",
+			"recruits", "gathers", "collects", "acquires"}, "positive"},
+
+		// Enablement/facilitation
+		{[]string{"enables", "allows", "permits", "facilitates", "supports", "helps",
+			"assists", "aids", "empowers", "fosters", "promotes", "encourages"}, "positive"},
+
+		// Requirement/dependency
+		{[]string{"requires", "needs", "demands", "necessitates", "depends on", "relies on",
+			"is contingent on", "presupposes", "assumes"}, "dependency"},
+
+		// Contribution/influence
+		{[]string{"contributes to", "influences", "affects", "impacts", "shapes", "determines",
+			"controls", "governs", "regulates", "modulates", "conditions"}, "positive"},
+
+		// Correlation patterns (weaker than causation)
+		{[]string{"correlates with", "is associated with", "is linked to", "is connected to",
+			"is related to", "corresponds to", "parallels", "mirrors", "tracks"}, "correlation"},
+
+		// Resource/funding specific
+		{[]string{"funds", "finances", "sponsors", "invests in", "allocates to", "provides for",
+			"bankrolls", "subsidizes", "underwrites"}, "positive"},
+
+		// Competition/displacement
+		{[]string{"competes with", "displaces", "replaces", "substitutes", "supplants",
+			"crowds out", "undermines", "cannibalizes"}, "negative"},
+
+		// Transformation
+		{[]string{"transforms", "converts", "changes", "alters", "modifies", "adapts",
+			"evolves into", "becomes", "turns into"}, "transformation"},
 	}
 
 	for _, pattern := range patterns {

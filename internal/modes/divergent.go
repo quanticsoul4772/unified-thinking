@@ -77,6 +77,7 @@ func (m *DivergentMode) ProcessThought(ctx context.Context, input ThoughtInput) 
 		ThoughtID:            thought.ID,
 		Mode:                 string(types.ModeDivergent),
 		Content:              creativeContent,
+		Confidence:           thought.Confidence, // Preserve input confidence
 		IsRebellion:          thought.IsRebellion,
 		ChallengesAssumption: thought.ChallengesAssumption,
 	}
@@ -135,10 +136,11 @@ func (m *DivergentMode) BranchThought(ctx context.Context, thoughtID string, dir
 	}
 
 	result := &ThoughtResult{
-		ThoughtID: thought.ID,
-		Mode:      string(types.ModeDivergent),
-		Content:   branchedContent,
-		Direction: direction,
+		ThoughtID:  thought.ID,
+		Mode:       string(types.ModeDivergent),
+		Content:    branchedContent,
+		Direction:  direction,
+		Confidence: thought.Confidence, // Preserve thought confidence
 	}
 
 	return result, nil

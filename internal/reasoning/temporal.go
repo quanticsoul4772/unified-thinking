@@ -89,48 +89,95 @@ func (tr *TemporalReasoner) normalizeTimeHorizon(horizon string) string {
 	return "months" // Default fallback
 }
 
+// extractKeyEntities extracts key nouns/topics from the situation
+func (tr *TemporalReasoner) extractKeyEntities(situation string) []string {
+	words := strings.Fields(situation)
+	entities := make([]string, 0)
+
+	// Skip common words to find meaningful entities
+	stopWords := map[string]bool{
+		"the": true, "a": true, "an": true, "and": true, "or": true, "but": true,
+		"in": true, "on": true, "at": true, "to": true, "for": true, "of": true,
+		"with": true, "by": true, "is": true, "are": true, "be": true, "this": true,
+		"that": true, "it": true, "we": true, "our": true, "how": true, "what": true,
+		"should": true, "would": true, "could": true, "will": true, "can": true,
+		"evaluate": true, "assess": true, "analyze": true, "consider": true,
+		"determine": true, "decide": true, "priorities": true, "about": true,
+	}
+
+	for _, word := range words {
+		wordLower := strings.ToLower(strings.Trim(word, ".,!?:;"))
+		if len(wordLower) > 2 && !stopWords[wordLower] {
+			entities = append(entities, wordLower)
+		}
+	}
+
+	// Keep up to 5 most relevant entities
+	if len(entities) > 5 {
+		entities = entities[:5]
+	}
+	return entities
+}
+
 // analyzeShortTerm analyzes immediate/short-term implications
 func (tr *TemporalReasoner) analyzeShortTerm(situation string) string {
 	situationLower := strings.ToLower(situation)
+	entities := tr.extractKeyEntities(situation)
 
 	var implications []string
 
 	// Check for cost implications
-	if strings.Contains(situationLower, "cost") || strings.Contains(situationLower, "budget") || strings.Contains(situationLower, "expense") {
-		implications = append(implications, "immediate financial impact")
+	if strings.Contains(situationLower, "cost") || strings.Contains(situationLower, "budget") || strings.Contains(situationLower, "expense") || strings.Contains(situationLower, "fund") || strings.Contains(situationLower, "invest") {
+		implications = append(implications, "immediate financial impact and resource allocation")
+	}
+
+	// Check for research/scientific context
+	if strings.Contains(situationLower, "research") || strings.Contains(situationLower, "study") || strings.Contains(situationLower, "scientific") || strings.Contains(situationLower, "experiment") {
+		implications = append(implications, "initial research phases and methodology setup")
 	}
 
 	// Check for implementation effort
-	if strings.Contains(situationLower, "implement") || strings.Contains(situationLower, "deploy") || strings.Contains(situationLower, "launch") {
+	if strings.Contains(situationLower, "implement") || strings.Contains(situationLower, "deploy") || strings.Contains(situationLower, "launch") || strings.Contains(situationLower, "develop") {
 		implications = append(implications, "implementation effort and disruption")
 	}
 
 	// Check for user/stakeholder impact
-	if strings.Contains(situationLower, "user") || strings.Contains(situationLower, "customer") || strings.Contains(situationLower, "employee") {
-		implications = append(implications, "immediate stakeholder reactions")
+	if strings.Contains(situationLower, "user") || strings.Contains(situationLower, "customer") || strings.Contains(situationLower, "employee") || strings.Contains(situationLower, "stakeholder") || strings.Contains(situationLower, "community") {
+		implications = append(implications, "immediate stakeholder reactions and engagement")
 	}
 
 	// Check for operational impact
-	if strings.Contains(situationLower, "operation") || strings.Contains(situationLower, "process") || strings.Contains(situationLower, "workflow") {
+	if strings.Contains(situationLower, "operation") || strings.Contains(situationLower, "process") || strings.Contains(situationLower, "workflow") || strings.Contains(situationLower, "system") {
 		implications = append(implications, "operational adjustment period")
 	}
 
 	// Check for risk
-	if strings.Contains(situationLower, "risk") || strings.Contains(situationLower, "challenge") || strings.Contains(situationLower, "problem") {
+	if strings.Contains(situationLower, "risk") || strings.Contains(situationLower, "challenge") || strings.Contains(situationLower, "problem") || strings.Contains(situationLower, "uncertain") {
 		implications = append(implications, "near-term risks and challenges")
 	}
 
-	// Build short-term view
-	if len(implications) == 0 {
-		return "Short-term: Initial implementation will require resources and attention. Immediate feedback will reveal early successes and challenges."
+	// Check for decision/priority context
+	if strings.Contains(situationLower, "decision") || strings.Contains(situationLower, "priorit") || strings.Contains(situationLower, "choose") || strings.Contains(situationLower, "select") {
+		implications = append(implications, "immediate decision-making requirements")
 	}
 
-	return fmt.Sprintf("Short-term: %s. Early indicators will emerge within weeks, requiring close monitoring and potential adjustments.", strings.Join(implications, "; "))
+	// Build short-term view with context
+	topicContext := ""
+	if len(entities) > 0 {
+		topicContext = fmt.Sprintf(" regarding %s", strings.Join(entities, ", "))
+	}
+
+	if len(implications) == 0 {
+		return fmt.Sprintf("Short-term%s: Initial assessment and early actions will be critical. Early indicators will emerge within weeks, requiring close monitoring and potential adjustments. Immediate stakeholder alignment and resource commitment will shape early outcomes.", topicContext)
+	}
+
+	return fmt.Sprintf("Short-term%s: Key immediate factors include %s. Early indicators will emerge within weeks, requiring close monitoring and potential adjustments.", topicContext, strings.Join(implications, "; "))
 }
 
 // analyzeLongTerm analyzes long-term implications
 func (tr *TemporalReasoner) analyzeLongTerm(situation string, horizon string) string {
 	situationLower := strings.ToLower(situation)
+	entities := tr.extractKeyEntities(situation)
 
 	var implications []string
 
@@ -164,6 +211,31 @@ func (tr *TemporalReasoner) analyzeLongTerm(situation string, horizon string) st
 		implications = append(implications, "technical debt and maintenance burden")
 	}
 
+	// Check for research/scientific long-term impact
+	if strings.Contains(situationLower, "research") || strings.Contains(situationLower, "scientific") || strings.Contains(situationLower, "discovery") || strings.Contains(situationLower, "breakthrough") {
+		implications = append(implications, "scientific advancement and knowledge accumulation")
+	}
+
+	// Check for funding/investment long-term impact
+	if strings.Contains(situationLower, "fund") || strings.Contains(situationLower, "invest") || strings.Contains(situationLower, "budget") || strings.Contains(situationLower, "grant") {
+		implications = append(implications, "return on investment and sustained funding viability")
+	}
+
+	// Check for talent/capability development
+	if strings.Contains(situationLower, "talent") || strings.Contains(situationLower, "scientist") || strings.Contains(situationLower, "expert") || strings.Contains(situationLower, "train") {
+		implications = append(implications, "talent pipeline and expertise development")
+	}
+
+	// Check for technology/infrastructure evolution
+	if strings.Contains(situationLower, "technology") || strings.Contains(situationLower, "infrastructure") || strings.Contains(situationLower, "platform") || strings.Contains(situationLower, "tool") {
+		implications = append(implications, "technology evolution and infrastructure maturity")
+	}
+
+	// Check for policy/regulatory trajectory
+	if strings.Contains(situationLower, "policy") || strings.Contains(situationLower, "regulation") || strings.Contains(situationLower, "government") || strings.Contains(situationLower, "public") {
+		implications = append(implications, "policy landscape and regulatory environment evolution")
+	}
+
 	// Build long-term view based on horizon
 	var horizonPhrase string
 	switch horizon {
@@ -179,11 +251,17 @@ func (tr *TemporalReasoner) analyzeLongTerm(situation string, horizon string) st
 		horizonPhrase = "over time"
 	}
 
-	if len(implications) == 0 {
-		return fmt.Sprintf("Long-term: %s, cumulative effects will become evident. Success depends on sustained commitment and adaptation.", horizonPhrase)
+	// Build topic context from entities
+	topicContext := ""
+	if len(entities) > 0 {
+		topicContext = fmt.Sprintf(" for %s", strings.Join(entities, ", "))
 	}
 
-	return fmt.Sprintf("Long-term: %s, this will impact %s. The full benefits and costs will compound over time.", horizonPhrase, strings.Join(implications, ", "))
+	if len(implications) == 0 {
+		return fmt.Sprintf("Long-term%s: %s, cumulative effects will become evident. Success depends on sustained commitment and adaptation. Long-term trajectory depends on consistent execution, stakeholder alignment, and ability to adapt to emerging opportunities and challenges.", topicContext, horizonPhrase)
+	}
+
+	return fmt.Sprintf("Long-term%s: %s, this will impact %s. The full benefits and costs will compound over time, shaping outcomes for years to come.", topicContext, horizonPhrase, strings.Join(implications, ", "))
 }
 
 // identifyTradeoffs identifies tensions between short and long-term considerations
@@ -211,6 +289,26 @@ func (tr *TemporalReasoner) identifyTradeoffs(situation string, shortTerm, longT
 		"manual": {
 			shortTerm: "Manual processes are quick to start but resource-intensive over time",
 			longTerm:  "Automation requires upfront effort but delivers compounding efficiency gains",
+		},
+		"research": {
+			shortTerm: "Applied research yields quick practical results but may miss fundamental insights",
+			longTerm:  "Basic research takes longer but creates foundational knowledge with broader applications",
+		},
+		"fund": {
+			shortTerm: "Short funding cycles enable quick pivots but discourage ambitious long-term projects",
+			longTerm:  "Sustained funding enables breakthrough research but requires sustained commitment",
+		},
+		"talent": {
+			shortTerm: "Hiring experienced talent delivers immediate capability but costs more",
+			longTerm:  "Developing talent through training creates loyal expertise but takes years",
+		},
+		"experiment": {
+			shortTerm: "Small experiments provide quick feedback but may miss large-scale effects",
+			longTerm:  "Large-scale experiments capture complex dynamics but require major resource commitment",
+		},
+		"discover": {
+			shortTerm: "Incremental discovery extends known boundaries with lower risk",
+			longTerm:  "Revolutionary discovery requires patient investment with uncertain timelines",
 		},
 	}
 

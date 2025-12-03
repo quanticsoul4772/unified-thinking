@@ -1,7 +1,8 @@
 # Unified Thinking Server
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![Test Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tests](https://img.shields.io/badge/tests-148_files-success)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
 [![Tools](https://img.shields.io/badge/tools-80-blue)](https://github.com/quanticsoul4772/unified-thinking)
@@ -176,7 +177,7 @@ make benchmark      # Run benchmarks
 make clean          # Remove artifacts
 ```
 
-**Test Coverage:** ~80% overall | 140 test files | 100% pass rate
+**Test Coverage:** ~84% overall | 148 test files | 100% pass rate
 
 | Package | Coverage |
 |---------|----------|

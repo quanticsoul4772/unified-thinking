@@ -81,12 +81,12 @@ func (e *serverToolExecutor) ExecuteTool(ctx context.Context, toolName string, i
 		}, nil
 
 	case "detect-biases":
-		// Create a simple response for now
-		content := getStringField(input, "content")
-		return map[string]interface{}{
-			"content": content,
-			"biases":  []string{},
-		}, nil
+		req := handlers.DetectBiasesRequest{
+			ThoughtID: getStringField(input, "thought_id"),
+			BranchID:  getStringField(input, "branch_id"),
+			Content:   getStringField(input, "content"),
+		}
+		return e.server.DetectBiases(ctx, req)
 
 	case "synthesize-insights":
 		// Create a simple response for now
