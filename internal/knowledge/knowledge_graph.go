@@ -8,6 +8,7 @@ import (
 	"log"
 
 	chromem "github.com/philippgille/chromem-go"
+	"unified-thinking/internal/embeddings"
 )
 
 // KnowledgeGraph combines Neo4j graph database with chromem-go vector search
@@ -18,6 +19,7 @@ type KnowledgeGraph struct {
 	neo4jClient    *Neo4jClient
 	database       string
 	enabled        bool
+	reranker       embeddings.Reranker
 }
 
 // KnowledgeGraphConfig holds knowledge graph configuration
@@ -102,6 +104,11 @@ func (kg *KnowledgeGraph) IsEnabled() bool {
 	return kg.enabled
 }
 
+// SetReranker sets the optional reranker for result optimization
+func (kg *KnowledgeGraph) SetReranker(reranker embeddings.Reranker) {
+	kg.reranker = reranker
+}
+
 // StoreEntity stores an entity in both Neo4j and vector search
 func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, content string) error {
 	if !kg.enabled {
@@ -170,7 +177,63 @@ func (kg *KnowledgeGraph) SearchSemantic(ctx context.Context, query string, limi
 		return nil, fmt.Errorf("vector store not configured")
 	}
 
-	return kg.VectorStore.SearchSimilarWithThreshold(ctx, "entities", query, limit, minSimilarity)
+	// Get more candidates for reranking if reranker is configured
+	searchLimit := limit
+	if kg.reranker != nil {
+		searchLimit = limit * 2
+	}
+
+	results, err := kg.VectorStore.SearchSimilarWithThreshold(ctx, "entities", query, searchLimit, minSimilarity)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply reranking if configured
+	if kg.reranker != nil && len(results) > 0 {
+		results, err = kg.rerankSemanticResults(ctx, query, results, limit)
+		if err != nil {
+			// Log and continue with original results
+			log.Printf("[WARN] Reranking failed, using embedding scores: %v", err)
+		}
+	}
+
+	// Apply limit
+	if len(results) > limit {
+		results = results[:limit]
+	}
+
+	return results, nil
+}
+
+// rerankSemanticResults uses the reranker to optimize semantic search results
+func (kg *KnowledgeGraph) rerankSemanticResults(ctx context.Context, query string, results []chromem.Result, limit int) ([]chromem.Result, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
+	// Extract document content for reranking
+	documents := make([]string, len(results))
+	for i, result := range results {
+		documents[i] = result.Content
+	}
+
+	// Rerank using the reranker
+	rerankResults, err := kg.reranker.Rerank(ctx, query, documents, limit)
+	if err != nil {
+		return results, err
+	}
+
+	// Build reranked results
+	reranked := make([]chromem.Result, 0, len(rerankResults))
+	for _, rr := range rerankResults {
+		if rr.Index < len(results) {
+			result := results[rr.Index]
+			result.Similarity = float32(rr.RelevanceScore) // Update score
+			reranked = append(reranked, result)
+		}
+	}
+
+	return reranked, nil
 }
 
 // SearchGraph performs graph traversal to find related entities

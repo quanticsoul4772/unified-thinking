@@ -22,6 +22,9 @@ type LLMClient interface {
 
 	// CalculateNovelty measures uniqueness vs siblings
 	CalculateNovelty(ctx context.Context, thought string, siblings []string) (float64, error)
+
+	// ResearchWithSearch performs web-augmented research (optional, may return error if not supported)
+	ResearchWithSearch(ctx context.Context, query string, problem string) (*ResearchResult, error)
 }
 
 // GenerateRequest encapsulates generation parameters

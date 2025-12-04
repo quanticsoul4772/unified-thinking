@@ -4,7 +4,7 @@ Guidance for Claude Code when working with this repository.
 
 ## Project Overview
 
-Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 81 cognitive reasoning tools.
+Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, branch-thinking, unreasonable-thinking-server, mcp-logic, state-coordinator) into one unified implementation with 85 cognitive reasoning tools.
 
 **Module**: `unified-thinking` | **Entry**: `cmd/server/main.go` | **SDK**: `github.com/modelcontextprotocol/go-sdk` v0.8.0
 
@@ -23,9 +23,9 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 | `internal/integration/` | Cross-mode synthesis, pattern detection |
 | `internal/orchestration/` | Workflow orchestration for multi-tool pipelines |
 | `internal/memory/` | Episodic memory with trajectory storage and pattern learning |
-| `internal/embeddings/` | Voyage AI semantic embeddings (voyage-3-lite, 512d) |
+| `internal/embeddings/` | Voyage AI semantic embeddings (voyage-3-lite, 512d) + reranking (rerank-2) + multimodal (voyage-multimodal-3, 1024d) |
 | `internal/contextbridge/` | Cross-session context retrieval with caching |
-| `internal/server/` | MCP server with 81 tools, 24 handler modules |
+| `internal/server/` | MCP server with 85 tools, 27 handler modules |
 | `internal/similarity/` | Thought similarity search via embeddings |
 | `internal/claudecode/` | Claude Code optimizations: format, errors, session, presets |
 | `internal/streaming/` | MCP progress notifications for long-running tools |
@@ -67,7 +67,7 @@ make clean              # Remove bin/
 
 **Test Coverage**: 72.1% overall, 148 test files across 30 packages. Key: metrics (100%), presets (98.3%), config (97.3%), reinforcement (90.2%), reasoning (89.7%), analysis (89.3%).
 
-## MCP Tools (81 total)
+## MCP Tools (85 total)
 
 ### Core (11)
 `think`, `history`, `list-branches`, `focus-branch`, `branch-history`, `recent-branches`, `validate`, `prove`, `check-syntax`, `search`, `get-metrics`
@@ -125,6 +125,15 @@ make clean              # Remove bin/
 
 ### Claude Code Optimization (5)
 `export-session`, `import-session`, `list-presets`, `run-preset`, `format-response`
+
+### Research (1)
+`research-with-search` - Web-augmented research using Anthropic's server-side web search (requires `ANTHROPIC_API_KEY` + `WEB_SEARCH_ENABLED=true`)
+
+### Multimodal (1)
+`embed-multimodal` - Generate embeddings for images using Voyage AI's multimodal model (requires `VOYAGE_API_KEY` + `MULTIMODAL_ENABLED=true`)
+
+### Agentic (2)
+`run-agent`, `list-agent-tools` - Programmatic tool calling via agentic LLM loop (requires `ANTHROPIC_API_KEY` + `AGENT_ENABLED=true`)
 
 ## Claude Code Optimization
 
@@ -280,6 +289,73 @@ The `detect-biases` tool now tracks historical false positive rates and suppress
 
 Predictions are automatically recorded on `think` calls and outcomes recorded on `validate` calls, enabling passive calibration improvement.
 
+### Voyage AI Reranking
+
+Search results are now automatically reranked using Voyage AI's rerank models when `VOYAGE_API_KEY` is set:
+
+**Affected Tools**:
+- `search-similar-thoughts` - Reranks thought similarity results
+- `search-knowledge-graph` - Reranks semantic search results
+
+**Pipeline**: Query → Embedding Search (2x limit) → Rerank → Return Top Results
+
+**Models**:
+- `rerank-2` (default): Best quality, ~150ms latency
+- `rerank-2-lite`: Faster, ~50ms latency
+
+**Disable**: Set `RERANK_ENABLED=false` to use embedding-only scoring.
+
+### Domain-Specific Model Configuration
+
+The system automatically detects task domains and applies optimized model configurations:
+
+| Domain | Keywords | Temperature | Use Case |
+|--------|----------|-------------|----------|
+| `code` | debug, function, api, error, implement | 0.3 | Code generation, debugging, refactoring |
+| `research` | research, analyze, study, hypothesis, experiment | 0.7 | Research tasks, creative exploration |
+| `quick` | simple, brief, summarize, what is | 0.5 | Fast responses, simple questions |
+| `default` | - | 0.5 | General-purpose reasoning |
+
+**Override via environment variables**: `GOT_MODEL_CODE`, `GOT_MODEL_RESEARCH`, `GOT_MODEL_QUICK`, `GOT_MODEL`
+
+### Multimodal Embeddings
+
+The `embed-multimodal` tool generates embeddings for images using Voyage AI's multimodal model:
+
+```json
+{
+  "image_base64": "iVBORw0KGgo...",
+  "content_type": "image/png"
+}
+```
+
+**Supported formats**: PNG, JPEG, GIF, WebP
+**Model**: `voyage-multimodal-3` (1024 dimensions)
+**Enable**: Set `MULTIMODAL_ENABLED=true` and `VOYAGE_API_KEY`
+
+### Agentic Tool Calling
+
+The `run-agent` tool executes complex multi-step reasoning tasks autonomously:
+
+```json
+{
+  "task": "Analyze the tradeoffs between SQL and NoSQL for our use case",
+  "max_iterations": 5
+}
+```
+
+**Features**:
+- Autonomous iteration until task completion or max iterations
+- 30+ safe tools available (read-only, no side effects)
+- Full execution trace with thoughts and tool calls
+- Custom system prompts supported
+
+**Safe Tools**: `think`, `decompose-problem`, `analyze-perspectives`, `detect-biases`, `build-causal-graph`, `generate-hypotheses`, `search-similar-thoughts`, etc.
+
+**Excluded Tools**: `store-entity`, `run-agent`, `run-preset`, `create-checkpoint` (side effects or recursion risk)
+
+**Enable**: Set `AGENT_ENABLED=true` and `ANTHROPIC_API_KEY`
+
 ## Storage Architecture
 
 ### In-Memory (Default)
@@ -329,8 +405,21 @@ Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`):
 | `EMBEDDINGS_ENABLED` | `false` | Enable semantic embeddings |
 | `VOYAGE_API_KEY` | - | Voyage AI API key |
 | `EMBEDDINGS_MODEL` | `voyage-3-lite` | `voyage-3-lite` (512d), `voyage-3` (1024d), `voyage-3-large` (2048d) |
+| `RERANK_ENABLED` | `true` | Enable Voyage AI reranking (when VOYAGE_API_KEY set) |
+| `RERANK_MODEL` | `rerank-2` | `rerank-2` (quality) or `rerank-2-lite` (speed) |
 | `NEO4J_ENABLED` | `false` | Enable knowledge graph |
 | `CONTEXT_BRIDGE_ENABLED` | `false` | Enable cross-session context |
+| `WEB_SEARCH_ENABLED` | `false` | Enable web search for research tool |
+| `GOT_STRUCTURED_OUTPUT` | `true` | Use structured outputs for GoT (disable for text parsing) |
+| `GOT_MODEL` | `claude-sonnet-4-5-20250929` | Default model for GoT and auto mode |
+| `GOT_MODEL_CODE` | `claude-sonnet-4-5-20250929` | Model for code-related tasks (lower temperature: 0.3) |
+| `GOT_MODEL_RESEARCH` | `claude-sonnet-4-5-20250929` | Model for research tasks (higher temperature: 0.7) |
+| `GOT_MODEL_QUICK` | `claude-3-5-haiku-20241022` | Model for quick/simple tasks (faster, cheaper) |
+| `MULTIMODAL_ENABLED` | `false` | Enable multimodal image embeddings |
+| `MULTIMODAL_MODEL` | `voyage-multimodal-3` | Voyage multimodal model (1024d) |
+| `AGENT_ENABLED` | `false` | Enable agentic LLM tool calling |
+| `AGENT_MODEL` | `claude-sonnet-4-5-20250929` | Model for agentic tasks |
+| `ANTHROPIC_API_KEY` | - | Anthropic API key (required for agent, web search) |
 
 ## Data Flow
 
@@ -368,6 +457,25 @@ Pearl's framework: DAGs, graph surgery (do-calculus), counterfactuals, intervent
 ### Fallacy Detection
 20+ types: formal (affirming consequent, circular), informal (ad hominem, straw man), evidence (hasty generalization), appeal (authority, emotion).
 
+### LLM Client Architecture
+Unified Anthropic API infrastructure using Go's embedding pattern:
+
+```
+AnthropicBaseClient (llm_base.go)
+├── AnthropicLLMClient (llm_anthropic.go) - Graph-of-Thoughts scoring/generation
+└── AgenticClient (llm_agentic.go) - Programmatic tool-calling loop
+```
+
+| File | Purpose |
+|------|---------|
+| `llm_types.go` | Unified API types: APIRequest, Message, ContentBlock, Tool, APIResponse |
+| `llm_base.go` | Shared HTTP infrastructure: AnthropicBaseClient, SendRequest |
+| `llm_anthropic.go` | AnthropicLLMClient with structured outputs, caching, domain-specific models |
+| `llm_agentic.go` | AgenticClient with tool-calling loop, execution traces |
+| `llm_client.go` | LLMClient interface definition |
+| `llm_models.go` | Domain-specific model configuration (code/research/quick) |
+| `llm_tools.go` | Structured output tool schemas |
+
 ## Migration from Old Servers
 
 | Old Server | Old Tool | New Tool | Mode |
@@ -384,6 +492,8 @@ Pearl's framework: DAGs, graph surgery (do-calculus), counterfactuals, intervent
 **Storage**: `internal/storage/factory.go`, `memory.go`, `sqlite.go`, `sqlite_schema.go`
 
 **Modes**: `internal/modes/auto.go`, `registry.go`, `linear.go`, `tree.go`, `divergent.go`, `graph*.go`
+
+**LLM**: `internal/modes/llm_types.go`, `llm_base.go`, `llm_anthropic.go`, `llm_agentic.go`, `llm_client.go`, `llm_models.go`, `llm_tools.go`
 
 **Reasoning**: `internal/reasoning/probabilistic.go`, `causal.go`, `decision.go`, `temporal.go`, `domain_templates.go`
 

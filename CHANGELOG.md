@@ -4,6 +4,266 @@ Detailed change history for the Unified Thinking Server.
 
 ---
 
+## LLM Client Consolidation (2025-12-04)
+
+### Technical Debt: Unified LLM Infrastructure
+
+**Problem**: Duplicate HTTP client implementations and API types across `llm_anthropic.go` and `llm_agentic.go` files.
+
+**Solution**: Consolidated LLM client infrastructure using Go's embedding pattern.
+
+**New Files Created**:
+- `internal/modes/llm_types.go` (96 lines) - Unified Anthropic API types
+- `internal/modes/llm_base.go` (112 lines) - Shared HTTP infrastructure
+
+**Types Consolidated**:
+- `APIRequest`, `Message`, `ContentBlock`, `Tool`, `APIResponse`, `ResponseBlock`, `Usage`
+- Helper functions: `NewTextMessage()`, `NewBlockMessage()`, `TextBlock()`, `ToolUseBlock()`, `ToolResultBlock()`
+
+**Architecture**:
+```go
+// Both clients now embed shared base
+type AnthropicLLMClient struct {
+    *AnthropicBaseClient  // Shared HTTP infrastructure
+    useStructured    bool
+    webSearchEnabled bool
+}
+
+type AgenticClient struct {
+    *AnthropicBaseClient  // Shared HTTP infrastructure
+    registry *ToolRegistry
+    config   AgenticConfig
+}
+```
+
+**Benefits**:
+- Eliminated ~200 lines of duplicate type definitions
+- Single HTTP client configuration (API URL, headers, timeout)
+- Consistent error handling across all API calls
+- Easier maintenance - fix once, applies everywhere
+
+**Files Modified**:
+- `internal/modes/llm_anthropic.go` - Refactored to embed `*AnthropicBaseClient`
+- `internal/modes/llm_agentic.go` - Refactored to embed `*AnthropicBaseClient`
+- `internal/modes/llm_agentic_test.go` - Updated to use unified types
+
+**LLM File Structure** (7 files, well-organized):
+| File | Lines | Purpose |
+|------|-------|---------|
+| `llm_types.go` | 96 | Unified Anthropic API types |
+| `llm_base.go` | 112 | Shared HTTP infrastructure |
+| `llm_anthropic.go` | 665 | AnthropicLLMClient for GoT |
+| `llm_agentic.go` | 311 | AgenticClient with tool loop |
+| `llm_client.go` | 55 | LLMClient interface |
+| `llm_models.go` | 142 | Domain-specific model config |
+| `llm_tools.go` | 216 | Structured output schemas |
+
+---
+
+## Phase 3: Advanced Capabilities (2025-12-03)
+
+### Multimodal Embeddings (`embed-multimodal`)
+
+**New Tool**: `embed-multimodal` - Generate embeddings for images using Voyage AI's multimodal model.
+
+**Features**:
+- Support for base64-encoded images (PNG, JPEG, GIF, WebP)
+- Support for image URLs (auto-fetched and encoded)
+- Uses `voyage-multimodal-3` model (1024 dimensions)
+- Image preprocessing: resize to max 512px, optimize quality
+- Batch embedding support for multiple images
+
+**Usage**:
+```json
+{
+  "image_base64": "iVBORw0KGgo...",
+  "content_type": "image/png"
+}
+```
+
+**Response**:
+```json
+{
+  "embedding": [0.123, -0.456, ...],
+  "dimensions": 1024,
+  "model": "voyage-multimodal-3",
+  "input_type": "base64"
+}
+```
+
+**Environment Variables**:
+- `MULTIMODAL_ENABLED=true` - Enable multimodal embeddings
+- `MULTIMODAL_MODEL` - Model to use (default: `voyage-multimodal-3`)
+
+**Files Created**: `internal/embeddings/multimodal.go`, `internal/embeddings/multimodal_test.go`, `internal/embeddings/image_utils.go`, `internal/embeddings/image_utils_test.go`, `internal/server/handlers/multimodal.go`, `internal/server/handlers/multimodal_test.go`
+
+### Programmatic Tool Calling (`run-agent`, `list-agent-tools`)
+
+**New Tools**: Agentic LLM with programmatic tool calling for complex multi-step reasoning.
+
+**Features**:
+- Autonomous task execution with tool-calling loop
+- 30+ safe tools available (no side effects)
+- Configurable max iterations (default: 10, max: 20)
+- Execution trace with full history
+- Custom system prompts supported
+
+**Safe Tool Subset** (available by default):
+- Reasoning: `think`, `decompose-problem`, `make-decision`, `dual-process-think`
+- Analysis: `analyze-perspectives`, `detect-biases`, `detect-fallacies`
+- Evidence: `assess-evidence`, `probabilistic-reasoning`, `detect-contradictions`
+- Causal: `build-causal-graph`, `generate-hypotheses`, `evaluate-hypotheses`
+- Search: `search-similar-thoughts`, `search-knowledge-graph`, `retrieve-similar-cases`
+- Synthesis: `synthesize-insights`, `detect-emergent-patterns`
+- Graph-of-Thoughts: `got-generate`, `got-aggregate`, `got-refine`, `got-score`
+
+**Excluded Tools** (not available to prevent recursion/side effects):
+- Storage: `store-entity`, `create-relationship`
+- Sessions: `export-session`, `import-session`
+- Orchestration: `run-agent`, `run-preset`, `execute-workflow`
+- State: `create-checkpoint`, `restore-checkpoint`, `got-initialize`, `got-prune`, `got-finalize`
+
+**Usage**:
+```json
+{
+  "task": "Analyze the pros and cons of microservices architecture for a startup",
+  "max_iterations": 5,
+  "allowed_tools": ["think", "analyze-perspectives", "make-decision"]
+}
+```
+
+**Response**:
+```json
+{
+  "final_answer": "Based on my analysis...",
+  "status": "completed",
+  "iterations": 3,
+  "tools_used": ["think", "analyze-perspectives", "make-decision"],
+  "total_tool_calls": 7,
+  "error_count": 0,
+  "trace": { ... }
+}
+```
+
+**Environment Variables**:
+- `AGENT_ENABLED=true` - Enable agentic tool calling
+- `AGENT_MODEL` - Model to use (default: `claude-sonnet-4-5-20250929`)
+- `ANTHROPIC_API_KEY` - Required for agent execution
+
+**Files Created**: `internal/modes/tool_registry.go`, `internal/modes/tool_registry_test.go`, `internal/modes/llm_agentic.go`, `internal/modes/llm_agentic_test.go`, `internal/server/handlers/agent.go`
+
+**Tool Count**: 82 → 85 tools
+
+---
+
+## Phase 2: Quality Improvements (2025-12-03)
+
+### Voyage AI Reranking
+
+**Problem**: Embedding-based similarity search returns results based purely on vector distance, which may not reflect relevance for specific queries.
+
+**Solution**: Integrated Voyage AI's rerank API to optimize search results using cross-encoder relevance scoring.
+
+**Features**:
+- Automatic reranking for `search-similar-thoughts` and `search-knowledge-graph` tools
+- Pipeline: Query → Embedding Search (2x limit) → Rerank → Return Top Results
+- Model selection: `rerank-2` (quality) or `rerank-2-lite` (speed)
+- Graceful fallback to embedding-only scoring if reranking fails
+
+**Environment Variables**:
+- `RERANK_ENABLED` - Enable/disable reranking (default: `true` when VOYAGE_API_KEY set)
+- `RERANK_MODEL` - Model to use: `rerank-2` (default) or `rerank-2-lite`
+
+**Files Created**: `internal/embeddings/reranker.go`, `internal/embeddings/reranker_test.go`
+**Files Modified**: `internal/similarity/thought_search.go`, `internal/knowledge/knowledge_graph.go`, `cmd/server/initializer.go`
+
+### Domain-Specific Model Configuration
+
+**Problem**: All tasks used the same model configuration, regardless of task type (code vs research vs quick queries).
+
+**Solution**: Added automatic task domain detection and per-domain model configuration.
+
+**Features**:
+- Automatic domain detection via keyword analysis
+- Domain-specific temperature settings (code: 0.3, research: 0.7, quick/default: 0.5)
+- Configurable models per domain via environment variables
+- Default to Haiku for quick tasks, Sonnet for complex tasks
+
+**Domains**:
+| Domain | Keywords | Default Model | Temperature |
+|--------|----------|---------------|-------------|
+| `code` | debug, function, api, error, implement, refactor | claude-sonnet-4-5-20250929 | 0.3 |
+| `research` | research, analyze, study, hypothesis, experiment | claude-sonnet-4-5-20250929 | 0.7 |
+| `quick` | simple, brief, summarize, what is | claude-3-5-haiku-20241022 | 0.5 |
+| `default` | - | claude-sonnet-4-5-20250929 | 0.5 |
+
+**Environment Variables**:
+- `GOT_MODEL` - Default model for all domains
+- `GOT_MODEL_CODE` - Override for code domain
+- `GOT_MODEL_RESEARCH` - Override for research domain
+- `GOT_MODEL_QUICK` - Override for quick domain
+
+**Files Created**: `internal/modes/llm_models.go`, `internal/modes/llm_models_test.go`
+
+---
+
+## Phase 1: AI Integrations (2025-12-03)
+
+### Structured Outputs for Graph-of-Thoughts
+
+**Problem**: GoT operations used fragile JSON parsing from LLM text responses, causing parsing failures and inconsistent outputs.
+
+**Solution**: Implemented Anthropic's tool use API with `strict: true` for guaranteed schema compliance.
+
+**Features**:
+- JSON schemas for all GoT operations (Generate, Aggregate, Refine, Score, ExtractKeyPoints, CalculateNovelty)
+- Zero parsing failures - API enforces schema at generation time
+- Optional fallback to text mode via `GOT_STRUCTURED_OUTPUT=false`
+
+**Files Created**: `internal/modes/llm_tools.go` (tool definitions with JSON schemas)
+**Files Modified**: `internal/modes/llm_anthropic.go` (major rewrite for structured outputs)
+
+### Web Search Integration (`research-with-search`)
+
+**New Tool**: `research-with-search` - Web-augmented research using Anthropic's server-side web search.
+
+**Features**:
+- Multi-turn agentic search with automatic query refinement
+- Citation extraction with URLs and titles
+- Confidence scoring based on source quality
+- Integrated with existing LLM client architecture
+
+**Usage**:
+```json
+{
+  "query": "What are the latest advances in quantum computing?",
+  "problem": "Research for technology report"
+}
+```
+
+**Response**:
+```json
+{
+  "findings": "...",
+  "key_insights": ["...", "..."],
+  "confidence": 0.85,
+  "citations": [{"url": "...", "title": "..."}],
+  "searches_performed": 3,
+  "status": "completed"
+}
+```
+
+**Environment Variables**:
+- `WEB_SEARCH_ENABLED=true` - Enable web search capability
+- `GOT_STRUCTURED_OUTPUT=false` - Disable structured outputs (fallback to text parsing)
+
+**Files Created**: `internal/server/handlers/research.go`
+**Files Modified**: `internal/modes/llm_client.go`, `internal/server/server.go`
+
+**Tool Count**: 81 → 82 tools
+
+---
+
 ## Tool Quality Improvements (2025-12-03)
 
 ### 5 Critical Pain Points Fixed

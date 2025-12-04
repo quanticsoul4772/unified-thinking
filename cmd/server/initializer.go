@@ -26,6 +26,7 @@ type ServerComponents struct {
 	AutoMode       *modes.AutoMode
 	Validator      *validation.LogicValidator
 	Embedder       embeddings.Embedder
+	Reranker       embeddings.Reranker
 	ContextBridge  *contextbridge.ContextBridge
 	KnowledgeGraph *knowledge.KnowledgeGraph
 	Server         *server.UnifiedServer
@@ -60,7 +61,7 @@ func InitializeServer() (*ServerComponents, error) {
 	components.Validator = validation.NewLogicValidator()
 	log.Println("Initialized logic validator")
 
-	// Initialize embedder if API key is available
+	// Initialize embedder and reranker if API key is available
 	if apiKey := os.Getenv("VOYAGE_API_KEY"); apiKey != "" {
 		model := os.Getenv("EMBEDDINGS_MODEL")
 		if model == "" {
@@ -69,6 +70,19 @@ func InitializeServer() (*ServerComponents, error) {
 		components.Embedder = embeddings.NewVoyageEmbedder(apiKey, model)
 		components.AutoMode.SetEmbedder(components.Embedder)
 		log.Printf("Initialized Voyage AI embedder (model: %s)", model)
+
+		// Initialize reranker if enabled (defaults to enabled when VOYAGE_API_KEY is set)
+		rerankEnabled := os.Getenv("RERANK_ENABLED") != "false"
+		if rerankEnabled {
+			rerankModel := os.Getenv("RERANK_MODEL")
+			if rerankModel == "" {
+				rerankModel = "rerank-2" // Default to full model
+			}
+			components.Reranker = embeddings.NewVoyageReranker(apiKey, rerankModel)
+			log.Printf("Initialized Voyage AI reranker (model: %s)", rerankModel)
+		} else {
+			log.Println("Voyage reranker disabled (RERANK_ENABLED=false)")
+		}
 	} else {
 		log.Println("VOYAGE_API_KEY not set, semantic features disabled")
 	}
@@ -118,7 +132,7 @@ func InitializeServer() (*ServerComponents, error) {
 	log.Println("Created unified server")
 
 	// Initialize knowledge graph (if enabled)
-	components.KnowledgeGraph = initializeKnowledgeGraph(store, components.Embedder)
+	components.KnowledgeGraph = initializeKnowledgeGraph(store, components.Embedder, components.Reranker)
 	if components.KnowledgeGraph != nil && components.KnowledgeGraph.IsEnabled() {
 		components.Server.SetKnowledgeGraph(components.KnowledgeGraph)
 		log.Println("Knowledge graph enabled and configured")
@@ -127,8 +141,13 @@ func InitializeServer() (*ServerComponents, error) {
 	// Initialize thought similarity searcher (if embedder available)
 	if components.Embedder != nil {
 		thoughtSearcher := similarity.NewThoughtSearcher(store, components.Embedder)
+		if components.Reranker != nil {
+			thoughtSearcher.SetReranker(components.Reranker)
+			log.Println("Thought similarity search enabled with reranking")
+		} else {
+			log.Println("Thought similarity search enabled")
+		}
 		components.Server.SetThoughtSearcher(thoughtSearcher)
-		log.Println("Thought similarity search enabled")
 	}
 
 	// Initialize orchestrator
@@ -168,7 +187,7 @@ func initializeContextBridge(
 }
 
 // initializeKnowledgeGraph creates and configures the knowledge graph
-func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedder) *knowledge.KnowledgeGraph {
+func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedder, reranker embeddings.Reranker) *knowledge.KnowledgeGraph {
 	// Check if knowledge graph is enabled
 	enabled := os.Getenv("NEO4J_ENABLED")
 	if enabled != "true" {
@@ -227,6 +246,12 @@ func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedde
 	if err != nil {
 		log.Printf("Failed to initialize knowledge graph: %v", err)
 		return &knowledge.KnowledgeGraph{}
+	}
+
+	// Set reranker for improved search results
+	if reranker != nil {
+		kg.SetReranker(reranker)
+		log.Println("Knowledge graph reranking enabled")
 	}
 
 	return kg

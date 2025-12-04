@@ -5,9 +5,9 @@
 [![Tests](https://img.shields.io/badge/tests-148_files-success)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
-[![Tools](https://img.shields.io/badge/tools-80-blue)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tools](https://img.shields.io/badge/tools-82-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
-A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation with 80 specialized reasoning tools.
+A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation with 82 specialized reasoning tools.
 
 ## Quick Start
 
@@ -33,7 +33,7 @@ make build
 | **Auto** | Automatic mode selection based on input |
 | **Graph** | Graph-of-Thoughts with aggregation, refinement, cyclic reasoning |
 
-### Tool Categories (80 tools)
+### Tool Categories (82 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -56,6 +56,7 @@ make build
 | Similarity | 1 | Semantic thought search |
 | Graph-of-Thoughts | 8 | GoT operations (generate, aggregate, refine, score, prune) |
 | Claude Code | 5 | Session export/import, presets, formatting |
+| Research | 1 | Web-augmented research with citations |
 
 See [API_REFERENCE.md](API_REFERENCE.md) for complete tool documentation.
 
@@ -154,11 +155,14 @@ make build  # Output: bin\unified-thinking.exe
 | `NEO4J_ENABLED` | `false` | Enable knowledge graph |
 | `NEO4J_URI` | - | Neo4j connection URI |
 | `CONTEXT_BRIDGE_ENABLED` | `true` | Cross-session context retrieval |
+| `WEB_SEARCH_ENABLED` | `false` | Enable web search for research tool |
+| `GOT_STRUCTURED_OUTPUT` | `true` | Use structured outputs for GoT (disable for text parsing) |
 
 **Notes:**
 - Trajectory persistence requires `STORAGE_TYPE=sqlite`
 - Graph-of-Thoughts requires `ANTHROPIC_API_KEY`
 - Knowledge graph requires both `NEO4J_ENABLED=true` and `VOYAGE_API_KEY`
+- Web search requires `ANTHROPIC_API_KEY` and `WEB_SEARCH_ENABLED=true`
 
 ## Documentation
 

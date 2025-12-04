@@ -177,6 +177,8 @@ type UnifiedServer struct {
 	gotHandler      *handlers.GoTHandler
 	// Claude Code optimization handler
 	claudeCodeHandler *handlers.ClaudeCodeHandler
+	// Research with web search handler
+	researchHandler *handlers.ResearchHandler
 }
 
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
@@ -260,6 +262,10 @@ func NewUnifiedServer(
 	}
 	log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
 	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
+
+	// Initialize research handler with web search capability
+	// Uses same LLM client, web search enabled via WEB_SEARCH_ENABLED env var
+	s.researchHandler = handlers.NewResearchHandler(llmClient)
 
 	return s, nil
 }
@@ -988,6 +994,9 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 
 	// Register Claude Code optimization tools (5 tools)
 	handlers.RegisterClaudeCodeTools(mcpServer, s.claudeCodeHandler)
+
+	// Register research tools with web search (1 tool)
+	handlers.RegisterResearchTools(mcpServer, s.researchHandler)
 }
 
 type ThinkRequest struct {

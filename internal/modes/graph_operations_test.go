@@ -51,6 +51,18 @@ func (t *testLLMClient) CalculateNovelty(ctx context.Context, thought string, si
 	return 0.7, nil
 }
 
+func (t *testLLMClient) ResearchWithSearch(ctx context.Context, query string, problem string) (*ResearchResult, error) {
+	return &ResearchResult{
+		Findings:    "Test research findings for: " + query,
+		KeyInsights: []string{"Test insight 1", "Test insight 2"},
+		Confidence:  0.85,
+		Citations: []Citation{
+			{URL: "https://example.com/1", Title: "Example Source 1"},
+		},
+		Searches: 1,
+	}, nil
+}
+
 func truncateTest(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

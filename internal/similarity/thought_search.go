@@ -15,6 +15,7 @@ import (
 type ThoughtSearcher struct {
 	storage  storage.Storage
 	embedder embeddings.Embedder
+	reranker embeddings.Reranker
 }
 
 // NewThoughtSearcher creates a new thought searcher
@@ -23,6 +24,11 @@ func NewThoughtSearcher(store storage.Storage, embedder embeddings.Embedder) *Th
 		storage:  store,
 		embedder: embedder,
 	}
+}
+
+// SetReranker sets the optional reranker for result optimization
+func (ts *ThoughtSearcher) SetReranker(reranker embeddings.Reranker) {
+	ts.reranker = reranker
 }
 
 // SimilarThought represents a thought with similarity score
@@ -72,12 +78,61 @@ func (ts *ThoughtSearcher) SearchSimilar(ctx context.Context, query string, limi
 		return results[i].Similarity > results[j].Similarity
 	})
 
+	// If reranker is configured, use it to optimize results
+	if ts.reranker != nil && len(results) > 0 {
+		results, err = ts.rerankResults(ctx, query, results, limit)
+		if err != nil {
+			// Log error but continue with embedding-based results
+			// Reranking is an optimization, not a requirement
+			_ = err
+		}
+	}
+
 	// Limit results
 	if len(results) > limit {
 		results = results[:limit]
 	}
 
 	return results, nil
+}
+
+// rerankResults uses the reranker to optimize search results
+func (ts *ThoughtSearcher) rerankResults(ctx context.Context, query string, results []*SimilarThought, limit int) ([]*SimilarThought, error) {
+	if len(results) == 0 {
+		return results, nil
+	}
+
+	// Get more candidates for reranking (2x limit or all if less)
+	candidateCount := limit * 2
+	if candidateCount > len(results) {
+		candidateCount = len(results)
+	}
+	candidates := results[:candidateCount]
+
+	// Extract document content for reranking
+	documents := make([]string, len(candidates))
+	for i, st := range candidates {
+		documents[i] = st.Thought.Content
+	}
+
+	// Rerank using the reranker
+	rerankResults, err := ts.reranker.Rerank(ctx, query, documents, limit)
+	if err != nil {
+		return results, err
+	}
+
+	// Build reranked results
+	reranked := make([]*SimilarThought, 0, len(rerankResults))
+	for _, rr := range rerankResults {
+		if rr.Index < len(candidates) {
+			reranked = append(reranked, &SimilarThought{
+				Thought:    candidates[rr.Index].Thought,
+				Similarity: float32(rr.RelevanceScore), // Use rerank score
+			})
+		}
+	}
+
+	return reranked, nil
 }
 
 // cosineSimilarity calculates cosine similarity between two vectors

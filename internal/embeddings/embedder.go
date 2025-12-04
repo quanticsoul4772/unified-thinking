@@ -26,6 +26,60 @@ type Embedder interface {
 	Provider() string
 }
 
+// MultimodalInputType defines the type of multimodal content
+type MultimodalInputType string
+
+const (
+	// InputTypeText represents text content
+	InputTypeText MultimodalInputType = "text"
+	// InputTypeImageBase64 represents base64-encoded image data
+	InputTypeImageBase64 MultimodalInputType = "image_base64"
+	// InputTypeImageURL represents an image URL
+	InputTypeImageURL MultimodalInputType = "image_url"
+)
+
+// MultimodalInput represents content that can be text, image, or document
+type MultimodalInput struct {
+	Type     MultimodalInputType `json:"type"`                 // "text", "image_base64", "image_url"
+	Text     string              `json:"text,omitempty"`       // Text content
+	ImageB64 string              `json:"image_base64,omitempty"` // Base64-encoded image
+	ImageURL string              `json:"image_url,omitempty"`  // Image URL
+}
+
+// ToAPIFormat converts the input to Voyage API format
+func (m *MultimodalInput) ToAPIFormat() map[string]interface{} {
+	result := make(map[string]interface{})
+	result["type"] = string(m.Type)
+
+	switch m.Type {
+	case InputTypeText:
+		result["text"] = m.Text
+	case InputTypeImageBase64:
+		result["image_base64"] = m.ImageB64
+	case InputTypeImageURL:
+		result["image_url"] = m.ImageURL
+	}
+
+	return result
+}
+
+// MultimodalEmbedder extends Embedder with multimodal support
+type MultimodalEmbedder interface {
+	Embedder
+
+	// EmbedMultimodal generates embedding for multimodal content
+	EmbedMultimodal(ctx context.Context, inputs []MultimodalInput) ([]float32, error)
+
+	// EmbedImage generates embedding for a single image
+	EmbedImage(ctx context.Context, imageBase64 string) ([]float32, error)
+
+	// EmbedImageWithText generates embedding for image with text description
+	EmbedImageWithText(ctx context.Context, imageBase64, text string) ([]float32, error)
+
+	// SupportsMultimodal returns whether the embedder supports multimodal input
+	SupportsMultimodal() bool
+}
+
 // EmbeddingMetadata contains metadata about an embedding
 type EmbeddingMetadata struct {
 	Model     string    `json:"model"`     // e.g., "voyage-3-lite"
