@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"unified-thinking/internal/embeddings"
+	"unified-thinking/internal/types"
 )
 
 // ContextBridge enriches tool responses with similar past trajectories
@@ -48,7 +49,7 @@ func (cb *ContextBridge) GenerateEmbedding(ctx context.Context, text string) ([]
 func (cb *ContextBridge) EnrichResponse(
 	ctx context.Context,
 	toolName string,
-	params map[string]interface{},
+	params types.Metadata,
 	result interface{},
 ) (interface{}, error) {
 	// Fast path - feature disabled or tool not enabled
@@ -224,7 +225,7 @@ func (cb *ContextBridge) isEnabledTool(toolName string) bool {
 }
 
 // GetMetrics returns the current metrics snapshot
-func (cb *ContextBridge) GetMetrics() map[string]interface{} {
+func (cb *ContextBridge) GetMetrics() types.Metadata {
 	metricsData := cb.metrics.Snapshot()
 	metricsData["cache_stats"] = cb.cache.Stats()
 	metricsData["enabled"] = cb.config.Enabled
@@ -237,7 +238,7 @@ func (cb *ContextBridge) IsEnabled() bool {
 }
 
 // extractTextContent extracts text content from params for embedding generation
-func extractTextContent(params map[string]interface{}) string {
+func extractTextContent(params types.Metadata) string {
 	// Check common content field names
 	contentFields := []string{"content", "description", "query", "problem", "text", "message"}
 

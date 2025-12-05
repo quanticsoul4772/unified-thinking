@@ -55,11 +55,21 @@ type HypothesisOutput struct {
 
 // HandleGenerateHypotheses generates hypotheses from observations
 func (h *AbductiveHandler) HandleGenerateHypotheses(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req GenerateHypothesesRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[GenerateHypothesesRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.generateHypotheses(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// generateHypotheses is the typed internal implementation
+func (h *AbductiveHandler) generateHypotheses(ctx context.Context, req GenerateHypothesesRequest) (*GenerateHypothesesResponse, error) {
 	if len(req.Observations) == 0 {
 		return nil, fmt.Errorf("observations are required")
 	}
@@ -109,12 +119,10 @@ func (h *AbductiveHandler) HandleGenerateHypotheses(ctx context.Context, params 
 		}
 	}
 
-	resp := &GenerateHypothesesResponse{
+	return &GenerateHypothesesResponse{
 		Hypotheses: outputs,
 		Count:      len(outputs),
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // EvaluateHypothesesRequest represents an evaluation request
@@ -150,11 +158,21 @@ type RankedHypothesis struct {
 
 // HandleEvaluateHypotheses evaluates and ranks hypotheses
 func (h *AbductiveHandler) HandleEvaluateHypotheses(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req EvaluateHypothesesRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[EvaluateHypothesesRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.evaluateHypotheses(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// evaluateHypotheses is the typed internal implementation
+func (h *AbductiveHandler) evaluateHypotheses(ctx context.Context, req EvaluateHypothesesRequest) (*EvaluateHypothesesResponse, error) {
 	if len(req.Observations) == 0 {
 		return nil, fmt.Errorf("observations are required")
 	}
@@ -232,5 +250,5 @@ func (h *AbductiveHandler) HandleEvaluateHypotheses(ctx context.Context, params 
 		resp.BestHypothesis = outputs[0]
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	return resp, nil
 }

@@ -23,12 +23,12 @@ const (
 
 // MetricValue represents a single metric measurement
 type MetricValue struct {
-	Type      MetricType             `json:"type"`
-	Tool      string                 `json:"tool"`
-	Value     float64                `json:"value"`
-	Target    float64                `json:"target"`
-	Timestamp time.Time              `json:"timestamp"`
-	Context   map[string]interface{} `json:"context,omitempty"`
+	Type      MetricType     `json:"type"`
+	Tool      string         `json:"tool"`
+	Value     float64        `json:"value"`
+	Target    float64        `json:"target"`
+	Timestamp time.Time      `json:"timestamp"`
+	Context   types.Metadata `json:"context,omitempty"`
 }
 
 // Collector manages metric collection and analysis
@@ -80,7 +80,7 @@ func (c *Collector) RecordThoughtValidation(thought *types.Thought, validation *
 		Tool:   "validate",
 		Value:  accuracy,
 		Target: 0.95,
-		Context: map[string]interface{}{
+		Context: types.Metadata{
 			"thought_id": thought.ID,
 			"mode":       thought.Mode,
 		},

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"unified-thinking/internal/types"
 )
 
 // EntityType represents the type of entity in the knowledge graph
@@ -36,37 +37,37 @@ const (
 
 // Entity represents a node in the knowledge graph
 type Entity struct {
-	ID          string                 `json:"id"`
-	Label       string                 `json:"label"`
-	Type        EntityType             `json:"type"`
-	Description string                 `json:"description,omitempty"`
-	CreatedAt   int64                  `json:"created_at"`
-	UpdatedAt   int64                  `json:"updated_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID          string         `json:"id"`
+	Label       string         `json:"label"`
+	Type        EntityType     `json:"type"`
+	Description string         `json:"description,omitempty"`
+	CreatedAt   int64          `json:"created_at"`
+	UpdatedAt   int64          `json:"updated_at"`
+	Metadata    types.Metadata `json:"metadata,omitempty"`
 }
 
 // Relationship represents an edge in the knowledge graph
 type Relationship struct {
-	ID         string                 `json:"id"`
-	FromID     string                 `json:"from_id"`
-	ToID       string                 `json:"to_id"`
-	Type       RelationshipType       `json:"type"`
-	Strength   float64                `json:"strength"`   // 0.0 to 1.0
-	Confidence float64                `json:"confidence"` // 0.0 to 1.0
-	Source     string                 `json:"source,omitempty"`
-	CreatedAt  int64                  `json:"created_at"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	ID         string           `json:"id"`
+	FromID     string           `json:"from_id"`
+	ToID       string           `json:"to_id"`
+	Type       RelationshipType `json:"type"`
+	Strength   float64          `json:"strength"`   // 0.0 to 1.0
+	Confidence float64          `json:"confidence"` // 0.0 to 1.0
+	Source     string           `json:"source,omitempty"`
+	CreatedAt  int64            `json:"created_at"`
+	Metadata   types.Metadata   `json:"metadata,omitempty"`
 }
 
 // Observation represents a temporal fact about an entity
 type Observation struct {
-	ID         string                 `json:"id"`
-	EntityID   string                 `json:"entity_id"`
-	Content    string                 `json:"content"`
-	Confidence float64                `json:"confidence"`
-	Source     string                 `json:"source"`
-	Timestamp  int64                  `json:"timestamp"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	ID         string         `json:"id"`
+	EntityID   string         `json:"entity_id"`
+	Content    string         `json:"content"`
+	Confidence float64        `json:"confidence"`
+	Source     string         `json:"source"`
+	Timestamp  int64          `json:"timestamp"`
+	Metadata   types.Metadata `json:"metadata,omitempty"`
 }
 
 // InitializeSchema creates constraints and indexes for the knowledge graph

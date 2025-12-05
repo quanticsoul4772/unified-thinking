@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"unified-thinking/internal/types"
 )
 
 // GraphStore provides CRUD operations for the knowledge graph
@@ -113,7 +114,7 @@ func (s *GraphStore) GetEntity(ctx context.Context, entityID string) (*Entity, e
 
 			// Deserialize metadata from JSON string
 			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
-				var metadata map[string]interface{}
+				var metadata types.Metadata
 				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
 					entity.Metadata = metadata
 				}
@@ -180,7 +181,7 @@ func (s *GraphStore) QueryEntitiesByType(ctx context.Context, entityType EntityT
 
 			// Deserialize metadata from JSON string
 			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
-				var metadata map[string]interface{}
+				var metadata types.Metadata
 				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
 					entity.Metadata = metadata
 				}
@@ -313,7 +314,7 @@ func (s *GraphStore) GetRelationships(ctx context.Context, entityID string, dire
 				CreatedAt:  record.Values[7].(int64),
 			}
 
-			if metadata, ok := record.Values[8].(map[string]interface{}); ok {
+			if metadata, ok := record.Values[8].(types.Metadata); ok {
 				rel.Metadata = metadata
 			}
 
@@ -427,7 +428,7 @@ func (s *GraphStore) QueryEntitiesWithinHops(ctx context.Context, entityID strin
 
 			// Deserialize metadata from JSON string
 			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
-				var metadata map[string]interface{}
+				var metadata types.Metadata
 				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
 					entity.Metadata = metadata
 				}
@@ -491,7 +492,7 @@ func (s *GraphStore) SearchEntities(ctx context.Context, searchTerm string, limi
 
 			// Deserialize metadata from JSON string
 			if metadataJSON, ok := record.Values[6].(string); ok && metadataJSON != "" {
-				var metadata map[string]interface{}
+				var metadata types.Metadata
 				if err := json.Unmarshal([]byte(metadataJSON), &metadata); err == nil {
 					entity.Metadata = metadata
 				}

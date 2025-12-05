@@ -34,11 +34,11 @@ type EmbedMultimodalRequest struct {
 
 // EmbedMultimodalResponse for embed-multimodal tool
 type EmbedMultimodalResponse struct {
-	Embedding []float32               `json:"embedding"`
-	Dimension int                     `json:"dimension"`
-	Model     string                  `json:"model"`
-	InputType string                  `json:"input_type"` // "text", "image", "multimodal"
-	ImageInfo *embeddings.ImageInfo   `json:"image_info,omitempty"`
+	Embedding []float32             `json:"embedding"`
+	Dimension int                   `json:"dimension"`
+	Model     string                `json:"model"`
+	InputType string                `json:"input_type"` // "text", "image", "multimodal"
+	ImageInfo *embeddings.ImageInfo `json:"image_info,omitempty"`
 }
 
 // HandleEmbedMultimodal generates embeddings for multimodal content

@@ -6,6 +6,8 @@ package validation
 import (
 	"fmt"
 	"strings"
+
+	"unified-thinking/internal/types"
 )
 
 // SymbolicReasoner provides symbolic constraint tracking and theorem proving
@@ -28,7 +30,7 @@ type Symbol struct {
 	Type     SymbolType
 	Domain   string // e.g., "integer", "boolean", "real"
 	Value    interface{}
-	Metadata map[string]interface{}
+	Metadata types.Metadata
 }
 
 // SymbolType categorizes symbols
@@ -48,7 +50,7 @@ type SymbolicConstraint struct {
 	Symbols     []string // Symbol names involved
 	Satisfiable bool
 	Explanation string
-	Metadata    map[string]interface{}
+	Metadata    types.Metadata
 }
 
 // ConstraintType categorizes constraints
@@ -108,7 +110,7 @@ func (sr *SymbolicReasoner) AddSymbol(name string, symbolType SymbolType, domain
 		Name:     name,
 		Type:     symbolType,
 		Domain:   domain,
-		Metadata: make(map[string]interface{}),
+		Metadata: make(types.Metadata),
 	}
 	sr.symbols[name] = symbol
 	return symbol
@@ -129,7 +131,7 @@ func (sr *SymbolicReasoner) AddConstraint(constraintType ConstraintType, express
 		Expression:  expression,
 		Symbols:     symbols,
 		Satisfiable: true, // Assume satisfiable until proven otherwise
-		Metadata:    make(map[string]interface{}),
+		Metadata:    make(types.Metadata),
 	}
 
 	// Check basic satisfiability

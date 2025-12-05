@@ -307,4 +307,3 @@ func (t *ExecutionTrace) ErrorCount() int {
 	}
 	return count
 }
-

@@ -4,6 +4,8 @@ import (
 	"sort"
 	"sync"
 	"sync/atomic"
+
+	"unified-thinking/internal/types"
 )
 
 // Metrics tracks context bridge performance and usage
@@ -106,7 +108,7 @@ func (m *Metrics) RecordTimeout() {
 }
 
 // Snapshot returns current metrics as a map
-func (m *Metrics) Snapshot() map[string]interface{} {
+func (m *Metrics) Snapshot() types.Metadata {
 	total := atomic.LoadInt64(&m.TotalEnrichments)
 	avgLatency := int64(0)
 	if total > 0 {
@@ -121,7 +123,7 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 		cacheHitRate = float64(cacheHits) / float64(cacheTotal)
 	}
 
-	return map[string]interface{}{
+	return types.Metadata{
 		"total_enrichments": total,
 		"total_matches":     atomic.LoadInt64(&m.MatchesFound),
 		"cache_hits":        cacheHits,

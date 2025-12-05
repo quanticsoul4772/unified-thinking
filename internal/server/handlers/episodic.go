@@ -60,11 +60,21 @@ type StartSessionResponse struct {
 
 // HandleStartSession starts tracking a new reasoning session
 func (h *EpisodicMemoryHandler) HandleStartSession(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req StartSessionRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[StartSessionRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.startSession(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// startSession is the typed internal implementation
+func (h *EpisodicMemoryHandler) startSession(ctx context.Context, req StartSessionRequest) (*StartSessionResponse, error) {
 	if req.SessionID == "" {
 		return nil, fmt.Errorf("session_id is required")
 	}
@@ -101,14 +111,12 @@ func (h *EpisodicMemoryHandler) HandleStartSession(ctx context.Context, params m
 		suggestions = make([]*memory.Recommendation, 0, 3) // Pre-allocate typical size
 	}
 
-	resp := &StartSessionResponse{
+	return &StartSessionResponse{
 		SessionID:   req.SessionID,
 		ProblemID:   memory.ComputeProblemHash(problem),
 		Status:      "active",
 		Suggestions: suggestions,
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // CompleteSessionRequest completes a reasoning session
@@ -134,11 +142,21 @@ type CompleteSessionResponse struct {
 
 // HandleCompleteSession marks a session as complete
 func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req CompleteSessionRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[CompleteSessionRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.completeSession(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// completeSession is the typed internal implementation
+func (h *EpisodicMemoryHandler) completeSession(ctx context.Context, req CompleteSessionRequest) (*CompleteSessionResponse, error) {
 	if req.SessionID == "" {
 		return nil, fmt.Errorf("session_id is required")
 	}
@@ -188,16 +206,14 @@ func (h *EpisodicMemoryHandler) HandleCompleteSession(ctx context.Context, param
 		qualityScore = trajectory.Quality.OverallQuality
 	}
 
-	resp := &CompleteSessionResponse{
+	return &CompleteSessionResponse{
 		TrajectoryID:  trajectory.ID,
 		SessionID:     trajectory.SessionID,
 		SuccessScore:  trajectory.SuccessScore,
 		QualityScore:  qualityScore,
 		PatternsFound: patternsFound,
 		Status:        "completed",
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // GetRecommendationsRequest requests recommendations for current problem
@@ -220,11 +236,21 @@ type GetRecommendationsResponse struct {
 
 // HandleGetRecommendations provides recommendations based on similar past cases
 func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req GetRecommendationsRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[GetRecommendationsRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.getRecommendations(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// getRecommendations is the typed internal implementation
+func (h *EpisodicMemoryHandler) getRecommendations(ctx context.Context, req GetRecommendationsRequest) (*GetRecommendationsResponse, error) {
 	if req.Description == "" {
 		return nil, fmt.Errorf("description is required")
 	}
@@ -269,14 +295,12 @@ func (h *EpisodicMemoryHandler) HandleGetRecommendations(ctx context.Context, pa
 		patterns = make([]*memory.TrajectoryPattern, 0, 3) // Pre-allocate typical size
 	}
 
-	resp := &GetRecommendationsResponse{
+	return &GetRecommendationsResponse{
 		Recommendations: recommendations,
 		SimilarCases:    len(similar),
 		LearnedPatterns: patterns,
 		Count:           len(recommendations),
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // SearchTrajectoriesRequest searches for past trajectories
@@ -309,11 +333,21 @@ type TrajectorySummary struct {
 
 // HandleSearchTrajectories searches for past reasoning trajectories
 func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req SearchTrajectoriesRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[SearchTrajectoriesRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.searchTrajectories(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// searchTrajectories is the typed internal implementation
+func (h *EpisodicMemoryHandler) searchTrajectories(_ context.Context, req SearchTrajectoriesRequest) (*SearchTrajectoriesResponse, error) {
 	if req.Limit == 0 {
 		req.Limit = 10
 	}
@@ -415,12 +449,10 @@ func (h *EpisodicMemoryHandler) HandleSearchTrajectories(ctx context.Context, pa
 		}
 	}
 
-	resp := &SearchTrajectoriesResponse{
+	return &SearchTrajectoriesResponse{
 		Trajectories: summaries,
 		Count:        len(summaries),
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // AnalyzeTrajectoryRequest requests retrospective analysis
@@ -430,11 +462,21 @@ type AnalyzeTrajectoryRequest struct {
 
 // HandleAnalyzeTrajectory performs retrospective analysis of a completed session
 func (h *EpisodicMemoryHandler) HandleAnalyzeTrajectory(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req AnalyzeTrajectoryRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[AnalyzeTrajectoryRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	analysis, err := h.analyzeTrajectory(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(analysis)}, nil
+}
+
+// analyzeTrajectory is the typed internal implementation
+func (h *EpisodicMemoryHandler) analyzeTrajectory(ctx context.Context, req AnalyzeTrajectoryRequest) (*memory.RetrospectiveAnalysis, error) {
 	if req.TrajectoryID == "" {
 		return nil, fmt.Errorf("trajectory_id is required")
 	}
@@ -458,7 +500,7 @@ func (h *EpisodicMemoryHandler) HandleAnalyzeTrajectory(ctx context.Context, par
 		analysis.LessonsLearned = []string{}
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(analysis)}, nil
+	return analysis, nil
 }
 
 // ComputeProblemHash is exported for testing

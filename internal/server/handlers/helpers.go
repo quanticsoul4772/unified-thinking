@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"unified-thinking/internal/server/types"
 )
 
-// unmarshalParams unmarshals MCP parameters into a struct
+// unmarshalParams unmarshals MCP parameters into a struct.
+// Deprecated: Use types.UnmarshalRequest[T] for new code. This function
+// is retained for backward compatibility with existing handlers.
 func unmarshalParams(params map[string]interface{}, target interface{}) error {
 	data, err := json.Marshal(params)
 	if err != nil {
@@ -18,6 +22,12 @@ func unmarshalParams(params map[string]interface{}, target interface{}) error {
 	}
 
 	return nil
+}
+
+// unmarshalRequest is the generic version of unmarshalParams.
+// It uses the centralized types.UnmarshalRequest[T] adapter.
+func unmarshalRequest[T any](params map[string]interface{}) (T, error) {
+	return types.UnmarshalRequest[T](params)
 }
 
 // generateID generates a unique ID with a prefix

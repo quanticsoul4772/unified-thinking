@@ -37,9 +37,9 @@ type ImageLoaderConfig struct {
 // DefaultImageLoaderConfig returns the default configuration
 func DefaultImageLoaderConfig() ImageLoaderConfig {
 	return ImageLoaderConfig{
-		MaxWidth:  4096,               // Voyage multimodal limit
-		MaxHeight: 4096,               // Voyage multimodal limit
-		MaxBytes:  20 * 1024 * 1024,   // 20MB
+		MaxWidth:  4096,             // Voyage multimodal limit
+		MaxHeight: 4096,             // Voyage multimodal limit
+		MaxBytes:  20 * 1024 * 1024, // 20MB
 	}
 }
 

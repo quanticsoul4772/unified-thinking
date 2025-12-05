@@ -49,11 +49,21 @@ type DualProcessThinkResponse struct {
 
 // HandleDualProcessThink handles dual-process thinking requests
 func (h *DualProcessHandler) HandleDualProcessThink(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req DualProcessThinkRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[DualProcessThinkRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.dualProcessThink(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// dualProcessThink is the typed internal implementation
+func (h *DualProcessHandler) dualProcessThink(ctx context.Context, req DualProcessThinkRequest) (*DualProcessThinkResponse, error) {
 	if req.Content == "" {
 		return nil, fmt.Errorf("content is required")
 	}
@@ -110,5 +120,5 @@ func (h *DualProcessHandler) HandleDualProcessThink(ctx context.Context, params 
 		resp.System2Time = result.System2Time.String()
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	return resp, nil
 }

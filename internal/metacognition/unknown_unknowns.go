@@ -40,7 +40,7 @@ type BlindSpot struct {
 	Indicators  []string
 	Suggestions []string
 	DetectedAt  time.Time
-	Metadata    map[string]interface{}
+	Metadata    types.Metadata
 }
 
 // BlindSpotType categorizes types of blind spots
@@ -178,7 +178,7 @@ func (uud *UnknownUnknownsDetector) detectPatternBasedBlindSpots(req *GapAnalysi
 				Indicators:  matchedIndicators,
 				Suggestions: pattern.Questions,
 				DetectedAt:  time.Now(),
-				Metadata:    map[string]interface{}{"pattern_id": pattern.ID},
+				Metadata:    types.Metadata{"pattern_id": pattern.ID},
 			}
 			spots = append(spots, spot)
 		}
@@ -260,7 +260,7 @@ func (uud *UnknownUnknownsDetector) analyzeFraming(content string) []*BlindSpot 
 					"Who might frame this differently?",
 				},
 				DetectedAt: time.Now(),
-				Metadata:   make(map[string]interface{}),
+				Metadata:   make(types.Metadata),
 			}
 			spots = append(spots, spot)
 			break // Only add one framing spot
@@ -286,7 +286,7 @@ func (uud *UnknownUnknownsDetector) checkOverconfidence(req *GapAnalysisRequest)
 				"What evidence would change your mind?",
 			},
 			DetectedAt: time.Now(),
-			Metadata:   map[string]interface{}{"confidence": req.Confidence, "content_length": contentLength},
+			Metadata:   types.Metadata{"confidence": req.Confidence, "content_length": contentLength},
 		}
 	}
 
@@ -515,7 +515,7 @@ func (uud *UnknownUnknownsDetector) detectSelfReferentialOverconfidence(req *Gap
 			"What would a critic say about this claim?",
 		},
 		DetectedAt: time.Now(),
-		Metadata: map[string]interface{}{
+		Metadata: types.Metadata{
 			"claim_type":        "self-referential",
 			"absolute_claim":    hasAbsoluteClaim,
 			"lacks_hedging":     hasNoHedges,

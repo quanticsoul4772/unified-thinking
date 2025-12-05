@@ -30,12 +30,12 @@ type ResearchWithSearchRequest struct {
 
 // ResearchWithSearchResponse for research-with-search tool
 type ResearchWithSearchResponse struct {
-	Findings    string          `json:"findings"`
-	KeyInsights []string        `json:"key_insights"`
-	Confidence  float64         `json:"confidence"`
-	Citations   []CitationInfo  `json:"citations"`
-	Searches    int             `json:"searches_performed"`
-	Status      string          `json:"status"`
+	Findings    string         `json:"findings"`
+	KeyInsights []string       `json:"key_insights"`
+	Confidence  float64        `json:"confidence"`
+	Citations   []CitationInfo `json:"citations"`
+	Searches    int            `json:"searches_performed"`
+	Status      string         `json:"status"`
 }
 
 // CitationInfo represents a citation from web search

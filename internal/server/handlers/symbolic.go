@@ -57,11 +57,21 @@ type ProofStepOutput struct {
 
 // HandleProveTheorem attempts to prove a theorem
 func (h *SymbolicHandler) HandleProveTheorem(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req ProveTheoremRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[ProveTheoremRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.proveTheorem(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// proveTheorem is the typed internal implementation
+func (h *SymbolicHandler) proveTheorem(_ context.Context, req ProveTheoremRequest) (*ProveTheoremResponse, error) {
 	if req.Conclusion == "" {
 		return nil, fmt.Errorf("conclusion is required")
 	}
@@ -110,7 +120,7 @@ func (h *SymbolicHandler) HandleProveTheorem(ctx context.Context, params map[str
 		}
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	return resp, nil
 }
 
 // CheckConstraintsRequest represents a constraint checking request
@@ -150,11 +160,21 @@ type ConflictOutput struct {
 
 // HandleCheckConstraints checks constraint consistency
 func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req CheckConstraintsRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[CheckConstraintsRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.checkConstraints(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// checkConstraints is the typed internal implementation
+func (h *SymbolicHandler) checkConstraints(_ context.Context, req CheckConstraintsRequest) (*CheckConstraintsResponse, error) {
 	if len(req.Symbols) == 0 {
 		return nil, fmt.Errorf("symbols are required")
 	}
@@ -214,5 +234,5 @@ func (h *SymbolicHandler) HandleCheckConstraints(ctx context.Context, params map
 		resp.Conflicts = conflicts
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	return resp, nil
 }

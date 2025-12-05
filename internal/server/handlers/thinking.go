@@ -185,12 +185,20 @@ func (h *ThinkingHandler) HandleThink(ctx context.Context, req *mcp.CallToolRequ
 		)
 	}
 
+	// Honor user's input confidence if it's higher than calculated confidence
+	// This ensures explicit confidence values are respected while allowing
+	// the system to boost confidence when calculation yields a higher value
+	finalConfidence := result.Confidence
+	if input.Confidence > result.Confidence {
+		finalConfidence = input.Confidence
+	}
+
 	response := &ThinkResponse{
 		ThoughtID:            result.ThoughtID,
 		Mode:                 string(result.Mode),
 		Status:               "success",
 		BranchID:             result.BranchID,
-		Confidence:           result.Confidence,
+		Confidence:           finalConfidence,
 		IsRebellion:          result.IsRebellion,
 		ChallengesAssumption: result.ChallengesAssumption,
 		InsightCount:         result.InsightCount,

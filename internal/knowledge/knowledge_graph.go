@@ -9,6 +9,7 @@ import (
 
 	chromem "github.com/philippgille/chromem-go"
 	"unified-thinking/internal/embeddings"
+	"unified-thinking/internal/types"
 )
 
 // KnowledgeGraph combines Neo4j graph database with chromem-go vector search
@@ -320,7 +321,7 @@ func (kg *KnowledgeGraph) CreateRelationship(ctx context.Context, rel *Relations
 }
 
 // GetEmbeddingCacheStats returns embedding cache statistics
-func (kg *KnowledgeGraph) GetEmbeddingCacheStats() (map[string]interface{}, error) {
+func (kg *KnowledgeGraph) GetEmbeddingCacheStats() (types.Metadata, error) {
 	if !kg.enabled || kg.embeddingCache == nil {
 		return nil, fmt.Errorf("embedding cache not available")
 	}

@@ -22,8 +22,8 @@ const (
 
 // ModelConfig holds the configuration for a specific model
 type ModelConfig struct {
-	Model      string  // Model ID (e.g., "claude-sonnet-4-5-20250929")
-	MaxTokens  int     // Maximum tokens for this model
+	Model       string  // Model ID (e.g., "claude-sonnet-4-5-20250929")
+	MaxTokens   int     // Maximum tokens for this model
 	Temperature float64 // Temperature setting (0.0-1.0)
 }
 
@@ -40,23 +40,23 @@ type DomainModelConfig struct {
 func DefaultDomainModels() *DomainModelConfig {
 	return &DomainModelConfig{
 		Code: ModelConfig{
-			Model:      getEnvOrDefault("GOT_MODEL_CODE", "claude-sonnet-4-5-20250929"),
-			MaxTokens:  4096,
+			Model:       getEnvOrDefault("GOT_MODEL_CODE", "claude-sonnet-4-5-20250929"),
+			MaxTokens:   4096,
 			Temperature: 0.3, // Lower temperature for code
 		},
 		Research: ModelConfig{
-			Model:      getEnvOrDefault("GOT_MODEL_RESEARCH", "claude-sonnet-4-5-20250929"),
-			MaxTokens:  8192,
+			Model:       getEnvOrDefault("GOT_MODEL_RESEARCH", "claude-sonnet-4-5-20250929"),
+			MaxTokens:   8192,
 			Temperature: 0.7, // Higher temperature for creative research
 		},
 		Quick: ModelConfig{
-			Model:      getEnvOrDefault("GOT_MODEL_QUICK", "claude-3-5-haiku-20241022"),
-			MaxTokens:  1024,
+			Model:       getEnvOrDefault("GOT_MODEL_QUICK", "claude-3-5-haiku-20241022"),
+			MaxTokens:   1024,
 			Temperature: 0.5,
 		},
 		Default: ModelConfig{
-			Model:      getEnvOrDefault("GOT_MODEL", "claude-sonnet-4-5-20250929"),
-			MaxTokens:  2048,
+			Model:       getEnvOrDefault("GOT_MODEL", "claude-sonnet-4-5-20250929"),
+			MaxTokens:   2048,
 			Temperature: 0.5,
 		},
 	}

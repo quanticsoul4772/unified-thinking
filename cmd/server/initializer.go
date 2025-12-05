@@ -14,6 +14,7 @@ import (
 	"unified-thinking/internal/server"
 	"unified-thinking/internal/similarity"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
 
@@ -288,7 +289,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "build-graph",
 				Tool: "build-causal-graph",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"description":  "{{problem}}",
 					"observations": "{{observations}}",
 				},
@@ -297,7 +298,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "detect-issues",
 				Tool: "detect-biases",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"content": "{{problem}}",
 				},
 				DependsOn: []string{"build-graph"},
@@ -306,7 +307,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "think-about-results",
 				Tool: "think",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"content": "Analyze the causal graph and detected issues for: {{problem}}",
 					"mode":    "linear",
 				},
@@ -326,7 +327,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "detect-biases",
 				Tool: "detect-biases",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"content": "{{content}}",
 				},
 				StoreAs: "detected_biases",
@@ -334,7 +335,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "check-syntax",
 				Tool: "check-syntax",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"statement": "{{content}}",
 				},
 				DependsOn: []string{"detect-biases"},
@@ -343,7 +344,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "prove",
 				Tool: "prove",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"premises":   "{{premises}}",
 					"conclusion": "{{conclusion}}",
 				},
@@ -368,7 +369,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "analyze-perspectives",
 				Tool: "analyze-perspectives",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"situation": "{{situation}}",
 				},
 				StoreAs: "perspectives",
@@ -376,7 +377,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "sensitivity-analysis",
 				Tool: "sensitivity-analysis",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"target_claim": "{{decision}}",
 					"assumptions":  "{{assumptions}}",
 				},
@@ -385,7 +386,7 @@ func registerPredefinedWorkflows(orchestrator *orchestration.Orchestrator) {
 			{
 				ID:   "make-decision",
 				Tool: "make-decision",
-				Input: map[string]interface{}{
+				Input: types.Metadata{
 					"situation":    "{{situation}}",
 					"criteria":     "{{criteria}}",
 					"perspectives": "{{perspectives}}",

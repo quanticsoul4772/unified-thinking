@@ -54,11 +54,21 @@ type BlindSpotOutput struct {
 
 // HandleDetectBlindSpots detects blind spots and knowledge gaps
 func (h *UnknownUnknownsHandler) HandleDetectBlindSpots(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req DetectBlindSpotsRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[DetectBlindSpotsRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.detectBlindSpots(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// detectBlindSpots is the typed internal implementation
+func (h *UnknownUnknownsHandler) detectBlindSpots(ctx context.Context, req DetectBlindSpotsRequest) (*DetectBlindSpotsResponse, error) {
 	if req.Content == "" {
 		return nil, fmt.Errorf("content is required")
 	}
@@ -103,7 +113,7 @@ func (h *UnknownUnknownsHandler) HandleDetectBlindSpots(ctx context.Context, par
 		riskLevel = "MODERATE"
 	}
 
-	resp := &DetectBlindSpotsResponse{
+	return &DetectBlindSpotsResponse{
 		BlindSpots:              blindSpots,
 		MissingConsiderations:   result.MissingConsiderations,
 		UnchallengedAssumptions: result.UnchallengedAssumptions,
@@ -111,7 +121,5 @@ func (h *UnknownUnknownsHandler) HandleDetectBlindSpots(ctx context.Context, par
 		OverallRisk:             result.OverallRisk,
 		RiskLevel:               riskLevel,
 		Analysis:                result.Analysis,
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }

@@ -13,14 +13,14 @@ import (
 
 // Voyage Multimodal API constants
 const (
-	voyageMultimodalAPIURL  = "https://api.voyageai.com/v1/multimodalembeddings"
-	defaultMultimodalModel  = "voyage-multimodal-3"
-	multimodalDimension     = 1024 // voyage-multimodal-3 produces 1024-dim vectors
+	voyageMultimodalAPIURL = "https://api.voyageai.com/v1/multimodalembeddings"
+	defaultMultimodalModel = "voyage-multimodal-3"
+	multimodalDimension    = 1024 // voyage-multimodal-3 produces 1024-dim vectors
 )
 
 // VoyageMultimodalEmbedder implements MultimodalEmbedder using Voyage AI API
 type VoyageMultimodalEmbedder struct {
-	*VoyageEmbedder           // Embed base for text operations
+	*VoyageEmbedder // Embed base for text operations
 	multimodalModel string
 }
 

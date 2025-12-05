@@ -143,38 +143,38 @@ func (r *ToolRegistry) Clone() *ToolRegistry {
 // SafeToolSubset returns the list of tools safe for agentic use
 // These tools do not have side effects or resource-intensive operations
 var SafeToolSubset = []string{
-	"think",                          // Process reasoning
-	"search-similar-thoughts",        // Semantic search (read-only)
-	"search-knowledge-graph",         // Knowledge retrieval (read-only)
-	"build-causal-graph",             // Causal analysis
-	"get-causal-graph",               // Retrieve causal graph (read-only)
-	"generate-hypotheses",            // Abductive reasoning
-	"evaluate-hypotheses",            // Hypothesis testing
-	"analyze-perspectives",           // Multi-perspective analysis
-	"detect-biases",                  // Bias detection
-	"detect-fallacies",               // Fallacy detection
-	"decompose-problem",              // Problem decomposition
-	"make-decision",                  // Decision analysis
-	"analyze-temporal",               // Temporal analysis
-	"probabilistic-reasoning",        // Probabilistic reasoning
-	"assess-evidence",                // Evidence assessment
-	"detect-contradictions",          // Contradiction detection
-	"self-evaluate",                  // Metacognitive analysis
-	"detect-blind-spots",             // Unknown unknowns detection
-	"dual-process-think",             // System 1/2 reasoning
-	"verify-thought",                 // Hallucination detection
-	"retrieve-similar-cases",         // Case-based reasoning (read-only)
-	"decompose-argument",             // Argument analysis
-	"generate-counter-arguments",     // Counter-argument generation
-	"find-analogy",                   // Analogy finding
-	"apply-analogy",                  // Analogy application
-	"synthesize-insights",            // Cross-mode synthesis
-	"detect-emergent-patterns",       // Pattern detection
-	"got-generate",                   // Graph-of-Thoughts generation
-	"got-aggregate",                  // Graph-of-Thoughts aggregation
-	"got-refine",                     // Graph-of-Thoughts refinement
-	"got-score",                      // Graph-of-Thoughts scoring
-	"got-get-state",                  // Graph-of-Thoughts state (read-only)
+	"think",                      // Process reasoning
+	"search-similar-thoughts",    // Semantic search (read-only)
+	"search-knowledge-graph",     // Knowledge retrieval (read-only)
+	"build-causal-graph",         // Causal analysis
+	"get-causal-graph",           // Retrieve causal graph (read-only)
+	"generate-hypotheses",        // Abductive reasoning
+	"evaluate-hypotheses",        // Hypothesis testing
+	"analyze-perspectives",       // Multi-perspective analysis
+	"detect-biases",              // Bias detection
+	"detect-fallacies",           // Fallacy detection
+	"decompose-problem",          // Problem decomposition
+	"make-decision",              // Decision analysis
+	"analyze-temporal",           // Temporal analysis
+	"probabilistic-reasoning",    // Probabilistic reasoning
+	"assess-evidence",            // Evidence assessment
+	"detect-contradictions",      // Contradiction detection
+	"self-evaluate",              // Metacognitive analysis
+	"detect-blind-spots",         // Unknown unknowns detection
+	"dual-process-think",         // System 1/2 reasoning
+	"verify-thought",             // Hallucination detection
+	"retrieve-similar-cases",     // Case-based reasoning (read-only)
+	"decompose-argument",         // Argument analysis
+	"generate-counter-arguments", // Counter-argument generation
+	"find-analogy",               // Analogy finding
+	"apply-analogy",              // Analogy application
+	"synthesize-insights",        // Cross-mode synthesis
+	"detect-emergent-patterns",   // Pattern detection
+	"got-generate",               // Graph-of-Thoughts generation
+	"got-aggregate",              // Graph-of-Thoughts aggregation
+	"got-refine",                 // Graph-of-Thoughts refinement
+	"got-score",                  // Graph-of-Thoughts scoring
+	"got-get-state",              // Graph-of-Thoughts state (read-only)
 }
 
 // ExcludedTools lists tools that should NOT be available for agentic use
@@ -242,18 +242,18 @@ type PropertyDef struct {
 
 // CommonSchemas provides reusable JSON schemas for tool inputs
 var CommonSchemas = struct {
-	Think                   map[string]interface{}
-	SearchSimilarThoughts   map[string]interface{}
-	BuildCausalGraph        map[string]interface{}
-	GenerateHypotheses      map[string]interface{}
-	AnalyzePerspectives     map[string]interface{}
-	DecomposeProblem        map[string]interface{}
-	MakeDecision            map[string]interface{}
-	DetectBiases            map[string]interface{}
-	DetectFallacies         map[string]interface{}
-	AssessEvidence          map[string]interface{}
-	ProbabilisticReasoning  map[string]interface{}
-	SynthesizeInsights      map[string]interface{}
+	Think                  map[string]interface{}
+	SearchSimilarThoughts  map[string]interface{}
+	BuildCausalGraph       map[string]interface{}
+	GenerateHypotheses     map[string]interface{}
+	AnalyzePerspectives    map[string]interface{}
+	DecomposeProblem       map[string]interface{}
+	MakeDecision           map[string]interface{}
+	DetectBiases           map[string]interface{}
+	DetectFallacies        map[string]interface{}
+	AssessEvidence         map[string]interface{}
+	ProbabilisticReasoning map[string]interface{}
+	SynthesizeInsights     map[string]interface{}
 }{
 	Think: BuildSchemaFromStruct(
 		"Process a thought with structured reasoning",
@@ -340,9 +340,9 @@ var CommonSchemas = struct {
 	ProbabilisticReasoning: BuildSchemaFromStruct(
 		"Perform probabilistic reasoning with beliefs",
 		map[string]PropertyDef{
-			"hypothesis":   {Type: "string", Description: "The hypothesis to evaluate"},
-			"evidence":     {Type: "array", Description: "Evidence items", Items: map[string]string{"type": "string"}},
-			"prior":        {Type: "number", Description: "Prior probability", Default: 0.5},
+			"hypothesis": {Type: "string", Description: "The hypothesis to evaluate"},
+			"evidence":   {Type: "array", Description: "Evidence items", Items: map[string]string{"type": "string"}},
+			"prior":      {Type: "number", Description: "Prior probability", Default: 0.5},
 		},
 		[]string{"hypothesis", "evidence"},
 	),

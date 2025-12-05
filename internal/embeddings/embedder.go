@@ -40,10 +40,10 @@ const (
 
 // MultimodalInput represents content that can be text, image, or document
 type MultimodalInput struct {
-	Type     MultimodalInputType `json:"type"`                 // "text", "image_base64", "image_url"
-	Text     string              `json:"text,omitempty"`       // Text content
+	Type     MultimodalInputType `json:"type"`                   // "text", "image_base64", "image_url"
+	Text     string              `json:"text,omitempty"`         // Text content
 	ImageB64 string              `json:"image_base64,omitempty"` // Base64-encoded image
-	ImageURL string              `json:"image_url,omitempty"`  // Image URL
+	ImageURL string              `json:"image_url,omitempty"`    // Image URL
 }
 
 // ToAPIFormat converts the input to Voyage API format

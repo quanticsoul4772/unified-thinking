@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"unified-thinking/internal/types"
 )
 
 // EntityEmbedding represents a cached embedding for an entity
@@ -175,8 +177,8 @@ func (ec *EmbeddingCache) Count() (int, error) {
 }
 
 // GetCacheStats returns cache statistics
-func (ec *EmbeddingCache) GetCacheStats() (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
+func (ec *EmbeddingCache) GetCacheStats() (types.Metadata, error) {
+	stats := make(types.Metadata)
 
 	// Total count
 	count, err := ec.Count()

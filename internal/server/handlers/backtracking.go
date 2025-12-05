@@ -43,11 +43,21 @@ type CreateCheckpointResponse struct {
 
 // HandleCreateCheckpoint creates a checkpoint
 func (h *BacktrackingHandler) HandleCreateCheckpoint(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req CreateCheckpointRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[CreateCheckpointRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.createCheckpoint(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// createCheckpoint is the typed internal implementation
+func (h *BacktrackingHandler) createCheckpoint(ctx context.Context, req CreateCheckpointRequest) (*CreateCheckpointResponse, error) {
 	if req.BranchID == "" {
 		return nil, fmt.Errorf("branch_id is required")
 	}
@@ -69,7 +79,7 @@ func (h *BacktrackingHandler) HandleCreateCheckpoint(ctx context.Context, params
 		insightCount = len(branch.Insights)
 	}
 
-	resp := &CreateCheckpointResponse{
+	return &CreateCheckpointResponse{
 		CheckpointID: checkpoint.ID,
 		Name:         checkpoint.Name,
 		Description:  checkpoint.Description,
@@ -77,9 +87,7 @@ func (h *BacktrackingHandler) HandleCreateCheckpoint(ctx context.Context, params
 		ThoughtCount: thoughtCount,
 		InsightCount: insightCount,
 		CreatedAt:    checkpoint.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // RestoreCheckpointRequest represents a restore request
@@ -97,11 +105,21 @@ type RestoreCheckpointResponse struct {
 
 // HandleRestoreCheckpoint restores from a checkpoint
 func (h *BacktrackingHandler) HandleRestoreCheckpoint(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req RestoreCheckpointRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[RestoreCheckpointRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.restoreCheckpoint(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// restoreCheckpoint is the typed internal implementation
+func (h *BacktrackingHandler) restoreCheckpoint(ctx context.Context, req RestoreCheckpointRequest) (*RestoreCheckpointResponse, error) {
 	if req.CheckpointID == "" {
 		return nil, fmt.Errorf("checkpoint_id is required")
 	}
@@ -111,14 +129,12 @@ func (h *BacktrackingHandler) HandleRestoreCheckpoint(ctx context.Context, param
 		return nil, fmt.Errorf("checkpoint restoration failed: %w", err)
 	}
 
-	resp := &RestoreCheckpointResponse{
+	return &RestoreCheckpointResponse{
 		BranchID:     branch.ID,
 		ThoughtCount: len(branch.Thoughts),
 		InsightCount: len(branch.Insights),
 		Message:      "Checkpoint restored successfully",
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // ListCheckpointsRequest represents a list request
@@ -144,11 +160,21 @@ type CheckpointInfo struct {
 
 // HandleListCheckpoints lists available checkpoints
 func (h *BacktrackingHandler) HandleListCheckpoints(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req ListCheckpointsRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[ListCheckpointsRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.listCheckpoints(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// listCheckpoints is the typed internal implementation
+func (h *BacktrackingHandler) listCheckpoints(_ context.Context, req ListCheckpointsRequest) (*ListCheckpointsResponse, error) {
 	checkpoints := h.manager.ListCheckpoints(req.BranchID)
 
 	infos := make([]*CheckpointInfo, 0, len(checkpoints))
@@ -171,10 +197,8 @@ func (h *BacktrackingHandler) HandleListCheckpoints(ctx context.Context, params 
 		infos = append(infos, info)
 	}
 
-	resp := &ListCheckpointsResponse{
+	return &ListCheckpointsResponse{
 		Checkpoints: infos,
 		Count:       len(infos),
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }

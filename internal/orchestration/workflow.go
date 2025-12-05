@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"unified-thinking/internal/streaming"
+	"unified-thinking/internal/types"
 )
 
 // WorkflowType defines the type of workflow execution pattern
@@ -25,26 +26,26 @@ const (
 
 // Workflow represents a coordinated sequence of tool executions
 type Workflow struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Type        WorkflowType           `json:"type"`
-	Steps       []*WorkflowStep        `json:"steps"`
-	Context     *ReasoningContext      `json:"context,omitempty"`
-	CreatedAt   time.Time              `json:"created_at"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Type        WorkflowType      `json:"type"`
+	Steps       []*WorkflowStep   `json:"steps"`
+	Context     *ReasoningContext `json:"context,omitempty"`
+	CreatedAt   time.Time         `json:"created_at"`
+	Metadata    types.Metadata    `json:"metadata,omitempty"`
 }
 
 // WorkflowStep represents a single step in a workflow
 type WorkflowStep struct {
-	ID        string                 `json:"id"`
-	Tool      string                 `json:"tool"`                 // Tool name to execute
-	Input     map[string]interface{} `json:"input"`                // Tool input parameters
-	DependsOn []string               `json:"depends_on,omitempty"` // Step IDs this depends on
-	Condition *StepCondition         `json:"condition,omitempty"`  // Conditional execution
-	Transform *OutputTransform       `json:"transform,omitempty"`  // Output transformation
-	StoreAs   string                 `json:"store_as,omitempty"`   // Store result in context
-	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+	ID        string           `json:"id"`
+	Tool      string           `json:"tool"`                 // Tool name to execute
+	Input     types.Metadata   `json:"input"`                // Tool input parameters
+	DependsOn []string         `json:"depends_on,omitempty"` // Step IDs this depends on
+	Condition *StepCondition   `json:"condition,omitempty"`  // Conditional execution
+	Transform *OutputTransform `json:"transform,omitempty"`  // Output transformation
+	StoreAs   string           `json:"store_as,omitempty"`   // Store result in context
+	Metadata  types.Metadata   `json:"metadata,omitempty"`
 }
 
 // StepCondition defines when a step should execute
@@ -57,36 +58,36 @@ type StepCondition struct {
 
 // OutputTransform defines how to transform step output
 type OutputTransform struct {
-	Type   string                 `json:"type"`   // "extract_field", "map", "filter"
-	Config map[string]interface{} `json:"config"` // Transform configuration
+	Type   string         `json:"type"`   // "extract_field", "map", "filter"
+	Config types.Metadata `json:"config"` // Transform configuration
 }
 
 // ReasoningContext tracks shared state across workflow execution
 type ReasoningContext struct {
-	ID           string                 `json:"id"`
-	WorkflowID   string                 `json:"workflow_id"`
-	Problem      string                 `json:"problem"`
-	Results      map[string]interface{} `json:"results"`       // Step results
-	Thoughts     []string               `json:"thoughts"`      // Thought IDs
-	CausalGraphs []string               `json:"causal_graphs"` // Causal graph IDs
-	Beliefs      []string               `json:"beliefs"`       // Belief IDs
-	Evidence     []string               `json:"evidence"`      // Evidence IDs
-	Decisions    []string               `json:"decisions"`     // Decision IDs
-	Confidence   float64                `json:"confidence"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
+	ID           string         `json:"id"`
+	WorkflowID   string         `json:"workflow_id"`
+	Problem      string         `json:"problem"`
+	Results      types.Metadata `json:"results"`       // Step results
+	Thoughts     []string       `json:"thoughts"`      // Thought IDs
+	CausalGraphs []string       `json:"causal_graphs"` // Causal graph IDs
+	Beliefs      []string       `json:"beliefs"`       // Belief IDs
+	Evidence     []string       `json:"evidence"`      // Evidence IDs
+	Decisions    []string       `json:"decisions"`     // Decision IDs
+	Confidence   float64        `json:"confidence"`
+	Metadata     types.Metadata `json:"metadata,omitempty"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
 }
 
 // WorkflowResult contains the outcome of workflow execution
 type WorkflowResult struct {
-	WorkflowID   string                 `json:"workflow_id"`
-	Status       string                 `json:"status"` // "success", "partial", "failed"
-	StepResults  map[string]interface{} `json:"step_results"`
-	Context      *ReasoningContext      `json:"context"`
-	Duration     time.Duration          `json:"duration"`
-	ErrorMessage string                 `json:"error_message,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	WorkflowID   string            `json:"workflow_id"`
+	Status       string            `json:"status"` // "success", "partial", "failed"
+	StepResults  types.Metadata    `json:"step_results"`
+	Context      *ReasoningContext `json:"context"`
+	Duration     time.Duration     `json:"duration"`
+	ErrorMessage string            `json:"error_message,omitempty"`
+	Metadata     types.Metadata    `json:"metadata,omitempty"`
 }
 
 // Orchestrator manages workflow execution and coordination
@@ -174,13 +175,13 @@ func (o *Orchestrator) CreateContext(workflowID, problem string) *ReasoningConte
 		ID:           fmt.Sprintf("ctx_%d", time.Now().UnixNano()),
 		WorkflowID:   workflowID,
 		Problem:      problem,
-		Results:      make(map[string]interface{}),
+		Results:      make(types.Metadata),
 		Thoughts:     []string{},
 		CausalGraphs: []string{},
 		Beliefs:      []string{},
 		Evidence:     []string{},
 		Decisions:    []string{},
-		Metadata:     make(map[string]interface{}),
+		Metadata:     make(types.Metadata),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -220,7 +221,7 @@ func (o *Orchestrator) UpdateContext(ctx *ReasoningContext) error {
 }
 
 // ExecuteWorkflow executes a workflow with the given input
-func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, input map[string]interface{}) (*WorkflowResult, error) {
+func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, input types.Metadata) (*WorkflowResult, error) {
 	startTime := time.Now()
 
 	workflow, err := o.GetWorkflow(workflowID)
@@ -234,9 +235,9 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 
 	result := &WorkflowResult{
 		WorkflowID:  workflowID,
-		StepResults: make(map[string]interface{}),
+		StepResults: make(types.Metadata),
 		Context:     reasoningCtx,
-		Metadata:    make(map[string]interface{}),
+		Metadata:    make(types.Metadata),
 	}
 
 	// Get progress reporter from context if available
@@ -282,7 +283,7 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 }
 
 // executeSequential executes workflow steps in sequence
-func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow, input map[string]interface{}, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
+func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow, input types.Metadata, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
 	reporter := streaming.GetReporter(ctx)
 	totalSteps := len(workflow.Steps)
 
@@ -325,10 +326,10 @@ func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow
 }
 
 // executeParallel executes workflow steps in parallel
-func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, input map[string]interface{}, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
+func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, input types.Metadata, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
 	var wg sync.WaitGroup
 	errors := make(chan error, len(workflow.Steps))
-	stepResults := make(map[string]interface{})
+	stepResults := make(types.Metadata)
 	var resultMu sync.Mutex
 
 	for _, step := range workflow.Steps {
@@ -382,7 +383,7 @@ func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, 
 }
 
 // executeConditional executes workflow with conditional branching
-func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflow, input map[string]interface{}, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
+func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflow, input types.Metadata, reasoningCtx *ReasoningContext, result *WorkflowResult) error {
 	reporter := streaming.GetReporter(ctx)
 	totalSteps := len(workflow.Steps)
 
@@ -465,19 +466,19 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 }
 
 // executeStep executes a single workflow step using the tool executor
-func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, input map[string]interface{}, reasoningCtx *ReasoningContext) (interface{}, error) {
+func (o *Orchestrator) executeStep(ctx context.Context, step *WorkflowStep, input types.Metadata, reasoningCtx *ReasoningContext) (interface{}, error) {
 	return o.executeStepWithLock(ctx, step, input, reasoningCtx, nil)
 }
 
 // executeStepWithLock executes a single workflow step with optional mutex protection for reasoningCtx
-func (o *Orchestrator) executeStepWithLock(ctx context.Context, step *WorkflowStep, input map[string]interface{}, reasoningCtx *ReasoningContext, mu *sync.Mutex) (interface{}, error) {
+func (o *Orchestrator) executeStepWithLock(ctx context.Context, step *WorkflowStep, input types.Metadata, reasoningCtx *ReasoningContext, mu *sync.Mutex) (interface{}, error) {
 	// Check if executor is available
 	if o.executor == nil {
 		return nil, fmt.Errorf("no tool executor configured for orchestrator")
 	}
 
 	// Prepare step input by merging workflow input with step-specific input
-	toolInput := make(map[string]interface{})
+	toolInput := make(types.Metadata)
 
 	// Start with workflow input
 	for k, v := range input {
@@ -514,34 +515,37 @@ func (o *Orchestrator) executeStepWithLock(ctx context.Context, step *WorkflowSt
 		defer mu.Unlock()
 	}
 
+	// Extract result as map for field access (handles both types.Metadata and map[string]interface{})
+	resultMap := extractResultMap(result)
+
 	switch step.Tool {
 	case "think":
-		if thoughtResult, ok := result.(map[string]interface{}); ok {
-			if thoughtID, ok := thoughtResult["thought_id"].(string); ok {
+		if resultMap != nil {
+			if thoughtID, ok := resultMap["thought_id"].(string); ok {
 				reasoningCtx.Thoughts = append(reasoningCtx.Thoughts, thoughtID)
 			}
 		}
 	case "build-causal-graph":
-		if graphResult, ok := result.(map[string]interface{}); ok {
-			if graphID, ok := graphResult["id"].(string); ok {
+		if resultMap != nil {
+			if graphID, ok := resultMap["id"].(string); ok {
 				reasoningCtx.CausalGraphs = append(reasoningCtx.CausalGraphs, graphID)
 			}
 		}
 	case "probabilistic-reasoning":
-		if beliefResult, ok := result.(map[string]interface{}); ok {
-			if beliefID, ok := beliefResult["id"].(string); ok {
+		if resultMap != nil {
+			if beliefID, ok := resultMap["id"].(string); ok {
 				reasoningCtx.Beliefs = append(reasoningCtx.Beliefs, beliefID)
 			}
 		}
 	case "assess-evidence":
-		if evidenceResult, ok := result.(map[string]interface{}); ok {
-			if evidenceID, ok := evidenceResult["id"].(string); ok {
+		if resultMap != nil {
+			if evidenceID, ok := resultMap["id"].(string); ok {
 				reasoningCtx.Evidence = append(reasoningCtx.Evidence, evidenceID)
 			}
 		}
 	case "make-decision":
-		if decisionResult, ok := result.(map[string]interface{}); ok {
-			if decisionID, ok := decisionResult["id"].(string); ok {
+		if resultMap != nil {
+			if decisionID, ok := resultMap["id"].(string); ok {
 				reasoningCtx.Decisions = append(reasoningCtx.Decisions, decisionID)
 			}
 		}
@@ -563,7 +567,7 @@ func (o *Orchestrator) executeStepWithLock(ctx context.Context, step *WorkflowSt
 // resolveTemplateValue resolves template references in workflow step input values.
 // Supports both {{variable}} and $variable syntax for backward compatibility.
 // Also handles nested references like {{causal_graph.id}} or $causal_graph.id.
-func (o *Orchestrator) resolveTemplateValue(value interface{}, workflowInput map[string]interface{}, reasoningCtx *ReasoningContext) interface{} {
+func (o *Orchestrator) resolveTemplateValue(value interface{}, workflowInput types.Metadata, reasoningCtx *ReasoningContext) interface{} {
 	// Handle string values that might contain template references
 	strVal, ok := value.(string)
 	if !ok {
@@ -663,14 +667,20 @@ func splitReference(ref string) []string {
 	return parts
 }
 
-// extractNestedValue extracts a nested value from an interface using a path
+// extractNestedValue extracts a nested value from an interface using a path.
+// Handles both types.Metadata and map[string]interface{} for JSON unmarshaling compatibility.
 func extractNestedValue(val interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return val
 	}
 
 	switch v := val.(type) {
+	case types.Metadata:
+		if nextVal, exists := v[path[0]]; exists {
+			return extractNestedValue(nextVal, path[1:])
+		}
 	case map[string]interface{}:
+		// Handle map[string]interface{} for JSON unmarshaling compatibility
 		if nextVal, exists := v[path[0]]; exists {
 			return extractNestedValue(nextVal, path[1:])
 		}
@@ -684,7 +694,7 @@ func applyTransform(result interface{}, transform *OutputTransform) interface{} 
 	switch transform.Type {
 	case "extract_field":
 		if field, ok := transform.Config["field"].(string); ok {
-			if m, ok := result.(map[string]interface{}); ok {
+			if m, ok := result.(types.Metadata); ok {
 				if val, exists := m[field]; exists {
 					return val
 				}
@@ -692,8 +702,8 @@ func applyTransform(result interface{}, transform *OutputTransform) interface{} 
 		}
 	case "map":
 		// Apply a mapping function (simplified for now)
-		if m, ok := result.(map[string]interface{}); ok {
-			mapped := make(map[string]interface{})
+		if m, ok := result.(types.Metadata); ok {
+			mapped := make(types.Metadata)
 			for k, v := range m {
 				if mapConfig, ok := transform.Config[k]; ok {
 					mapped[mapConfig.(string)] = v
@@ -706,8 +716,8 @@ func applyTransform(result interface{}, transform *OutputTransform) interface{} 
 	case "filter":
 		// Filter results based on criteria
 		if fields, ok := transform.Config["fields"].([]string); ok {
-			if m, ok := result.(map[string]interface{}); ok {
-				filtered := make(map[string]interface{})
+			if m, ok := result.(types.Metadata); ok {
+				filtered := make(types.Metadata)
 				for _, field := range fields {
 					if val, exists := m[field]; exists {
 						filtered[field] = val
@@ -721,20 +731,33 @@ func applyTransform(result interface{}, transform *OutputTransform) interface{} 
 	return result
 }
 
+// extractResultMap extracts a map from interface{} (handles both types.Metadata and map[string]interface{})
+func extractResultMap(result interface{}) map[string]interface{} {
+	switch v := result.(type) {
+	case types.Metadata:
+		return map[string]interface{}(v)
+	case map[string]interface{}:
+		return v
+	}
+	return nil
+}
+
 // extractConfidence extracts confidence value from a result
 func extractConfidence(result interface{}) float64 {
-	switch v := result.(type) {
-	case map[string]interface{}:
-		if conf, ok := v["confidence"].(float64); ok {
-			return conf
-		}
-		// Try other common confidence field names
-		if conf, ok := v["probability"].(float64); ok {
-			return conf
-		}
-		if conf, ok := v["score"].(float64); ok {
-			return conf
-		}
+	resultMap := extractResultMap(result)
+	if resultMap == nil {
+		return 0
+	}
+
+	// Try common confidence field names
+	if conf, ok := resultMap["confidence"].(float64); ok {
+		return conf
+	}
+	if conf, ok := resultMap["probability"].(float64); ok {
+		return conf
+	}
+	if conf, ok := resultMap["score"].(float64); ok {
+		return conf
 	}
 	return 0
 }
@@ -797,37 +820,37 @@ var PredefinedWorkflows = map[string]*Workflow{
 			{
 				ID:      "decompose",
 				Tool:    "decompose-problem",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "decomposition",
 			},
 			{
 				ID:      "causal",
 				Tool:    "build-causal-graph",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "causal_graph",
 			},
 			{
 				ID:      "temporal",
 				Tool:    "analyze-temporal",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "temporal_analysis",
 			},
 			{
 				ID:      "perspectives",
 				Tool:    "analyze-perspectives",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "perspectives",
 			},
 			{
 				ID:      "synthesis",
 				Tool:    "synthesize-insights",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "synthesis",
 			},
 			{
 				ID:      "decision",
 				Tool:    "make-decision",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "decision",
 			},
 		},
@@ -841,25 +864,25 @@ var PredefinedWorkflows = map[string]*Workflow{
 			{
 				ID:      "detect-contradictions",
 				Tool:    "detect-contradictions",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "contradictions",
 			},
 			{
 				ID:      "detect-biases",
 				Tool:    "detect-biases",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "biases",
 			},
 			{
 				ID:      "self-evaluate",
 				Tool:    "self-evaluate",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "evaluation",
 			},
 			{
 				ID:      "sensitivity",
 				Tool:    "sensitivity-analysis",
-				Input:   map[string]interface{}{},
+				Input:   types.Metadata{},
 				StoreAs: "sensitivity",
 			},
 		},

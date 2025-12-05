@@ -541,9 +541,10 @@ func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, 
 
 		for _, block := range resp.Content {
 			if block.Type == "tool_use" {
-				if block.Name == "web_search" {
+				switch block.Name {
+				case "web_search":
 					searchCount++
-				} else if block.Name == "research_response" {
+				case "research_response":
 					inputBytes, err := json.Marshal(block.Input)
 					if err != nil {
 						return nil, nil, 0, fmt.Errorf("marshal tool input: %w", err)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"unified-thinking/internal/knowledge/extraction"
+	"unified-thinking/internal/types"
 )
 
 // TrajectoryExtractor extracts entities and relationships from reasoning trajectories
@@ -44,7 +45,7 @@ func (te *TrajectoryExtractor) ExtractFromTrajectory(ctx context.Context, trajec
 		Label:       truncate(problem, 100),
 		Type:        EntityTypeProblem,
 		Description: problem,
-		Metadata: map[string]interface{}{
+		Metadata: types.Metadata{
 			"trajectory_id": trajectoryID,
 			"extracted_at":  time.Now().Unix(),
 		},
@@ -60,7 +61,7 @@ func (te *TrajectoryExtractor) ExtractFromTrajectory(ctx context.Context, trajec
 			ID:    fmt.Sprintf("%s-%s", entity.Type, entity.Text),
 			Label: entity.Text,
 			Type:  mapExtractedType(entity.Type),
-			Metadata: map[string]interface{}{
+			Metadata: types.Metadata{
 				"extracted_from": trajectoryID,
 				"confidence":     entity.Confidence,
 				"method":         entity.Method,

@@ -428,3 +428,92 @@ func TestThinkingHandler_ParentChaining(t *testing.T) {
 		t.Errorf("ParentID = %v, want %v", thought.ParentID, response1.ThoughtID)
 	}
 }
+
+func TestThinkingHandler_ConfidencePropagation(t *testing.T) {
+	store := storage.NewMemoryStorage()
+	linear := modes.NewLinearMode(store)
+	tree := modes.NewTreeMode(store)
+	divergent := modes.NewDivergentMode(store)
+	auto := modes.NewAutoMode(linear, tree, divergent)
+	validator := validation.NewLogicValidator()
+	handler := NewThinkingHandler(store, linear, tree, divergent, auto, validator)
+
+	ctx := context.Background()
+	req := &mcp.CallToolRequest{}
+
+	tests := []struct {
+		name        string
+		inputConf   float64
+		wantMinConf float64
+		description string
+	}{
+		{
+			name:        "high input confidence is honored",
+			inputConf:   0.95,
+			wantMinConf: 0.95,
+			description: "When user provides high confidence, it should be returned",
+		},
+		{
+			name:        "moderate input confidence is honored",
+			inputConf:   0.75,
+			wantMinConf: 0.75,
+			description: "When user provides moderate confidence, it should be at least that value",
+		},
+		{
+			name:        "default confidence when not provided",
+			inputConf:   0,
+			wantMinConf: 0.8,
+			description: "When confidence is 0, default 0.8 should be used",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, response, err := handler.HandleThink(ctx, req, ThinkRequest{
+				Content:    "Test confidence propagation",
+				Mode:       "linear",
+				Confidence: tt.inputConf,
+			})
+
+			if err != nil {
+				t.Fatalf("HandleThink() error = %v", err)
+			}
+
+			if response.Confidence < tt.wantMinConf {
+				t.Errorf("Confidence = %v, want at least %v. %s",
+					response.Confidence, tt.wantMinConf, tt.description)
+			}
+		})
+	}
+}
+
+func TestThinkingHandler_ConfidenceHonorsInputOverCalculated(t *testing.T) {
+	store := storage.NewMemoryStorage()
+	linear := modes.NewLinearMode(store)
+	tree := modes.NewTreeMode(store)
+	divergent := modes.NewDivergentMode(store)
+	auto := modes.NewAutoMode(linear, tree, divergent)
+	validator := validation.NewLogicValidator()
+	handler := NewThinkingHandler(store, linear, tree, divergent, auto, validator)
+
+	ctx := context.Background()
+	req := &mcp.CallToolRequest{}
+
+	// Test that very high input confidence (0.99) is always honored
+	_, response, err := handler.HandleThink(ctx, req, ThinkRequest{
+		Content:    "Test that high input confidence is always returned",
+		Mode:       "linear",
+		Confidence: 0.99,
+	})
+
+	if err != nil {
+		t.Fatalf("HandleThink() error = %v", err)
+	}
+
+	// The response confidence should be at least the input confidence
+	// since we honor user's input when it's higher than calculated
+	if response.Confidence < 0.99 {
+		t.Errorf("Response confidence = %v, expected at least 0.99 (input confidence should be honored)",
+			response.Confidence)
+	}
+}

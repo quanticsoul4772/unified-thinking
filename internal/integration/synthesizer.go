@@ -30,7 +30,7 @@ type Input struct {
 	Mode       string // "causal", "temporal", "perspective", "probabilistic", etc.
 	Content    string
 	Confidence float64
-	Metadata   map[string]interface{}
+	Metadata   types.Metadata
 }
 
 // SynthesizeInsights combines insights from multiple reasoning modes
@@ -69,7 +69,7 @@ func (s *Synthesizer) SynthesizeInsights(inputs []*Input, context string) (*type
 		Synergies:      synergies,
 		Conflicts:      conflicts,
 		Confidence:     confidence,
-		Metadata:       map[string]interface{}{},
+		Metadata:       types.Metadata{},
 		CreatedAt:      time.Now(),
 	}
 

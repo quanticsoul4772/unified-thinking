@@ -33,23 +33,23 @@ func NewAgentHandler(registry *modes.ToolRegistry) *AgentHandler {
 
 // RunAgentRequest for the run-agent tool
 type RunAgentRequest struct {
-	Task          string   `json:"task"`                      // The task for the agent to complete
-	MaxIterations int      `json:"max_iterations,omitempty"`  // Maximum iterations (default: 10)
-	AllowedTools  []string `json:"allowed_tools,omitempty"`   // Restrict to specific tools
-	StopOnError   *bool    `json:"stop_on_error,omitempty"`   // Stop on tool error (default: true)
-	SystemPrompt  string   `json:"system_prompt,omitempty"`   // Custom system prompt
-	Temperature   float64  `json:"temperature,omitempty"`     // Model temperature (default: 0.3)
+	Task          string   `json:"task"`                     // The task for the agent to complete
+	MaxIterations int      `json:"max_iterations,omitempty"` // Maximum iterations (default: 10)
+	AllowedTools  []string `json:"allowed_tools,omitempty"`  // Restrict to specific tools
+	StopOnError   *bool    `json:"stop_on_error,omitempty"`  // Stop on tool error (default: true)
+	SystemPrompt  string   `json:"system_prompt,omitempty"`  // Custom system prompt
+	Temperature   float64  `json:"temperature,omitempty"`    // Model temperature (default: 0.3)
 }
 
 // RunAgentResponse contains agentic execution results
 type RunAgentResponse struct {
-	FinalAnswer    string                  `json:"final_answer"`
-	Status         string                  `json:"status"`         // "completed", "max_iterations", "error"
-	Iterations     int                     `json:"iterations"`
-	ToolsUsed      []string                `json:"tools_used"`
-	TotalToolCalls int                     `json:"total_tool_calls"`
-	ErrorCount     int                     `json:"error_count"`
-	Trace          *modes.ExecutionTrace   `json:"trace,omitempty"`
+	FinalAnswer    string                `json:"final_answer"`
+	Status         string                `json:"status"` // "completed", "max_iterations", "error"
+	Iterations     int                   `json:"iterations"`
+	ToolsUsed      []string              `json:"tools_used"`
+	TotalToolCalls int                   `json:"total_tool_calls"`
+	ErrorCount     int                   `json:"error_count"`
+	Trace          *modes.ExecutionTrace `json:"trace,omitempty"`
 }
 
 // HandleRunAgent executes an agentic task

@@ -72,11 +72,21 @@ type SolutionDescriptionInfo struct {
 
 // HandleRetrieveCases retrieves similar cases
 func (h *CaseBasedHandler) HandleRetrieveCases(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req RetrieveCasesRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[RetrieveCasesRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.retrieveCases(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// retrieveCases is the typed internal implementation
+func (h *CaseBasedHandler) retrieveCases(ctx context.Context, req RetrieveCasesRequest) (*RetrieveCasesResponse, error) {
 	if req.Problem == nil || req.Problem.Description == "" {
 		return nil, fmt.Errorf("problem description is required")
 	}
@@ -132,12 +142,10 @@ func (h *CaseBasedHandler) HandleRetrieveCases(ctx context.Context, params map[s
 		}
 	}
 
-	resp := &RetrieveCasesResponse{
+	return &RetrieveCasesResponse{
 		Cases:     cases,
 		Retrieved: result.Retrieved,
-	}
-
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	}, nil
 }
 
 // PerformCBRCycleRequest represents a full CBR cycle request
@@ -157,11 +165,21 @@ type PerformCBRCycleResponse struct {
 
 // HandlePerformCBRCycle performs a full CBR cycle
 func (h *CaseBasedHandler) HandlePerformCBRCycle(ctx context.Context, params map[string]interface{}) (*mcp.CallToolResult, error) {
-	var req PerformCBRCycleRequest
-	if err := unmarshalParams(params, &req); err != nil {
+	req, err := unmarshalRequest[PerformCBRCycleRequest](params)
+	if err != nil {
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	resp, err := h.performCBRCycle(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+}
+
+// performCBRCycle is the typed internal implementation
+func (h *CaseBasedHandler) performCBRCycle(ctx context.Context, req PerformCBRCycleRequest) (*PerformCBRCycleResponse, error) {
 	if req.Problem == nil || req.Problem.Description == "" {
 		return nil, fmt.Errorf("problem description is required")
 	}
@@ -212,5 +230,5 @@ func (h *CaseBasedHandler) HandlePerformCBRCycle(ctx context.Context, params map
 		resp.Confidence = cycle.Reused.Confidence
 	}
 
-	return &mcp.CallToolResult{Content: toJSONContent(resp)}, nil
+	return resp, nil
 }
