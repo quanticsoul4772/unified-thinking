@@ -65,3 +65,16 @@ gosec*.json
 # Benchmark test databases
 test_*.db
 benchmarks/results/*.db
+
+# Environment files (may contain API keys)
+.env
+.env.local
+.env.*.local
+
+# Test coverage reports
+coverage.html
+
+# Editor temporary files
+*~
+*.swp
+*.tmp
