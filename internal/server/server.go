@@ -613,12 +613,22 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name: "decompose-problem",
-		Description: `Break down complex problems into manageable subproblems with dependencies.
+		Description: `Break down complex problems into manageable subproblems with dependencies using domain-specific templates.
 
 **Parameters:**
 - problem (required): Complex problem statement
+- domain (optional): Explicit domain override - "debugging", "proof", "architecture", "research", or "general"
 
-**Returns:** decomposition with subproblems, dependencies, solution_path, and metadata with:
+**Domain-Specific Templates:**
+- debugging (6 steps): For bugs, errors, crashes, flaky tests - keywords: debug, error, fix, crash, trace
+- proof (7 steps): For theorems, formal verification - keywords: prove, theorem, lemma, axiom, verify
+- architecture (6 steps): For system design, APIs - keywords: design, system, component, api, scale
+- research (7 steps): For analysis, studies - keywords: research, analyze, explore, study, benchmark
+- general (5 steps): Default fallback for other problems
+
+**Auto-Detection:** If domain not specified, automatically detects from problem keywords.
+
+**Returns:** decomposition with subproblems, dependencies, solution_path, detected_domain, domain_was_explicit, and metadata with:
 - suggested_next_tools: brave-search, obsidian:search-notes, think
 - export_formats.obsidian_note: Problem breakdown as checklist
 
@@ -634,7 +644,9 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 3. Tracked Progress: decompose-problem → obsidian:create-note (checklist) → update as solved
 4. Team Collaboration: decompose-problem → memory:create_entities (subproblems as tasks)
 
-**Example:** {"problem": "How to improve CI/CD pipeline performance?"}`,
+**Examples:**
+- Auto-detect: {"problem": "Debug the flaky CI test"}
+- Explicit: {"problem": "Improve performance", "domain": "debugging"}`,
 	}, s.handleDecomposeProblem)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
