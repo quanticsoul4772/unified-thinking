@@ -101,9 +101,14 @@ type Config struct {
 	RRFParameter    int     `json:"rrf_k"`             // Default: 60
 	MinSimilarity   float64 `json:"min_similarity"`    // Minimum similarity threshold (default: 0.5)
 
-	// Caching
+	// Caching (Legacy - use LRU cache settings for new features)
 	CacheEmbeddings bool          `json:"cache_embeddings"` // Cache computed embeddings
 	CacheTTL        time.Duration `json:"cache_ttl"`        // Cache expiration
+
+	// LRU Cache settings
+	CacheMaxEntries int    `json:"cache_max_entries"` // Max cache entries (0 = unlimited)
+	CachePersist    bool   `json:"cache_persist"`     // Persist cache to disk
+	CachePath       string `json:"cache_path"`        // Path for cache persistence
 
 	// Performance
 	BatchSize     int           `json:"batch_size"`     // Batch embedding requests
@@ -122,6 +127,9 @@ func DefaultConfig() *Config {
 		MinSimilarity:   0.5,
 		CacheEmbeddings: true,
 		CacheTTL:        24 * time.Hour,
+		CacheMaxEntries: 10000, // 10K entries ~= 20MB for 512d embeddings
+		CachePersist:    false, // Opt-in for disk persistence
+		CachePath:       "",    // Must be set if CachePersist is true
 		BatchSize:       100,
 		MaxConcurrent:   5,
 		Timeout:         30 * time.Second,
@@ -193,5 +201,37 @@ func ConfigFromEnv() *Config {
 		}
 	}
 
+	// LRU Cache settings
+	if maxEntries := os.Getenv("EMBEDDINGS_CACHE_MAX_ENTRIES"); maxEntries != "" {
+		if val, err := strconv.Atoi(maxEntries); err == nil {
+			cfg.CacheMaxEntries = val
+		}
+	}
+
+	if os.Getenv("EMBEDDINGS_CACHE_PERSIST") == "true" {
+		cfg.CachePersist = true
+	}
+
+	if cachePath := os.Getenv("EMBEDDINGS_CACHE_PATH"); cachePath != "" {
+		cfg.CachePath = cachePath
+		cfg.CachePersist = true // Auto-enable persistence if path is set
+	}
+
 	return cfg
+}
+
+// ToLRUCacheConfig converts embedding Config to LRUCacheConfig
+func (c *Config) ToLRUCacheConfig() *LRUCacheConfig {
+	persistPath := ""
+	if c.CachePersist && c.CachePath != "" {
+		persistPath = c.CachePath
+	}
+
+	return &LRUCacheConfig{
+		MaxEntries:    c.CacheMaxEntries,
+		TTL:           c.CacheTTL,
+		PersistPath:   persistPath,
+		SaveInterval:  5 * time.Minute,
+		CompressCache: true,
+	}
 }

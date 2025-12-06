@@ -322,6 +322,39 @@ Search results are now automatically reranked using Voyage AI's rerank models wh
 
 **Disable**: Set `RERANK_ENABLED=false` to use embedding-only scoring.
 
+### LRU Embedding Cache
+
+The embedding cache now uses LRU (Least Recently Used) eviction with optional disk persistence:
+
+**Features**:
+- **LRU Eviction**: Automatically evicts least-used entries when max size is reached
+- **Disk Persistence**: Save cache to disk, load on startup (gzip compressed)
+- **TTL Expiry**: Entries automatically expire after configurable time
+- **Auto-Save**: Dirty caches save automatically every 5 minutes
+- **Thread-Safe**: Full concurrent read/write support
+
+**Configuration**:
+```bash
+EMBEDDINGS_CACHE_MAX_ENTRIES=10000   # Max cache entries (default: 10000, 0 = unlimited)
+EMBEDDINGS_CACHE_PERSIST=true         # Enable disk persistence
+EMBEDDINGS_CACHE_PATH=/path/to/cache  # Cache file path (auto-enables persist)
+```
+
+**Cache Stats**: Available via `cache.Stats()`:
+```json
+{
+  "size": 5000,
+  "max_size": 10000,
+  "hits": 12500,
+  "misses": 250,
+  "hit_rate": 0.98,
+  "evictions": 100,
+  "expiries": 50
+}
+```
+
+**Memory Estimate**: ~20MB for 10K entries with 512-dimensional embeddings.
+
 ### Domain-Specific Model Configuration
 
 The system automatically detects task domains and applies optimized model configurations:
@@ -422,6 +455,9 @@ Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`):
 | `EMBEDDINGS_ENABLED` | `false` | Enable semantic embeddings |
 | `VOYAGE_API_KEY` | - | Voyage AI API key |
 | `EMBEDDINGS_MODEL` | `voyage-3-lite` | `voyage-3-lite` (512d), `voyage-3` (1024d), `voyage-3-large` (2048d) |
+| `EMBEDDINGS_CACHE_MAX_ENTRIES` | `10000` | Max LRU cache entries (0 = unlimited) |
+| `EMBEDDINGS_CACHE_PERSIST` | `false` | Persist embedding cache to disk |
+| `EMBEDDINGS_CACHE_PATH` | - | Path for cache persistence (auto-enables persist if set) |
 | `RERANK_ENABLED` | `true` | Enable Voyage AI reranking (when VOYAGE_API_KEY set) |
 | `RERANK_MODEL` | `rerank-2` | `rerank-2` (quality) or `rerank-2-lite` (speed) |
 | `NEO4J_ENABLED` | `false` | Enable knowledge graph |
