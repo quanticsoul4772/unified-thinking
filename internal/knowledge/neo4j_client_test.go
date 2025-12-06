@@ -59,15 +59,27 @@ func TestDefaultConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set environment
+			// Clear Neo4j env vars first to ensure clean state
+			neo4jVars := []string{"NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD", "NEO4J_DATABASE", "NEO4J_TIMEOUT_MS"}
+			original := make(map[string]string)
+			for _, k := range neo4jVars {
+				original[k] = os.Getenv(k)
+				os.Unsetenv(k)
+			}
+			defer func() {
+				for k, v := range original {
+					if v != "" {
+						os.Setenv(k, v)
+					} else {
+						os.Unsetenv(k)
+					}
+				}
+			}()
+
+			// Set test-specific environment
 			for k, v := range tt.env {
 				os.Setenv(k, v)
 			}
-			defer func() {
-				for k := range tt.env {
-					os.Unsetenv(k)
-				}
-			}()
 
 			cfg := DefaultConfig()
 
