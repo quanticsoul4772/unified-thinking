@@ -82,6 +82,8 @@ type MCPClient struct {
 	requestID  int
 	mu         sync.Mutex
 	writeMu    sync.Mutex
+	waitOnce   sync.Once   // Ensure cmd.Wait() is only called once
+	waitErr    error       // Result of cmd.Wait()
 	done       chan struct{}
 	config     Config
 	ctx        context.Context    // P2 #10: Context for lifecycle management
@@ -300,8 +302,11 @@ func (c *MCPClient) Initialize() error {
 // monitorProcess watches for process exit (P2 #10: cancels context on exit)
 func (c *MCPClient) monitorProcess() {
 	go func() {
-		_ = c.cmd.Wait() // Ignore error - just monitoring for exit
-		c.cancel()       // Cancel context when process exits
+		// Use sync.Once to prevent race with Close() calling Wait()
+		c.waitOnce.Do(func() {
+			c.waitErr = c.cmd.Wait()
+		})
+		c.cancel() // Cancel context when process exits
 		close(c.done)
 	}()
 }
@@ -581,14 +586,18 @@ func (c *MCPClient) Close() error {
 	}
 
 	// Wait for process to exit (with timeout)
-	done := make(chan error, 1)
+	// Use sync.Once to prevent race with monitorProcess() calling Wait()
+	done := make(chan struct{})
 	go func() {
-		done <- c.cmd.Wait()
+		c.waitOnce.Do(func() {
+			c.waitErr = c.cmd.Wait()
+		})
+		close(done)
 	}()
 
 	select {
 	case <-done:
-		return nil
+		return c.waitErr
 	case <-time.After(c.config.CloseTimeout):
 		// Force kill after timeout
 		_ = c.cmd.Process.Kill()
