@@ -91,38 +91,9 @@ make build  # Output: bin\unified-thinking.exe
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
-### Minimal (In-Memory)
+### Required Configuration
 
-```json
-{
-  "mcpServers": {
-    "unified-thinking": {
-      "command": "/path/to/bin/unified-thinking",
-      "env": { "DEBUG": "true" }
-    }
-  }
-}
-```
-
-### Recommended (SQLite + Embeddings)
-
-```json
-{
-  "mcpServers": {
-    "unified-thinking": {
-      "command": "/path/to/bin/unified-thinking",
-      "env": {
-        "DEBUG": "true",
-        "STORAGE_TYPE": "sqlite",
-        "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
-        "VOYAGE_API_KEY": "your-voyage-api-key"
-      }
-    }
-  }
-}
-```
-
-### Full (All Features)
+All infrastructure is **required** - the server fails fast if any required configuration is missing.
 
 ```json
 {
@@ -135,10 +106,10 @@ make build  # Output: bin\unified-thinking.exe
         "SQLITE_PATH": "~/Library/Application Support/Claude/unified-thinking.db",
         "VOYAGE_API_KEY": "your-voyage-api-key",
         "ANTHROPIC_API_KEY": "your-anthropic-api-key",
-        "NEO4J_ENABLED": "true",
         "NEO4J_URI": "neo4j+s://your-instance.databases.neo4j.io",
         "NEO4J_USERNAME": "neo4j",
-        "NEO4J_PASSWORD": "your-password"
+        "NEO4J_PASSWORD": "your-password",
+        "NEO4J_DATABASE": "neo4j"
       }
     }
   }
@@ -147,24 +118,31 @@ make build  # Output: bin\unified-thinking.exe
 
 ### Environment Variables
 
+**Required (server fails if missing):**
+
+| Variable | Description |
+|----------|-------------|
+| `VOYAGE_API_KEY` | Voyage AI API key for embeddings |
+| `ANTHROPIC_API_KEY` | Anthropic API key for GoT, agent, web search |
+| `NEO4J_URI` | Neo4j connection URI |
+| `NEO4J_USERNAME` | Neo4j username |
+| `NEO4J_PASSWORD` | Neo4j password |
+
+**Storage:**
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STORAGE_TYPE` | `memory` | `memory` or `sqlite` |
-| `SQLITE_PATH` | - | Database file path |
-| `DEBUG` | `false` | Enable debug logging |
-| `VOYAGE_API_KEY` | - | Voyage AI for semantic embeddings |
-| `ANTHROPIC_API_KEY` | - | Required for Graph-of-Thoughts |
-| `NEO4J_ENABLED` | `false` | Enable knowledge graph |
-| `NEO4J_URI` | - | Neo4j connection URI |
-| `CONTEXT_BRIDGE_ENABLED` | `true` | Cross-session context retrieval |
-| `WEB_SEARCH_ENABLED` | `false` | Enable web search for research tool |
-| `GOT_STRUCTURED_OUTPUT` | `true` | Use structured outputs for GoT (disable for text parsing) |
+| `STORAGE_TYPE` | `sqlite` | `sqlite` (recommended) or `memory` |
+| `SQLITE_PATH` | `./data/unified-thinking.db` | Database file path |
 
-**Notes:**
-- Trajectory persistence requires `STORAGE_TYPE=sqlite`
-- Graph-of-Thoughts requires `ANTHROPIC_API_KEY`
-- Knowledge graph requires both `NEO4J_ENABLED=true` and `VOYAGE_API_KEY`
-- Web search requires `ANTHROPIC_API_KEY` and `WEB_SEARCH_ENABLED=true`
+**Optional:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEBUG` | `false` | Enable debug logging |
+| `NEO4J_DATABASE` | `neo4j` | Neo4j database name |
+| `EMBEDDINGS_MODEL` | `voyage-3-lite` | Embedding model |
+| `GOT_MODEL` | `claude-sonnet-4-5-20250929` | Model for Graph-of-Thoughts |
 
 ## Documentation
 

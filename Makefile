@@ -145,11 +145,14 @@ ifeq ($(UNAME_S),Windows)
 clean:
 	@echo "Cleaning..."
 	@if exist bin rmdir /s /q bin
+	@if exist unified-thinking-server.exe del unified-thinking-server.exe
+	@if exist unified-thinking.exe del unified-thinking.exe
 	@echo "Clean complete"
 else
 clean:
 	@echo "Cleaning..."
 	@rm -rf bin
+	@rm -f unified-thinking-server unified-thinking-server.exe unified-thinking.exe
 	@echo "Clean complete"
 endif
 
@@ -211,16 +214,18 @@ help:
 	@echo "  verify                 - Verify installation"
 	@echo "  help                   - Show this help message"
 
-# Build server binary for E2E testing
+# Build server binary for E2E testing (outputs to bin/ like other builds)
 .PHONY: build-server
 ifeq ($(UNAME_S),Windows)
 build-server:
 	@echo "Building server binary for E2E testing (Windows)..."
-	go build -o unified-thinking-server.exe ./cmd/server
+	@if not exist bin mkdir bin
+	go build -o bin\unified-thinking.exe .\cmd\server
 else
 build-server:
 	@echo "Building server binary for E2E testing..."
-	go build -o unified-thinking-server ./cmd/server
+	@mkdir -p bin
+	go build -o bin/unified-thinking ./cmd/server
 endif
 
 # Run E2E benchmarks via MCP protocol

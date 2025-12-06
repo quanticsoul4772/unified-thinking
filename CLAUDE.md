@@ -408,15 +408,19 @@ The `run-agent` tool executes complex multi-step reasoning tasks autonomously:
 
 ## Storage Architecture
 
-### In-Memory (Default)
-Thread-safe (sync.RWMutex), no persistence, zero config.
-
-### SQLite (Optional)
+### SQLite (Default)
 Persistent, write-through cache, FTS5 search, WAL mode, trajectory persistence (schema v6).
 
 ```bash
-STORAGE_TYPE=sqlite
-SQLITE_PATH=./data/thoughts.db
+STORAGE_TYPE=sqlite  # Default
+SQLITE_PATH=./data/unified-thinking.db
+```
+
+### In-Memory (Optional)
+Thread-safe (sync.RWMutex), no persistence - use for testing only.
+
+```bash
+STORAGE_TYPE=memory
 ```
 
 **Key Methods**: `StoreThought()`, `GetThought()`, `SearchThoughts()`, `StoreBranch()`, `GetBranch()`, `ListBranches()`
@@ -445,34 +449,42 @@ Claude Desktop config (`%APPDATA%\Claude\claude_desktop_config.json`):
 
 ### Environment Variables
 
+**Required (fail-fast if missing):**
+
+| Variable | Description |
+|----------|-------------|
+| `VOYAGE_API_KEY` | Voyage AI API key (REQUIRED for embeddings) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (REQUIRED for GoT, agent, web search) |
+| `NEO4J_URI` | Neo4j connection URI (REQUIRED for knowledge graph) |
+| `NEO4J_USERNAME` | Neo4j username |
+| `NEO4J_PASSWORD` | Neo4j password |
+
+**Storage:**
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STORAGE_TYPE` | `memory` | `memory` or `sqlite` |
-| `SQLITE_PATH` | - | Database file path |
+| `STORAGE_TYPE` | `sqlite` | `sqlite` (recommended) or `memory` |
+| `SQLITE_PATH` | `./data/unified-thinking.db` | Database file path |
+
+**Configuration:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `DEBUG` | `false` | Enable debug logging |
 | `AUTO_VALIDATION_THRESHOLD` | `0.5` | Auto-validation confidence threshold |
-| `RESPONSE_FORMAT` | `full` | Response format: `full`, `compact` (40-60% reduction), `minimal` (80%+ reduction) |
-| `EMBEDDINGS_ENABLED` | `false` | Enable semantic embeddings |
-| `VOYAGE_API_KEY` | - | Voyage AI API key |
+| `RESPONSE_FORMAT` | `full` | Response format: `full`, `compact`, `minimal` |
 | `EMBEDDINGS_MODEL` | `voyage-3-lite` | `voyage-3-lite` (512d), `voyage-3` (1024d), `voyage-3-large` (2048d) |
 | `EMBEDDINGS_CACHE_MAX_ENTRIES` | `10000` | Max LRU cache entries (0 = unlimited) |
 | `EMBEDDINGS_CACHE_PERSIST` | `false` | Persist embedding cache to disk |
-| `EMBEDDINGS_CACHE_PATH` | - | Path for cache persistence (auto-enables persist if set) |
-| `RERANK_ENABLED` | `true` | Enable Voyage AI reranking (when VOYAGE_API_KEY set) |
+| `EMBEDDINGS_CACHE_PATH` | - | Path for cache persistence |
 | `RERANK_MODEL` | `rerank-2` | `rerank-2` (quality) or `rerank-2-lite` (speed) |
-| `NEO4J_ENABLED` | `false` | Enable knowledge graph |
-| `CONTEXT_BRIDGE_ENABLED` | `false` | Enable cross-session context |
-| `WEB_SEARCH_ENABLED` | `false` | Enable web search for research tool |
-| `GOT_STRUCTURED_OUTPUT` | `true` | Use structured outputs for GoT (disable for text parsing) |
 | `GOT_MODEL` | `claude-sonnet-4-5-20250929` | Default model for GoT and auto mode |
-| `GOT_MODEL_CODE` | `claude-sonnet-4-5-20250929` | Model for code-related tasks (lower temperature: 0.3) |
-| `GOT_MODEL_RESEARCH` | `claude-sonnet-4-5-20250929` | Model for research tasks (higher temperature: 0.7) |
-| `GOT_MODEL_QUICK` | `claude-3-5-haiku-20241022` | Model for quick/simple tasks (faster, cheaper) |
-| `MULTIMODAL_ENABLED` | `false` | Enable multimodal image embeddings |
+| `GOT_MODEL_CODE` | `claude-sonnet-4-5-20250929` | Model for code-related tasks (temperature: 0.3) |
+| `GOT_MODEL_RESEARCH` | `claude-sonnet-4-5-20250929` | Model for research tasks (temperature: 0.7) |
+| `GOT_MODEL_QUICK` | `claude-3-5-haiku-20241022` | Model for quick/simple tasks |
 | `MULTIMODAL_MODEL` | `voyage-multimodal-3` | Voyage multimodal model (1024d) |
-| `AGENT_ENABLED` | `false` | Enable agentic LLM tool calling |
 | `AGENT_MODEL` | `claude-sonnet-4-5-20250929` | Model for agentic tasks |
-| `ANTHROPIC_API_KEY` | - | Anthropic API key (required for agent, web search) |
+| `NEO4J_DATABASE` | `neo4j` | Neo4j database name |
 
 ## Data Flow
 

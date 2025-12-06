@@ -84,11 +84,13 @@ export UT_SERVER_ENVIRONMENT="production"
 
 **Description**: Type of storage backend
 
-**Default**: `"memory"`
+**Default**: `"sqlite"`
 
-**Valid Values**: `memory`, `sqlite`
+**Valid Values**: `sqlite`, `memory`
 
 **Environment Variable**: `STORAGE_TYPE` (Claude Desktop) or `UT_STORAGE_TYPE` (standalone)
+
+**Note**: SQLite is the recommended and default storage type. It provides persistence and is required for full functionality including knowledge graph and trajectory storage.
 
 **Example**:
 ```bash
@@ -313,7 +315,7 @@ UT_SERVER_VERSION=1.0.0
 UT_SERVER_ENVIRONMENT=development
 
 # Storage
-UT_STORAGE_TYPE=memory
+UT_STORAGE_TYPE=sqlite
 UT_STORAGE_MAX_THOUGHTS=0
 UT_STORAGE_MAX_BRANCHES=0
 UT_STORAGE_ENABLE_INDEXING=true
@@ -373,7 +375,7 @@ Create a JSON configuration file to set multiple options at once:
     "environment": "production"
   },
   "storage": {
-    "type": "memory",
+    "type": "sqlite",
     "max_thoughts": 50000,
     "max_branches": 1000,
     "enable_indexing": true
@@ -453,7 +455,7 @@ export UT_LOGGING_FORMAT=text
 }
 ```
 
-### Production Environment (In-Memory)
+### High-Performance Production Environment
 
 ```json
 {
@@ -462,7 +464,7 @@ export UT_LOGGING_FORMAT=text
     "environment": "production"
   },
   "storage": {
-    "type": "memory",
+    "type": "sqlite",
     "max_thoughts": 100000,
     "max_branches": 5000
   },
@@ -545,7 +547,7 @@ The configuration system validates all settings on startup. If validation fails,
 Common validation errors:
 - Empty server name
 - Invalid environment (must be development, staging, or production)
-- Invalid storage type (must be memory)
+- Invalid storage type (must be sqlite or memory)
 - Negative values for max_thoughts, max_branches, or cache_size
 - max_concurrent_thoughts less than 1
 - Invalid log level or format

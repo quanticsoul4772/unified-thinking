@@ -510,6 +510,16 @@ func (c *MCPClient) readResponse(ctx context.Context) (*ToolResponse, error) {
 
 	// Read response in goroutine with context awareness
 	go func() {
+		// Recover from panics caused by closed reader during teardown
+		defer func() {
+			if r := recover(); r != nil {
+				select {
+				case errChan <- fmt.Errorf("reader panic (likely closed connection): %v", r):
+				case <-ctx.Done():
+				}
+			}
+		}()
+
 		// Check context before starting
 		select {
 		case <-ctx.Done():

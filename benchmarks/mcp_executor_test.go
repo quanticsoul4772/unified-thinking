@@ -1,9 +1,12 @@
 package benchmarks
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,21 +18,65 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	// Load .env file from project root
+	loadEnvFile("../.env")
+}
+
+// loadEnvFile loads environment variables from a file
+func loadEnvFile(path string) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return
+	}
+	file, err := os.Open(absPath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			// Only set if not already set (env vars take precedence)
+			if os.Getenv(key) == "" {
+				os.Setenv(key, value)
+			}
+		}
+	}
+}
+
 // getServerPath returns the platform-appropriate server binary path
 func getServerPath() string {
 	if runtime.GOOS == "windows" {
-		return "../unified-thinking-server.exe"
+		return "../bin/unified-thinking.exe"
 	}
-	return "../unified-thinking-server"
+	return "../bin/unified-thinking"
+}
+
+// checkRequiredEnv verifies required environment variables are set - FAILS if missing
+func checkRequiredEnv(t *testing.T) {
+	t.Helper()
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Fatal("VOYAGE_API_KEY not set - create .env file or set environment variable")
+	}
 }
 
 // Test 1: Basic MCPClient connectivity
 func TestMCPClientStartStop(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	// Skip if server binary not available
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found, run 'make build-server' first")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	client, err := NewMCPClient(serverPath, nil)
@@ -48,10 +95,11 @@ func TestMCPClientStartStop(t *testing.T) {
 
 // Test 2: Single think tool call
 func TestMCPClientThinkTool(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	client, err := NewMCPClient(serverPath, nil)
@@ -112,10 +160,11 @@ func TestMCPClientThinkTool(t *testing.T) {
 
 // Test 3: Full E2E benchmark suite via MCP
 func TestMCPExecutorE2E(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	// Load a small test suite
@@ -168,10 +217,11 @@ func TestMCPExecutorE2E(t *testing.T) {
 
 // Test 4: Performance comparison (Direct vs MCP)
 func TestMCPVsDirectPerformance(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	suite, err := LoadSuite("datasets/reasoning/logic_puzzles.json")
@@ -226,10 +276,11 @@ func TestMCPVsDirectPerformance(t *testing.T) {
 
 // Test 6: Server crash recovery
 func TestMCPExecutorServerCrash(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	executor := NewMCPExecutor(serverPath, nil)
@@ -273,10 +324,11 @@ func TestMCPExecutorServerCrash(t *testing.T) {
 
 // Test 7: Connection reuse
 func TestMCPExecutorConnectionReuse(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	executor := NewMCPExecutor(serverPath, nil)
@@ -338,10 +390,11 @@ func avgDuration(durations []time.Duration) time.Duration {
 // Test 8: Concurrent tool calls (P2 #8)
 // Each goroutine creates its own MCP client since stdio isn't thread-safe
 func TestMCPConcurrentCalls(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	var wg sync.WaitGroup
@@ -353,6 +406,9 @@ func TestMCPConcurrentCalls(t *testing.T) {
 	for i := 0; i < numCalls; i++ {
 		go func(id int) {
 			defer wg.Done()
+
+			// Stagger server starts to avoid resource exhaustion on Windows
+			time.Sleep(time.Duration(id) * 500 * time.Millisecond)
 
 			// Each goroutine creates its own client/server instance
 			client, err := NewMCPClient(serverPath, nil)
@@ -406,10 +462,11 @@ func TestMCPConcurrentCalls(t *testing.T) {
 
 // Test 9: Protocol version mismatch (P2 #8)
 func TestMCPProtocolMismatch(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	config := DefaultConfig()
@@ -440,10 +497,11 @@ func TestMCPProtocolMismatch(t *testing.T) {
 
 // Test 10: Timeout behavior (P2 #8)
 func TestMCPExecutorTimeout(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	config := DefaultConfig()
@@ -476,10 +534,11 @@ func TestMCPExecutorTimeout(t *testing.T) {
 // Test 11: Invalid response handling (P2 #8)
 // Note: This tests the client's resilience to unexpected response formats
 func TestMCPExecutorInvalidResponse(t *testing.T) {
+	checkRequiredEnv(t)
 	serverPath := getServerPath()
 
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		t.Skip("Server binary not found")
+		t.Fatal("Server binary not found - run make build-server")
 	}
 
 	client, err := NewMCPClient(serverPath, nil)

@@ -12,9 +12,9 @@ import (
 type StorageType string
 
 const (
-	// StorageTypeMemory uses in-memory storage (default)
+	// StorageTypeMemory uses in-memory storage
 	StorageTypeMemory StorageType = "memory"
-	// StorageTypeSQLite uses SQLite persistent storage
+	// StorageTypeSQLite uses SQLite persistent storage (default)
 	StorageTypeSQLite StorageType = "sqlite"
 )
 
@@ -37,7 +37,7 @@ func DefaultConfig() Config {
 
 // ConfigFromEnv reads storage configuration from environment variables
 // Supports:
-//   - STORAGE_TYPE: "memory" (default) or "sqlite"
+//   - STORAGE_TYPE: "sqlite" (default) or "memory"
 //   - SQLITE_PATH: Path to SQLite database file
 //   - SQLITE_TIMEOUT: Busy timeout in milliseconds
 func ConfigFromEnv() Config {

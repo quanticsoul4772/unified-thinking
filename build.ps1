@@ -163,7 +163,8 @@ switch ($Command) {
 
     "benchmark-e2e" {
         Write-Step "Building server for E2E testing..."
-        go build -o unified-thinking-server.exe ./cmd/server
+        if (-not (Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" | Out-Null }
+        go build -o bin\unified-thinking.exe .\cmd\server
         Write-Step "Running E2E benchmarks via MCP..."
         go test -v ./benchmarks/ -run TestMCP -timeout 10m
     }
@@ -279,7 +280,10 @@ switch ($Command) {
         if (Test-Path "coverage.html") { Remove-Item "coverage.html" }
         if (Test-Path "storage-coverage.out") { Remove-Item "storage-coverage.out" }
         if (Test-Path "storage-coverage.html") { Remove-Item "storage-coverage.html" }
+        # Clean up any stale root-level binaries (legacy output paths)
         if (Test-Path "unified-thinking-server.exe") { Remove-Item "unified-thinking-server.exe" }
+        if (Test-Path "unified-thinking-server") { Remove-Item "unified-thinking-server" }
+        if (Test-Path "unified-thinking.exe") { Remove-Item "unified-thinking.exe" }
         Write-Success "Clean complete"
     }
 
