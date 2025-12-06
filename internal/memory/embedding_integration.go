@@ -34,14 +34,15 @@ func (ei *EmbeddingIntegration) GetEmbedder() embeddings.Embedder {
 	return ei.embedder
 }
 
-// NewEmbeddingIntegration creates a new embedding integration
+// NewEmbeddingIntegration creates a new embedding integration.
+// Returns an error if embeddings are disabled or configuration is invalid.
+// No fallbacks - embeddings must be properly configured to use this integration.
 func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQLiteStorage) (*EmbeddingIntegration, error) {
 	// Get configuration from environment
 	config := embeddings.ConfigFromEnv()
 
 	if !config.Enabled {
-		log.Println("Embeddings disabled, using hash-based search only")
-		return nil, nil // Return nil when disabled, don't create a broken integration
+		return nil, fmt.Errorf("embeddings disabled: set EMBEDDINGS_ENABLED=true to use embedding integration")
 	}
 
 	// Create embedder
@@ -62,7 +63,10 @@ func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQ
 	}
 
 	// Create LRU cache with configuration from environment
-	cache := embeddings.NewLRUEmbeddingCache(config.ToLRUCacheConfig())
+	cache, err := embeddings.NewLRUEmbeddingCache(config.ToLRUCacheConfig())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create embedding cache: %w", err)
+	}
 
 	return &EmbeddingIntegration{
 		store:       store,
@@ -73,10 +77,14 @@ func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQ
 	}, nil
 }
 
-// GenerateAndStoreEmbedding generates and stores an embedding for a problem
+// GenerateAndStoreEmbedding generates and stores an embedding for a problem.
+// Returns an error if embeddings are not properly configured.
 func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, problem *ProblemDescription) error {
-	if !ei.config.Enabled || ei.embedder == nil {
-		return nil // Embeddings disabled, skip
+	if !ei.config.Enabled {
+		return fmt.Errorf("embeddings disabled: cannot generate embedding")
+	}
+	if ei.embedder == nil {
+		return fmt.Errorf("embedder not initialized: cannot generate embedding")
 	}
 
 	// Generate embedding text
@@ -144,11 +152,14 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 	return nil
 }
 
-// RetrieveSimilarWithHybridSearch performs hybrid search combining structured and semantic search
+// RetrieveSimilarWithHybridSearch performs hybrid search combining structured and semantic search.
+// Returns an error if embeddings are not properly configured.
 func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Context, problem *ProblemDescription, limit int) ([]*TrajectoryMatch, error) {
-	// If embeddings disabled, fall back to hash-based search
-	if !ei.config.Enabled || ei.embedder == nil {
-		return ei.store.RetrieveSimilarHashBased(problem, limit)
+	if !ei.config.Enabled {
+		return nil, fmt.Errorf("embeddings disabled: cannot perform hybrid search")
+	}
+	if ei.embedder == nil {
+		return nil, fmt.Errorf("embedder not initialized: cannot perform hybrid search")
 	}
 
 	// Ensure problem has embedding

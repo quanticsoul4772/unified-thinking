@@ -69,8 +69,9 @@ type persistedEntry struct {
 	Expiry    time.Time
 }
 
-// NewLRUEmbeddingCache creates a new LRU embedding cache
-func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
+// NewLRUEmbeddingCache creates a new LRU embedding cache.
+// Returns an error if persistence is configured but loading fails.
+func NewLRUEmbeddingCache(config *LRUCacheConfig) (*LRUEmbeddingCache, error) {
 	if config == nil {
 		config = DefaultLRUCacheConfig()
 	}
@@ -89,11 +90,10 @@ func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
 		stopChan:      make(chan struct{}),
 	}
 
-	// Load from disk if path configured
+	// Load from disk if path configured - fail fast if load fails
 	if config.PersistPath != "" {
 		if err := c.Load(); err != nil {
-			// Log but don't fail - start with empty cache
-			fmt.Printf("LRU cache: failed to load from disk: %v\n", err)
+			return nil, fmt.Errorf("failed to load cache from disk: %w", err)
 		}
 	}
 
@@ -102,7 +102,7 @@ func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
 		c.startAutoSave()
 	}
 
-	return c
+	return c, nil
 }
 
 // Get retrieves an embedding from cache, returns nil if not found or expired

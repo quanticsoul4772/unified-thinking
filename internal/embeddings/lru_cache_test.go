@@ -8,8 +8,28 @@ import (
 	"time"
 )
 
+// mustNewLRUEmbeddingCache creates a cache and fails the test if there's an error
+func mustNewLRUEmbeddingCache(t *testing.T, config *LRUCacheConfig) *LRUEmbeddingCache {
+	t.Helper()
+	cache, err := NewLRUEmbeddingCache(config)
+	if err != nil {
+		t.Fatalf("failed to create LRU cache: %v", err)
+	}
+	return cache
+}
+
+// mustNewLRUEmbeddingCacheBenchmark creates a cache for benchmarks and fails if there's an error
+func mustNewLRUEmbeddingCacheBenchmark(b *testing.B, config *LRUCacheConfig) *LRUEmbeddingCache {
+	b.Helper()
+	cache, err := NewLRUEmbeddingCache(config)
+	if err != nil {
+		b.Fatalf("failed to create LRU cache: %v", err)
+	}
+	return cache
+}
+
 func TestLRUEmbeddingCache_BasicOperations(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        time.Hour,
 	})
@@ -42,7 +62,7 @@ func TestLRUEmbeddingCache_BasicOperations(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_LRUEviction(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 3,
 		TTL:        time.Hour,
 	})
@@ -99,7 +119,7 @@ func TestLRUEmbeddingCache_LRUEviction(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_TTLExpiry(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        100 * time.Millisecond,
 	})
@@ -129,7 +149,7 @@ func TestLRUEmbeddingCache_TTLExpiry(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_Update(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        time.Hour,
 	})
@@ -157,7 +177,7 @@ func TestLRUEmbeddingCache_Update(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_Clear(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        time.Hour,
 	})
@@ -189,7 +209,7 @@ func TestLRUEmbeddingCache_Persistence(t *testing.T) {
 	cachePath := filepath.Join(tempDir, "test_cache.gob")
 
 	// Create and populate cache
-	cache1 := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache1 := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries:    100,
 		TTL:           time.Hour,
 		PersistPath:   cachePath,
@@ -210,7 +230,7 @@ func TestLRUEmbeddingCache_Persistence(t *testing.T) {
 	}
 
 	// Create new cache and load
-	cache2 := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache2 := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries:    100,
 		TTL:           time.Hour,
 		PersistPath:   cachePath,
@@ -241,7 +261,7 @@ func TestLRUEmbeddingCache_PersistenceUncompressed(t *testing.T) {
 	cachePath := filepath.Join(tempDir, "uncompressed.gob")
 
 	// Create with uncompressed storage
-	cache1 := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache1 := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries:    100,
 		TTL:           time.Hour,
 		PersistPath:   cachePath,
@@ -252,7 +272,7 @@ func TestLRUEmbeddingCache_PersistenceUncompressed(t *testing.T) {
 	cache1.Close()
 
 	// Reload
-	cache2 := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache2 := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries:    100,
 		TTL:           time.Hour,
 		PersistPath:   cachePath,
@@ -270,7 +290,7 @@ func TestLRUEmbeddingCache_PersistenceUncompressed(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_ConcurrentAccess(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 1000,
 		TTL:        time.Hour,
 	})
@@ -313,7 +333,7 @@ func TestLRUEmbeddingCache_ConcurrentAccess(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_Stats(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 10,
 		TTL:        time.Hour,
 	})
@@ -343,7 +363,7 @@ func TestLRUEmbeddingCache_Stats(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_Cleanup(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        50 * time.Millisecond,
 	})
@@ -373,7 +393,7 @@ func TestLRUEmbeddingCache_Cleanup(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_NoTTL(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        0, // No TTL
 	})
@@ -397,7 +417,7 @@ func TestLRUEmbeddingCache_NoTTL(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_UnlimitedSize(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 0, // Unlimited
 		TTL:        time.Hour,
 	})
@@ -417,7 +437,7 @@ func TestLRUEmbeddingCache_UnlimitedSize(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_HashConsistency(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 100,
 		TTL:        time.Hour,
 	})
@@ -457,7 +477,7 @@ func TestLRUEmbeddingCache_DefaultConfig(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_NilConfig(t *testing.T) {
-	cache := NewLRUEmbeddingCache(nil)
+	cache := mustNewLRUEmbeddingCache(t, nil)
 	defer cache.Close()
 
 	// Should use defaults
@@ -473,7 +493,7 @@ func TestLRUEmbeddingCache_MissingFile(t *testing.T) {
 	cachePath := filepath.Join(tempDir, "nonexistent.gob")
 
 	// Should not error on missing file
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries:  100,
 		TTL:         time.Hour,
 		PersistPath: cachePath,
@@ -486,7 +506,7 @@ func TestLRUEmbeddingCache_MissingFile(t *testing.T) {
 }
 
 func TestLRUEmbeddingCache_LRUOrder(t *testing.T) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCache(t, &LRUCacheConfig{
 		MaxEntries: 3,
 		TTL:        time.Hour,
 	})
@@ -518,7 +538,7 @@ func TestLRUEmbeddingCache_LRUOrder(t *testing.T) {
 }
 
 func BenchmarkLRUEmbeddingCache_Set(b *testing.B) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCacheBenchmark(b, &LRUCacheConfig{
 		MaxEntries: 10000,
 		TTL:        time.Hour,
 	})
@@ -537,7 +557,7 @@ func BenchmarkLRUEmbeddingCache_Set(b *testing.B) {
 }
 
 func BenchmarkLRUEmbeddingCache_Get(b *testing.B) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCacheBenchmark(b, &LRUCacheConfig{
 		MaxEntries: 10000,
 		TTL:        time.Hour,
 	})
@@ -557,7 +577,7 @@ func BenchmarkLRUEmbeddingCache_Get(b *testing.B) {
 }
 
 func BenchmarkLRUEmbeddingCache_ConcurrentReadWrite(b *testing.B) {
-	cache := NewLRUEmbeddingCache(&LRUCacheConfig{
+	cache := mustNewLRUEmbeddingCacheBenchmark(b, &LRUCacheConfig{
 		MaxEntries: 10000,
 		TTL:        time.Hour,
 	})

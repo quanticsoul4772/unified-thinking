@@ -13,6 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// mustNewLRUEmbeddingCache creates an LRU cache for tests and fails on error
+func mustNewLRUEmbeddingCache(t *testing.T, config *embeddings.LRUCacheConfig) *embeddings.LRUEmbeddingCache {
+	t.Helper()
+	cache, err := embeddings.NewLRUEmbeddingCache(config)
+	if err != nil {
+		t.Fatalf("failed to create LRU cache: %v", err)
+	}
+	return cache
+}
+
 // MockEmbedder implements embeddings.Embedder for testing
 type MockEmbedder struct {
 	mu          sync.RWMutex
@@ -143,15 +153,17 @@ func TestGetEmbedder_Nil(t *testing.T) {
 	assert.Nil(t, ei.GetEmbedder())
 }
 
-func TestGenerateAndStoreEmbedding_Disabled(t *testing.T) {
+func TestGenerateAndStoreEmbedding_WithCache(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	config := embeddings.DefaultConfig()
-	config.Enabled = false
+	config.Enabled = true
+	config.CacheEmbeddings = true
 
 	ei := &EmbeddingIntegration{
 		store:    store,
 		embedder: NewMockEmbedder(),
 		config:   config,
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -163,31 +175,44 @@ func TestGenerateAndStoreEmbedding_Disabled(t *testing.T) {
 	err := ei.GenerateAndStoreEmbedding(ctx, problem)
 	require.NoError(t, err)
 
-	// Embedding should not be set
-	assert.Nil(t, problem.Embedding)
+	// Embedding should be set
+	assert.NotNil(t, problem.Embedding)
+	assert.Greater(t, len(problem.Embedding), 0)
 }
 
-func TestGenerateAndStoreEmbedding_NoEmbedder(t *testing.T) {
+func TestGenerateAndStoreEmbedding_CacheHit(t *testing.T) {
 	store := NewEpisodicMemoryStore()
+	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
 	config.Enabled = true
+	config.CacheEmbeddings = true
+
+	cache := mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour})
 
 	ei := &EmbeddingIntegration{
 		store:    store,
-		embedder: nil, // No embedder
+		embedder: mockEmbedder,
 		config:   config,
+		cache:    cache,
 	}
 
 	ctx := context.Background()
 	problem := &ProblemDescription{
-		Description: "Test problem",
+		Description: "Test problem for cache",
 	}
 
+	// First call generates embedding
 	err := ei.GenerateAndStoreEmbedding(ctx, problem)
 	require.NoError(t, err)
+	assert.NotNil(t, problem.Embedding)
 
-	// Should skip without error
-	assert.Nil(t, problem.Embedding)
+	// Second call with same problem should hit cache
+	problem2 := &ProblemDescription{
+		Description: "Test problem for cache",
+	}
+	err = ei.GenerateAndStoreEmbedding(ctx, problem2)
+	require.NoError(t, err)
+	assert.NotNil(t, problem2.Embedding)
 }
 
 func TestGenerateAndStoreEmbedding_Success(t *testing.T) {
@@ -200,7 +225,7 @@ func TestGenerateAndStoreEmbedding_Success(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -346,20 +371,23 @@ func TestProblemToText(t *testing.T) {
 	}
 }
 
-func TestRetrieveSimilarWithHybridSearch_Disabled(t *testing.T) {
+func TestRetrieveSimilarWithHybridSearch_WithEmbeddings(t *testing.T) {
 	store := NewEpisodicMemoryStore()
+	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = false
+	config.Enabled = true
+	config.MinSimilarity = 0.0 // Accept all matches for testing
 
 	ei := &EmbeddingIntegration{
 		store:    store,
-		embedder: nil,
+		embedder: mockEmbedder,
 		config:   config,
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
 
-	// Store some trajectories
+	// Store some trajectories with embeddings
 	for i := 0; i < 3; i++ {
 		traj := &ReasoningTrajectory{
 			SessionID: "session_" + string(rune('a'+i)),
@@ -367,18 +395,22 @@ func TestRetrieveSimilarWithHybridSearch_Disabled(t *testing.T) {
 			Problem: &ProblemDescription{
 				Domain:      "test",
 				ProblemType: "testing",
+				Description: "Test problem " + string(rune('a'+i)),
 			},
 			SuccessScore: 0.8,
 		}
+		// Generate embedding for the trajectory's problem
+		_ = ei.GenerateAndStoreEmbedding(ctx, traj.Problem)
 		store.StoreTrajectory(ctx, traj)
 	}
 
 	problem := &ProblemDescription{
 		Domain:      "test",
 		ProblemType: "testing",
+		Description: "Test problem query",
 	}
 
-	// Should fall back to hash-based search
+	// Should use hybrid search with embeddings
 	matches, err := ei.RetrieveSimilarWithHybridSearch(ctx, problem, 10)
 	require.NoError(t, err)
 	assert.NotNil(t, matches)
@@ -395,7 +427,7 @@ func TestRetrieveSimilarWithHybridSearch_GeneratesEmbedding(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -775,7 +807,7 @@ func TestEmbeddingIntegration_ConcurrentAccess(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -862,7 +894,7 @@ func TestRetrieveSimilarWithHybridSearch_NoVectorResults(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
