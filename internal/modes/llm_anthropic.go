@@ -540,9 +540,7 @@ func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, 
 			switch block.Type {
 			case "text":
 				// Collect citations from text blocks
-				for _, cit := range block.Citations {
-					citations = append(citations, cit)
-				}
+				citations = append(citations, block.Citations...)
 				assistantBlocks = append(assistantBlocks, ContentBlock{
 					Type: "text",
 					Text: block.Text,
