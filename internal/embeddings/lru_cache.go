@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"unified-thinking/pkg/cache"
 )
 
 // LRUCacheConfig configures the LRU embedding cache
@@ -32,36 +34,21 @@ func DefaultLRUCacheConfig() *LRUCacheConfig {
 	}
 }
 
-// lruEntry is a doubly-linked list node for LRU tracking
-type lruEntry struct {
-	key       string
-	embedding []float32
-	expiry    time.Time
-	prev      *lruEntry
-	next      *lruEntry
-}
-
 // LRUEmbeddingCache provides LRU-evicting, disk-persistent embedding cache
+// It composes the generic cache.LRU for core LRU functionality and adds
+// embedding-specific features like disk persistence and text hashing.
 type LRUEmbeddingCache struct {
 	mu sync.RWMutex
 
-	// LRU data structures
-	cache map[string]*lruEntry
-	head  *lruEntry // Most recently used
-	tail  *lruEntry // Least recently used
+	// Core LRU cache (delegates all cache operations)
+	inner *cache.LRU[string, []float32]
 
-	// Configuration
-	maxEntries    int
-	ttl           time.Duration
+	// Configuration for persistence
 	persistPath   string
 	compressCache bool
 
-	// Metrics
-	hits      int64
-	misses    int64
-	evictions int64
-	expiries  int64
-	dirty     bool // Track if cache needs saving
+	// Dirty tracking for optimized saves
+	dirty bool
 
 	// Auto-save
 	saveInterval time.Duration
@@ -88,10 +75,14 @@ func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
 		config = DefaultLRUCacheConfig()
 	}
 
-	cache := &LRUEmbeddingCache{
-		cache:         make(map[string]*lruEntry),
-		maxEntries:    config.MaxEntries,
-		ttl:           config.TTL,
+	// Create the inner generic cache
+	inner := cache.New[string, []float32](&cache.Config{
+		MaxEntries: config.MaxEntries,
+		TTL:        config.TTL,
+	})
+
+	c := &LRUEmbeddingCache{
+		inner:         inner,
 		persistPath:   config.PersistPath,
 		compressCache: config.CompressCache,
 		saveInterval:  config.SaveInterval,
@@ -100,7 +91,7 @@ func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
 
 	// Load from disk if path configured
 	if config.PersistPath != "" {
-		if err := cache.Load(); err != nil {
+		if err := c.Load(); err != nil {
 			// Log but don't fail - start with empty cache
 			fmt.Printf("LRU cache: failed to load from disk: %v\n", err)
 		}
@@ -108,120 +99,47 @@ func NewLRUEmbeddingCache(config *LRUCacheConfig) *LRUEmbeddingCache {
 
 	// Start auto-save goroutine if interval configured
 	if config.SaveInterval > 0 && config.PersistPath != "" {
-		cache.startAutoSave()
+		c.startAutoSave()
 	}
 
-	return cache
+	return c
 }
 
 // Get retrieves an embedding from cache, returns nil if not found or expired
 func (c *LRUEmbeddingCache) Get(text string) ([]float32, bool) {
 	key := c.hashText(text)
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	entry, exists := c.cache[key]
-	if !exists {
-		c.misses++
-		return nil, false
-	}
-
-	// Check TTL expiry
-	if c.ttl > 0 && time.Now().After(entry.expiry) {
-		c.removeEntry(entry)
-		c.expiries++
-		c.misses++
-		return nil, false
-	}
-
-	// Move to front (most recently used)
-	c.moveToFront(entry)
-	c.hits++
-
-	return entry.embedding, true
+	return c.inner.Get(key)
 }
 
 // Set stores an embedding in cache, evicting LRU entries if needed
 func (c *LRUEmbeddingCache) Set(text string, embedding []float32) {
 	key := c.hashText(text)
+	c.inner.Set(key, embedding)
 
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Check if key already exists
-	if entry, exists := c.cache[key]; exists {
-		entry.embedding = embedding
-		if c.ttl > 0 {
-			entry.expiry = time.Now().Add(c.ttl)
-		}
-		c.moveToFront(entry)
-		c.dirty = true
-		return
-	}
-
-	// Evict if at capacity
-	if c.maxEntries > 0 && len(c.cache) >= c.maxEntries {
-		c.evictLRU()
-	}
-
-	// Create new entry
-	var expiry time.Time
-	if c.ttl > 0 {
-		expiry = time.Now().Add(c.ttl)
-	}
-
-	entry := &lruEntry{
-		key:       key,
-		embedding: embedding,
-		expiry:    expiry,
-	}
-
-	c.cache[key] = entry
-	c.addToFront(entry)
 	c.dirty = true
+	c.mu.Unlock()
 }
 
 // Size returns current cache size
 func (c *LRUEmbeddingCache) Size() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return len(c.cache)
+	return c.inner.Size()
 }
 
 // Clear removes all entries
 func (c *LRUEmbeddingCache) Clear() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.inner.Clear()
 
-	c.cache = make(map[string]*lruEntry)
-	c.head = nil
-	c.tail = nil
+	c.mu.Lock()
 	c.dirty = true
+	c.mu.Unlock()
 }
 
 // Stats returns cache statistics
 func (c *LRUEmbeddingCache) Stats() map[string]interface{} {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	hitRate := float64(0)
-	total := c.hits + c.misses
-	if total > 0 {
-		hitRate = float64(c.hits) / float64(total)
-	}
-
-	return map[string]interface{}{
-		"size":       len(c.cache),
-		"max_size":   c.maxEntries,
-		"hits":       c.hits,
-		"misses":     c.misses,
-		"hit_rate":   hitRate,
-		"evictions":  c.evictions,
-		"expiries":   c.expiries,
-		"ttl":        c.ttl.String(),
-		"persistent": c.persistPath != "",
-	}
+	stats := c.inner.Stats()
+	stats["persistent"] = c.persistPath != ""
+	return stats
 }
 
 // Save persists cache to disk
@@ -230,26 +148,22 @@ func (c *LRUEmbeddingCache) Save() error {
 		return nil // No persistence configured
 	}
 
-	c.mu.RLock()
-	entries := make([]persistedEntry, 0, len(c.cache))
-	now := time.Now()
+	// Get all entries from the generic cache
+	entries := c.inner.Entries()
 
-	for _, entry := range c.cache {
-		// Skip expired entries
-		if c.ttl > 0 && now.After(entry.expiry) {
-			continue
-		}
-		entries = append(entries, persistedEntry{
-			Key:       entry.key,
-			Embedding: entry.embedding,
-			Expiry:    entry.expiry,
+	// Convert to persisted format
+	persistedEntries := make([]persistedEntry, 0, len(entries))
+	for _, e := range entries {
+		persistedEntries = append(persistedEntries, persistedEntry{
+			Key:       e.Key,
+			Embedding: e.Value,
+			Expiry:    e.Expiry,
 		})
 	}
-	c.mu.RUnlock()
 
 	data := persistedCache{
-		Entries:   entries,
-		CreatedAt: now,
+		Entries:   persistedEntries,
+		CreatedAt: time.Now(),
 		Version:   1,
 	}
 
@@ -351,36 +265,25 @@ func (c *LRUEmbeddingCache) Load() error {
 		return fmt.Errorf("failed to decode cache: %w", err)
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
+	// Load entries into the generic cache using SetWithExpiry
 	now := time.Now()
 	loaded := 0
 
 	for _, entry := range data.Entries {
 		// Skip expired entries
-		if c.ttl > 0 && now.After(entry.Expiry) {
+		if !entry.Expiry.IsZero() && now.After(entry.Expiry) {
 			continue
 		}
 
-		// Respect max entries
-		if c.maxEntries > 0 && len(c.cache) >= c.maxEntries {
-			break
-		}
-
-		lruEnt := &lruEntry{
-			key:       entry.Key,
-			embedding: entry.Embedding,
-			expiry:    entry.Expiry,
-		}
-
-		c.cache[entry.Key] = lruEnt
-		c.addToFront(lruEnt)
+		c.inner.SetWithExpiry(entry.Key, entry.Embedding, entry.Expiry)
 		loaded++
 	}
 
+	c.mu.Lock()
 	c.dirty = false
+	c.mu.Unlock()
 
+	fmt.Printf("LRU cache: loaded %d entries from disk\n", loaded)
 	return nil
 }
 
@@ -399,71 +302,6 @@ func (c *LRUEmbeddingCache) Close() error {
 func (c *LRUEmbeddingCache) hashText(text string) string {
 	hash := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(hash[:])
-}
-
-func (c *LRUEmbeddingCache) addToFront(entry *lruEntry) {
-	entry.prev = nil
-	entry.next = c.head
-
-	if c.head != nil {
-		c.head.prev = entry
-	}
-	c.head = entry
-
-	if c.tail == nil {
-		c.tail = entry
-	}
-}
-
-func (c *LRUEmbeddingCache) moveToFront(entry *lruEntry) {
-	if entry == c.head {
-		return // Already at front
-	}
-
-	// Remove from current position
-	if entry.prev != nil {
-		entry.prev.next = entry.next
-	}
-	if entry.next != nil {
-		entry.next.prev = entry.prev
-	}
-	if entry == c.tail {
-		c.tail = entry.prev
-	}
-
-	// Add to front
-	entry.prev = nil
-	entry.next = c.head
-	if c.head != nil {
-		c.head.prev = entry
-	}
-	c.head = entry
-}
-
-func (c *LRUEmbeddingCache) removeEntry(entry *lruEntry) {
-	delete(c.cache, entry.key)
-
-	if entry.prev != nil {
-		entry.prev.next = entry.next
-	} else {
-		c.head = entry.next
-	}
-
-	if entry.next != nil {
-		entry.next.prev = entry.prev
-	} else {
-		c.tail = entry.prev
-	}
-}
-
-func (c *LRUEmbeddingCache) evictLRU() {
-	if c.tail == nil {
-		return
-	}
-
-	c.removeEntry(c.tail)
-	c.evictions++
-	c.dirty = true
 }
 
 func (c *LRUEmbeddingCache) startAutoSave() {
@@ -494,31 +332,11 @@ func (c *LRUEmbeddingCache) startAutoSave() {
 
 // Cleanup removes all expired entries
 func (c *LRUEmbeddingCache) Cleanup() int {
-	if c.ttl == 0 {
-		return 0 // No TTL configured
-	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	now := time.Now()
-	removed := 0
-
-	// Traverse from tail (oldest) to head
-	entry := c.tail
-	for entry != nil {
-		prev := entry.prev
-		if now.After(entry.expiry) {
-			c.removeEntry(entry)
-			c.expiries++
-			removed++
-		}
-		entry = prev
-	}
-
+	removed := c.inner.Cleanup()
 	if removed > 0 {
+		c.mu.Lock()
 		c.dirty = true
+		c.mu.Unlock()
 	}
-
 	return removed
 }

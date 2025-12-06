@@ -217,6 +217,66 @@ func (c *LRU[K, V]) Keys() []K {
 	return keys
 }
 
+// Entry represents a cache entry with its key, value, and expiry time
+type Entry[K comparable, V any] struct {
+	Key    K
+	Value  V
+	Expiry time.Time
+}
+
+// Entries returns all non-expired entries in the cache (most recent first)
+// This is useful for persistence scenarios
+func (c *LRU[K, V]) Entries() []Entry[K, V] {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	now := time.Now()
+	entries := make([]Entry[K, V], 0, len(c.cache))
+	e := c.head
+	for e != nil {
+		// Skip expired entries
+		if c.ttl > 0 && now.After(e.expiry) {
+			e = e.next
+			continue
+		}
+		entries = append(entries, Entry[K, V]{
+			Key:    e.key,
+			Value:  e.value,
+			Expiry: e.expiry,
+		})
+		e = e.next
+	}
+	return entries
+}
+
+// SetWithExpiry stores a value with a specific expiry time (for loading from persistence)
+func (c *LRU[K, V]) SetWithExpiry(key K, value V, expiry time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Check if key already exists
+	if e, exists := c.cache[key]; exists {
+		e.value = value
+		e.expiry = expiry
+		c.moveToFront(e)
+		return
+	}
+
+	// Evict if at capacity
+	if c.maxEntries > 0 && len(c.cache) >= c.maxEntries {
+		c.evictLRU()
+	}
+
+	e := &entry[K, V]{
+		key:    key,
+		value:  value,
+		expiry: expiry,
+	}
+
+	c.cache[key] = e
+	c.addToFront(e)
+}
+
 // Internal methods
 
 func (c *LRU[K, V]) addToFront(e *entry[K, V]) {

@@ -352,6 +352,94 @@ func TestLRU_ComplexValueType(t *testing.T) {
 	}
 }
 
+func TestLRU_Entries(t *testing.T) {
+	c := New[string, int](&Config{MaxEntries: 10, TTL: time.Hour})
+
+	c.Set("key1", 1)
+	c.Set("key2", 2)
+	c.Set("key3", 3)
+
+	entries := c.Entries()
+	if len(entries) != 3 {
+		t.Errorf("expected 3 entries, got %d", len(entries))
+	}
+
+	// Most recent should be first
+	if entries[0].Key != "key3" {
+		t.Errorf("expected key3 first, got %s", entries[0].Key)
+	}
+	if entries[0].Value != 3 {
+		t.Errorf("expected value 3, got %d", entries[0].Value)
+	}
+}
+
+func TestLRU_EntriesSkipsExpired(t *testing.T) {
+	c := New[string, int](&Config{MaxEntries: 10, TTL: 50 * time.Millisecond})
+
+	c.Set("key1", 1)
+	time.Sleep(100 * time.Millisecond) // Let key1 expire
+	c.Set("key2", 2)                   // key2 is still valid
+
+	entries := c.Entries()
+	if len(entries) != 1 {
+		t.Errorf("expected 1 entry (expired should be skipped), got %d", len(entries))
+	}
+	if len(entries) > 0 && entries[0].Key != "key2" {
+		t.Errorf("expected key2, got %s", entries[0].Key)
+	}
+}
+
+func TestLRU_SetWithExpiry(t *testing.T) {
+	c := New[string, int](&Config{MaxEntries: 10, TTL: time.Hour})
+
+	// Set with custom expiry in the past
+	pastExpiry := time.Now().Add(-time.Hour)
+	c.SetWithExpiry("expired", 1, pastExpiry)
+
+	// Should not be found (expired)
+	_, found := c.Get("expired")
+	if found {
+		t.Error("expected expired entry not to be found")
+	}
+
+	// Set with custom expiry in the future
+	futureExpiry := time.Now().Add(time.Hour)
+	c.SetWithExpiry("valid", 2, futureExpiry)
+
+	// Should be found
+	val, found := c.Get("valid")
+	if !found {
+		t.Fatal("expected valid entry to be found")
+	}
+	if val != 2 {
+		t.Errorf("expected 2, got %d", val)
+	}
+}
+
+func TestLRU_SetWithExpiryUpdate(t *testing.T) {
+	c := New[string, int](&Config{MaxEntries: 10, TTL: time.Hour})
+
+	// Set initial value
+	c.Set("key1", 1)
+
+	// Update with SetWithExpiry
+	futureExpiry := time.Now().Add(2 * time.Hour)
+	c.SetWithExpiry("key1", 2, futureExpiry)
+
+	val, found := c.Get("key1")
+	if !found {
+		t.Fatal("expected to find key1")
+	}
+	if val != 2 {
+		t.Errorf("expected 2, got %d", val)
+	}
+
+	// Size should still be 1
+	if c.Size() != 1 {
+		t.Errorf("expected size 1, got %d", c.Size())
+	}
+}
+
 // Benchmarks
 
 func BenchmarkLRU_Get(b *testing.B) {
