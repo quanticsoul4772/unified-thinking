@@ -306,7 +306,7 @@ func TestRLContextRetriever_Construction(t *testing.T) {
 	t.Run("NewRLContextRetriever", func(t *testing.T) {
 		retriever := NewRLContextRetriever(kg)
 		if retriever == nil {
-			t.Error("NewRLContextRetriever() = nil")
+			t.Fatal("NewRLContextRetriever() = nil")
 		}
 		if retriever.similarityThreshold != 0.7 {
 			t.Errorf("default threshold = %f, want 0.7", retriever.similarityThreshold)
@@ -316,7 +316,7 @@ func TestRLContextRetriever_Construction(t *testing.T) {
 	t.Run("NewRLContextRetrieverWithThreshold", func(t *testing.T) {
 		retriever := NewRLContextRetrieverWithThreshold(kg, 0.5)
 		if retriever == nil {
-			t.Error("NewRLContextRetrieverWithThreshold() = nil")
+			t.Fatal("NewRLContextRetrieverWithThreshold() = nil")
 		}
 		if retriever.similarityThreshold != 0.5 {
 			t.Errorf("threshold = %f, want 0.5", retriever.similarityThreshold)
