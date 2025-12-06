@@ -195,3 +195,43 @@ func ExtractMap(params map[string]interface{}, key string) map[string]interface{
 	}
 	return nil
 }
+
+// ToParams converts a typed struct to map[string]interface{} for handler calls.
+// This is primarily useful in tests to maintain type safety while calling
+// handlers that accept untyped params at the MCP boundary.
+//
+// Usage in tests:
+//
+//	req := MyRequest{Content: "test", Mode: "linear"}
+//	params := types.ToParams(req)
+//	result, err := handler.HandleMyTool(ctx, params)
+func ToParams[T any](req T) map[string]interface{} {
+	data, err := json.Marshal(req)
+	if err != nil {
+		// Return empty map on marshal error (shouldn't happen with valid structs)
+		return make(map[string]interface{})
+	}
+
+	var params map[string]interface{}
+	if err := json.Unmarshal(data, &params); err != nil {
+		return make(map[string]interface{})
+	}
+
+	return params
+}
+
+// MustToParams is like ToParams but panics on error.
+// Use in tests where marshal failure indicates a programming error.
+func MustToParams[T any](req T) map[string]interface{} {
+	data, err := json.Marshal(req)
+	if err != nil {
+		panic(fmt.Sprintf("MustToParams: marshal failed: %v", err))
+	}
+
+	var params map[string]interface{}
+	if err := json.Unmarshal(data, &params); err != nil {
+		panic(fmt.Sprintf("MustToParams: unmarshal failed: %v", err))
+	}
+
+	return params
+}

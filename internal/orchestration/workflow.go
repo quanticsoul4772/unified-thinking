@@ -8,6 +8,7 @@ package orchestration
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -246,7 +247,9 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 	// Report workflow start
 	if reporter.IsEnabled() {
 		totalSteps := len(workflow.Steps)
-		_ = reporter.ReportStep(0, totalSteps, "initialize", "Starting workflow: "+workflow.Name)
+		if err := reporter.ReportStep(0, totalSteps, "initialize", "Starting workflow: "+workflow.Name); err != nil {
+			log.Printf("failed to report workflow start: %v", err)
+		}
 	}
 
 	// Execute based on workflow type
@@ -268,14 +271,18 @@ func (o *Orchestrator) ExecuteWorkflow(ctx context.Context, workflowID string, i
 		result.ErrorMessage = err.Error()
 		// Report failure
 		if reporter.IsEnabled() {
-			_ = reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "failed", "Workflow failed: "+err.Error())
+			if reportErr := reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "failed", "Workflow failed: "+err.Error()); reportErr != nil {
+				log.Printf("failed to report workflow failure: %v", reportErr)
+			}
 		}
 		return result, err
 	}
 
 	// Report completion
 	if reporter.IsEnabled() {
-		_ = reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "complete", "Workflow completed successfully")
+		if err := reporter.ReportStep(len(workflow.Steps), len(workflow.Steps), "complete", "Workflow completed successfully"); err != nil {
+			log.Printf("failed to report workflow completion: %v", err)
+		}
 	}
 
 	result.Status = "success"
@@ -292,14 +299,18 @@ func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow
 		if step.Condition != nil && !o.evaluateCondition(step.Condition, reasoningCtx) {
 			// Report skipped step
 			if reporter.IsEnabled() {
-				_ = reporter.ReportStep(i+1, totalSteps, step.ID, "Skipped (condition not met)")
+				if err := reporter.ReportStep(i+1, totalSteps, step.ID, "Skipped (condition not met)"); err != nil {
+					log.Printf("failed to report skipped step %s: %v", step.ID, err)
+				}
 			}
 			continue
 		}
 
 		// Report step start
 		if reporter.IsEnabled() {
-			_ = reporter.ReportStep(i+1, totalSteps, step.ID, "Executing: "+step.Tool)
+			if err := reporter.ReportStep(i+1, totalSteps, step.ID, "Executing: "+step.Tool); err != nil {
+				log.Printf("failed to report step start %s: %v", step.ID, err)
+			}
 		}
 
 		// Execute step
@@ -311,14 +322,18 @@ func (o *Orchestrator) executeSequential(ctx context.Context, workflow *Workflow
 		// Store result
 		if step.StoreAs != "" {
 			reasoningCtx.Results[step.StoreAs] = stepResult
-			_ = o.UpdateContext(reasoningCtx)
+			if err := o.UpdateContext(reasoningCtx); err != nil {
+				log.Printf("failed to update context for step %s: %v", step.ID, err)
+			}
 		}
 
 		result.StepResults[step.ID] = stepResult
 
 		// Report step completion with partial data if enabled
 		if reporter.IsEnabled() {
-			_ = reporter.ReportPartialResult(step.ID, stepResult)
+			if err := reporter.ReportPartialResult(step.ID, stepResult); err != nil {
+				log.Printf("failed to report partial result for step %s: %v", step.ID, err)
+			}
 		}
 	}
 
@@ -378,7 +393,9 @@ func (o *Orchestrator) executeParallel(ctx context.Context, workflow *Workflow, 
 		result.StepResults[id] = res
 	}
 
-	_ = o.UpdateContext(reasoningCtx)
+	if err := o.UpdateContext(reasoningCtx); err != nil {
+		log.Printf("failed to update context after parallel execution: %v", err)
+	}
 	return nil
 }
 
@@ -423,7 +440,9 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 				executedCount++
 				// Report skipped step
 				if reporter.IsEnabled() {
-					_ = reporter.ReportStep(executedCount, totalSteps, step.ID, "Skipped (condition not met)")
+					if err := reporter.ReportStep(executedCount, totalSteps, step.ID, "Skipped (condition not met)"); err != nil {
+						log.Printf("failed to report skipped step %s: %v", step.ID, err)
+					}
 				}
 				progress = true
 				continue
@@ -431,7 +450,9 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 
 			// Report step start
 			if reporter.IsEnabled() {
-				_ = reporter.ReportStep(executedCount+1, totalSteps, step.ID, "Executing: "+step.Tool)
+				if err := reporter.ReportStep(executedCount+1, totalSteps, step.ID, "Executing: "+step.Tool); err != nil {
+					log.Printf("failed to report conditional step start %s: %v", step.ID, err)
+				}
 			}
 
 			// Execute step
@@ -443,7 +464,9 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 			// Store result
 			if step.StoreAs != "" {
 				reasoningCtx.Results[step.StoreAs] = stepResult
-				_ = o.UpdateContext(reasoningCtx)
+				if err := o.UpdateContext(reasoningCtx); err != nil {
+					log.Printf("failed to update context for conditional step %s: %v", step.ID, err)
+				}
 			}
 
 			result.StepResults[step.ID] = stepResult
@@ -453,7 +476,9 @@ func (o *Orchestrator) executeConditional(ctx context.Context, workflow *Workflo
 
 			// Report step completion with partial data
 			if reporter.IsEnabled() {
-				_ = reporter.ReportPartialResult(step.ID, stepResult)
+				if err := reporter.ReportPartialResult(step.ID, stepResult); err != nil {
+					log.Printf("failed to report partial result for conditional step %s: %v", step.ID, err)
+				}
 			}
 		}
 

@@ -509,7 +509,7 @@ Improvements following review by Karl Wiegers, Martin Fowler, Michael Nygard, Li
 - Large content (1MB), Unicode, concurrent writes
 - Empty content, nil metadata, pagination
 
-**Overall**: 83.7% → 84.3%
+**Overall at time**: 83.7% → 84.3% (see README for current coverage)
 
 ---
 

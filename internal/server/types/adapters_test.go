@@ -488,3 +488,135 @@ func BenchmarkMarshalResponse(b *testing.B) {
 		_, _ = MarshalResponse(resp)
 	}
 }
+
+// TestToParams tests the typed struct to params conversion
+func TestToParams(t *testing.T) {
+	tests := []struct {
+		name string
+		req  SimpleRequest
+		want map[string]interface{}
+	}{
+		{
+			name: "basic fields",
+			req: SimpleRequest{
+				Name:    "test",
+				Value:   42,
+				Enabled: true,
+				Score:   0.95,
+			},
+			want: map[string]interface{}{
+				"name":    "test",
+				"value":   float64(42), // JSON numbers are float64
+				"enabled": true,
+				"score":   0.95,
+			},
+		},
+		{
+			name: "zero values",
+			req:  SimpleRequest{},
+			want: map[string]interface{}{
+				"name":    "",
+				"value":   float64(0),
+				"enabled": false,
+				"score":   float64(0),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ToParams(tt.req)
+			if got["name"] != tt.want["name"] {
+				t.Errorf("ToParams().name = %v, want %v", got["name"], tt.want["name"])
+			}
+			if got["value"] != tt.want["value"] {
+				t.Errorf("ToParams().value = %v, want %v", got["value"], tt.want["value"])
+			}
+			if got["enabled"] != tt.want["enabled"] {
+				t.Errorf("ToParams().enabled = %v, want %v", got["enabled"], tt.want["enabled"])
+			}
+			if got["score"] != tt.want["score"] {
+				t.Errorf("ToParams().score = %v, want %v", got["score"], tt.want["score"])
+			}
+		})
+	}
+}
+
+// TestToParams_Nested tests nested struct conversion
+func TestToParams_Nested(t *testing.T) {
+	req := NestedRequest{
+		ID:     "test-123",
+		Config: map[string]string{"key": "value"},
+		Tags:   []string{"tag1", "tag2"},
+	}
+
+	params := ToParams(req)
+
+	if params["id"] != "test-123" {
+		t.Errorf("ToParams().id = %v, want test-123", params["id"])
+	}
+
+	config, ok := params["config"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("ToParams().config is not a map")
+	}
+	if config["key"] != "value" {
+		t.Errorf("ToParams().config.key = %v, want value", config["key"])
+	}
+
+	tags, ok := params["tags"].([]interface{})
+	if !ok {
+		t.Fatalf("ToParams().tags is not a slice")
+	}
+	if len(tags) != 2 || tags[0] != "tag1" {
+		t.Errorf("ToParams().tags = %v, want [tag1 tag2]", tags)
+	}
+}
+
+// TestMustToParams tests the panic version
+func TestMustToParams(t *testing.T) {
+	req := SimpleRequest{Name: "test", Value: 42}
+	params := MustToParams(req)
+
+	if params["name"] != "test" {
+		t.Errorf("MustToParams().name = %v, want test", params["name"])
+	}
+}
+
+// TestToParams_RoundTrip verifies ToParams and UnmarshalRequest are inverses
+func TestToParams_RoundTrip(t *testing.T) {
+	original := SimpleRequest{
+		Name:    "roundtrip",
+		Value:   999,
+		Enabled: true,
+		Score:   3.14,
+	}
+
+	// Convert to params
+	params := ToParams(original)
+
+	// Convert back to struct
+	result, err := UnmarshalRequest[SimpleRequest](params)
+	if err != nil {
+		t.Fatalf("UnmarshalRequest() error = %v", err)
+	}
+
+	// Verify round-trip preserves values
+	if result != original {
+		t.Errorf("Round-trip failed: got %+v, want %+v", result, original)
+	}
+}
+
+func BenchmarkToParams(b *testing.B) {
+	req := SimpleRequest{
+		Name:    "benchmark",
+		Value:   100,
+		Enabled: true,
+		Score:   0.99,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ToParams(req)
+	}
+}

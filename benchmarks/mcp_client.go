@@ -165,7 +165,7 @@ func (c *MCPClient) Start() error {
 	}
 
 	// Create command (serverPath validated: absolute path + file exists)
-	c.cmd = exec.Command(c.serverPath) // #nosec G204
+	c.cmd = exec.Command(c.serverPath) // #nosec G204 -- serverPath validated: must be absolute path and exist as file
 	c.cmd.Env = append(os.Environ(), c.env...)
 
 	// Setup pipes

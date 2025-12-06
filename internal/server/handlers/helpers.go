@@ -34,3 +34,16 @@ func unmarshalRequest[T any](params map[string]interface{}) (T, error) {
 func generateID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
+
+// toParams converts a typed request struct to map[string]interface{} for handler calls.
+// This wrapper around types.ToParams provides convenient access within the handlers package.
+// Primarily useful in tests to maintain type safety while calling handlers.
+//
+// Usage in tests:
+//
+//	req := DualProcessThinkRequest{Content: "test", Mode: "linear"}
+//	params := toParams(req)
+//	result, err := handler.HandleDualProcessThink(ctx, params)
+func toParams[T any](req T) map[string]interface{} {
+	return types.ToParams(req)
+}

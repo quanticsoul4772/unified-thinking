@@ -22,13 +22,11 @@ func NewLogicValidator() *LogicValidator {
 	return &LogicValidator{}
 }
 
-// Logical connectives and patterns
+// Logical connectives and patterns - use constants from constants.go
 var (
-	implications = []string{" implies ", " then ", " therefore ", " thus ", " hence "}
-	negations    = []string{"not ", "no ", "never ", "none "}
-	universals   = []string{"all ", "every ", "each "}
-	//nolint:unused // Reserved for future use
-	_existentials = []string{"some ", "exists ", "there is ", "there are "} // Reserved for future use
+	implications = ImplicationPatterns
+	negations    = NegationPatterns
+	universals   = UniversalPatterns
 )
 
 // ValidateThought validates a thought for logical consistency by checking

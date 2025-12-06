@@ -1,13 +1,13 @@
 # Unified Thinking Server
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![Test Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen)](https://github.com/quanticsoul4772/unified-thinking)
-[![Tests](https://img.shields.io/badge/tests-148_files-success)](https://github.com/quanticsoul4772/unified-thinking)
+[![Test Coverage](https://img.shields.io/badge/coverage-71%25-yellowgreen)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tests](https://img.shields.io/badge/tests-156_files-success)](https://github.com/quanticsoul4772/unified-thinking)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
-[![Tools](https://img.shields.io/badge/tools-82-blue)](https://github.com/quanticsoul4772/unified-thinking)
+[![Tools](https://img.shields.io/badge/tools-85-blue)](https://github.com/quanticsoul4772/unified-thinking)
 
-A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation with 82 specialized reasoning tools.
+A Model Context Protocol (MCP) server that consolidates multiple cognitive thinking patterns into a single Go-based implementation with 85 specialized reasoning tools.
 
 ## Quick Start
 
@@ -33,7 +33,7 @@ make build
 | **Auto** | Automatic mode selection based on input |
 | **Graph** | Graph-of-Thoughts with aggregation, refinement, cyclic reasoning |
 
-### Tool Categories (82 tools)
+### Tool Categories (85 tools)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -54,9 +54,11 @@ make build
 | Episodic Memory | 5 | Session tracking, pattern learning, recommendations |
 | Knowledge Graph | 3 | Entity storage, semantic search, relationships |
 | Similarity | 1 | Semantic thought search |
-| Graph-of-Thoughts | 8 | GoT operations (generate, aggregate, refine, score, prune) |
+| Graph-of-Thoughts | 9 | GoT operations (generate, aggregate, refine, score, prune, explore) |
 | Claude Code | 5 | Session export/import, presets, formatting |
 | Research | 1 | Web-augmented research with citations |
+| Multimodal | 1 | Image embedding generation |
+| Agentic | 2 | Autonomous tool-calling agent |
 
 See [API_REFERENCE.md](API_REFERENCE.md) for complete tool documentation.
 
@@ -181,15 +183,18 @@ make benchmark      # Run benchmarks
 make clean          # Remove artifacts
 ```
 
-**Test Coverage:** ~84% overall | 148 test files | 100% pass rate
+**Test Coverage:** 71% overall | 156 test files | 100% pass rate
 
 | Package | Coverage |
 |---------|----------|
 | metrics | 100% |
-| config, presets | 97%+ |
-| reasoning, reinforcement | 90%+ |
-| analysis, metacognition, validation | 87%+ |
-| memory, orchestration, processing | 83%+ |
+| presets | 98% |
+| config | 97% |
+| similarity | 95% |
+| format | 95% |
+| reinforcement, reasoning | 90% |
+| analysis, modes, metacognition | 87% |
+| memory, orchestration, validation | 83% |
 
 ## Troubleshooting
 

@@ -65,7 +65,7 @@ make clean              # Remove bin/
 
 **DO NOT run server manually** - Claude Desktop starts it automatically.
 
-**Test Coverage**: 72.1% overall, 148 test files across 30 packages. Key: metrics (100%), presets (98.3%), config (97.3%), reinforcement (90.2%), reasoning (89.7%), analysis (89.3%).
+**Test Coverage**: 71% overall, 156 test files across 30 packages. Key: metrics (100%), presets (98%), config (97%), similarity (95%), format (95%), reinforcement (90%), reasoning (90%).
 
 ## MCP Tools (85 total)
 
