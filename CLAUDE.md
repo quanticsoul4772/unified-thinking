@@ -29,6 +29,7 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 | `internal/similarity/` | Thought similarity search via embeddings |
 | `internal/claudecode/` | Claude Code optimizations: format, errors, session, presets |
 | `internal/streaming/` | MCP progress notifications for long-running tools |
+| `internal/testutil/` | Testing utilities: MockLLMClient for GoT testing without API calls |
 
 ### Thinking Modes
 
@@ -44,28 +45,44 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 
 ## Development Commands
 
+### Make (Linux/macOS/WSL)
 ```bash
-# Build
 make build              # Windows: bin/unified-thinking.exe
 make linux              # Linux: bin/unified-thinking
-
-# Test
 make test               # All tests
 make test-coverage      # With coverage report
-make test-race          # With race detector
-go test -v ./internal/modes/  # Specific package
-
-# Lint
-golangci-lint run       # Run linter
-golangci-lint run --fix # Auto-fix
-
-# Clean
 make clean              # Remove bin/
+```
+
+### PowerShell (Windows)
+```powershell
+.\build.ps1 build       # Windows: bin\unified-thinking.exe
+.\build.ps1 linux       # Cross-compile for Linux
+.\build.ps1 test        # All tests
+.\build.ps1 test-coverage # With coverage report
+.\build.ps1 pre-commit  # Quick checks (fmt + vet + test-short)
+.\build.ps1 clean       # Remove bin\
+.\build.ps1 help        # Show all 25+ commands
+```
+
+### Pre-commit Hooks
+```bash
+# Install (one-time setup)
+./scripts/install-hooks.sh      # Unix
+.\scripts\install-hooks.ps1     # Windows
+
+# Hook runs automatically on git commit:
+# - go fmt (formatting check)
+# - go vet (static analysis)
+# - go test -short (quick tests)
+# - golangci-lint --fast (if available)
+
+# Skip temporarily: git commit --no-verify
 ```
 
 **DO NOT run server manually** - Claude Desktop starts it automatically.
 
-**Test Coverage**: 71% overall, 156 test files across 30 packages. Key: metrics (100%), presets (98%), config (97%), similarity (95%), format (95%), reinforcement (90%), reasoning (90%).
+**Test Coverage**: 72.1% overall, 148 test files across 30 packages. Key: metrics (100%), presets (98.3%), config (97.3%), reinforcement (90.2%), reasoning (89.7%), analysis (89.3%).
 
 ## MCP Tools (85 total)
 
@@ -496,6 +513,10 @@ AnthropicBaseClient (llm_base.go)
 **LLM**: `internal/modes/llm_types.go`, `llm_base.go`, `llm_anthropic.go`, `llm_agentic.go`, `llm_client.go`, `llm_models.go`, `llm_tools.go`
 
 **Reasoning**: `internal/reasoning/probabilistic.go`, `causal.go`, `decision.go`, `temporal.go`, `domain_templates.go`
+
+**Testing**: `internal/testutil/mock_llm.go` (MockLLMClient for GoT testing without API)
+
+**Dev Tools**: `build.ps1` (PowerShell), `scripts/pre-commit`, `scripts/install-hooks.{sh,ps1}`
 
 **Validation**: `internal/validation/logic.go`, `fallacies.go`
 

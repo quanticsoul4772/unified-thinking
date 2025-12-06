@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Pre-commit hook for unified-thinking
+# Runs: go fmt, go vet, go test -short
+#
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run: ./scripts/install-hooks.sh
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check for staged Go files
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+
+if [ -z "$STAGED_GO_FILES" ]; then
+    echo "No Go files staged, skipping checks"
+    exit 0
+fi
+
+# 1. Format check
+echo ">> Checking formatting..."
+UNFORMATTED=$(gofmt -l $STAGED_GO_FILES)
+if [ -n "$UNFORMATTED" ]; then
+    echo "ERROR: The following files need formatting:"
+    echo "$UNFORMATTED"
+    echo ""
+    echo "Run 'go fmt ./...' to fix"
+    exit 1
+fi
+echo "   Formatting: OK"
+
+# 2. Vet check
+echo ">> Running go vet..."
+go vet ./...
+echo "   Vet: OK"
+
+# 3. Short tests
+echo ">> Running short tests..."
+go test -short ./... > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: Tests failed. Run 'go test ./...' to see details"
+    exit 1
+fi
+echo "   Tests: OK"
+
+# 4. Optional: golangci-lint (if available)
+if command -v golangci-lint &> /dev/null; then
+    echo ">> Running golangci-lint..."
+    golangci-lint run --fast --timeout=2m
+    echo "   Lint: OK"
+else
+    echo "   Lint: SKIPPED (golangci-lint not installed)"
+fi
+
+echo ""
+echo "Pre-commit checks passed!"

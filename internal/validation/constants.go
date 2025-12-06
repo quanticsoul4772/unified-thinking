@@ -77,9 +77,9 @@ const (
 
 // Biconditional patterns
 const (
-	BiconIff          = " iff "
-	BiconIfAndOnlyIf  = " if and only if "
-	BiconEquivalent   = " equivalent to "
+	BiconIff         = " iff "
+	BiconIfAndOnlyIf = " if and only if "
+	BiconEquivalent  = " equivalent to "
 )
 
 // Conditional patterns
@@ -99,14 +99,14 @@ const (
 
 // Proof step types
 const (
-	ProofModusPonens         = "modus ponens"
-	ProofModusTollens        = "modus tollens"
-	ProofHypotheticalSyll    = "hypothetical syllogism"
-	ProofDisjunctiveSyll     = "disjunctive syllogism"
-	ProofUniversalInstant    = "universal instantiation"
-	ProofExistentialGeneral  = "existential generalization"
-	ProofReductioAdAbsurdum  = "reductio ad absurdum"
-	ProofContradiction       = "contradiction"
+	ProofModusPonens        = "modus ponens"
+	ProofModusTollens       = "modus tollens"
+	ProofHypotheticalSyll   = "hypothetical syllogism"
+	ProofDisjunctiveSyll    = "disjunctive syllogism"
+	ProofUniversalInstant   = "universal instantiation"
+	ProofExistentialGeneral = "existential generalization"
+	ProofReductioAdAbsurdum = "reductio ad absurdum"
+	ProofContradiction      = "contradiction"
 )
 
 // Validation result messages
@@ -122,26 +122,26 @@ const (
 
 // Fallacy type names
 const (
-	FallacyCircularReasoning     = "circular reasoning"
-	FallacyAffirmingConsequent   = "affirming the consequent"
-	FallacyDenyingAntecedent     = "denying the antecedent"
-	FallacyFalseEquivalence      = "false equivalence"
-	FallacyHastyGeneralization   = "hasty generalization"
-	FallacyAppealToAuthority     = "appeal to authority"
-	FallacyAppealToEmotion       = "appeal to emotion"
-	FallacyStrawMan              = "straw man"
-	FallacyAdHominem             = "ad hominem"
-	FallacyFalseDichotomy        = "false dichotomy"
-	FallacySlipperySlope         = "slippery slope"
-	FallacyRedHerring            = "red herring"
-	FallacyBeggingTheQuestion    = "begging the question"
-	FallacyEquivocation          = "equivocation"
-	FallacyAppealToIgnorance     = "appeal to ignorance"
-	FallacyComposition           = "composition fallacy"
-	FallacyDivision              = "division fallacy"
-	FallacyNoTrueScotsman        = "no true scotsman"
-	FallacyGamblers              = "gambler's fallacy"
-	FallacyHotHand               = "hot hand fallacy"
+	FallacyCircularReasoning   = "circular reasoning"
+	FallacyAffirmingConsequent = "affirming the consequent"
+	FallacyDenyingAntecedent   = "denying the antecedent"
+	FallacyFalseEquivalence    = "false equivalence"
+	FallacyHastyGeneralization = "hasty generalization"
+	FallacyAppealToAuthority   = "appeal to authority"
+	FallacyAppealToEmotion     = "appeal to emotion"
+	FallacyStrawMan            = "straw man"
+	FallacyAdHominem           = "ad hominem"
+	FallacyFalseDichotomy      = "false dichotomy"
+	FallacySlipperySlope       = "slippery slope"
+	FallacyRedHerring          = "red herring"
+	FallacyBeggingTheQuestion  = "begging the question"
+	FallacyEquivocation        = "equivocation"
+	FallacyAppealToIgnorance   = "appeal to ignorance"
+	FallacyComposition         = "composition fallacy"
+	FallacyDivision            = "division fallacy"
+	FallacyNoTrueScotsman      = "no true scotsman"
+	FallacyGamblers            = "gambler's fallacy"
+	FallacyHotHand             = "hot hand fallacy"
 )
 
 // Evidence quality levels

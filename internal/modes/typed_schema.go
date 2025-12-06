@@ -5,23 +5,23 @@ package modes
 // This replaces map[string]interface{} usage for schema definitions
 // while maintaining Claude API compatibility.
 type JSONSchema struct {
-	Type                 string                   `json:"type"`
-	Description          string                   `json:"description,omitempty"`
+	Type                 string                    `json:"type"`
+	Description          string                    `json:"description,omitempty"`
 	Properties           map[string]PropertySchema `json:"properties,omitempty"`
-	Required             []string                 `json:"required,omitempty"`
-	AdditionalProperties *bool                    `json:"additionalProperties,omitempty"`
+	Required             []string                  `json:"required,omitempty"`
+	AdditionalProperties *bool                     `json:"additionalProperties,omitempty"`
 }
 
 // PropertySchema defines a property within a JSON schema
 type PropertySchema struct {
-	Type        string         `json:"type"`
-	Description string         `json:"description,omitempty"`
-	Default     any            `json:"default,omitempty"`
-	Enum        []string       `json:"enum,omitempty"`
-	Minimum     *float64       `json:"minimum,omitempty"`
-	Maximum     *float64       `json:"maximum,omitempty"`
-	MinItems    *int           `json:"minItems,omitempty"`
-	MaxItems    *int           `json:"maxItems,omitempty"`
+	Type        string          `json:"type"`
+	Description string          `json:"description,omitempty"`
+	Default     any             `json:"default,omitempty"`
+	Enum        []string        `json:"enum,omitempty"`
+	Minimum     *float64        `json:"minimum,omitempty"`
+	Maximum     *float64        `json:"maximum,omitempty"`
+	MinItems    *int            `json:"minItems,omitempty"`
+	MaxItems    *int            `json:"maxItems,omitempty"`
 	Items       *PropertySchema `json:"items,omitempty"`
 }
 
@@ -235,9 +235,9 @@ func (b *SchemaBuilder) ToMap() map[string]interface{} {
 	}
 
 	result := map[string]interface{}{
-		"type":        b.schema.Type,
-		"properties":  props,
-		"required":    b.schema.Required,
+		"type":       b.schema.Type,
+		"properties": props,
+		"required":   b.schema.Required,
 	}
 	if b.schema.Description != "" {
 		result["description"] = b.schema.Description

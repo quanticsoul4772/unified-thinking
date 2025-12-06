@@ -380,7 +380,7 @@ func TestParseFormatLevel(t *testing.T) {
 		{"full", FormatFull},
 		{"compact", FormatCompact},
 		{"minimal", FormatMinimal},
-		{"", FormatFull},      // default
+		{"", FormatFull},        // default
 		{"unknown", FormatFull}, // default
 		{"COMPACT", FormatFull}, // case-sensitive, defaults to full
 	}
@@ -395,11 +395,11 @@ func TestParseFormatLevel(t *testing.T) {
 // TestRemoveEmptyFields tests the removeEmptyFields function
 func TestRemoveEmptyFields(t *testing.T) {
 	input := map[string]any{
-		"id":      "test",
-		"empty":   "",
-		"null":    nil,
-		"arr":     []any{},
-		"nested":  map[string]any{"key": "value", "empty": ""},
+		"id":     "test",
+		"empty":  "",
+		"null":   nil,
+		"arr":    []any{},
+		"nested": map[string]any{"key": "value", "empty": ""},
 	}
 
 	result, err := removeEmptyFields(input)

@@ -191,8 +191,8 @@ func TestThoughtSearcher_SearchSimilarWithReranker(t *testing.T) {
 	// Create mock reranker that reorders results
 	reranker := &mockReranker{
 		results: []embeddings.RerankResult{
-			{Index: 1, RelevanceScore: 0.95},  // SQL query tuning gets highest score
-			{Index: 0, RelevanceScore: 0.85},  // Database optimization second
+			{Index: 1, RelevanceScore: 0.95}, // SQL query tuning gets highest score
+			{Index: 0, RelevanceScore: 0.85}, // Database optimization second
 		},
 	}
 	searcher.SetReranker(reranker)

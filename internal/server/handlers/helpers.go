@@ -34,4 +34,3 @@ func unmarshalRequest[T any](params map[string]interface{}) (T, error) {
 func generateID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 }
-
