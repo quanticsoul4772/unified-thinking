@@ -177,19 +177,53 @@ switch ($Command) {
     # ============ CODE QUALITY COMMANDS ============
     "lint" {
         Write-Step "Running golangci-lint..."
+        $linterPath = $null
+
+        # First check PATH
         $linter = Get-Command golangci-lint -ErrorAction SilentlyContinue
-        if (-not $linter) {
+        if ($linter) {
+            $linterPath = $linter.Source
+        } else {
+            # Check GOPATH/bin
+            $gopath = (go env GOPATH) -replace "`n", "" -replace "`r", ""
+            $gopathLinter = Join-Path $gopath "bin\golangci-lint.exe"
+            if (Test-Path $gopathLinter) {
+                $linterPath = $gopathLinter
+            }
+        }
+
+        if (-not $linterPath) {
             Write-Warn "golangci-lint not found. Install with:"
             Write-Host "  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
             exit 1
         }
-        golangci-lint run --timeout=5m
+
+        & $linterPath run --timeout=5m
         if ($LASTEXITCODE -ne 0) { exit 1 }
     }
 
     "lint-fix" {
         Write-Step "Running golangci-lint with auto-fix..."
-        golangci-lint run --fix --timeout=5m
+        $linterPath = $null
+
+        $linter = Get-Command golangci-lint -ErrorAction SilentlyContinue
+        if ($linter) {
+            $linterPath = $linter.Source
+        } else {
+            $gopath = (go env GOPATH) -replace "`n", "" -replace "`r", ""
+            $gopathLinter = Join-Path $gopath "bin\golangci-lint.exe"
+            if (Test-Path $gopathLinter) {
+                $linterPath = $gopathLinter
+            }
+        }
+
+        if (-not $linterPath) {
+            Write-Warn "golangci-lint not found. Install with:"
+            Write-Host "  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+            exit 1
+        }
+
+        & $linterPath run --fix --timeout=5m
     }
 
     "fmt" {
