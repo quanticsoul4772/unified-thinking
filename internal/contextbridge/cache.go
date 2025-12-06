@@ -1,123 +1,56 @@
 package contextbridge
 
 import (
-	"container/list"
-	"sync"
 	"time"
+
+	"unified-thinking/pkg/cache"
 )
 
 // LRUCache provides a thread-safe LRU cache for signature lookups
+// This is a thin wrapper around the generic cache.LRU for backwards compatibility
 type LRUCache struct {
-	mu       sync.RWMutex
-	capacity int
-	ttl      time.Duration
-	items    map[string]*list.Element
-	order    *list.List
-}
-
-type cacheEntry struct {
-	key       string
-	value     []*Match
-	expiresAt time.Time
+	inner *cache.LRU[string, []*Match]
 }
 
 // NewLRUCache creates a new LRU cache with the specified capacity and TTL
 func NewLRUCache(capacity int, ttl time.Duration) *LRUCache {
 	return &LRUCache{
-		capacity: capacity,
-		ttl:      ttl,
-		items:    make(map[string]*list.Element),
-		order:    list.New(),
+		inner: cache.New[string, []*Match](&cache.Config{
+			MaxEntries: capacity,
+			TTL:        ttl,
+		}),
 	}
 }
 
 // Get retrieves a value from the cache
 func (c *LRUCache) Get(key string) []*Match {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if elem, ok := c.items[key]; ok {
-		entry := elem.Value.(*cacheEntry)
-
-		// Check if expired
-		if time.Now().After(entry.expiresAt) {
-			c.removeElement(elem)
-			return nil
-		}
-
-		// Move to front (most recently used)
-		c.order.MoveToFront(elem)
-		return entry.value
+	val, found := c.inner.Get(key)
+	if !found {
+		return nil
 	}
-
-	return nil
+	return val
 }
 
 // Put adds a value to the cache
 func (c *LRUCache) Put(key string, value []*Match) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Update if exists
-	if elem, ok := c.items[key]; ok {
-		c.order.MoveToFront(elem)
-		entry := elem.Value.(*cacheEntry)
-		entry.value = value
-		entry.expiresAt = time.Now().Add(c.ttl)
-		return
-	}
-
-	// Evict if at capacity
-	if c.order.Len() >= c.capacity {
-		c.evictOldest()
-	}
-
-	// Add new entry
-	entry := &cacheEntry{
-		key:       key,
-		value:     value,
-		expiresAt: time.Now().Add(c.ttl),
-	}
-	elem := c.order.PushFront(entry)
-	c.items[key] = elem
-}
-
-// evictOldest removes the least recently used item
-func (c *LRUCache) evictOldest() {
-	elem := c.order.Back()
-	if elem != nil {
-		c.removeElement(elem)
-	}
-}
-
-// removeElement removes an element from the cache
-func (c *LRUCache) removeElement(elem *list.Element) {
-	c.order.Remove(elem)
-	entry := elem.Value.(*cacheEntry)
-	delete(c.items, entry.key)
+	c.inner.Set(key, value)
 }
 
 // Len returns the current number of items in the cache
 func (c *LRUCache) Len() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.order.Len()
+	return c.inner.Size()
 }
 
 // Clear removes all items from the cache
 func (c *LRUCache) Clear() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.items = make(map[string]*list.Element)
-	c.order = list.New()
+	c.inner.Clear()
 }
 
 // Stats returns cache statistics
 func (c *LRUCache) Stats() map[string]int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	stats := c.inner.Stats()
 	return map[string]int{
-		"size":     c.order.Len(),
-		"capacity": c.capacity,
+		"size":     stats["size"].(int),
+		"capacity": stats["max_size"].(int),
 	}
 }

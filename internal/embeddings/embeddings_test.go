@@ -276,111 +276,6 @@ func TestDeserializeFloat32_Nil(t *testing.T) {
 	}
 }
 
-// Test cache
-
-func TestEmbeddingCache_Basic(t *testing.T) {
-	cache := NewEmbeddingCache(time.Hour)
-
-	// Test Set and Get
-	text := "test text"
-	embedding := []float32{1.0, 2.0, 3.0}
-
-	cache.Set(text, embedding)
-
-	result, found := cache.Get(text)
-	if !found {
-		t.Fatal("expected to find cached embedding")
-	}
-
-	if len(result) != len(embedding) {
-		t.Errorf("expected %d elements, got %d", len(embedding), len(result))
-	}
-
-	for i := range embedding {
-		if result[i] != embedding[i] {
-			t.Errorf("value mismatch at index %d", i)
-		}
-	}
-}
-
-func TestEmbeddingCache_NotFound(t *testing.T) {
-	cache := NewEmbeddingCache(time.Hour)
-
-	_, found := cache.Get("nonexistent")
-	if found {
-		t.Error("expected not found for nonexistent key")
-	}
-}
-
-func TestEmbeddingCache_Expiration(t *testing.T) {
-	cache := NewEmbeddingCache(50 * time.Millisecond)
-
-	text := "test text"
-	embedding := []float32{1.0, 2.0, 3.0}
-
-	cache.Set(text, embedding)
-
-	// Should be found immediately
-	_, found := cache.Get(text)
-	if !found {
-		t.Fatal("expected to find cached embedding before expiration")
-	}
-
-	// Wait for expiration
-	time.Sleep(100 * time.Millisecond)
-
-	// Should not be found after expiration
-	_, found = cache.Get(text)
-	if found {
-		t.Error("expected not found after expiration")
-	}
-}
-
-func TestEmbeddingCache_Clear(t *testing.T) {
-	cache := NewEmbeddingCache(time.Hour)
-
-	cache.Set("text1", []float32{1.0})
-	cache.Set("text2", []float32{2.0})
-
-	if cache.Size() != 2 {
-		t.Errorf("expected size 2, got %d", cache.Size())
-	}
-
-	cache.Clear()
-
-	if cache.Size() != 0 {
-		t.Errorf("expected size 0 after clear, got %d", cache.Size())
-	}
-}
-
-func TestEmbeddingCache_Size(t *testing.T) {
-	cache := NewEmbeddingCache(time.Hour)
-
-	if cache.Size() != 0 {
-		t.Errorf("expected initial size 0, got %d", cache.Size())
-	}
-
-	for i := 0; i < 10; i++ {
-		cache.Set(string(rune('a'+i)), []float32{float32(i)})
-	}
-
-	if cache.Size() != 10 {
-		t.Errorf("expected size 10, got %d", cache.Size())
-	}
-}
-
-func TestEmbeddingCache_DefaultTTL(t *testing.T) {
-	cache := NewEmbeddingCache(0) // Should use default
-
-	text := "test"
-	cache.Set(text, []float32{1.0})
-
-	_, found := cache.Get(text)
-	if !found {
-		t.Error("expected to find cached embedding with default TTL")
-	}
-}
-
 // Test config
 
 func TestDefaultConfig(t *testing.T) {
@@ -527,27 +422,6 @@ func BenchmarkDeserializeFloat32(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		DeserializeFloat32(bytes)
-	}
-}
-
-func BenchmarkEmbeddingCache_Get(b *testing.B) {
-	cache := NewEmbeddingCache(time.Hour)
-	embedding := make([]float32, 512)
-	cache.Set("test", embedding)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		cache.Get("test")
-	}
-}
-
-func BenchmarkEmbeddingCache_Set(b *testing.B) {
-	cache := NewEmbeddingCache(time.Hour)
-	embedding := make([]float32, 512)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		cache.Set("test", embedding)
 	}
 }
 
