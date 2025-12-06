@@ -136,7 +136,9 @@ func TestInitializeContextBridge_WithEmbedder(t *testing.T) {
 func TestInitializeServer_RequiresVoyageAPIKey(t *testing.T) {
 	// Do NOT call setupTestEnv - we want to test missing VOYAGE_API_KEY
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-fake-key-for-testing")
-	// VOYAGE_API_KEY is intentionally not set
+	// Explicitly unset VOYAGE_API_KEY to test the failure case
+	t.Setenv("VOYAGE_API_KEY", "")
+	t.Setenv("SQLITE_PATH", t.TempDir()+"/test.db")
 
 	_, err := InitializeServer()
 	if err == nil {
