@@ -1,17 +1,26 @@
 package main
 
 import (
+	"os"
 	"testing"
 )
 
 // setupTestEnv sets required environment variables for testing
-// All features are ALWAYS enabled - API keys are REQUIRED
+// VOYAGE_API_KEY and ANTHROPIC_API_KEY must be real keys from environment
+// No fake keys - tests fail if keys are missing/invalid
 func setupTestEnv(t *testing.T) {
 	t.Helper()
-	// ANTHROPIC_API_KEY is REQUIRED for agent, web search, GoT
-	t.Setenv("ANTHROPIC_API_KEY", "sk-test-fake-key-for-testing")
-	// VOYAGE_API_KEY is REQUIRED for embeddings
-	t.Setenv("VOYAGE_API_KEY", "pa-test-fake-voyage-key-for-testing")
+
+	// Verify VOYAGE_API_KEY is set (required for embeddings)
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Fatal("VOYAGE_API_KEY not set: tests require real Voyage AI API key")
+	}
+
+	// Verify ANTHROPIC_API_KEY is set (required for agent, web search, GoT)
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Fatal("ANTHROPIC_API_KEY not set: tests require real Anthropic API key")
+	}
+
 	// SQLite storage is default - set path for tests
 	t.Setenv("SQLITE_PATH", t.TempDir()+"/test.db")
 }
