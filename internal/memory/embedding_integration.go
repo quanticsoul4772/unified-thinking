@@ -18,7 +18,7 @@ type EmbeddingIntegration struct {
 	sqliteStore *storage.SQLiteStorage
 	embedder    embeddings.Embedder
 	config      *embeddings.Config
-	cache       *embeddings.EmbeddingCache
+	cache       *embeddings.LRUEmbeddingCache
 }
 
 // GetProvider returns the embedding provider name
@@ -61,8 +61,8 @@ func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQ
 		return nil, fmt.Errorf("unsupported embedding provider: %s", config.Provider)
 	}
 
-	// Create cache
-	cache := embeddings.NewEmbeddingCache(config.CacheTTL)
+	// Create LRU cache with configuration from environment
+	cache := embeddings.NewLRUEmbeddingCache(config.ToLRUCacheConfig())
 
 	return &EmbeddingIntegration{
 		store:       store,
@@ -82,21 +82,39 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 	// Generate embedding text
 	text := ei.problemToText(problem)
 
-	// Use a background context with timeout to ensure embedding completes
-	// even if the original request context is cancelled
-	embedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	// Check cache first (if caching is enabled)
+	var embedding []float32
+	if ei.cache != nil && ei.config.CacheEmbeddings {
+		if cached, found := ei.cache.Get(text); found {
+			log.Printf("Cache hit for problem embedding (dimension: %d)", len(cached))
+			embedding = cached
+		}
+	}
 
-	// Generate embedding
-	log.Printf("Generating embedding for problem (text length: %d)", len(text))
-	embedding, err := ei.embedder.Embed(embedCtx, text)
-	if err != nil {
-		return fmt.Errorf("failed to generate embedding: %w", err)
+	// Generate embedding if not cached
+	if embedding == nil {
+		// Use a background context with timeout to ensure embedding completes
+		// even if the original request context is cancelled
+		embedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Generate embedding
+		log.Printf("Generating embedding for problem (text length: %d)", len(text))
+		var err error
+		embedding, err = ei.embedder.Embed(embedCtx, text)
+		if err != nil {
+			return fmt.Errorf("failed to generate embedding: %w", err)
+		}
+		if len(embedding) == 0 {
+			return fmt.Errorf("embedding returned empty array")
+		}
+		log.Printf("Successfully generated embedding (dimension: %d)", len(embedding))
+
+		// Store in cache
+		if ei.cache != nil && ei.config.CacheEmbeddings {
+			ei.cache.Set(text, embedding)
+		}
 	}
-	if len(embedding) == 0 {
-		return fmt.Errorf("embedding returned empty array")
-	}
-	log.Printf("Successfully generated embedding (dimension: %d)", len(embedding))
 
 	// Store embedding in problem (for in-memory usage)
 	problem.Embedding = embedding
@@ -110,7 +128,7 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 	// Store in SQLite if available
 	if ei.sqliteStore != nil {
 		problemID := ComputeProblemHash(problem)
-		err = ei.sqliteStore.StoreEmbedding(
+		err := ei.sqliteStore.StoreEmbedding(
 			problemID,
 			embedding,
 			ei.embedder.Model(),
@@ -302,6 +320,22 @@ func (ei *EmbeddingIntegration) LoadEmbeddingsFromStorage() error {
 	}
 
 	log.Printf("Loaded %d embeddings from storage", len(embeddings))
+	return nil
+}
+
+// Close performs cleanup including saving the cache
+func (ei *EmbeddingIntegration) Close() error {
+	if ei.cache != nil {
+		return ei.cache.Close()
+	}
+	return nil
+}
+
+// GetCacheStats returns cache statistics for monitoring
+func (ei *EmbeddingIntegration) GetCacheStats() map[string]interface{} {
+	if ei.cache != nil {
+		return ei.cache.Stats()
+	}
 	return nil
 }
 

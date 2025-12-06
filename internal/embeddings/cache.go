@@ -7,7 +7,12 @@ import (
 	"time"
 )
 
-// EmbeddingCache provides thread-safe caching for embeddings
+// Deprecated: EmbeddingCache is deprecated in favor of LRUEmbeddingCache which provides
+// LRU eviction, disk persistence, and better memory management.
+// Use NewLRUEmbeddingCache instead of NewEmbeddingCache.
+//
+// This simple cache has unbounded growth (no max size) and no persistence.
+// It will be removed in a future version.
 type EmbeddingCache struct {
 	mu    sync.RWMutex
 	cache map[string]*cachedEmbedding
@@ -20,7 +25,7 @@ type cachedEmbedding struct {
 	expiry    time.Time
 }
 
-// NewEmbeddingCache creates a new embedding cache
+// Deprecated: NewEmbeddingCache is deprecated. Use NewLRUEmbeddingCache instead.
 func NewEmbeddingCache(ttl time.Duration) *EmbeddingCache {
 	if ttl == 0 {
 		ttl = 24 * time.Hour // Default to 24 hours

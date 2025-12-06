@@ -200,7 +200,7 @@ func TestGenerateAndStoreEmbedding_Success(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewEmbeddingCache(time.Hour),
+		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -395,7 +395,7 @@ func TestRetrieveSimilarWithHybridSearch_GeneratesEmbedding(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewEmbeddingCache(time.Hour),
+		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -775,7 +775,7 @@ func TestEmbeddingIntegration_ConcurrentAccess(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewEmbeddingCache(time.Hour),
+		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -862,7 +862,7 @@ func TestRetrieveSimilarWithHybridSearch_NoVectorResults(t *testing.T) {
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
-		cache:    embeddings.NewEmbeddingCache(time.Hour),
+		cache:    embeddings.NewLRUEmbeddingCache(&embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
