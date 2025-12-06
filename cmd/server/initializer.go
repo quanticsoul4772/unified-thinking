@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -62,57 +61,47 @@ func InitializeServer() (*ServerComponents, error) {
 	components.Validator = validation.NewLogicValidator()
 	log.Println("Initialized logic validator")
 
-	// Initialize embedder and reranker if API key is available
-	if apiKey := os.Getenv("VOYAGE_API_KEY"); apiKey != "" {
-		model := os.Getenv("EMBEDDINGS_MODEL")
-		if model == "" {
-			model = "voyage-3-lite"
-		}
-		components.Embedder = embeddings.NewVoyageEmbedder(apiKey, model)
-		components.AutoMode.SetEmbedder(components.Embedder)
-		log.Printf("Initialized Voyage AI embedder (model: %s)", model)
-
-		// Initialize reranker if enabled (defaults to enabled when VOYAGE_API_KEY is set)
-		rerankEnabled := os.Getenv("RERANK_ENABLED") != "false"
-		if rerankEnabled {
-			rerankModel := os.Getenv("RERANK_MODEL")
-			if rerankModel == "" {
-				rerankModel = "rerank-2" // Default to full model
-			}
-			components.Reranker = embeddings.NewVoyageReranker(apiKey, rerankModel)
-			log.Printf("Initialized Voyage AI reranker (model: %s)", rerankModel)
-		} else {
-			log.Println("Voyage reranker disabled (RERANK_ENABLED=false)")
-		}
-	} else {
-		log.Println("VOYAGE_API_KEY not set, semantic features disabled")
+	// Initialize embedder and reranker - VOYAGE_API_KEY is REQUIRED
+	apiKey := os.Getenv("VOYAGE_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("VOYAGE_API_KEY not set: embeddings are required")
 	}
 
-	// Initialize Thompson Sampling RL if SQLite storage is available
-	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
-		if err := components.AutoMode.SetRLStorage(sqliteStore); err != nil {
-			log.Printf("Warning: failed to initialize Thompson Sampling RL: %v", err)
-		}
-	} else {
-		log.Println("Thompson Sampling RL requires SQLite storage (using in-memory storage)")
+	model := os.Getenv("EMBEDDINGS_MODEL")
+	if model == "" {
+		model = "voyage-3-lite"
+	}
+	components.Embedder = embeddings.NewVoyageEmbedder(apiKey, model)
+	components.AutoMode.SetEmbedder(components.Embedder)
+	log.Printf("Initialized Voyage AI embedder (model: %s)", model)
+
+	// Initialize reranker - ALWAYS enabled (VOYAGE_API_KEY already validated above)
+	rerankModel := os.Getenv("RERANK_MODEL")
+	if rerankModel == "" {
+		rerankModel = "rerank-2"
+	}
+	components.Reranker = embeddings.NewVoyageReranker(apiKey, rerankModel)
+	log.Printf("Initialized Voyage AI reranker (model: %s)", rerankModel)
+
+	// SQLite storage is REQUIRED for context bridge and knowledge graph
+	sqliteStore, ok := store.(*storage.SQLiteStorage)
+	if !ok {
+		return nil, fmt.Errorf("SQLite storage is required (set STORAGE_TYPE=sqlite)")
 	}
 
-	// Initialize context bridge if SQLite storage is available
+	// Initialize Thompson Sampling RL - ALWAYS enabled
+	if err := components.AutoMode.SetRLStorage(sqliteStore); err != nil {
+		return nil, fmt.Errorf("failed to initialize Thompson Sampling RL: %w", err)
+	}
+
+	// Initialize context bridge - ALWAYS enabled
 	bridgeConfig := contextbridge.ConfigFromEnv()
-	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
-		if bridgeConfig.Enabled {
-			components.ContextBridge = initializeContextBridge(
-				sqliteStore,
-				components.Embedder,
-				bridgeConfig,
-			)
-			log.Println("Initialized context bridge with SQLite storage")
-		} else {
-			log.Println("Context bridge disabled via CONTEXT_BRIDGE_ENABLED=false")
-		}
-	} else {
-		log.Println("Context bridge requires SQLite storage (using in-memory storage)")
-	}
+	components.ContextBridge = initializeContextBridge(
+		sqliteStore,
+		components.Embedder,
+		bridgeConfig,
+	)
+	log.Println("Initialized context bridge with SQLite storage")
 
 	// Create unified server
 	unifiedServer, err := server.NewUnifiedServer(
@@ -127,29 +116,23 @@ func InitializeServer() (*ServerComponents, error) {
 		return nil, fmt.Errorf("failed to create unified server: %w", err)
 	}
 	components.Server = unifiedServer
-	if components.ContextBridge != nil {
-		components.Server.SetContextBridge(components.ContextBridge)
-	}
+	components.Server.SetContextBridge(components.ContextBridge)
 	log.Println("Created unified server")
 
-	// Initialize knowledge graph (if enabled)
-	components.KnowledgeGraph = initializeKnowledgeGraph(store, components.Embedder, components.Reranker)
-	if components.KnowledgeGraph != nil && components.KnowledgeGraph.IsEnabled() {
-		components.Server.SetKnowledgeGraph(components.KnowledgeGraph)
-		log.Println("Knowledge graph enabled and configured")
+	// Initialize knowledge graph - ALWAYS enabled, will FAIL if requirements not met
+	kg, kgErr := initializeKnowledgeGraph(store, components.Embedder, components.Reranker)
+	if kgErr != nil {
+		return nil, kgErr
 	}
+	components.KnowledgeGraph = kg
+	components.Server.SetKnowledgeGraph(components.KnowledgeGraph)
+	log.Println("Knowledge graph enabled and configured")
 
-	// Initialize thought similarity searcher (if embedder available)
-	if components.Embedder != nil {
-		thoughtSearcher := similarity.NewThoughtSearcher(store, components.Embedder)
-		if components.Reranker != nil {
-			thoughtSearcher.SetReranker(components.Reranker)
-			log.Println("Thought similarity search enabled with reranking")
-		} else {
-			log.Println("Thought similarity search enabled")
-		}
-		components.Server.SetThoughtSearcher(thoughtSearcher)
-	}
+	// Initialize thought similarity searcher - ALWAYS enabled (embedder is required)
+	thoughtSearcher := similarity.NewThoughtSearcher(store, components.Embedder)
+	thoughtSearcher.SetReranker(components.Reranker)
+	log.Println("Thought similarity search enabled with reranking")
+	components.Server.SetThoughtSearcher(thoughtSearcher)
 
 	// Initialize orchestrator
 	executor := server.NewServerToolExecutor(components.Server)
@@ -187,29 +170,21 @@ func initializeContextBridge(
 	return contextbridge.New(config, matcher, extractor, embedder)
 }
 
-// initializeKnowledgeGraph creates and configures the knowledge graph
-func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedder, reranker embeddings.Reranker) *knowledge.KnowledgeGraph {
-	// Check if knowledge graph is enabled
-	enabled := os.Getenv("NEO4J_ENABLED")
-	if enabled != "true" {
-		log.Println("Knowledge graph disabled (NEO4J_ENABLED != true)")
-		return &knowledge.KnowledgeGraph{} // Return disabled instance
+// initializeKnowledgeGraph creates and configures the knowledge graph.
+// Knowledge graph is ALWAYS enabled - will FAIL at runtime if requirements not met.
+func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedder, reranker embeddings.Reranker) (*knowledge.KnowledgeGraph, error) {
+	// Knowledge graph is ALWAYS enabled - no NEO4J_ENABLED check
+	// FAIL FAST: All requirements must be met
+	sqliteStore, ok := store.(*storage.SQLiteStorage)
+	if !ok {
+		return nil, fmt.Errorf("knowledge graph requires SQLite storage (set STORAGE_TYPE=sqlite)")
 	}
 
-	// Get SQLite database for embedding cache
-	var sqliteDB *sql.DB
-	if sqliteStore, ok := store.(*storage.SQLiteStorage); ok {
-		sqliteDB = sqliteStore.DB()
-	} else {
-		log.Println("Knowledge graph requires SQLite storage (using in-memory storage)")
-		return &knowledge.KnowledgeGraph{}
-	}
-
-	// Validate embedder
 	if embedder == nil {
-		log.Println("Knowledge graph requires embedder (VOYAGE_API_KEY not set)")
-		return &knowledge.KnowledgeGraph{}
+		return nil, fmt.Errorf("knowledge graph requires embedder (set VOYAGE_API_KEY)")
 	}
+
+	sqliteDB := sqliteStore.DB()
 
 	// Configure Neo4j
 	neo4jCfg := knowledge.DefaultConfig()
@@ -231,8 +206,6 @@ func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedde
 
 	if vectorPersistPath != "" {
 		log.Printf("Knowledge graph vector store persistence: %s", vectorPersistPath)
-	} else {
-		log.Println("Knowledge graph vector store using in-memory only (will not persist)")
 	}
 
 	// Create knowledge graph
@@ -240,13 +213,11 @@ func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedde
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := knowledge.NewKnowledgeGraph(kgCfg)
 	if err != nil {
-		log.Printf("Failed to initialize knowledge graph: %v", err)
-		return &knowledge.KnowledgeGraph{}
+		return nil, fmt.Errorf("failed to initialize knowledge graph: %w", err)
 	}
 
 	// Set reranker for improved search results
@@ -255,7 +226,7 @@ func initializeKnowledgeGraph(store storage.Storage, embedder embeddings.Embedde
 		log.Println("Knowledge graph reranking enabled")
 	}
 
-	return kg
+	return kg, nil
 }
 
 // Cleanup closes all server resources

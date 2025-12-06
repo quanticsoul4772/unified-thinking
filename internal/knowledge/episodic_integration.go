@@ -27,12 +27,8 @@ func NewTrajectoryExtractor(kg *KnowledgeGraph, enableLLM bool) *TrajectoryExtra
 	}
 }
 
-// ExtractFromTrajectory extracts entities from a trajectory and stores in knowledge graph
+// ExtractFromTrajectory extracts entities from a trajectory and stores in knowledge graph.
 func (te *TrajectoryExtractor) ExtractFromTrajectory(ctx context.Context, trajectoryID string, problem string, steps []string) error {
-	if !te.kg.IsEnabled() {
-		return nil // Silently skip if KG disabled
-	}
-
 	// Extract entities from problem description
 	problemResult, err := te.extractor.Extract(problem)
 	if err != nil {

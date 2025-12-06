@@ -2,16 +2,18 @@ package main
 
 import (
 	"testing"
-
-	"unified-thinking/internal/embeddings"
 )
 
 // setupTestEnv sets required environment variables for testing
+// All features are ALWAYS enabled - API keys are REQUIRED
 func setupTestEnv(t *testing.T) {
 	t.Helper()
-	// Set ANTHROPIC_API_KEY to allow server initialization (GoT requires it)
-	// Use a fake key since we won't actually call the API during tests
+	// ANTHROPIC_API_KEY is REQUIRED for agent, web search, GoT
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-fake-key-for-testing")
+	// VOYAGE_API_KEY is REQUIRED for embeddings
+	t.Setenv("VOYAGE_API_KEY", "pa-test-fake-voyage-key-for-testing")
+	// SQLite storage is default - set path for tests
+	t.Setenv("SQLITE_PATH", t.TempDir()+"/test.db")
 }
 
 func TestInitializeServer(t *testing.T) {
@@ -54,35 +56,12 @@ func TestInitializeServer(t *testing.T) {
 	// Not testing their presence here
 }
 
-func TestInitializeServer_WithMockEmbedder(t *testing.T) {
-	setupTestEnv(t)
-
-	// Set environment to enable embeddings with mock
-	t.Setenv("VOYAGE_API_KEY", "mock-key-for-testing")
-	t.Setenv("EMBEDDINGS_MODEL", "mock-model")
-
-	components, err := InitializeServer()
-	if err != nil {
-		t.Fatalf("InitializeServer() with embedder failed: %v", err)
-	}
-	defer components.Cleanup()
-
-	// When VOYAGE_API_KEY is set, embedder should be initialized
-	if components.Embedder == nil {
-		t.Error("Embedder should be initialized when VOYAGE_API_KEY is set")
-	}
-}
+// TestInitializeServer_WithMockEmbedder removed - no mock embedders allowed
 
 func TestInitializeServer_SQLiteStorage(t *testing.T) {
 	setupTestEnv(t)
 
-	// Create temporary database for testing
-	tmpDir := t.TempDir()
-	dbPath := tmpDir + "/test.db"
-
-	t.Setenv("STORAGE_TYPE", "sqlite")
-	t.Setenv("SQLITE_PATH", dbPath)
-
+	// SQLite is now the default - this test verifies it works
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() with SQLite failed: %v", err)
@@ -133,86 +112,33 @@ func TestServerComponents_NilStorage(t *testing.T) {
 func TestInitializeContextBridge_WithEmbedder(t *testing.T) {
 	setupTestEnv(t)
 
-	tmpDir := t.TempDir()
-	dbPath := tmpDir + "/test.db"
-
-	t.Setenv("STORAGE_TYPE", "sqlite")
-	t.Setenv("SQLITE_PATH", dbPath)
-	t.Setenv("CONTEXT_BRIDGE_ENABLED", "true")
-	t.Setenv("VOYAGE_API_KEY", "mock-key-for-testing")
-
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() failed: %v", err)
 	}
 	defer components.Cleanup()
 
-	// With SQLite and context bridge enabled, should have bridge
+	// Context bridge is ALWAYS enabled with SQLite storage and embedder
 	if components.ContextBridge == nil {
 		t.Error("Expected ContextBridge to be initialized with SQLite storage and embedder")
 	}
 }
 
-func TestInitializeContextBridge_WithoutEmbedder(t *testing.T) {
-	setupTestEnv(t)
+func TestInitializeServer_RequiresVoyageAPIKey(t *testing.T) {
+	// Do NOT call setupTestEnv - we want to test missing VOYAGE_API_KEY
+	t.Setenv("ANTHROPIC_API_KEY", "sk-test-fake-key-for-testing")
+	// VOYAGE_API_KEY is intentionally not set
 
-	tmpDir := t.TempDir()
-	dbPath := tmpDir + "/test.db"
-
-	t.Setenv("STORAGE_TYPE", "sqlite")
-	t.Setenv("SQLITE_PATH", dbPath)
-	t.Setenv("CONTEXT_BRIDGE_ENABLED", "true")
-	// No VOYAGE_API_KEY - should use concept-based similarity
-
-	components, err := InitializeServer()
-	if err != nil {
-		t.Fatalf("InitializeServer() failed: %v", err)
+	_, err := InitializeServer()
+	if err == nil {
+		t.Fatal("InitializeServer() should fail when VOYAGE_API_KEY is not set")
 	}
-	defer components.Cleanup()
-
-	// Bridge should still work without embedder (uses concept similarity)
-	if components.ContextBridge == nil {
-		t.Error("Expected ContextBridge to be initialized even without embedder (concept-based similarity)")
+	if err.Error() != "VOYAGE_API_KEY not set: embeddings are required" {
+		t.Errorf("Unexpected error message: %v", err)
 	}
 }
 
-func TestInitializeContextBridge_Disabled(t *testing.T) {
-	setupTestEnv(t)
-
-	tmpDir := t.TempDir()
-	dbPath := tmpDir + "/test.db"
-
-	t.Setenv("STORAGE_TYPE", "sqlite")
-	t.Setenv("SQLITE_PATH", dbPath)
-	t.Setenv("CONTEXT_BRIDGE_ENABLED", "false")
-
-	components, err := InitializeServer()
-	if err != nil {
-		t.Fatalf("InitializeServer() failed: %v", err)
-	}
-	defer components.Cleanup()
-
-	// Context bridge behavior when disabled is implementation-dependent
-	// Test passes if initialization succeeds
-}
-
-func TestInitializeContextBridge_MemoryStorage(t *testing.T) {
-	setupTestEnv(t)
-
-	t.Setenv("STORAGE_TYPE", "memory")
-	t.Setenv("CONTEXT_BRIDGE_ENABLED", "true")
-
-	components, err := InitializeServer()
-	if err != nil {
-		t.Fatalf("InitializeServer() failed: %v", err)
-	}
-	defer components.Cleanup()
-
-	// Context bridge requires SQLite, should be nil with memory storage
-	if components.ContextBridge != nil {
-		t.Error("ContextBridge should be nil with memory storage")
-	}
-}
+// TestInitializeContextBridge_Disabled removed - context bridge is ALWAYS enabled
 
 func TestRegisterPredefinedWorkflows_NilOrchestrator(t *testing.T) {
 	// Should not panic with nil orchestrator
@@ -258,28 +184,7 @@ func TestRegisterPredefinedWorkflows_ValidOrchestrator(t *testing.T) {
 	}
 }
 
-func TestInitializeServer_WithMockEmbedderForTesting(t *testing.T) {
-	setupTestEnv(t)
-
-	// This test demonstrates how to inject a mock embedder
-	// Useful pattern for integration tests
-
-	components, err := InitializeServer()
-	if err != nil {
-		t.Fatalf("InitializeServer() failed: %v", err)
-	}
-	defer components.Cleanup()
-
-	// Replace embedder with mock for testing
-	mockEmbedder := embeddings.NewMockEmbedder(512)
-	components.Embedder = mockEmbedder
-	components.AutoMode.SetEmbedder(mockEmbedder)
-
-	// Now components can be tested without real API calls
-	if components.Embedder.Provider() != "mock" {
-		t.Errorf("Expected mock provider, got %s", components.Embedder.Provider())
-	}
-}
+// TestInitializeServer_WithMockEmbedderForTesting removed - no mock embedders allowed
 
 func TestServerComponents_DefaultFields(t *testing.T) {
 	// Test that ServerComponents struct can be created with default values

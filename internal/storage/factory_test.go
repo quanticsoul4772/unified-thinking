@@ -122,6 +122,9 @@ func TestNewStorageFromEnv(t *testing.T) {
 		os.Setenv("SQLITE_TIMEOUT", originalSQLiteTimeout)
 	}()
 
+	// SQLite is now the default - tests need temp dirs for each test case
+	tempDir := t.TempDir()
+
 	tests := []struct {
 		name     string
 		envVars  map[string]string
@@ -129,10 +132,13 @@ func TestNewStorageFromEnv(t *testing.T) {
 		wantType string
 	}{
 		{
-			name:     "default (memory storage)",
-			envVars:  map[string]string{},
+			name: "default (sqlite storage - required by knowledge graph)",
+			envVars: map[string]string{
+				// SQLite is default, must provide valid path
+				"SQLITE_PATH": filepath.Join(tempDir, "default-test.db"),
+			},
 			wantErr:  false,
-			wantType: "*storage.MemoryStorage",
+			wantType: "*storage.SQLiteStorage",
 		},
 		{
 			name: "memory storage from env",
@@ -146,7 +152,7 @@ func TestNewStorageFromEnv(t *testing.T) {
 			name: "sqlite storage from env",
 			envVars: map[string]string{
 				"STORAGE_TYPE":   "sqlite",
-				"SQLITE_PATH":    filepath.Join(t.TempDir(), "env-test.db"),
+				"SQLITE_PATH":    filepath.Join(tempDir, "env-test.db"),
 				"SQLITE_TIMEOUT": "3000",
 			},
 			wantErr:  false,

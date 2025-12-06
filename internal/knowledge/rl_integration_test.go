@@ -58,7 +58,6 @@ func TestRLContextRetriever_GetSimilarProblems(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)
@@ -171,7 +170,6 @@ func TestRLContextRetriever_GetStrategyPerformance(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)
@@ -305,7 +303,6 @@ func TestRLContextRetriever_RecordStrategyOutcome(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)

@@ -104,10 +104,6 @@ type StoreEntityResponse struct {
 
 // HandleStoreEntity implements the store-entity MCP tool
 func (kh *KnowledgeHandlers) HandleStoreEntity(ctx context.Context, req *mcp.CallToolRequest, request StoreEntityRequest) (*mcp.CallToolResult, *StoreEntityResponse, error) {
-	if !kh.kg.IsEnabled() {
-		return nil, nil, fmt.Errorf("knowledge graph not enabled")
-	}
-
 	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -152,10 +148,6 @@ type SearchKnowledgeGraphResponse struct {
 
 // HandleSearchKnowledgeGraph implements the search-knowledge-graph MCP tool
 func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(ctx context.Context, req *mcp.CallToolRequest, request SearchKnowledgeGraphRequest) (*mcp.CallToolResult, *SearchKnowledgeGraphResponse, error) {
-	if !kh.kg.IsEnabled() {
-		return nil, nil, fmt.Errorf("knowledge graph not enabled")
-	}
-
 	start := time.Now()
 	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -220,10 +212,6 @@ type CreateRelationshipResponse struct {
 
 // HandleCreateRelationship implements the create-relationship MCP tool
 func (kh *KnowledgeHandlers) HandleCreateRelationship(ctx context.Context, req *mcp.CallToolRequest, request CreateRelationshipRequest) (*mcp.CallToolResult, *CreateRelationshipResponse, error) {
-	if !kh.kg.IsEnabled() {
-		return nil, nil, fmt.Errorf("knowledge graph not enabled")
-	}
-
 	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

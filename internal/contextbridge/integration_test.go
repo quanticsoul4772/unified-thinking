@@ -244,11 +244,6 @@ func TestIntegration_FullContextBridgeFlow(t *testing.T) {
 			t.Errorf("Expected at least 4 enrichments, got %d", totalEnrichments)
 		}
 
-		enabled := metrics["enabled"].(bool)
-		if !enabled {
-			t.Error("Expected bridge to be enabled")
-		}
-
 		t.Logf("Metrics: %+v", metrics)
 	})
 }

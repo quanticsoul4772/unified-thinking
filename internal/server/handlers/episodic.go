@@ -25,7 +25,7 @@ type EpisodicMemoryHandler struct {
 // NewEpisodicMemoryHandler creates a new episodic memory handler
 func NewEpisodicMemoryHandler(store *memory.EpisodicMemoryStore, tracker *memory.SessionTracker, learner *memory.LearningEngine, kg *knowledge.KnowledgeGraph) *EpisodicMemoryHandler {
 	var extractor *knowledge.TrajectoryExtractor
-	if kg != nil && kg.IsEnabled() {
+	if kg != nil {
 		extractor = knowledge.NewTrajectoryExtractor(kg, false) // false = no LLM for now
 	}
 

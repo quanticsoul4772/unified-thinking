@@ -10,30 +10,6 @@ import (
 	"unified-thinking/internal/embeddings"
 )
 
-// TestKnowledgeGraph_Disabled tests disabled mode
-func TestKnowledgeGraph_Disabled(t *testing.T) {
-	cfg := KnowledgeGraphConfig{
-		Enabled: false,
-	}
-
-	kg, err := NewKnowledgeGraph(cfg)
-	if err != nil {
-		t.Fatalf("NewKnowledgeGraph failed: %v", err)
-	}
-
-	if kg.IsEnabled() {
-		t.Error("Expected knowledge graph to be disabled")
-	}
-
-	// Operations should fail gracefully
-	ctx := context.Background()
-	entity := &Entity{ID: "test", Label: "Test", Type: EntityTypeConcept}
-	err = kg.StoreEntity(ctx, entity, "content")
-	if err == nil {
-		t.Error("Expected error when storing to disabled knowledge graph")
-	}
-}
-
 // TestKnowledgeGraph_StoreAndRetrieve tests entity storage and retrieval
 func TestKnowledgeGraph_StoreAndRetrieve(t *testing.T) {
 	if testing.Short() {
@@ -84,7 +60,6 @@ func TestKnowledgeGraph_StoreAndRetrieve(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)
@@ -197,7 +172,6 @@ func TestKnowledgeGraph_SemanticSearch(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)
@@ -304,7 +278,6 @@ func TestKnowledgeGraph_HybridSearch(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)

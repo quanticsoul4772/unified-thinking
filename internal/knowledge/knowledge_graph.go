@@ -19,7 +19,6 @@ type KnowledgeGraph struct {
 	embeddingCache *EmbeddingCache
 	neo4jClient    *Neo4jClient
 	database       string
-	enabled        bool
 	reranker       embeddings.Reranker
 }
 
@@ -28,15 +27,11 @@ type KnowledgeGraphConfig struct {
 	Neo4jConfig  Neo4jConfig
 	VectorConfig VectorStoreConfig
 	SQLiteDB     *sql.DB // For embedding cache
-	Enabled      bool
 }
 
 // NewKnowledgeGraph creates a new knowledge graph instance
+// Knowledge graph is REQUIRED - will FAIL if Neo4j is not available
 func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
-	if !cfg.Enabled {
-		return &KnowledgeGraph{enabled: false}, nil
-	}
-
 	// Initialize Neo4j client
 	neo4jClient, err := NewNeo4jClient(cfg.Neo4jConfig)
 	if err != nil {
@@ -74,7 +69,6 @@ func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
 		embeddingCache: embeddingCache,
 		neo4jClient:    neo4jClient,
 		database:       cfg.Neo4jConfig.Database,
-		enabled:        true,
 	}
 
 	log.Printf("[DEBUG] Knowledge graph initialized successfully")
@@ -83,10 +77,6 @@ func NewKnowledgeGraph(cfg KnowledgeGraphConfig) (*KnowledgeGraph, error) {
 
 // Close closes all knowledge graph connections
 func (kg *KnowledgeGraph) Close(ctx context.Context) error {
-	if !kg.enabled {
-		return nil
-	}
-
 	if kg.VectorStore != nil {
 		if err := kg.VectorStore.Close(); err != nil {
 			return err
@@ -100,11 +90,6 @@ func (kg *KnowledgeGraph) Close(ctx context.Context) error {
 	return nil
 }
 
-// IsEnabled returns whether knowledge graph is enabled
-func (kg *KnowledgeGraph) IsEnabled() bool {
-	return kg.enabled
-}
-
 // SetReranker sets the optional reranker for result optimization
 func (kg *KnowledgeGraph) SetReranker(reranker embeddings.Reranker) {
 	kg.reranker = reranker
@@ -112,10 +97,6 @@ func (kg *KnowledgeGraph) SetReranker(reranker embeddings.Reranker) {
 
 // StoreEntity stores an entity in both Neo4j and vector search
 func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, content string) error {
-	if !kg.enabled {
-		return fmt.Errorf("knowledge graph not enabled")
-	}
-
 	// Store in Neo4j graph
 	if err := kg.graphStore.CreateEntity(ctx, entity); err != nil {
 		return fmt.Errorf("failed to store entity in graph: %w", err)
@@ -162,18 +143,11 @@ func (kg *KnowledgeGraph) StoreEntity(ctx context.Context, entity *Entity, conte
 
 // GetEntity retrieves an entity from Neo4j
 func (kg *KnowledgeGraph) GetEntity(ctx context.Context, entityID string) (*Entity, error) {
-	if !kg.enabled {
-		return nil, fmt.Errorf("knowledge graph not enabled")
-	}
 	return kg.graphStore.GetEntity(ctx, entityID)
 }
 
 // SearchSemantic performs semantic search using vector similarity
 func (kg *KnowledgeGraph) SearchSemantic(ctx context.Context, query string, limit int, minSimilarity float32) ([]chromem.Result, error) {
-	if !kg.enabled {
-		return nil, fmt.Errorf("knowledge graph not enabled")
-	}
-
 	if kg.VectorStore == nil {
 		return nil, fmt.Errorf("vector store not configured")
 	}
@@ -239,9 +213,6 @@ func (kg *KnowledgeGraph) rerankSemanticResults(ctx context.Context, query strin
 
 // SearchGraph performs graph traversal to find related entities
 func (kg *KnowledgeGraph) SearchGraph(ctx context.Context, entityID string, maxHops int, relationshipTypes []RelationshipType) ([]*Entity, error) {
-	if !kg.enabled {
-		return nil, fmt.Errorf("knowledge graph not enabled")
-	}
 	return kg.graphStore.QueryEntitiesWithinHops(ctx, entityID, maxHops, relationshipTypes)
 }
 
@@ -252,10 +223,6 @@ func (kg *KnowledgeGraph) HybridSearch(ctx context.Context, query string, limit 
 
 // HybridSearchWithThreshold combines semantic and graph search with configurable threshold
 func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query string, limit int, maxHops int, minSimilarity float32) ([]*Entity, error) {
-	if !kg.enabled {
-		return nil, fmt.Errorf("knowledge graph not enabled")
-	}
-
 	// Step 1: Semantic search to find relevant starting entities
 	// Use lower threshold (0.3) to get more starting points for graph traversal
 	// Final filtering by user's minSimilarity happens after graph traversal
@@ -314,15 +281,12 @@ func (kg *KnowledgeGraph) HybridSearchWithThreshold(ctx context.Context, query s
 
 // CreateRelationship creates a relationship between entities
 func (kg *KnowledgeGraph) CreateRelationship(ctx context.Context, rel *Relationship) error {
-	if !kg.enabled {
-		return fmt.Errorf("knowledge graph not enabled")
-	}
 	return kg.graphStore.CreateRelationship(ctx, rel)
 }
 
 // GetEmbeddingCacheStats returns embedding cache statistics
 func (kg *KnowledgeGraph) GetEmbeddingCacheStats() (types.Metadata, error) {
-	if !kg.enabled || kg.embeddingCache == nil {
+	if kg.embeddingCache == nil {
 		return nil, fmt.Errorf("embedding cache not available")
 	}
 	return kg.embeddingCache.GetCacheStats()

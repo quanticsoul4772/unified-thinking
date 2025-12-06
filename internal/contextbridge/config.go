@@ -8,7 +8,6 @@ import (
 
 // Config holds context bridge configuration
 type Config struct {
-	Enabled       bool
 	MinSimilarity float64
 	MaxMatches    int
 	EnabledTools  []string
@@ -17,10 +16,9 @@ type Config struct {
 	Timeout       time.Duration
 }
 
-// DefaultConfig returns the default configuration - always enabled
+// DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:       true, // Always enabled by default
 		MinSimilarity: 0.7,
 		MaxMatches:    3,
 		EnabledTools: []string{
@@ -39,11 +37,6 @@ func DefaultConfig() *Config {
 // ConfigFromEnv creates configuration from environment variables
 func ConfigFromEnv() *Config {
 	config := DefaultConfig()
-
-	// Emergency disable flag (for rollback scenarios only)
-	if disabled := os.Getenv("CONTEXT_BRIDGE_DISABLED"); disabled == "true" || disabled == "1" {
-		config.Enabled = false
-	}
 
 	// Min similarity threshold
 	if minSim := os.Getenv("CONTEXT_BRIDGE_MIN_SIMILARITY"); minSim != "" {

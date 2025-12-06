@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"sort"
 	"time"
 
@@ -35,34 +34,28 @@ func (ei *EmbeddingIntegration) GetEmbedder() embeddings.Embedder {
 }
 
 // NewEmbeddingIntegration creates a new embedding integration.
-// Returns an error if embeddings are disabled or configuration is invalid.
-// No fallbacks - embeddings must be properly configured to use this integration.
+// Embeddings are ALWAYS enabled - VOYAGE_API_KEY is REQUIRED.
+// Returns an error if configuration is invalid - NO FALLBACKS.
 func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQLiteStorage) (*EmbeddingIntegration, error) {
 	// Get configuration from environment
 	config := embeddings.ConfigFromEnv()
 
-	if !config.Enabled {
-		return nil, fmt.Errorf("embeddings disabled: set EMBEDDINGS_ENABLED=true to use embedding integration")
-	}
+	// Embeddings are ALWAYS enabled - no check for config.Enabled
 
-	// Create embedder
+	// Create embedder - VOYAGE_API_KEY is REQUIRED
 	var embedder embeddings.Embedder
 
 	switch config.Provider {
 	case "voyage":
 		if config.APIKey == "" {
-			// Try to get from environment if not set
-			config.APIKey = os.Getenv("VOYAGE_API_KEY")
-		}
-		if config.APIKey == "" {
-			return nil, fmt.Errorf("VOYAGE_API_KEY not set")
+			return nil, fmt.Errorf("VOYAGE_API_KEY not set: embeddings require this API key")
 		}
 		embedder = embeddings.NewVoyageEmbedder(config.APIKey, config.Model)
 	default:
 		return nil, fmt.Errorf("unsupported embedding provider: %s", config.Provider)
 	}
 
-	// Create LRU cache with configuration from environment
+	// Create LRU cache - cache is ALWAYS enabled
 	cache, err := embeddings.NewLRUEmbeddingCache(config.ToLRUCacheConfig())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create embedding cache: %w", err)
@@ -78,25 +71,15 @@ func NewEmbeddingIntegration(store *EpisodicMemoryStore, sqliteStore *storage.SQ
 }
 
 // GenerateAndStoreEmbedding generates and stores an embedding for a problem.
-// Returns an error if embeddings are not properly configured.
 func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, problem *ProblemDescription) error {
-	if !ei.config.Enabled {
-		return fmt.Errorf("embeddings disabled: cannot generate embedding")
-	}
-	if ei.embedder == nil {
-		return fmt.Errorf("embedder not initialized: cannot generate embedding")
-	}
-
 	// Generate embedding text
 	text := ei.problemToText(problem)
 
-	// Check cache first (if caching is enabled)
+	// Check cache first - cache is ALWAYS enabled
 	var embedding []float32
-	if ei.cache != nil && ei.config.CacheEmbeddings {
-		if cached, found := ei.cache.Get(text); found {
-			log.Printf("Cache hit for problem embedding (dimension: %d)", len(cached))
-			embedding = cached
-		}
+	if cached, found := ei.cache.Get(text); found {
+		log.Printf("Cache hit for problem embedding (dimension: %d)", len(cached))
+		embedding = cached
 	}
 
 	// Generate embedding if not cached
@@ -118,10 +101,8 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 		}
 		log.Printf("Successfully generated embedding (dimension: %d)", len(embedding))
 
-		// Store in cache
-		if ei.cache != nil && ei.config.CacheEmbeddings {
-			ei.cache.Set(text, embedding)
-		}
+		// Store in cache - cache is ALWAYS enabled
+		ei.cache.Set(text, embedding)
 	}
 
 	// Store embedding in problem (for in-memory usage)
@@ -153,16 +134,8 @@ func (ei *EmbeddingIntegration) GenerateAndStoreEmbedding(ctx context.Context, p
 }
 
 // RetrieveSimilarWithHybridSearch performs hybrid search combining structured and semantic search.
-// Returns an error if embeddings are not properly configured.
 func (ei *EmbeddingIntegration) RetrieveSimilarWithHybridSearch(ctx context.Context, problem *ProblemDescription, limit int) ([]*TrajectoryMatch, error) {
-	if !ei.config.Enabled {
-		return nil, fmt.Errorf("embeddings disabled: cannot perform hybrid search")
-	}
-	if ei.embedder == nil {
-		return nil, fmt.Errorf("embedder not initialized: cannot perform hybrid search")
-	}
-
-	// Ensure problem has embedding
+	// Ensure problem has embedding - will FAIL if embedder not configured
 	if len(problem.Embedding) == 0 {
 		if err := ei.GenerateAndStoreEmbedding(ctx, problem); err != nil {
 			return nil, fmt.Errorf("failed to generate embedding for query: %w", err)

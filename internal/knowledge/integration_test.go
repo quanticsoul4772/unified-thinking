@@ -58,7 +58,6 @@ func TestFullIntegration(t *testing.T) {
 		Neo4jConfig:  neo4jCfg,
 		VectorConfig: vectorCfg,
 		SQLiteDB:     sqliteDB,
-		Enabled:      true,
 	}
 
 	kg, err := NewKnowledgeGraph(kgCfg)

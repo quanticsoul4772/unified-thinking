@@ -12,16 +12,14 @@ import (
 // AnthropicLLMClient implements LLMClient using Anthropic's Claude API
 type AnthropicLLMClient struct {
 	*AnthropicBaseClient
-	useStructured    bool
-	webSearchEnabled bool
+	useStructured bool
 }
 
 // NewAnthropicLLMClient creates a new Anthropic LLM client
+// Web search is ALWAYS enabled - no WEB_SEARCH_ENABLED check
 func NewAnthropicLLMClient() (*AnthropicLLMClient, error) {
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("ANTHROPIC_API_KEY environment variable is required")
-	}
+	// No check for apiKey - will FAIL at runtime if not set
 
 	model := os.Getenv("GOT_MODEL")
 	if model == "" {
@@ -29,25 +27,14 @@ func NewAnthropicLLMClient() (*AnthropicLLMClient, error) {
 	}
 
 	useStructured := os.Getenv("GOT_STRUCTURED_OUTPUT") != "false"
-	webSearchEnabled := os.Getenv("WEB_SEARCH_ENABLED") == "true"
 
 	return &AnthropicLLMClient{
 		AnthropicBaseClient: NewAnthropicBaseClient(BaseClientConfig{
 			APIKey: apiKey,
 			Model:  model,
 		}),
-		useStructured:    useStructured,
-		webSearchEnabled: webSearchEnabled,
+		useStructured: useStructured,
 	}, nil
-}
-
-// WithWebSearch returns a copy with web search enabled
-func (a *AnthropicLLMClient) WithWebSearch() *AnthropicLLMClient {
-	return &AnthropicLLMClient{
-		AnthropicBaseClient: a.AnthropicBaseClient,
-		useStructured:       a.useStructured,
-		webSearchEnabled:    true,
-	}
 }
 
 // WithoutStructured returns a copy with structured outputs disabled
@@ -55,7 +42,6 @@ func (a *AnthropicLLMClient) WithoutStructured() *AnthropicLLMClient {
 	return &AnthropicLLMClient{
 		AnthropicBaseClient: a.AnthropicBaseClient,
 		useStructured:       false,
-		webSearchEnabled:    a.webSearchEnabled,
 	}
 }
 
@@ -483,11 +469,8 @@ func (a *AnthropicLLMClient) calculateNoveltyLegacy(ctx context.Context, thought
 }
 
 // ResearchWithSearch performs web-augmented research
+// Web search is ALWAYS enabled - requires ANTHROPIC_API_KEY at runtime
 func (a *AnthropicLLMClient) ResearchWithSearch(ctx context.Context, query string, problem string) (*ResearchResult, error) {
-	if !a.webSearchEnabled {
-		return nil, fmt.Errorf("web search is not enabled (set WEB_SEARCH_ENABLED=true)")
-	}
-
 	systemPrompt := `You are a research assistant with access to web search. Research the given query thoroughly using web search when needed for current information. Provide well-sourced findings.
 
 Use the research_response tool to provide your findings.`

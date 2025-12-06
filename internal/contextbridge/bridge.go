@@ -52,8 +52,8 @@ func (cb *ContextBridge) EnrichResponse(
 	params types.Metadata,
 	result interface{},
 ) (interface{}, error) {
-	// Fast path - feature disabled or tool not enabled
-	if !cb.config.Enabled || !cb.isEnabledTool(toolName) {
+	// Fast path - tool not in enabled list
+	if !cb.isEnabledTool(toolName) {
 		return result, nil
 	}
 
@@ -228,13 +228,7 @@ func (cb *ContextBridge) isEnabledTool(toolName string) bool {
 func (cb *ContextBridge) GetMetrics() types.Metadata {
 	metricsData := cb.metrics.Snapshot()
 	metricsData["cache_stats"] = cb.cache.Stats()
-	metricsData["enabled"] = cb.config.Enabled
 	return metricsData
-}
-
-// IsEnabled returns whether the context bridge is enabled
-func (cb *ContextBridge) IsEnabled() bool {
-	return cb.config.Enabled
 }
 
 // extractTextContent extracts text content from params for embedding generation

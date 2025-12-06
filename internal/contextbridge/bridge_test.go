@@ -15,37 +15,8 @@ func (m *MockStorage) FindCandidatesWithSignatures(domain string, fingerprintPre
 	return m.candidates, nil
 }
 
-func TestContextBridge_EnrichResponse_Disabled(t *testing.T) {
-	config := DefaultConfig()
-	config.Enabled = false
-
-	storage := &MockStorage{}
-	extractor := NewSimpleExtractor()
-	similarity := NewDefaultSimilarity()
-	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor, nil) // nil embedder for tests
-
-	result := map[string]interface{}{"thought_id": "test-123"}
-	params := map[string]interface{}{"content": "test content"}
-
-	enriched, err := bridge.EnrichResponse(context.Background(), "think", params, result)
-	if err != nil {
-		t.Fatalf("EnrichResponse failed: %v", err)
-	}
-
-	// Should return original result when disabled
-	enrichedMap, ok := enriched.(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected map, got %T", enriched)
-	}
-	if enrichedMap["thought_id"] != "test-123" {
-		t.Error("Expected original result when bridge is disabled")
-	}
-}
-
 func TestContextBridge_EnrichResponse_NotEnabledTool(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 	config.EnabledTools = []string{"think"} // Only think is enabled
 
 	storage := &MockStorage{}
@@ -75,7 +46,6 @@ func TestContextBridge_EnrichResponse_NotEnabledTool(t *testing.T) {
 
 func TestContextBridge_EnrichResponse_WithMatches(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 	config.MinSimilarity = 0.3 // Lower threshold for easier matching
 
 	// Create mock storage with matching candidate
@@ -143,7 +113,6 @@ func TestContextBridge_EnrichResponse_WithMatches(t *testing.T) {
 
 func TestContextBridge_EnrichResponse_NoMatches(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 	config.MinSimilarity = 0.9 // High threshold
 
 	// Create mock storage with non-matching candidate
@@ -206,7 +175,6 @@ func TestContextBridge_EnrichResponse_NoMatches(t *testing.T) {
 
 func TestContextBridge_EnrichResponse_CacheHit(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 	config.MinSimilarity = 0.5
 
 	storage := &MockStorage{
@@ -262,7 +230,6 @@ func TestContextBridge_EnrichResponse_CacheHit(t *testing.T) {
 
 func TestContextBridge_GenerateRecommendation(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 
 	storage := &MockStorage{}
 	extractor := NewSimpleExtractor()
@@ -312,7 +279,6 @@ func TestContextBridge_GenerateRecommendation(t *testing.T) {
 
 func TestContextBridge_Metrics(t *testing.T) {
 	config := DefaultConfig()
-	config.Enabled = true
 
 	storage := &MockStorage{
 		candidates: []*CandidateWithSignature{
@@ -345,10 +311,6 @@ func TestContextBridge_Metrics(t *testing.T) {
 		t.Errorf("Expected 3 total enrichments, got %v", metrics["total_enrichments"])
 	}
 
-	if metrics["enabled"].(bool) != true {
-		t.Error("Expected enabled to be true")
-	}
-
 	// Should have cache stats
 	cacheStats := metrics["cache_stats"].(map[string]int)
 	if cacheStats["capacity"] != config.CacheSize {
@@ -358,7 +320,6 @@ func TestContextBridge_Metrics(t *testing.T) {
 
 func BenchmarkContextBridge_EnrichResponse(b *testing.B) {
 	config := DefaultConfig()
-	config.Enabled = true
 	config.MinSimilarity = 0.5
 
 	// Create mock storage with candidates
@@ -401,27 +362,6 @@ func BenchmarkSignatureExtraction(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ExtractSignature("think", params, extractor)
-	}
-}
-
-func TestContextBridge_IsEnabled(t *testing.T) {
-	config := DefaultConfig()
-	config.Enabled = true
-
-	storage := &MockStorage{}
-	extractor := NewSimpleExtractor()
-	similarity := NewDefaultSimilarity()
-	matcher := NewMatcher(storage, similarity, extractor)
-	bridge := New(config, matcher, extractor, nil)
-
-	if !bridge.IsEnabled() {
-		t.Error("Expected IsEnabled() to return true")
-	}
-
-	config.Enabled = false
-	bridge2 := New(config, matcher, extractor, nil)
-	if bridge2.IsEnabled() {
-		t.Error("Expected IsEnabled() to return false")
 	}
 }
 
@@ -515,9 +455,6 @@ func TestConfig_FromEnv(t *testing.T) {
 	// Test with defaults
 	config := DefaultConfig()
 
-	if !config.Enabled {
-		t.Error("Expected Enabled to be true by default")
-	}
 	if config.MinSimilarity != 0.7 {
 		t.Errorf("Expected MinSimilarity 0.7, got %v", config.MinSimilarity)
 	}

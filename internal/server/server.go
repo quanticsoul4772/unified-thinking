@@ -989,8 +989,8 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	// Register episodic memory tools (Phase 2)
 	handlers.RegisterEpisodicMemoryTools(mcpServer, s.episodicMemoryHandler)
 
-	// Register knowledge graph tools (Phase 4) - only if enabled
-	if s.knowledgeGraph != nil && s.knowledgeGraph.IsEnabled() {
+	// Register knowledge graph tools (Phase 4)
+	if s.knowledgeGraph != nil {
 		kgHandler := handlers.NewKnowledgeHandlers(s.knowledgeGraph)
 		handlers.RegisterKnowledgeGraphTools(mcpServer, kgHandler)
 	}
@@ -1656,9 +1656,9 @@ func (s *UnifiedServer) handleGetMetrics(ctx context.Context, req *mcp.CallToolR
 		log.Println("[DEBUG] Not using SQLite storage - RL not available")
 	}
 
-	// Include knowledge graph metrics if enabled
-	if s.knowledgeGraph != nil && s.knowledgeGraph.IsEnabled() {
-		log.Println("[DEBUG] Knowledge graph enabled, collecting metrics...")
+	// Include knowledge graph metrics
+	if s.knowledgeGraph != nil {
+		log.Println("[DEBUG] Knowledge graph available, collecting metrics...")
 		kgMetrics := make(map[string]interface{})
 		kgMetrics["enabled"] = true
 

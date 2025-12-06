@@ -32,10 +32,6 @@ func NewRLContextRetrieverWithThreshold(kg *KnowledgeGraph, threshold float32) *
 
 // GetSimilarProblems retrieves similar past problems using semantic search
 func (rcr *RLContextRetriever) GetSimilarProblems(ctx context.Context, problemDesc string, limit int) ([]*Entity, error) {
-	if !rcr.kg.IsEnabled() {
-		return nil, nil
-	}
-
 	// Semantic search for similar problems
 	results, err := rcr.kg.SearchSemantic(ctx, problemDesc, limit, rcr.similarityThreshold)
 	if err != nil {
@@ -62,10 +58,6 @@ func (rcr *RLContextRetriever) GetSimilarProblems(ctx context.Context, problemDe
 
 // GetStrategyPerformance retrieves strategy performance for similar problems
 func (rcr *RLContextRetriever) GetStrategyPerformance(ctx context.Context, problemDesc string) (map[string]float64, error) {
-	if !rcr.kg.IsEnabled() {
-		return nil, nil
-	}
-
 	// Find similar problems
 	similarProblems, err := rcr.GetSimilarProblems(ctx, problemDesc, 5)
 	if err != nil || len(similarProblems) == 0 {
@@ -106,10 +98,6 @@ func (rcr *RLContextRetriever) GetStrategyPerformance(ctx context.Context, probl
 
 // EnrichProblemContext adds knowledge graph context to problem description
 func (rcr *RLContextRetriever) EnrichProblemContext(ctx context.Context, problemDesc string) (string, error) {
-	if !rcr.kg.IsEnabled() {
-		return problemDesc, nil
-	}
-
 	// Get similar problems
 	similar, err := rcr.GetSimilarProblems(ctx, problemDesc, 3)
 	if err != nil || len(similar) == 0 {
@@ -141,10 +129,6 @@ func (rcr *RLContextRetriever) EnrichProblemContext(ctx context.Context, problem
 
 // RecordStrategyOutcome records strategy selection outcome in knowledge graph
 func (rcr *RLContextRetriever) RecordStrategyOutcome(ctx context.Context, problemDesc string, strategy string, success bool, confidence float64) error {
-	if !rcr.kg.IsEnabled() {
-		return nil
-	}
-
 	// Create problem entity
 	problemEntity := &Entity{
 		ID:          fmt.Sprintf("problem-%d", time.Now().Unix()),

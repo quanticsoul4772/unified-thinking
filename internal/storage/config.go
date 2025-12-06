@@ -25,10 +25,11 @@ type Config struct {
 	SQLiteTimeout int         // SQLite busy timeout in milliseconds
 }
 
-// DefaultConfig returns default configuration with in-memory storage
+// DefaultConfig returns default configuration with SQLite storage
+// SQLite is REQUIRED - knowledge graph and other features need it
 func DefaultConfig() Config {
 	return Config{
-		Type:          StorageTypeMemory,
+		Type:          StorageTypeSQLite,
 		SQLitePath:    "./data/unified-thinking.db",
 		SQLiteTimeout: 5000,
 	}

@@ -9,8 +9,9 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
-	if config.Type != StorageTypeMemory {
-		t.Errorf("Default Type = %v, want %v", config.Type, StorageTypeMemory)
+	// SQLite is now the default (required by knowledge graph)
+	if config.Type != StorageTypeSQLite {
+		t.Errorf("Default Type = %v, want %v", config.Type, StorageTypeSQLite)
 	}
 
 	if config.SQLitePath != "./data/unified-thinking.db" {
@@ -44,8 +45,9 @@ func TestConfigFromEnv(t *testing.T) {
 			name:    "default config when no env vars",
 			envVars: map[string]string{},
 			validate: func(t *testing.T, cfg Config) {
-				if cfg.Type != StorageTypeMemory {
-					t.Errorf("Type = %v, want %v", cfg.Type, StorageTypeMemory)
+				// SQLite is now the default (required by knowledge graph)
+				if cfg.Type != StorageTypeSQLite {
+					t.Errorf("Type = %v, want %v", cfg.Type, StorageTypeSQLite)
 				}
 				if cfg.SQLitePath != "./data/unified-thinking.db" {
 					t.Errorf("SQLitePath = %v, want default", cfg.SQLitePath)
@@ -273,9 +275,9 @@ func TestConfigFromEnvEmptyStorageType(t *testing.T) {
 
 	config := ConfigFromEnv()
 
-	// Should fall back to default (memory)
-	if config.Type != StorageTypeMemory {
-		t.Errorf("Type = %v, want memory (default)", config.Type)
+	// Should fall back to default (sqlite, required by knowledge graph)
+	if config.Type != StorageTypeSQLite {
+		t.Errorf("Type = %v, want sqlite (default)", config.Type)
 	}
 }
 

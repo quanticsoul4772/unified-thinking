@@ -2,6 +2,7 @@ package modes
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -90,19 +91,14 @@ func (m *AutoMode) SetRLStorage(storage RLStorage) error {
 	// Initialize Thompson selector
 	m.thompsonSelector = reinforcement.NewThompsonSelectorWithTime()
 
-	// Load strategies from storage
+	// Load strategies from storage - FAIL FAST if this fails
 	strategies, err := storage.GetAllRLStrategies()
 	if err != nil {
-		log.Printf("Warning: failed to load RL strategies: %v", err)
-		// Disable RL if we can't load strategies
-		m.rlEnabled = false
-		return err
+		return fmt.Errorf("failed to load RL strategies: %w", err)
 	}
 
 	if len(strategies) == 0 {
-		log.Println("Warning: no RL strategies found in database")
-		m.rlEnabled = false
-		return nil
+		return fmt.Errorf("no RL strategies found in database (initialize RL strategies first)")
 	}
 
 	// Register strategies with Thompson selector

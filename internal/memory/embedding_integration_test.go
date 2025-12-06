@@ -156,8 +156,7 @@ func TestGetEmbedder_Nil(t *testing.T) {
 func TestGenerateAndStoreEmbedding_WithCache(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
-	config.CacheEmbeddings = true
+	// Embeddings and caching are ALWAYS enabled - no Enabled/CacheEmbeddings fields
 
 	ei := &EmbeddingIntegration{
 		store:    store,
@@ -184,8 +183,7 @@ func TestGenerateAndStoreEmbedding_CacheHit(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
-	config.CacheEmbeddings = true
+	// Embeddings and caching are ALWAYS enabled - no Enabled/CacheEmbeddings fields
 
 	cache := mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour})
 
@@ -219,7 +217,7 @@ func TestGenerateAndStoreEmbedding_Success(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 
 	ei := &EmbeddingIntegration{
 		store:    store,
@@ -258,12 +256,13 @@ func TestGenerateAndStoreEmbedding_Error(t *testing.T) {
 	mockEmbedder.errorMsg = "embedding API error"
 
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 
 	ei := &EmbeddingIntegration{
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -284,12 +283,13 @@ func TestGenerateAndStoreEmbedding_EmptyEmbedding(t *testing.T) {
 	}
 
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 
 	ei := &EmbeddingIntegration{
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -375,7 +375,7 @@ func TestRetrieveSimilarWithHybridSearch_WithEmbeddings(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0 // Accept all matches for testing
 
 	ei := &EmbeddingIntegration{
@@ -420,7 +420,7 @@ func TestRetrieveSimilarWithHybridSearch_GeneratesEmbedding(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0 // Accept all matches for testing
 
 	ei := &EmbeddingIntegration{
@@ -451,7 +451,7 @@ func TestVectorSearch_Empty(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.5
 
 	ei := &EmbeddingIntegration{
@@ -473,7 +473,7 @@ func TestVectorSearch_WithMatches(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0 // Accept all for testing
 
 	ei := &EmbeddingIntegration{
@@ -526,7 +526,7 @@ func TestVectorSearch_WithLimit(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0
 
 	ei := &EmbeddingIntegration{
@@ -569,7 +569,7 @@ func TestVectorSearch_WithLimit(t *testing.T) {
 func TestVectorSearch_NilProblem(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0
 
 	ei := &EmbeddingIntegration{
@@ -800,7 +800,7 @@ func TestEmbeddingIntegration_ConcurrentAccess(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 0.0
 
 	ei := &EmbeddingIntegration{
@@ -864,12 +864,13 @@ func TestRetrieveSimilarWithHybridSearch_EmbeddingError(t *testing.T) {
 	mockEmbedder.errorMsg = "API error"
 
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 
 	ei := &EmbeddingIntegration{
 		store:    store,
 		embedder: mockEmbedder,
 		config:   config,
+		cache:    mustNewLRUEmbeddingCache(t, &embeddings.LRUCacheConfig{TTL: time.Hour}),
 	}
 
 	ctx := context.Background()
@@ -887,7 +888,7 @@ func TestRetrieveSimilarWithHybridSearch_NoVectorResults(t *testing.T) {
 	store := NewEpisodicMemoryStore()
 	mockEmbedder := NewMockEmbedder()
 	config := embeddings.DefaultConfig()
-	config.Enabled = true
+	// Embeddings are ALWAYS enabled - no Enabled field
 	config.MinSimilarity = 1.0 // Very high threshold - no vector matches
 
 	ei := &EmbeddingIntegration{

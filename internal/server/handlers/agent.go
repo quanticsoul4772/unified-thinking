@@ -15,19 +15,15 @@ import (
 type AgentHandler struct {
 	registry *modes.ToolRegistry
 	apiKey   string
-	enabled  bool
 }
 
 // NewAgentHandler creates a new agent handler
-// The handler is disabled if AGENT_ENABLED is not "true" or ANTHROPIC_API_KEY is not set
+// Agent is ALWAYS enabled - no AGENT_ENABLED check
+// Will FAIL at runtime if ANTHROPIC_API_KEY is not set
 func NewAgentHandler(registry *modes.ToolRegistry) *AgentHandler {
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	enabled := os.Getenv("AGENT_ENABLED") == "true" && apiKey != ""
-
 	return &AgentHandler{
 		registry: registry,
-		apiKey:   apiKey,
-		enabled:  enabled,
+		apiKey:   os.Getenv("ANTHROPIC_API_KEY"),
 	}
 }
 
@@ -53,12 +49,8 @@ type RunAgentResponse struct {
 }
 
 // HandleRunAgent executes an agentic task
+// Agent is ALWAYS enabled - will FAIL at runtime if ANTHROPIC_API_KEY is not set
 func (h *AgentHandler) HandleRunAgent(ctx context.Context, req *mcp.CallToolRequest, input RunAgentRequest) (*mcp.CallToolResult, *RunAgentResponse, error) {
-	// Check if agent is enabled
-	if !h.enabled {
-		return nil, nil, fmt.Errorf("run-agent requires AGENT_ENABLED=true and ANTHROPIC_API_KEY")
-	}
-
 	// Validate input
 	if input.Task == "" {
 		return nil, nil, fmt.Errorf("task is required")
@@ -196,7 +188,7 @@ func RegisterAgentTools(mcpServer *mcp.Server, handler *AgentHandler) {
 		Name: "run-agent",
 		Description: `Execute a task using an agentic LLM with access to unified-thinking tools.
 
-Requires AGENT_ENABLED=true and ANTHROPIC_API_KEY environment variables.
+Requires ANTHROPIC_API_KEY environment variable.
 
 The agent can use cognitive reasoning tools to break down problems, analyze evidence,
 generate hypotheses, and synthesize insights. It operates in a loop, calling tools

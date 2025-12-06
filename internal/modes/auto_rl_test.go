@@ -2,6 +2,7 @@ package modes
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"unified-thinking/internal/reinforcement"
@@ -124,8 +125,8 @@ func TestAutoMode_RLIntegration(t *testing.T) {
 	}
 }
 
-// TestAutoMode_RLFallbackNoStrategies tests that RL gracefully falls back when no strategies available
-func TestAutoMode_RLFallbackNoStrategies(t *testing.T) {
+// TestAutoMode_RLFailsWithNoStrategies tests that RL fails fast when no strategies available
+func TestAutoMode_RLFailsWithNoStrategies(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	linear := NewLinearMode(store)
 	tree := NewTreeMode(store)
@@ -133,7 +134,7 @@ func TestAutoMode_RLFallbackNoStrategies(t *testing.T) {
 
 	auto := NewAutoMode(linear, tree, divergent)
 
-	// No strategies - RL should gracefully disable
+	// No strategies - RL should FAIL, not gracefully disable
 	mockStorage := &mockRLStorage{
 		strategies:      []*reinforcement.Strategy{},
 		outcomes:        []*reinforcement.Outcome{},
@@ -142,59 +143,18 @@ func TestAutoMode_RLFallbackNoStrategies(t *testing.T) {
 	}
 
 	err := auto.SetRLStorage(mockStorage)
-	if err != nil {
-		t.Fatalf("SetRLStorage failed: %v", err)
+	if err == nil {
+		t.Fatal("SetRLStorage should fail when no strategies available")
 	}
 
+	// Verify error message indicates the problem
+	if !strings.Contains(err.Error(), "no RL strategies") {
+		t.Errorf("Expected error about no strategies, got: %v", err)
+	}
+
+	// RL should not be enabled
 	if auto.rlEnabled {
-		t.Error("RL should be disabled when no strategies available")
-	}
-
-	// Process thought - should use keyword detection
-	input := ThoughtInput{
-		Content:    "This is a creative problem",
-		Confidence: 0.7,
-	}
-
-	result, err := auto.ProcessThought(context.Background(), input)
-	if err != nil {
-		t.Fatalf("ProcessThought failed: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("Expected result, got nil")
-	}
-
-	// No outcomes should be recorded
-	if len(mockStorage.outcomes) != 0 {
-		t.Errorf("Expected 0 outcomes when RL disabled, got %d", len(mockStorage.outcomes))
-	}
-}
-
-// TestAutoMode_RLNoStrategies tests that RL is disabled when no strategies available
-func TestAutoMode_RLNoStrategies(t *testing.T) {
-	store := storage.NewMemoryStorage()
-	linear := NewLinearMode(store)
-	tree := NewTreeMode(store)
-	divergent := NewDivergentMode(store)
-
-	auto := NewAutoMode(linear, tree, divergent)
-
-	mockStorage := &mockRLStorage{
-		strategies:      []*reinforcement.Strategy{}, // No strategies
-		outcomes:        []*reinforcement.Outcome{},
-		alphaIncrements: make(map[string]int),
-		betaIncrements:  make(map[string]int),
-	}
-
-	err := auto.SetRLStorage(mockStorage)
-	if err != nil {
-		t.Fatalf("SetRLStorage failed: %v", err)
-	}
-
-	// Should be disabled due to no strategies
-	if auto.rlEnabled {
-		t.Error("RL should be disabled when no strategies available")
+		t.Error("RL should not be enabled when SetRLStorage fails")
 	}
 }
 

@@ -281,9 +281,7 @@ func TestDeserializeFloat32_Nil(t *testing.T) {
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	if cfg.Enabled {
-		t.Error("expected Enabled to be false by default")
-	}
+	// Embeddings are ALWAYS enabled - no Enabled field
 	if cfg.Provider != "voyage" {
 		t.Errorf("expected Provider 'voyage', got '%s'", cfg.Provider)
 	}
@@ -299,9 +297,7 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.MinSimilarity != 0.5 {
 		t.Errorf("expected MinSimilarity 0.5, got %f", cfg.MinSimilarity)
 	}
-	if !cfg.CacheEmbeddings {
-		t.Error("expected CacheEmbeddings to be true by default")
-	}
+	// Caching is ALWAYS enabled - no CacheEmbeddings field
 	if cfg.CacheTTL != 24*time.Hour {
 		t.Errorf("expected CacheTTL 24h, got %v", cfg.CacheTTL)
 	}
@@ -318,14 +314,13 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestConfigFromEnv(t *testing.T) {
 	// Set environment variables
-	os.Setenv("EMBEDDINGS_ENABLED", "true")
+	// Note: EMBEDDINGS_ENABLED and EMBEDDINGS_CACHE_ENABLED are removed - always enabled
 	os.Setenv("EMBEDDINGS_PROVIDER", "test-provider")
 	os.Setenv("EMBEDDINGS_MODEL", "test-model")
 	os.Setenv("VOYAGE_API_KEY", "test-key")
 	os.Setenv("EMBEDDINGS_HYBRID_SEARCH", "true")
 	os.Setenv("EMBEDDINGS_RRF_K", "100")
 	os.Setenv("EMBEDDINGS_MIN_SIMILARITY", "0.75")
-	os.Setenv("EMBEDDINGS_CACHE_ENABLED", "false")
 	os.Setenv("EMBEDDINGS_CACHE_TTL", "1h")
 	os.Setenv("EMBEDDINGS_BATCH_SIZE", "50")
 	os.Setenv("EMBEDDINGS_MAX_CONCURRENT", "10")
@@ -333,14 +328,12 @@ func TestConfigFromEnv(t *testing.T) {
 
 	defer func() {
 		// Clean up
-		os.Unsetenv("EMBEDDINGS_ENABLED")
 		os.Unsetenv("EMBEDDINGS_PROVIDER")
 		os.Unsetenv("EMBEDDINGS_MODEL")
 		os.Unsetenv("VOYAGE_API_KEY")
 		os.Unsetenv("EMBEDDINGS_HYBRID_SEARCH")
 		os.Unsetenv("EMBEDDINGS_RRF_K")
 		os.Unsetenv("EMBEDDINGS_MIN_SIMILARITY")
-		os.Unsetenv("EMBEDDINGS_CACHE_ENABLED")
 		os.Unsetenv("EMBEDDINGS_CACHE_TTL")
 		os.Unsetenv("EMBEDDINGS_BATCH_SIZE")
 		os.Unsetenv("EMBEDDINGS_MAX_CONCURRENT")
@@ -349,9 +342,7 @@ func TestConfigFromEnv(t *testing.T) {
 
 	cfg := ConfigFromEnv()
 
-	if !cfg.Enabled {
-		t.Error("expected Enabled to be true")
-	}
+	// Embeddings are ALWAYS enabled - no Enabled field to check
 	if cfg.Provider != "test-provider" {
 		t.Errorf("expected Provider 'test-provider', got '%s'", cfg.Provider)
 	}
@@ -367,9 +358,7 @@ func TestConfigFromEnv(t *testing.T) {
 	if cfg.MinSimilarity != 0.75 {
 		t.Errorf("expected MinSimilarity 0.75, got %f", cfg.MinSimilarity)
 	}
-	if cfg.CacheEmbeddings {
-		t.Error("expected CacheEmbeddings to be false")
-	}
+	// Caching is ALWAYS enabled - no CacheEmbeddings field to check
 	if cfg.CacheTTL != time.Hour {
 		t.Errorf("expected CacheTTL 1h, got %v", cfg.CacheTTL)
 	}

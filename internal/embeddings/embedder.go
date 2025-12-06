@@ -91,19 +91,17 @@ type EmbeddingMetadata struct {
 
 // Config holds embedding configuration
 type Config struct {
-	Enabled  bool   `json:"enabled"`           // Master switch
 	Provider string `json:"provider"`          // "voyage" for Voyage AI
 	Model    string `json:"model"`             // "voyage-3-lite" or "voyage-3-large"
-	APIKey   string `json:"api_key,omitempty"` // API key for provider
+	APIKey   string `json:"api_key,omitempty"` // API key for provider (REQUIRED)
 
 	// Hybrid search settings
 	UseHybridSearch bool    `json:"use_hybrid_search"` // Enable RRF
 	RRFParameter    int     `json:"rrf_k"`             // Default: 60
 	MinSimilarity   float64 `json:"min_similarity"`    // Minimum similarity threshold (default: 0.5)
 
-	// Caching (Legacy - use LRU cache settings for new features)
-	CacheEmbeddings bool          `json:"cache_embeddings"` // Cache computed embeddings
-	CacheTTL        time.Duration `json:"cache_ttl"`        // Cache expiration
+	// Caching - ALWAYS enabled
+	CacheTTL time.Duration `json:"cache_ttl"` // Cache expiration
 
 	// LRU Cache settings
 	CacheMaxEntries int    `json:"cache_max_entries"` // Max cache entries (0 = unlimited)
@@ -117,15 +115,14 @@ type Config struct {
 }
 
 // DefaultConfig returns default embedding configuration
+// Embeddings are ALWAYS enabled - VOYAGE_API_KEY is REQUIRED
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:         false, // Opt-in feature
 		Provider:        "voyage",
 		Model:           "voyage-3-lite",
 		UseHybridSearch: true,
 		RRFParameter:    60,
 		MinSimilarity:   0.5,
-		CacheEmbeddings: true,
 		CacheTTL:        24 * time.Hour,
 		CacheMaxEntries: 10000, // 10K entries ~= 20MB for 512d embeddings
 		CachePersist:    false, // Opt-in for disk persistence
@@ -137,14 +134,12 @@ func DefaultConfig() *Config {
 }
 
 // ConfigFromEnv creates config from environment variables
+// Embeddings are ALWAYS enabled - VOYAGE_API_KEY is REQUIRED
+// Cache is ALWAYS enabled
 func ConfigFromEnv() *Config {
 	cfg := DefaultConfig()
 
 	// Read from environment
-	if os.Getenv("EMBEDDINGS_ENABLED") == "true" {
-		cfg.Enabled = true
-	}
-
 	if provider := os.Getenv("EMBEDDINGS_PROVIDER"); provider != "" {
 		cfg.Provider = provider
 	}
@@ -153,9 +148,8 @@ func ConfigFromEnv() *Config {
 		cfg.Model = model
 	}
 
-	if apiKey := os.Getenv("VOYAGE_API_KEY"); apiKey != "" {
-		cfg.APIKey = apiKey
-	}
+	// VOYAGE_API_KEY is REQUIRED - will fail at runtime if not set
+	cfg.APIKey = os.Getenv("VOYAGE_API_KEY")
 
 	if os.Getenv("EMBEDDINGS_HYBRID_SEARCH") == "true" {
 		cfg.UseHybridSearch = true
@@ -173,9 +167,7 @@ func ConfigFromEnv() *Config {
 		}
 	}
 
-	if os.Getenv("EMBEDDINGS_CACHE_ENABLED") == "false" {
-		cfg.CacheEmbeddings = false
-	}
+	// Cache is ALWAYS enabled - no EMBEDDINGS_CACHE_ENABLED check
 
 	if ttl := os.Getenv("EMBEDDINGS_CACHE_TTL"); ttl != "" {
 		if duration, err := time.ParseDuration(ttl); err == nil {
