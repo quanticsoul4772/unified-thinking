@@ -180,9 +180,8 @@ func (c *LRUEmbeddingCache) Save() error {
 	}
 
 	// Write to temp file first for atomic save
-	// #nosec G304 - path is from configuration, validated above
 	tempPath := cleanPath + ".tmp"
-	file, err := os.Create(tempPath)
+	file, err := os.Create(tempPath) // #nosec G304 -- path from config, validated above
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -241,8 +240,7 @@ func (c *LRUEmbeddingCache) Load() error {
 		return fmt.Errorf("invalid cache path: %s", c.persistPath)
 	}
 
-	// #nosec G304 - path is from configuration, validated above
-	file, err := os.Open(cleanPath)
+	file, err := os.Open(cleanPath) // #nosec G304 -- path from config, validated above
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // No cache file yet
