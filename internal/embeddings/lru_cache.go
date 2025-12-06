@@ -277,27 +277,27 @@ func (c *LRUEmbeddingCache) Save() error {
 	}
 
 	if err := encoder.Encode(data); err != nil {
-		file.Close()
-		os.Remove(tempPath)
+		_ = file.Close()
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to encode cache: %w", err)
 	}
 
 	if gzWriter != nil {
 		if err := gzWriter.Close(); err != nil {
-			file.Close()
-			os.Remove(tempPath)
+			_ = file.Close()
+			_ = os.Remove(tempPath)
 			return fmt.Errorf("failed to close gzip writer: %w", err)
 		}
 	}
 
 	if err := file.Close(); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to close file: %w", err)
 	}
 
 	// Atomic rename
 	if err := os.Rename(tempPath, c.persistPath); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to rename cache file: %w", err)
 	}
 
@@ -321,7 +321,9 @@ func (c *LRUEmbeddingCache) Load() error {
 		}
 		return fmt.Errorf("failed to open cache file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var decoder *gob.Decoder
 	var gzReader *gzip.Reader
@@ -330,10 +332,14 @@ func (c *LRUEmbeddingCache) Load() error {
 		gzReader, err = gzip.NewReader(file)
 		if err != nil {
 			// Try uncompressed fallback
-			file.Seek(0, 0)
+			if _, seekErr := file.Seek(0, 0); seekErr != nil {
+				return fmt.Errorf("failed to seek file: %w", seekErr)
+			}
 			decoder = gob.NewDecoder(file)
 		} else {
-			defer gzReader.Close()
+			defer func() {
+				_ = gzReader.Close()
+			}()
 			decoder = gob.NewDecoder(gzReader)
 		}
 	} else {
