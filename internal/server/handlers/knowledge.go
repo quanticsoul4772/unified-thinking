@@ -152,8 +152,8 @@ func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(ctx context.Context, req
 	opCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var results []*knowledge.Entity
-	var err error
+	// Initialize as empty slice, not nil - MCP schema requires array, not null
+	results := make([]*knowledge.Entity, 0)
 
 	switch request.SearchType {
 	case "semantic":
@@ -172,9 +172,13 @@ func (kh *KnowledgeHandlers) HandleSearchKnowledgeGraph(ctx context.Context, req
 
 	case "hybrid":
 		// Combined semantic + graph search
-		results, err = kh.kg.HybridSearch(opCtx, request.Query, request.Limit, request.MaxHops)
-		if err != nil {
-			return nil, nil, fmt.Errorf("hybrid search failed: %w", err)
+		hybridResults, hybridErr := kh.kg.HybridSearch(opCtx, request.Query, request.Limit, request.MaxHops)
+		if hybridErr != nil {
+			return nil, nil, fmt.Errorf("hybrid search failed: %w", hybridErr)
+		}
+		// Ensure we never return nil - MCP schema requires array
+		if hybridResults != nil {
+			results = hybridResults
 		}
 
 	default:
