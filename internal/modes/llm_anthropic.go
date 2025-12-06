@@ -68,7 +68,7 @@ Use the generate_continuations tool to provide your response.`, k)
 		MaxTokens: 2048,
 		System:    systemPrompt,
 		Messages:  []Message{NewTextMessage("user", prompt)},
-		Tools:     []Tool{{Name: "generate_continuations", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
+		Tools:     []any{Tool{Name: "generate_continuations", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
 		ToolChoice: map[string]string{
 			"type": "tool",
 			"name": "generate_continuations",
@@ -201,7 +201,7 @@ Use the score_thought tool to provide your evaluation.`
 		MaxTokens: 256,
 		System:    systemPrompt,
 		Messages:  []Message{NewTextMessage("user", userPrompt)},
-		Tools:     []Tool{{Name: "score_thought", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
+		Tools:     []any{Tool{Name: "score_thought", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
 		ToolChoice: map[string]string{
 			"type": "tool",
 			"name": "score_thought",
@@ -312,7 +312,7 @@ Use the extract_key_points tool to provide your response.`
 		MaxTokens: 512,
 		System:    systemPrompt,
 		Messages:  []Message{NewTextMessage("user", thought)},
-		Tools:     []Tool{{Name: "extract_key_points", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
+		Tools:     []any{Tool{Name: "extract_key_points", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
 		ToolChoice: map[string]string{
 			"type": "tool",
 			"name": "extract_key_points",
@@ -406,7 +406,7 @@ Use the calculate_novelty tool to provide your response.`
 		MaxTokens: 64,
 		System:    systemPrompt,
 		Messages:  []Message{NewTextMessage("user", userPrompt)},
-		Tools:     []Tool{{Name: "calculate_novelty", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
+		Tools:     []any{Tool{Name: "calculate_novelty", Description: toolDef["description"].(string), InputSchema: toolDef["input_schema"]}},
 		ToolChoice: map[string]string{
 			"type": "tool",
 			"name": "calculate_novelty",
@@ -499,11 +499,26 @@ Use the research_response tool to provide your findings.`
 	}, nil
 }
 
-// runResearchLoop handles multi-turn research with web search
+// runResearchLoop handles multi-turn research with server-side web search
+// Uses Anthropic's web_search_20250305 server-side tool - searches are executed automatically
 func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, userPrompt string, responseTool map[string]any) (*ResearchResponseResult, []Citation, int, error) {
 	var citations []Citation
 	searchCount := 0
 	messages := []Message{NewTextMessage("user", userPrompt)}
+
+	// Server-side web search tool (Anthropic executes searches automatically)
+	webSearchTool := ServerTool{
+		Type:    "web_search_20250305",
+		Name:    "web_search",
+		MaxUses: 5, // Limit to 5 searches per request
+	}
+
+	// Regular tool for structured response
+	responseToolDef := Tool{
+		Name:        "research_response",
+		Description: responseTool["description"].(string),
+		InputSchema: responseTool["input_schema"],
+	}
 
 	for i := 0; i < 10; i++ {
 		req := &APIRequest{
@@ -511,10 +526,7 @@ func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, 
 			MaxTokens: 4096,
 			System:    systemPrompt,
 			Messages:  messages,
-			Tools: []Tool{
-				{Name: "web_search", Description: WebSearchServerTool["description"].(string), InputSchema: WebSearchServerTool["input_schema"]},
-				{Name: "research_response", Description: responseTool["description"].(string), InputSchema: responseTool["input_schema"]},
-			},
+			Tools:     []any{webSearchTool, responseToolDef},
 		}
 
 		resp, err := a.SendRequest(ctx, req)
@@ -522,12 +534,44 @@ func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, 
 			return nil, nil, 0, err
 		}
 
+		// Process response blocks
+		var assistantBlocks []ContentBlock
 		for _, block := range resp.Content {
-			if block.Type == "tool_use" {
-				switch block.Name {
-				case "web_search":
+			switch block.Type {
+			case "text":
+				// Collect citations from text blocks
+				for _, cit := range block.Citations {
+					citations = append(citations, cit)
+				}
+				assistantBlocks = append(assistantBlocks, ContentBlock{
+					Type: "text",
+					Text: block.Text,
+				})
+
+			case "server_tool_use":
+				// Server-side web search was invoked
+				if block.Name == "web_search" {
 					searchCount++
-				case "research_response":
+				}
+				assistantBlocks = append(assistantBlocks, ContentBlock{
+					Type:  block.Type,
+					ID:    block.ID,
+					Name:  block.Name,
+					Input: block.Input,
+				})
+
+			case "web_search_tool_result":
+				// Search results from server-side execution
+				// Pass content as-is (Anthropic expects the array structure)
+				assistantBlocks = append(assistantBlocks, ContentBlock{
+					Type:      block.Type,
+					ToolUseID: block.ToolUseID,
+					Content:   block.Content, // Keep as-is, not convert to string
+				})
+
+			case "tool_use":
+				// Regular tool use (research_response)
+				if block.Name == "research_response" {
 					inputBytes, err := json.Marshal(block.Input)
 					if err != nil {
 						return nil, nil, 0, fmt.Errorf("marshal tool input: %w", err)
@@ -538,24 +582,23 @@ func (a *AnthropicLLMClient) runResearchLoop(ctx context.Context, systemPrompt, 
 					}
 					return &result, citations, searchCount, nil
 				}
-			}
-		}
-
-		if resp.StopReason == "end_turn" {
-			break
-		}
-
-		if resp.StopReason == "tool_use" {
-			var assistantBlocks []ContentBlock
-			for _, block := range resp.Content {
 				assistantBlocks = append(assistantBlocks, ContentBlock{
 					Type:  block.Type,
-					Text:  block.Text,
 					ID:    block.ID,
 					Name:  block.Name,
 					Input: block.Input,
 				})
 			}
+		}
+
+		// Check for terminal conditions
+		if resp.StopReason == "end_turn" {
+			break
+		}
+
+		// Handle pause_turn (long-running turn)
+		if resp.StopReason == "pause_turn" || resp.StopReason == "tool_use" {
+			// Continue the conversation with the assistant's response
 			messages = append(messages, NewBlockMessage("assistant", assistantBlocks))
 		}
 	}

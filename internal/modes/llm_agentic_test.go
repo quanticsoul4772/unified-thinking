@@ -268,8 +268,8 @@ func TestAPIRequest_Marshaling(t *testing.T) {
 		Messages: []Message{
 			{Role: "user", Content: "Hello"},
 		},
-		Tools: []Tool{
-			{
+		Tools: []any{
+			Tool{
 				Name:        "test-tool",
 				Description: "A test",
 				InputSchema: map[string]string{"type": "object"},

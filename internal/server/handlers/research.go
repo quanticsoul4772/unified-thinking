@@ -66,19 +66,28 @@ func (h *ResearchHandler) HandleResearchWithSearch(ctx context.Context, req *mcp
 	if err != nil {
 		return nil, nil, fmt.Errorf("research failed: %w", err)
 	}
+	if result == nil {
+		return nil, nil, fmt.Errorf("research returned nil result")
+	}
 
-	// Convert citations
-	citations := make([]CitationInfo, len(result.Citations))
-	for i, c := range result.Citations {
-		citations[i] = CitationInfo{
+	// Convert citations (ensure non-nil slice)
+	citations := make([]CitationInfo, 0, len(result.Citations))
+	for _, c := range result.Citations {
+		citations = append(citations, CitationInfo{
 			URL:   c.URL,
 			Title: c.Title,
-		}
+		})
+	}
+
+	// Ensure KeyInsights is non-nil
+	keyInsights := result.KeyInsights
+	if keyInsights == nil {
+		keyInsights = make([]string, 0)
 	}
 
 	response := &ResearchWithSearchResponse{
 		Findings:    result.Findings,
-		KeyInsights: result.KeyInsights,
+		KeyInsights: keyInsights,
 		Confidence:  result.Confidence,
 		Citations:   citations,
 		Searches:    result.Searches,

@@ -129,8 +129,8 @@ func (a *AgenticClient) RunWithSystem(ctx context.Context, task, systemPrompt st
 	messages := []Message{NewTextMessage("user", task)}
 	tools := a.registry.GetToolsForClaude()
 
-	// Convert to Tool slice
-	var toolDefs []Tool
+	// Convert to []any for APIRequest.Tools
+	var toolDefs []any
 	for _, t := range tools {
 		toolDefs = append(toolDefs, Tool{
 			Name:        t["name"].(string),

@@ -149,12 +149,6 @@ var ResearchWithSearchTool = ToolDefinition{
 	},
 }
 
-// WebSearchServerTool - Anthropic's built-in web search (server-side)
-var WebSearchServerTool = map[string]interface{}{
-	"type": "web_search_20250305",
-	"name": "web_search",
-}
-
 // Structured output response types
 
 // GenerateContinuationsResult is the parsed result from generate_continuations tool
@@ -190,8 +184,11 @@ type ResearchResponseResult struct {
 
 // Citation represents a web search citation
 type Citation struct {
-	URL   string `json:"url"`
-	Title string `json:"title"`
+	Type           string `json:"type,omitempty"`
+	URL            string `json:"url"`
+	Title          string `json:"title"`
+	EncryptedIndex string `json:"encrypted_index,omitempty"`
+	CitedText      string `json:"cited_text,omitempty"`
 }
 
 // ResearchResult combines research findings with citations
