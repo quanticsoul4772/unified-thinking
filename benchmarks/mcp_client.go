@@ -82,6 +82,7 @@ type MCPClient struct {
 	requestID  int
 	mu         sync.Mutex
 	writeMu    sync.Mutex
+	readMu     sync.Mutex  // Protect stdout reader from concurrent access
 	waitOnce   sync.Once   // Ensure cmd.Wait() is only called once
 	waitErr    error       // Result of cmd.Wait()
 	done       chan struct{}
@@ -428,6 +429,10 @@ func (c *MCPClient) CallTool(toolName string, args map[string]interface{}) (*Too
 // readJSONRPCResponse reads a single JSON-RPC response from stdout
 // This provides unified response parsing for all RPC methods
 func (c *MCPClient) readJSONRPCResponse() (*JSONRPCResponse, error) {
+	// Protect stdout reader from concurrent access
+	c.readMu.Lock()
+	defer c.readMu.Unlock()
+
 	line, err := c.stdout.ReadBytes('\n')
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
