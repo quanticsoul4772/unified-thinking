@@ -167,14 +167,21 @@ func (c *LRUEmbeddingCache) Save() error {
 		Version:   1,
 	}
 
+	// Validate and clean the persist path
+	cleanPath := filepath.Clean(c.persistPath)
+	if cleanPath == "." || cleanPath == "/" {
+		return fmt.Errorf("invalid cache path: %s", c.persistPath)
+	}
+
 	// Ensure directory exists
-	dir := filepath.Dir(c.persistPath)
+	dir := filepath.Dir(cleanPath)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// Write to temp file first for atomic save
-	tempPath := c.persistPath + ".tmp"
+	// #nosec G304 - path is from configuration, validated above
+	tempPath := cleanPath + ".tmp"
 	file, err := os.Create(tempPath)
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
@@ -210,7 +217,7 @@ func (c *LRUEmbeddingCache) Save() error {
 	}
 
 	// Atomic rename
-	if err := os.Rename(tempPath, c.persistPath); err != nil {
+	if err := os.Rename(tempPath, cleanPath); err != nil {
 		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to rename cache file: %w", err)
 	}
@@ -228,7 +235,14 @@ func (c *LRUEmbeddingCache) Load() error {
 		return nil
 	}
 
-	file, err := os.Open(c.persistPath)
+	// Validate and clean the persist path
+	cleanPath := filepath.Clean(c.persistPath)
+	if cleanPath == "." || cleanPath == "/" {
+		return fmt.Errorf("invalid cache path: %s", c.persistPath)
+	}
+
+	// #nosec G304 - path is from configuration, validated above
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // No cache file yet
