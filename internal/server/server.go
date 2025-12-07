@@ -323,7 +323,7 @@ func (s *UnifiedServer) initializeAdvancedHandlers(llmClient *modes.AnthropicLLM
 
 	// LLM-based problem decomposer for decompose-problem tool
 	decompositionGen := reasoning.NewAnthropicDecompositionGenerator(llmClient)
-	llmProblemDecomposer := reasoning.NewLLMProblemDecomposer(decompositionGen, s.problemDecomposer)
+	llmProblemDecomposer := reasoning.NewLLMProblemDecomposer(decompositionGen)
 	s.decisionHandler.SetLLMProblemDecomposer(llmProblemDecomposer)
 
 	// Case-based reasoner

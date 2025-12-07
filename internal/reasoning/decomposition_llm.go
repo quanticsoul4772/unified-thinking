@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -19,28 +18,25 @@ type DecompositionGenerator interface {
 // LLMProblemDecomposer uses LLM for generating context-aware problem decomposition
 type LLMProblemDecomposer struct {
 	generator DecompositionGenerator
-	fallback  *ProblemDecomposer // Fallback to template-based when LLM unavailable
 	counter   int
 }
 
 // NewLLMProblemDecomposer creates a new LLM-enhanced problem decomposer
-func NewLLMProblemDecomposer(generator DecompositionGenerator, fallback *ProblemDecomposer) *LLMProblemDecomposer {
+func NewLLMProblemDecomposer(generator DecompositionGenerator) *LLMProblemDecomposer {
 	return &LLMProblemDecomposer{
 		generator: generator,
-		fallback:  fallback,
 	}
 }
 
-// DecomposeProblemWithDomain generates decomposition using LLM when available
+// DecomposeProblemWithDomain generates decomposition using LLM - fails if generator unavailable
 func (pd *LLMProblemDecomposer) DecomposeProblemWithDomain(ctx context.Context, problem string, explicitDomain *Domain) (*types.ProblemDecomposition, error) {
 	if problem == "" {
 		return nil, fmt.Errorf("problem cannot be empty")
 	}
 
-	// If no LLM generator, use template-based fallback
+	// No generator = fail fast, no fallback
 	if pd.generator == nil {
-		log.Printf("[WARN] No LLM generator configured for problem decomposition, using template fallback")
-		return pd.fallback.DecomposeProblemWithDomain(problem, explicitDomain)
+		return nil, fmt.Errorf("LLM generator not configured - ANTHROPIC_API_KEY required")
 	}
 
 	// Detect domain if not explicitly provided
