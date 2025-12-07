@@ -260,6 +260,9 @@ func (cbr *CaseBasedReasoner) Retrieve(ctx context.Context, req *RetrieveRequest
 		return nil, fmt.Errorf("problem description required")
 	}
 
+	// DEBUG: Log case library size
+	fmt.Printf("[CBR Retrieve] Total cases in library: %d\n", len(cbr.cases))
+
 	// Get candidate cases
 	candidates := cbr.getCandidateCases(req)
 
