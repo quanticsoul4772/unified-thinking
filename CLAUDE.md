@@ -29,7 +29,7 @@ Go-based MCP server consolidating 5 TypeScript servers (sequential-thinking, bra
 | `internal/similarity/` | Thought similarity search via embeddings |
 | `internal/claudecode/` | Claude Code optimizations: format, errors, session, presets |
 | `internal/streaming/` | MCP progress notifications for long-running tools |
-| `internal/testutil/` | Testing utilities: MockLLMClient for GoT testing without API calls |
+| `internal/testutil/` | Testing utilities: MockLLMClient for GoT, MockHypothesisGenerator for abductive reasoning |
 
 ### Thinking Modes
 
@@ -571,7 +571,7 @@ AnthropicBaseClient (llm_base.go)
 
 **Reasoning**: `internal/reasoning/probabilistic.go`, `causal.go`, `decision.go`, `temporal.go`, `domain_templates.go`
 
-**Testing**: `internal/testutil/mock_llm.go` (MockLLMClient for GoT testing without API)
+**Testing**: `internal/testutil/mock_llm.go` (MockLLMClient for GoT, MockHypothesisGenerator for abductive reasoning)
 
 **Dev Tools**: `build.ps1` (PowerShell), `scripts/pre-commit`, `scripts/install-hooks.{sh,ps1}`
 
