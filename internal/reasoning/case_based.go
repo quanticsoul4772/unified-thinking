@@ -24,11 +24,87 @@ type CaseBasedReasoner struct {
 
 // NewCaseBasedReasoner creates a new case-based reasoner
 func NewCaseBasedReasoner(store storage.Storage) *CaseBasedReasoner {
-	return &CaseBasedReasoner{
+	cbr := &CaseBasedReasoner{
 		storage:    store,
 		cases:      make(map[string]*Case),
 		caseIndex:  NewCaseIndex(),
 		analogical: NewAnalogicalReasoner(),
+	}
+	// Pre-populate with default cases
+	cbr.populateDefaultCases()
+	return cbr
+}
+
+// populateDefaultCases adds common problem-solution cases to the library
+func (cbr *CaseBasedReasoner) populateDefaultCases() {
+	defaultCases := []*Case{
+		{
+			ID:     "case-race-condition-fix",
+			Domain: "software-engineering",
+			Tags:   []string{"concurrency", "debugging", "go"},
+			Problem: &ProblemDescription{
+				Description: "Fix race conditions in concurrent Go code",
+				Context:     "Multiple goroutines accessing shared state",
+				Goals:       []string{"Eliminate data races", "Maintain performance"},
+			},
+			Solution: &SolutionDescription{
+				Description: "Use sync.Mutex or sync.RWMutex to protect shared state",
+				Approach:    "synchronization",
+				Steps:       []string{"Identify shared state", "Add mutex", "Lock before access", "Defer unlock"},
+			},
+			Outcome: &Outcome{
+				Success:       true,
+				Effectiveness: 0.95,
+			},
+			SuccessRate: 0.95,
+		},
+		{
+			ID:     "case-ci-test-failure",
+			Domain: "devops",
+			Tags:   []string{"testing", "ci-cd", "debugging"},
+			Problem: &ProblemDescription{
+				Description: "Debug failing CI tests",
+				Context:     "Tests pass locally but fail in CI",
+				Goals:       []string{"Identify root cause", "Fix tests", "Prevent recurrence"},
+			},
+			Solution: &SolutionDescription{
+				Description: "Check for environment differences, missing dependencies, and timing issues",
+				Approach:    "systematic-debugging",
+				Steps:       []string{"Compare environments", "Check dependencies", "Add retries for flaky tests", "Improve test isolation"},
+			},
+			Outcome: &Outcome{
+				Success:       true,
+				Effectiveness: 0.85,
+			},
+			SuccessRate: 0.85,
+		},
+		{
+			ID:     "case-performance-optimization",
+			Domain: "software-engineering",
+			Tags:   []string{"performance", "optimization"},
+			Problem: &ProblemDescription{
+				Description: "Optimize slow application performance",
+				Context:     "Application response time degraded",
+				Goals:       []string{"Identify bottlenecks", "Improve response time"},
+			},
+			Solution: &SolutionDescription{
+				Description: "Profile, identify hotspots, optimize critical paths",
+				Approach:    "data-driven-optimization",
+				Steps:       []string{"Profile application", "Identify bottlenecks", "Optimize hot paths", "Add caching", "Measure improvement"},
+			},
+			Outcome: &Outcome{
+				Success:       true,
+				Effectiveness: 0.9,
+			},
+			SuccessRate: 0.9,
+		},
+	}
+
+	for _, c := range defaultCases {
+		c.CreatedAt = time.Now()
+		c.UpdatedAt = time.Now()
+		cbr.caseIndex.indexCase(c)
+		cbr.cases[c.ID] = c
 	}
 }
 
