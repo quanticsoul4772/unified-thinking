@@ -35,16 +35,26 @@ echo ">> Running go vet..."
 go vet ./...
 echo "   Vet: OK"
 
-# 3. Short tests
-echo ">> Running short tests..."
-go test -short ./... > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo "ERROR: Tests failed. Run 'go test ./...' to see details"
+# 3. Quick compilation check (much faster than full tests)
+echo ">> Running build check..."
+if ! go build ./... 2>&1; then
+    echo "ERROR: Build failed"
     exit 1
+fi
+echo "   Build: OK"
+
+# 4. Run only tests for changed packages (fast, targeted)
+echo ">> Running tests for changed packages..."
+CHANGED_PACKAGES=$(echo "$STAGED_GO_FILES" | xargs -n1 dirname | sort -u | sed 's|^|./|')
+if [ -n "$CHANGED_PACKAGES" ]; then
+    if ! go test -short -timeout 30s $CHANGED_PACKAGES 2>&1; then
+        echo "ERROR: Tests failed. Run 'go test ./...' to see details"
+        exit 1
+    fi
 fi
 echo "   Tests: OK"
 
-# 4. Optional: golangci-lint (if available)
+# 5. Optional: golangci-lint (if available)
 if command -v golangci-lint &> /dev/null; then
     echo ">> Running golangci-lint..."
     golangci-lint run --fast --timeout=2m
