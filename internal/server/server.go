@@ -275,11 +275,15 @@ func NewUnifiedServer(
 	// Requires VOYAGE_API_KEY, will fail at tool call time if not set
 	voyageKey := os.Getenv("VOYAGE_API_KEY")
 	if voyageKey != "" {
+		textModel := os.Getenv("EMBEDDINGS_MODEL")
+		if textModel == "" {
+			textModel = "voyage-3-lite"
+		}
 		multimodalModel := os.Getenv("MULTIMODAL_MODEL")
 		if multimodalModel == "" {
 			multimodalModel = "voyage-multimodal-3"
 		}
-		multimodalEmbedder := embeddings.NewVoyageMultimodalEmbedder(voyageKey, multimodalModel)
+		multimodalEmbedder := embeddings.NewVoyageMultimodalEmbedder(voyageKey, textModel, multimodalModel)
 		s.multimodalHandler = handlers.NewMultimodalHandler(multimodalEmbedder)
 	}
 
