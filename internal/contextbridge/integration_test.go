@@ -682,8 +682,8 @@ func TestIntegration_EmbeddingSimilarityPath(t *testing.T) {
 		t.Logf("Similarity(1,2)=%.3f, Similarity(1,3)=%.3f", sim12, sim13)
 	})
 
-	// Test 3: Fallback to concept similarity when embeddings missing
-	t.Run("fallback_without_embeddings", func(t *testing.T) {
+	// Test 3: NO fallback when embeddings missing - should return 0
+	t.Run("no_fallback_without_embeddings", func(t *testing.T) {
 		sigWithEmb := &Signature{
 			KeyConcepts: []string{"database", "optimization"},
 			Embedding:   embedding1,
@@ -693,12 +693,12 @@ func TestIntegration_EmbeddingSimilarityPath(t *testing.T) {
 			Embedding:   nil, // No embedding
 		}
 
-		// Should still calculate similarity using concepts
+		// Should return 0.0 - NO fallback to concept similarity
 		sim := embeddingSim.Calculate(sigWithEmb, sigWithoutEmb)
-		if sim == 0 {
-			t.Error("Expected non-zero similarity even without embedding (concept fallback)")
+		if sim != 0 {
+			t.Errorf("Expected zero similarity when embedding missing (no fallback), got %.3f", sim)
 		}
-		t.Logf("Similarity with missing embedding: %.3f", sim)
+		t.Logf("Similarity with missing embedding (expected 0.0): %.3f", sim)
 	})
 
 	// Test 4: Hybrid similarity mode indicator in response

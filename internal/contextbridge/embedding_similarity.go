@@ -26,32 +26,28 @@ func NewEmbeddingSimilarity(embedder embeddings.Embedder, fallback SimilarityCal
 }
 
 // Calculate computes similarity between two signatures
-// If embeddings are available, uses cosine similarity on embeddings
-// Falls back to concept-based similarity if embeddings are missing
+// REQUIRES: Both signatures must have embeddings - no fallback to concept similarity
 func (es *EmbeddingSimilarity) Calculate(sig1, sig2 *Signature) float64 {
 	if sig1 == nil || sig2 == nil {
 		return 0.0
 	}
 
-	// If both have embeddings, use embedding similarity
-	if len(sig1.Embedding) > 0 && len(sig2.Embedding) > 0 {
-		embeddingSim := embeddings.CosineSimilarity(sig1.Embedding, sig2.Embedding)
-
-		// In hybrid mode, combine with concept similarity
-		if es.hybridMode && es.fallback != nil {
-			conceptSim := es.fallback.Calculate(sig1, sig2)
-			return (embeddingSim * es.embedWeight) + (conceptSim * (1.0 - es.embedWeight))
-		}
-
-		return embeddingSim
+	// Both signatures MUST have embeddings - no fallback
+	if len(sig1.Embedding) == 0 || len(sig2.Embedding) == 0 {
+		// Return 0.0 to indicate no valid similarity (caller should have ensured embeddings exist)
+		log.Printf("[ERROR] EmbeddingSimilarity.Calculate called without embeddings - this is a programming error")
+		return 0.0
 	}
 
-	// Fall back to concept-based similarity
-	if es.fallback != nil {
-		return es.fallback.Calculate(sig1, sig2)
+	embeddingSim := embeddings.CosineSimilarity(sig1.Embedding, sig2.Embedding)
+
+	// In hybrid mode, combine with concept similarity for enhanced results
+	if es.hybridMode && es.fallback != nil {
+		conceptSim := es.fallback.Calculate(sig1, sig2)
+		return (embeddingSim * es.embedWeight) + (conceptSim * (1.0 - es.embedWeight))
 	}
 
-	return 0.0
+	return embeddingSim
 }
 
 // GenerateEmbedding generates an embedding for a signature's content

@@ -74,8 +74,6 @@ func (cb *ContextBridge) EnrichResponse(
 
 	// Generate embedding for semantic similarity if embedder is available
 	// Use a separate context with timeout for embedding generation
-	var embeddingFailed bool
-	var embeddingError string
 	if cb.embedder != nil && len(sig.Embedding) == 0 {
 		// Extract content for embedding (use full param content)
 		content := extractTextContent(params)
@@ -86,10 +84,8 @@ func (cb *ContextBridge) EnrichResponse(
 			cancel()
 
 			if embedErr != nil {
-				// Graceful degradation: log warning but continue with concept-based similarity
-				embeddingFailed = true
-				embeddingError = embedErr.Error()
-				log.Printf("[WARN] Embedding generation failed (will use concept similarity): %v", embedErr)
+				// FAIL FAST: Embedding is required, do not fallback
+				return nil, fmt.Errorf("embedding generation failed: %w", embedErr)
 			} else if len(embedding) > 0 {
 				sig.Embedding = embedding
 				log.Printf("[DEBUG] Generated embedding for signature (%d dimensions)", len(embedding))
@@ -107,11 +103,10 @@ func (cb *ContextBridge) EnrichResponse(
 	}
 	cb.metrics.RecordCacheMiss()
 
-	// Check if we've exceeded timeout - gracefully degrade with visible notification
+	// Check if we've exceeded timeout - FAIL FAST
 	if time.Now().After(deadline) {
 		cb.metrics.RecordTimeout()
-		log.Printf("[WARN] Context bridge timeout exceeded (%v) for tool %s", cb.config.Timeout, toolName)
-		return cb.buildDegradedResponse(result, "timeout", fmt.Sprintf("Context bridge timeout exceeded (%v)", cb.config.Timeout)), nil
+		return nil, fmt.Errorf("context bridge timeout exceeded (%v) for tool %s", cb.config.Timeout, toolName)
 	}
 
 	// Find matches
@@ -137,11 +132,11 @@ func (cb *ContextBridge) EnrichResponse(
 		cb.cache.Put(cacheKey, matches)
 	}
 
-	return cb.buildEnrichedResponseWithStatus(result, matches, embeddingFailed, embeddingError), nil
+	return cb.buildEnrichedResponse(result, matches), nil
 }
 
-// buildEnrichedResponseWithStatus creates the enriched response with context bridge data and status info
-func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, matches []*Match, embeddingFailed bool, embeddingError string) interface{} {
+// buildEnrichedResponse creates the enriched response with context bridge data
+func (cb *ContextBridge) buildEnrichedResponse(result interface{}, matches []*Match) interface{} {
 	// Always return context_bridge structure for visibility (even with no matches)
 	bridgeData := map[string]interface{}{
 		"version":        "1.0",
@@ -150,12 +145,8 @@ func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, mat
 		"recommendation": cb.generateRecommendation(matches),
 	}
 
-	// Add embedding status for visibility
-	if embeddingFailed {
-		bridgeData["embedding_status"] = "failed"
-		bridgeData["embedding_error"] = embeddingError
-		bridgeData["similarity_mode"] = "concept_only"
-	} else if cb.embedder != nil {
+	// Add similarity mode - always semantic_embedding since we fail fast if embedder fails
+	if cb.embedder != nil {
 		bridgeData["similarity_mode"] = "semantic_embedding"
 	} else {
 		bridgeData["similarity_mode"] = "concept_only"
@@ -171,25 +162,6 @@ func (cb *ContextBridge) buildEnrichedResponseWithStatus(result interface{}, mat
 	return map[string]interface{}{
 		"result":         result,
 		"context_bridge": bridgeData,
-	}
-}
-
-// buildEnrichedResponse creates the enriched response with context bridge data
-func (cb *ContextBridge) buildEnrichedResponse(result interface{}, matches []*Match) interface{} {
-	return cb.buildEnrichedResponseWithStatus(result, matches, false, "")
-}
-
-// buildDegradedResponse creates a response that notifies about degraded operation
-func (cb *ContextBridge) buildDegradedResponse(result interface{}, reason string, detail string) interface{} {
-	return map[string]interface{}{
-		"result": result,
-		"context_bridge": map[string]interface{}{
-			"version": "1.0",
-			"status":  "degraded",
-			"reason":  reason,
-			"detail":  detail,
-			"matches": []*Match{}, // Empty matches
-		},
 	}
 }
 
