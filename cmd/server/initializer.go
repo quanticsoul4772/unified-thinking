@@ -50,7 +50,7 @@ func InitializeServer() (*ServerComponents, error) {
 	defer func() {
 		if !success {
 			if closer, ok := store.(interface{ Close() error }); ok {
-				closer.Close()
+				_ = closer.Close()
 			}
 		}
 	}()
