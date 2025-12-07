@@ -68,24 +68,21 @@ Return ONLY valid JSON in this format:
 func (ar *AbductiveReasoner) parseHypothesesFromLLM(response string, observations []*Observation) ([]*Hypothesis, error) {
 	// Extract JSON from response (handle markdown code blocks)
 	jsonStr := response
-	if strings.Contains(response, "```json") {
-		start := strings.Index(response, "```json") + 7
-		// Skip newline after ```json
-		if start < len(response) && response[start] == '\n' {
-			start++
-		}
-		// Find closing ``` after the opening one
-		end := strings.Index(response[start:], "```")
-		if end > 0 {
+
+	// Remove markdown code blocks if present
+	if idx := strings.Index(response, "```json\n"); idx >= 0 {
+		start := idx + 8 // len("```json\n")
+		if end := strings.Index(response[start:], "\n```"); end >= 0 {
 			jsonStr = response[start : start+end]
 		}
-	} else if strings.Contains(response, "```") {
-		start := strings.Index(response, "```") + 3
-		if start < len(response) && response[start] == '\n' {
-			start++
+	} else if idx := strings.Index(response, "```json"); idx >= 0 {
+		start := idx + 7
+		if end := strings.Index(response[start:], "```"); end >= 0 {
+			jsonStr = response[start : start+end]
 		}
-		end := strings.Index(response[start:], "```")
-		if end > 0 {
+	} else if idx := strings.Index(response, "```\n"); idx >= 0 {
+		start := idx + 4
+		if end := strings.Index(response[start:], "\n```"); end >= 0 {
 			jsonStr = response[start : start+end]
 		}
 	}
