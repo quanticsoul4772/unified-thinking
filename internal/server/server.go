@@ -290,6 +290,8 @@ func NewUnifiedServer(
 	// Initialize agent handler - ALWAYS enabled
 	// Requires ANTHROPIC_API_KEY, will fail at tool call time if not set
 	toolRegistry := modes.NewToolRegistry()
+	// Populate with safe tools for agentic use
+	s.populateToolRegistry(toolRegistry)
 	s.agentHandler = handlers.NewAgentHandler(toolRegistry)
 
 	return s, nil
