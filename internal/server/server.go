@@ -255,9 +255,6 @@ func NewUnifiedServer(
 		calibrationHandler: handlers.NewCalibrationHandler(),
 	}
 
-	// Initialize Phase 2-3 handlers
-	s.initializeAdvancedHandlers()
-
 	// Initialize Graph-of-Thoughts (requires ANTHROPIC_API_KEY)
 	s.graphController = modes.NewGraphController(store)
 	llmClient, err := modes.NewAnthropicLLMClient()
@@ -266,6 +263,9 @@ func NewUnifiedServer(
 	}
 	log.Println("Graph-of-Thoughts enabled with Anthropic Claude API")
 	s.gotHandler = handlers.NewGoTHandler(s.graphController, llmClient)
+
+	// Initialize Phase 2-3 handlers with LLM client
+	s.initializeAdvancedHandlers(llmClient)
 
 	// Initialize research handler with web search capability
 	// Uses same LLM client, web search enabled via WEB_SEARCH_ENABLED env var
@@ -298,7 +298,7 @@ func NewUnifiedServer(
 }
 
 // initializeAdvancedHandlers initializes Phase 2-3 reasoning handlers
-func (s *UnifiedServer) initializeAdvancedHandlers() {
+func (s *UnifiedServer) initializeAdvancedHandlers(llmClient *modes.AnthropicLLMClient) {
 	// Dual-process executor
 	dualProcessExecutor := processing.NewDualProcessExecutor(s.storage, map[types.ThinkingMode]modes.ThinkingMode{
 		types.ModeLinear:    s.linear,
@@ -311,8 +311,9 @@ func (s *UnifiedServer) initializeAdvancedHandlers() {
 	backtrackingManager := modes.NewBacktrackingManager(s.storage)
 	s.backtrackingHandler = handlers.NewBacktrackingHandler(backtrackingManager, s.storage)
 
-	// Abductive reasoner
-	abductiveReasoner := reasoning.NewAbductiveReasoner(s.storage)
+	// Abductive reasoner with LLM-based hypothesis generation
+	hypothesisGen := reasoning.NewAnthropicHypothesisGenerator(llmClient)
+	abductiveReasoner := reasoning.NewAbductiveReasoner(s.storage, hypothesisGen)
 	s.abductiveHandler = handlers.NewAbductiveHandler(abductiveReasoner, s.storage)
 
 	// Case-based reasoner

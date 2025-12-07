@@ -16,13 +16,20 @@ import (
 
 // AbductiveReasoner performs inference to the best explanation
 type AbductiveReasoner struct {
-	storage storage.Storage
+	storage   storage.Storage
+	llmClient HypothesisGenerator
+}
+
+// HypothesisGenerator interface for LLM-based hypothesis generation
+type HypothesisGenerator interface {
+	GenerateHypotheses(ctx context.Context, prompt string) (string, error)
 }
 
 // NewAbductiveReasoner creates a new abductive reasoner
-func NewAbductiveReasoner(store storage.Storage) *AbductiveReasoner {
+func NewAbductiveReasoner(store storage.Storage, llm HypothesisGenerator) *AbductiveReasoner {
 	return &AbductiveReasoner{
-		storage: store,
+		storage:   store,
+		llmClient: llm,
 	}
 }
 
@@ -127,40 +134,23 @@ func (ar *AbductiveReasoner) GenerateHypotheses(ctx context.Context, req *Genera
 		return nil, fmt.Errorf("no observations provided")
 	}
 
-	hypotheses := make([]*Hypothesis, 0)
-
-	// Strategy 1: Single-cause hypothesis (one explanation for all observations)
-	singleCause := ar.generateSingleCauseHypothesis(req.Observations)
-	if singleCause != nil {
-		hypotheses = append(hypotheses, singleCause)
+	if ar.llmClient == nil {
+		return nil, fmt.Errorf("ANTHROPIC_API_KEY required: hypothesis generation uses LLM")
 	}
 
-	// Strategy 2: Hidden variable hypothesis (confounding factor)
-	hiddenVar := ar.generateHiddenVariableHypothesis(req.Observations)
-	if hiddenVar != nil {
-		hypotheses = append(hypotheses, hiddenVar)
+	// Build prompt for LLM hypothesis generation
+	prompt := ar.buildHypothesisPrompt(req)
+
+	// Generate hypotheses using LLM
+	response, err := ar.llmClient.GenerateHypotheses(ctx, prompt)
+	if err != nil {
+		return nil, fmt.Errorf("LLM hypothesis generation failed: %w", err)
 	}
 
-	// Strategy 3: Causal chain hypothesis (sequential causation)
-	causalChain := ar.generateCausalChainHypothesis(req.Observations)
-	if causalChain != nil {
-		hypotheses = append(hypotheses, causalChain)
-	}
-
-	// Strategy 4: Multiple independent causes (different explanations for different observations)
-	multipleCauses := ar.generateMultipleCauseHypotheses(req.Observations)
-	hypotheses = append(hypotheses, multipleCauses...)
-
-	// Strategy 5: Pattern-based hypotheses (if temporal patterns exist)
-	patterns := ar.generatePatternHypotheses(req.Observations)
-	hypotheses = append(hypotheses, patterns...)
-
-	// Strategy 6: Feedback loop hypothesis (circular causation)
-	if len(req.Observations) >= 3 {
-		feedbackLoop := ar.generateFeedbackLoopHypothesis(req.Observations)
-		if feedbackLoop != nil {
-			hypotheses = append(hypotheses, feedbackLoop)
-		}
+	// Parse LLM response into structured hypotheses
+	hypotheses, err := ar.parseHypothesesFromLLM(response, req.Observations)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse hypotheses: %w", err)
 	}
 
 	// Filter by parsimony threshold
