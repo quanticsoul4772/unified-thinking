@@ -122,6 +122,11 @@ make clean              # Remove bin/
 ### Case-Based (2)
 `retrieve-similar-cases`, `perform-cbr-cycle`
 
+**Pre-populated Case Library**: 3 default cases automatically loaded:
+- `case-race-condition-fix` - Concurrent Go code synchronization patterns
+- `case-ci-test-failure` - CI/CD debugging and environment troubleshooting
+- `case-performance-optimization` - Performance profiling and optimization strategies
+
 ### Symbolic (2)
 `prove-theorem`, `check-constraints`
 
@@ -144,13 +149,17 @@ make clean              # Remove bin/
 `export-session`, `import-session`, `list-presets`, `run-preset`, `format-response`
 
 ### Research (1)
-`research-with-search` - Web-augmented research using Anthropic's server-side web search (requires `ANTHROPIC_API_KEY` + `WEB_SEARCH_ENABLED=true`)
+`research-with-search` - Web-augmented research using Anthropic's server-side web search (uses `ANTHROPIC_API_KEY`)
 
 ### Multimodal (1)
-`embed-multimodal` - Generate embeddings for images using Voyage AI's multimodal model (requires `VOYAGE_API_KEY` + `MULTIMODAL_ENABLED=true`)
+`embed-multimodal` - Generate embeddings for text and images using Voyage AI's multimodal model (uses `VOYAGE_API_KEY`)
 
 ### Agentic (2)
-`run-agent`, `list-agent-tools` - Programmatic tool calling via agentic LLM loop (requires `ANTHROPIC_API_KEY` + `AGENT_ENABLED=true`)
+`run-agent`, `list-agent-tools` - Programmatic tool calling via agentic LLM loop (uses `ANTHROPIC_API_KEY`)
+
+**Pre-populated Tool Registry**: 31 safe tools automatically available for agent use (24 marked as safe subset). Includes: think, validate, search, decompose-problem, make-decision, analyze-perspectives, build-causal-graph, detect-biases, generate-hypotheses, synthesize-insights, and more.
+
+**Note**: All 85 tools are ALWAYS enabled without configuration flags. Tools requiring API keys will fail at runtime with clear error messages if keys are missing, but remain available in the tool list.
 
 ## Claude Code Optimization
 
