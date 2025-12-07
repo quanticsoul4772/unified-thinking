@@ -40,13 +40,14 @@ func (pd *LLMProblemDecomposer) DecomposeProblemWithDomain(ctx context.Context, 
 	}
 
 	// Detect domain if not explicitly provided
-	domain := DomainGeneral
-	domainDetected := true
+	var domain Domain
+	var domainDetected bool
 	if explicitDomain != nil {
 		domain = *explicitDomain
 		domainDetected = false
 	} else {
 		domain = DetectDomain(problem)
+		domainDetected = true
 	}
 
 	// Build prompt for LLM
