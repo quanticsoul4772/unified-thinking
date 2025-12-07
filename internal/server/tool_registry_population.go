@@ -3,14 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"unified-thinking/internal/modes"
 )
 
 // populateToolRegistry registers safe tools for agentic use
 func (s *UnifiedServer) populateToolRegistry(registry *modes.ToolRegistry) {
-	log.Println("[ToolRegistry] Populating tool registry for agent use")
-
 	// Register 30+ safe read-only tools
 	safeTools := []string{
 		"think", "validate", "search", "history", "decompose-problem",
@@ -38,7 +35,4 @@ func (s *UnifiedServer) populateToolRegistry(registry *modes.ToolRegistry) {
 			},
 		})
 	}
-
-	toolCount := len(registry.List())
-	log.Printf("[ToolRegistry] Registered %d tools for agent use\n", toolCount)
 }
