@@ -15,11 +15,12 @@ import (
 
 // DecisionHandler handles decision-making and problem decomposition operations
 type DecisionHandler struct {
-	storage             storage.Storage
-	decisionMaker       *reasoning.DecisionMaker
-	problemDecomposer   *reasoning.ProblemDecomposer
-	sensitivityAnalyzer *analysis.SensitivityAnalyzer
-	metadataGen         *MetadataGenerator
+	storage              storage.Storage
+	decisionMaker        *reasoning.DecisionMaker
+	problemDecomposer    *reasoning.ProblemDecomposer
+	llmProblemDecomposer *reasoning.LLMProblemDecomposer
+	sensitivityAnalyzer  *analysis.SensitivityAnalyzer
+	metadataGen          *MetadataGenerator
 }
 
 // NewDecisionHandler creates a new decision handler
@@ -36,6 +37,11 @@ func NewDecisionHandler(
 		sensitivityAnalyzer: sensitivityAnalyzer,
 		metadataGen:         NewMetadataGenerator(),
 	}
+}
+
+// SetLLMProblemDecomposer sets the LLM-based problem decomposer
+func (h *DecisionHandler) SetLLMProblemDecomposer(llmDecomposer *reasoning.LLMProblemDecomposer) {
+	h.llmProblemDecomposer = llmDecomposer
 }
 
 // ============================================================================
@@ -167,8 +173,14 @@ func (h *DecisionHandler) HandleDecomposeProblem(ctx context.Context, req *mcp.C
 		}
 	}
 
-	// Use domain-aware decomposition
-	decomposition, err := h.problemDecomposer.DecomposeProblemWithDomain(input.Problem, explicitDomain)
+	// Use LLM decomposer if available, otherwise fall back to template-based
+	var decomposition *types.ProblemDecomposition
+	var err error
+	if h.llmProblemDecomposer != nil && h.llmProblemDecomposer.HasGenerator() {
+		decomposition, err = h.llmProblemDecomposer.DecomposeProblemWithDomain(ctx, input.Problem, explicitDomain)
+	} else {
+		decomposition, err = h.problemDecomposer.DecomposeProblemWithDomain(input.Problem, explicitDomain)
+	}
 	if err != nil {
 		return nil, nil, err
 	}

@@ -321,6 +321,11 @@ func (s *UnifiedServer) initializeAdvancedHandlers(llmClient *modes.AnthropicLLM
 	llmPerspectiveAnalyzer := analysis.NewLLMPerspectiveAnalyzer(perspectiveGen, s.perspectiveAnalyzer)
 	s.temporalHandler.SetLLMPerspectiveAnalyzer(llmPerspectiveAnalyzer)
 
+	// LLM-based problem decomposer for decompose-problem tool
+	decompositionGen := reasoning.NewAnthropicDecompositionGenerator(llmClient)
+	llmProblemDecomposer := reasoning.NewLLMProblemDecomposer(decompositionGen, s.problemDecomposer)
+	s.decisionHandler.SetLLMProblemDecomposer(llmProblemDecomposer)
+
 	// Case-based reasoner
 	caseBasedReasoner := reasoning.NewCaseBasedReasoner(s.storage)
 	s.caseBasedHandler = handlers.NewCaseBasedHandler(caseBasedReasoner, s.storage)
