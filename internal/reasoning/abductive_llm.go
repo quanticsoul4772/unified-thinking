@@ -70,15 +70,23 @@ func (ar *AbductiveReasoner) parseHypothesesFromLLM(response string, observation
 	jsonStr := response
 	if strings.Contains(response, "```json") {
 		start := strings.Index(response, "```json") + 7
-		end := strings.LastIndex(response, "```")
-		if start > 7 && end > start {
-			jsonStr = response[start:end]
+		// Skip newline after ```json
+		if start < len(response) && response[start] == '\n' {
+			start++
+		}
+		// Find closing ``` after the opening one
+		end := strings.Index(response[start:], "```")
+		if end > 0 {
+			jsonStr = response[start : start+end]
 		}
 	} else if strings.Contains(response, "```") {
 		start := strings.Index(response, "```") + 3
-		end := strings.LastIndex(response, "```")
-		if start > 3 && end > start {
-			jsonStr = response[start:end]
+		if start < len(response) && response[start] == '\n' {
+			start++
+		}
+		end := strings.Index(response[start:], "```")
+		if end > 0 {
+			jsonStr = response[start : start+end]
 		}
 	}
 
