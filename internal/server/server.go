@@ -179,6 +179,10 @@ type UnifiedServer struct {
 	claudeCodeHandler *handlers.ClaudeCodeHandler
 	// Research with web search handler
 	researchHandler *handlers.ResearchHandler
+	// Multimodal embeddings handler (ALWAYS enabled)
+	multimodalHandler *handlers.MultimodalHandler
+	// Agentic tool calling handler (ALWAYS enabled)
+	agentHandler *handlers.AgentHandler
 }
 
 // SetKnowledgeGraph sets the knowledge graph instance (optional)
@@ -266,6 +270,23 @@ func NewUnifiedServer(
 	// Initialize research handler with web search capability
 	// Uses same LLM client, web search enabled via WEB_SEARCH_ENABLED env var
 	s.researchHandler = handlers.NewResearchHandler(llmClient)
+
+	// Initialize multimodal handler - ALWAYS enabled
+	// Requires VOYAGE_API_KEY, will fail at tool call time if not set
+	voyageKey := os.Getenv("VOYAGE_API_KEY")
+	if voyageKey != "" {
+		multimodalModel := os.Getenv("MULTIMODAL_MODEL")
+		if multimodalModel == "" {
+			multimodalModel = "voyage-multimodal-3"
+		}
+		multimodalEmbedder := embeddings.NewVoyageMultimodalEmbedder(voyageKey, multimodalModel)
+		s.multimodalHandler = handlers.NewMultimodalHandler(multimodalEmbedder)
+	}
+
+	// Initialize agent handler - ALWAYS enabled
+	// Requires ANTHROPIC_API_KEY, will fail at tool call time if not set
+	toolRegistry := modes.NewToolRegistry()
+	s.agentHandler = handlers.NewAgentHandler(toolRegistry)
 
 	return s, nil
 }
@@ -426,7 +447,7 @@ func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
 	return s.contextBridge
 }
 
-// RegisterTools registers all 63 MCP tools with the server.
+// RegisterTools registers all 85 MCP tools with the server.
 //
 // ORGANIZATION:
 // Tools are registered in the following order matching the package documentation:
@@ -441,6 +462,13 @@ func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
 //  9. Advanced Reasoning (10): dual-process, backtracking, abductive, CBR, symbolic
 //  10. Enhanced Tools (8): analogies, arguments, evidence pipeline
 //  11. Episodic Memory (5): session tracking, learning, recommendations
+//  12. Knowledge Graph (3): store-entity, search-knowledge-graph, create-relationship
+//  13. Similarity (1): search-similar-thoughts
+//  14. Graph-of-Thoughts (9): got-* tools
+//  15. Claude Code (5): export-session, import-session, list-presets, run-preset, format-response
+//  16. Research (1): research-with-search
+//  17. Multimodal (1): embed-multimodal - ALWAYS enabled
+//  18. Agentic (2): run-agent, list-agent-tools - ALWAYS enabled
 //
 // Each tool follows the pattern:
 //  1. Get tool definition from tools.go
@@ -1009,6 +1037,16 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 
 	// Register research tools with web search (1 tool)
 	handlers.RegisterResearchTools(mcpServer, s.researchHandler)
+
+	// Register multimodal tools (1 tool) - ALWAYS enabled
+	if s.multimodalHandler != nil {
+		handlers.RegisterMultimodalTools(mcpServer, s.multimodalHandler)
+	}
+
+	// Register agentic tools (2 tools) - ALWAYS enabled
+	if s.agentHandler != nil {
+		handlers.RegisterAgentTools(mcpServer, s.agentHandler)
+	}
 }
 
 type ThinkRequest struct {
