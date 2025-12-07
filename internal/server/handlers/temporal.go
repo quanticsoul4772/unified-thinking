@@ -13,8 +13,9 @@ import (
 
 // TemporalHandler handles temporal and perspective analysis operations
 type TemporalHandler struct {
-	perspectiveAnalyzer *analysis.PerspectiveAnalyzer
-	temporalReasoner    *reasoning.TemporalReasoner
+	perspectiveAnalyzer    *analysis.PerspectiveAnalyzer
+	llmPerspectiveAnalyzer *analysis.LLMPerspectiveAnalyzer
+	temporalReasoner       *reasoning.TemporalReasoner
 }
 
 // NewTemporalHandler creates a new temporal handler
@@ -26,6 +27,11 @@ func NewTemporalHandler(
 		perspectiveAnalyzer: perspectiveAnalyzer,
 		temporalReasoner:    temporalReasoner,
 	}
+}
+
+// SetLLMPerspectiveAnalyzer sets the LLM-based perspective analyzer
+func (h *TemporalHandler) SetLLMPerspectiveAnalyzer(llmAnalyzer *analysis.LLMPerspectiveAnalyzer) {
+	h.llmPerspectiveAnalyzer = llmAnalyzer
 }
 
 // ============================================================================
@@ -106,7 +112,14 @@ func (h *TemporalHandler) HandleAnalyzePerspectives(
 		_ = reporter.ReportStep(1, totalSteps, "analyze", fmt.Sprintf("Analyzing %d stakeholder perspectives...", stakeholderCount))
 	}
 
-	perspectives, err := h.perspectiveAnalyzer.AnalyzePerspectives(input.Situation, input.StakeholderHints)
+	// Use LLM analyzer if available, otherwise fall back to template-based
+	var perspectives []*types.Perspective
+	var err error
+	if h.llmPerspectiveAnalyzer != nil && h.llmPerspectiveAnalyzer.HasGenerator() {
+		perspectives, err = h.llmPerspectiveAnalyzer.AnalyzePerspectives(ctx, input.Situation, input.StakeholderHints)
+	} else {
+		perspectives, err = h.perspectiveAnalyzer.AnalyzePerspectives(input.Situation, input.StakeholderHints)
+	}
 	if err != nil {
 		return nil, nil, err
 	}

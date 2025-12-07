@@ -316,6 +316,11 @@ func (s *UnifiedServer) initializeAdvancedHandlers(llmClient *modes.AnthropicLLM
 	abductiveReasoner := reasoning.NewAbductiveReasoner(s.storage, hypothesisGen)
 	s.abductiveHandler = handlers.NewAbductiveHandler(abductiveReasoner, s.storage)
 
+	// LLM-based perspective analyzer for analyze-perspectives tool
+	perspectiveGen := analysis.NewAnthropicPerspectiveGenerator(llmClient)
+	llmPerspectiveAnalyzer := analysis.NewLLMPerspectiveAnalyzer(perspectiveGen, s.perspectiveAnalyzer)
+	s.temporalHandler.SetLLMPerspectiveAnalyzer(llmPerspectiveAnalyzer)
+
 	// Case-based reasoner
 	caseBasedReasoner := reasoning.NewCaseBasedReasoner(s.storage)
 	s.caseBasedHandler = handlers.NewCaseBasedHandler(caseBasedReasoner, s.storage)

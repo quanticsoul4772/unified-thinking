@@ -172,15 +172,6 @@ func (ar *AbductiveReasoner) GenerateHypotheses(ctx context.Context, req *Genera
 	return hypotheses, nil
 }
 
-
-
-
-
-
-
-
-
-
 // EvaluateHypotheses ranks hypotheses by their explanatory quality
 func (ar *AbductiveReasoner) EvaluateHypotheses(ctx context.Context, req *EvaluateHypothesesRequest) ([]*Hypothesis, error) {
 	if len(req.Hypotheses) == 0 {
@@ -517,7 +508,6 @@ func (ar *AbductiveReasoner) extractDomainTerms(observations []*Observation) []s
 
 	return terms
 }
-
 
 // hasTemporalPattern checks if observations follow a time sequence
 func (ar *AbductiveReasoner) hasTemporalPattern(observations []*Observation) bool {
