@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"unified-thinking/internal/modes"
 )
 
@@ -9,10 +10,16 @@ import (
 // Safe tools are read-only with no side effects (no store operations, no state changes)
 // Excluded: store-entity, create-relationship, export-session, import-session, create-checkpoint, restore-checkpoint
 func (s *UnifiedServer) populateToolRegistry(registry *modes.ToolRegistry) {
+	log := func(msg string) {
+		fmt.Printf("[ToolRegistry] %s\n", msg)
+	}
+
+	log("Starting tool registry population")
+
 	// CORE THINKING TOOLS
 
 	// Register think tool
-	registry.Register(modes.ToolSpec{
+	if err := registry.Register(modes.ToolSpec{
 		Name:        "think",
 		Description: "Reasoning tool for analysis",
 		InputSchema: map[string]interface{}{
@@ -49,10 +56,14 @@ func (s *UnifiedServer) populateToolRegistry(registry *modes.ToolRegistry) {
 				"confidence": thought.Confidence,
 			}, nil
 		},
-	})
+	}); err != nil {
+		log(fmt.Sprintf("Failed to register think: %v", err))
+	} else {
+		log("Registered: think")
+	}
 
 	// Register decompose-problem
-	registry.Register(modes.ToolSpec{
+	if err := registry.Register(modes.ToolSpec{
 		Name:        "decompose-problem",
 		Description: "Break down complex problems",
 		InputSchema: map[string]interface{}{
@@ -250,4 +261,7 @@ func (s *UnifiedServer) populateToolRegistry(registry *modes.ToolRegistry) {
 			},
 		})
 	}
+
+	toolCount := len(registry.List())
+	log(fmt.Sprintf("Tool registry population complete: %d tools registered", toolCount))
 }

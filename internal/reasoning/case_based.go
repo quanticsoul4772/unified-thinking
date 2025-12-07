@@ -37,6 +37,7 @@ func NewCaseBasedReasoner(store storage.Storage) *CaseBasedReasoner {
 
 // populateDefaultCases adds common problem-solution cases to the library
 func (cbr *CaseBasedReasoner) populateDefaultCases() {
+	fmt.Println("[CBR] Populating default case library")
 	defaultCases := []*Case{
 		{
 			ID:     "case-race-condition-fix",
@@ -106,6 +107,7 @@ func (cbr *CaseBasedReasoner) populateDefaultCases() {
 		cbr.caseIndex.indexCase(c)
 		cbr.cases[c.ID] = c
 	}
+	fmt.Printf("[CBR] Populated %d default cases\n", len(defaultCases))
 }
 
 // Case represents a past problem-solution pair
