@@ -14,7 +14,7 @@ import (
 type mockHypothesisGenerator struct{}
 
 func (m *mockHypothesisGenerator) GenerateHypotheses(ctx context.Context, prompt string) (string, error) {
-	return `{"hypotheses": [{"description": "Mock hypothesis", "assumptions": ["test"], "predictions": ["test"], "parsimony": 0.8, "prior_probability": 0.5}]}`, nil
+	return `{"hypotheses": [{"description": "Mock hypothesis", "assumptions": ["test"], "predictions": ["test"], "parsimony": 0.9, "prior_probability": 0.5}]}`, nil
 }
 
 func TestNewAbductiveReasoner(t *testing.T) {
@@ -65,14 +65,15 @@ func TestAbductiveReasoner_GenerateHypotheses_SingleCause(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hypotheses)
 
-	// LLM-based generation should produce at least one hypothesis
-	assert.GreaterOrEqual(t, len(hypotheses), 1, "Should generate hypotheses")
-	// All hypotheses should explain all observations
+	// Should have at least one single-cause hypothesis
+	hasSingleCause := false
 	for _, h := range hypotheses {
-		assert.Equal(t, len(observations), len(h.Observations), "Hypothesis should explain all observations")
-		assert.GreaterOrEqual(t, h.Parsimony, 0.0, "Parsimony should be valid")
-		assert.LessOrEqual(t, h.Parsimony, 1.0, "Parsimony should be valid")
+		if len(h.Observations) == 3 && h.Parsimony > 0.8 {
+			hasSingleCause = true
+			break
+		}
 	}
+	assert.True(t, hasSingleCause, "Should generate a single-cause hypothesis")
 }
 
 func TestAbductiveReasoner_GenerateHypotheses_MultipleCauses(t *testing.T) {

@@ -127,7 +127,6 @@ func TestCaseBasedHandler_HandleRetrieveCases(t *testing.T) {
 func TestCaseBasedHandler_HandlePerformCBRCycle(t *testing.T) {
 	store := storage.NewMemoryStorage()
 	reasoner := reasoning.NewCaseBasedReasoner(store)
-	// Note: reasoner automatically populates 3 default cases
 	handler := NewCaseBasedHandler(reasoner, store)
 
 	tests := []struct {
@@ -136,39 +135,41 @@ func TestCaseBasedHandler_HandlePerformCBRCycle(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid CBR cycle request - finds default cases",
+			name: "valid CBR cycle request - finds pre-populated cases",
 			params: map[string]interface{}{
 				"problem": map[string]interface{}{
-					"description": "Need to implement authentication",
-					"context":     "Web application needs secure login",
-					"goals":       []string{"Secure authentication", "User-friendly login"},
-					"constraints": []string{"Must comply with GDPR"},
+					"description": "Need to fix race condition in concurrent Go code",
+					"context":     "Goroutines accessing shared state without synchronization",
+					"goals":       []string{"Thread safety", "Fix data race"},
+					"constraints": []string{"Cannot reduce concurrency"},
 				},
-				"domain": "security",
+				"domain": "software-engineering",
 			},
-			wantErr: true, // Test creates new reasoner without pre-populated cases
+			wantErr: false, // Should succeed with pre-populated race-condition case
 		},
 		{
-			name: "valid request without domain - no cases in test",
+			name: "valid request without domain - searches all cases",
 			params: map[string]interface{}{
 				"problem": map[string]interface{}{
 					"description": "Generic problem",
 				},
 			},
-			wantErr: false, // Test creates new reasoner without pre-populated cases
+			wantErr: false, // Should succeed with pre-populated cases
 		},
 		{
-			name: "valid request with features - no cases in test",
+			name: "valid request with features - finds cases",
 			params: map[string]interface{}{
 				"problem": map[string]interface{}{
-					"description": "Feature-rich problem",
+					"description": "Debug failing CI tests in pipeline",
+					"context":     "Tests pass locally but fail in CI environment",
 					"features": map[string]interface{}{
-						"complexity": "high",
-						"priority":   1,
+						"environment": "CI/CD",
+						"priority":    1,
 					},
 				},
+				"domain": "devops", // Matches pre-populated ci-test-failure case domain
 			},
-			wantErr: true, // Test creates new reasoner without pre-populated cases
+			wantErr: false, // Should succeed with pre-populated ci-test-failure case
 		},
 		{
 			name:    "missing problem",
