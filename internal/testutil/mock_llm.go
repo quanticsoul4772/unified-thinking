@@ -469,3 +469,55 @@ func (m *MockLLMClient) ContainsString(calls []string, substr string) bool {
 	}
 	return false
 }
+
+// MockHypothesisGenerator provides a mock implementation for testing abductive reasoning
+// without making real LLM API calls.
+type MockHypothesisGenerator struct {
+	mu sync.Mutex
+
+	// Response configuration
+	Response string
+	Error    error
+
+	// Call tracking
+	Calls []string
+}
+
+// NewMockHypothesisGenerator creates a mock with a sensible default response
+func NewMockHypothesisGenerator() *MockHypothesisGenerator {
+	return &MockHypothesisGenerator{
+		Response: `{"hypotheses": [{"description": "Mock hypothesis: System issue detected", "assumptions": ["System is running"], "predictions": ["Issue will recur under similar conditions"], "parsimony": 0.8, "prior_probability": 0.6}]}`,
+	}
+}
+
+// GenerateHypotheses implements the reasoning.HypothesisGenerator interface
+func (m *MockHypothesisGenerator) GenerateHypotheses(ctx context.Context, prompt string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.Calls = append(m.Calls, prompt)
+
+	if m.Error != nil {
+		return "", m.Error
+	}
+	return m.Response, nil
+}
+
+// WithResponse sets the response for GenerateHypotheses
+func (m *MockHypothesisGenerator) WithResponse(response string) *MockHypothesisGenerator {
+	m.Response = response
+	return m
+}
+
+// WithError sets an error to be returned
+func (m *MockHypothesisGenerator) WithError(err error) *MockHypothesisGenerator {
+	m.Error = err
+	return m
+}
+
+// Reset clears call history
+func (m *MockHypothesisGenerator) Reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Calls = nil
+}

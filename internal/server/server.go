@@ -449,6 +449,11 @@ func (s *UnifiedServer) SetContextBridge(bridge *contextbridge.ContextBridge) {
 	s.contextBridge = bridge
 }
 
+// SetAbductiveHandler sets the abductive handler (for testing with mock generators)
+func (s *UnifiedServer) SetAbductiveHandler(handler *handlers.AbductiveHandler) {
+	s.abductiveHandler = handler
+}
+
 // GetContextBridge returns the context bridge (for metrics endpoint)
 func (s *UnifiedServer) GetContextBridge() *contextbridge.ContextBridge {
 	return s.contextBridge

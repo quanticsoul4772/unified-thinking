@@ -10,14 +10,17 @@ import (
 
 	"unified-thinking/internal/modes"
 	"unified-thinking/internal/orchestration"
+	"unified-thinking/internal/reasoning"
 	"unified-thinking/internal/server/handlers"
 	"unified-thinking/internal/storage"
+	"unified-thinking/internal/testutil"
 	"unified-thinking/internal/types"
 	"unified-thinking/internal/validation"
 )
 
 // setupTestServer creates a fully initialized server for testing.
 // Skips the test if ANTHROPIC_API_KEY is not set (required for GoT).
+// Uses mock hypothesis generator to avoid real API calls for abductive reasoning.
 func setupTestServer(t *testing.T) *UnifiedServer {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
@@ -34,6 +37,13 @@ func setupTestServer(t *testing.T) *UnifiedServer {
 	if err != nil {
 		t.Fatalf("setupTestServer failed: %v", err)
 	}
+
+	// Inject mock hypothesis generator for abductive reasoning tests
+	// This avoids real LLM API calls that would timeout in CI
+	mockGen := testutil.NewMockHypothesisGenerator()
+	abductiveReasoner := reasoning.NewAbductiveReasoner(store, mockGen)
+	srv.SetAbductiveHandler(handlers.NewAbductiveHandler(abductiveReasoner, store))
+
 	return srv
 }
 
