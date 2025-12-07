@@ -10,9 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockHypothesisGenerator for testing
+type mockHypothesisGenerator struct{}
+
+func (m *mockHypothesisGenerator) GenerateHypotheses(ctx context.Context, prompt string) (string, error) {
+	return `{"hypotheses": [{"description": "Mock hypothesis", "assumptions": ["test"], "predictions": ["test"], "parsimony": 0.8, "prior_probability": 0.5}]}`, nil
+}
+
 func TestNewAbductiveReasoner(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	assert.NotNil(t, ar)
 	assert.NotNil(t, ar.storage)
@@ -20,7 +28,8 @@ func TestNewAbductiveReasoner(t *testing.T) {
 
 func TestAbductiveReasoner_GenerateHypotheses_SingleCause(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -69,7 +78,8 @@ func TestAbductiveReasoner_GenerateHypotheses_SingleCause(t *testing.T) {
 
 func TestAbductiveReasoner_GenerateHypotheses_MultipleCauses(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -103,7 +113,8 @@ func TestAbductiveReasoner_GenerateHypotheses_MultipleCauses(t *testing.T) {
 
 func TestAbductiveReasoner_GenerateHypotheses_MaxLimit(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -125,7 +136,8 @@ func TestAbductiveReasoner_GenerateHypotheses_MaxLimit(t *testing.T) {
 
 func TestAbductiveReasoner_GenerateHypotheses_ParsimonyFilter(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -151,7 +163,8 @@ func TestAbductiveReasoner_GenerateHypotheses_ParsimonyFilter(t *testing.T) {
 
 func TestAbductiveReasoner_EvaluateHypotheses_Combined(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -198,7 +211,8 @@ func TestAbductiveReasoner_EvaluateHypotheses_Combined(t *testing.T) {
 
 func TestAbductiveReasoner_EvaluateHypotheses_Bayesian(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -231,7 +245,8 @@ func TestAbductiveReasoner_EvaluateHypotheses_Bayesian(t *testing.T) {
 
 func TestAbductiveReasoner_EvaluateHypotheses_Parsimony(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -270,7 +285,8 @@ func TestAbductiveReasoner_EvaluateHypotheses_Parsimony(t *testing.T) {
 
 func TestAbductiveReasoner_PerformAbductiveInference(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -308,7 +324,8 @@ func TestAbductiveReasoner_PerformAbductiveInference(t *testing.T) {
 
 func TestAbductiveReasoner_CalculateExplanatoryPower(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	observations := []*Observation{
 		{ID: "obs-1", Confidence: 1.0},
@@ -354,7 +371,8 @@ func TestAbductiveReasoner_CalculateExplanatoryPower(t *testing.T) {
 
 func TestAbductiveReasoner_CalculateParsimony(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	tests := []struct {
 		name        string
@@ -390,7 +408,8 @@ func TestAbductiveReasoner_CalculateParsimony(t *testing.T) {
 
 func TestAbductiveReasoner_FindCommonThemes(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	observations := []*Observation{
 		{Description: "The server performance degraded"},
@@ -405,7 +424,8 @@ func TestAbductiveReasoner_FindCommonThemes(t *testing.T) {
 
 func TestAbductiveReasoner_HasTemporalPattern(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	now := time.Now()
 
@@ -456,7 +476,8 @@ func TestDefaultEvaluationWeights(t *testing.T) {
 
 func TestAbductiveReasoner_NoObservations(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
@@ -471,7 +492,8 @@ func TestAbductiveReasoner_NoObservations(t *testing.T) {
 
 func TestAbductiveReasoner_NoHypotheses(t *testing.T) {
 	store := storage.NewMemoryStorage()
-	ar := NewAbductiveReasoner(store)
+	mockGen := &mockHypothesisGenerator{}
+	ar := NewAbductiveReasoner(store, mockGen)
 
 	ctx := context.Background()
 
