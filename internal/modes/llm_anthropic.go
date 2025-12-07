@@ -129,6 +129,23 @@ Format your response as a JSON array of strings, one per continuation. Example:
 	return continuations, nil
 }
 
+// GenerateText generates a raw text response without structured output constraints.
+// Used for hypothesis generation and other free-form text generation tasks.
+func (a *AnthropicLLMClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	req := &APIRequest{
+		Model:     a.Model(),
+		MaxTokens: 4096,
+		Messages:  []Message{NewTextMessage("user", prompt)},
+	}
+
+	resp, err := a.SendRequest(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return extractTextFromResponse(resp), nil
+}
+
 // Aggregate synthesizes multiple thoughts into one
 func (a *AnthropicLLMClient) Aggregate(ctx context.Context, thoughts []string, problem string) (string, error) {
 	systemPrompt := `You are a Graph-of-Thoughts reasoning engine. Synthesize the given thoughts into a single, unified insight that captures the best aspects of all inputs. The synthesis should be coherent, comprehensive, and more valuable than any individual thought.`
