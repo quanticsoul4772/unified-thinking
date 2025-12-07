@@ -45,6 +45,16 @@ func InitializeServer() (*ServerComponents, error) {
 	}
 	components.Storage = store
 
+	// Ensure storage is closed on failure to release file locks (important for Windows)
+	success := false
+	defer func() {
+		if !success {
+			if closer, ok := store.(interface{ Close() error }); ok {
+				closer.Close()
+			}
+		}
+	}()
+
 	// Initialize thinking modes
 	components.LinearMode = modes.NewLinearMode(store)
 	components.TreeMode = modes.NewTreeMode(store)
@@ -143,6 +153,7 @@ func InitializeServer() (*ServerComponents, error) {
 	// Register predefined workflows
 	registerPredefinedWorkflows(components.Orchestrator)
 
+	success = true // Mark success to prevent defer from closing storage
 	return components, nil
 }
 
