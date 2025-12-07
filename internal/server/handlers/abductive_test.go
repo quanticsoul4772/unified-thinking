@@ -9,6 +9,13 @@ import (
 	"unified-thinking/internal/types"
 )
 
+// mockHypothesisGenerator for handler testing
+type mockHypothesisGenerator struct{}
+
+func (m *mockHypothesisGenerator) GenerateHypotheses(ctx context.Context, prompt string) (string, error) {
+	return `{"hypotheses": [{"description": "Test hypothesis", "assumptions": ["test"], "predictions": ["test"], "parsimony": 0.8, "prior_probability": 0.5}]}`, nil
+}
+
 // MockAbductiveReasoner mocks the abductive reasoner for testing
 type MockAbductiveReasoner struct {
 	hypotheses []*reasoning.Hypothesis
@@ -71,7 +78,8 @@ func TestAbductiveHandler_HandleGenerateHypotheses(t *testing.T) {
 	mockStorage := &MockStorage{}
 
 	// Create a real reasoner for testing since we can't easily mock the concrete type
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	tests := []struct {
@@ -142,7 +150,8 @@ func TestAbductiveHandler_HandleGenerateHypotheses(t *testing.T) {
 
 func TestAbductiveHandler_HandleGenerateHypotheses_ReasonerError(t *testing.T) {
 	mockStorage := &MockStorage{}
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	params := map[string]interface{}{
@@ -161,7 +170,8 @@ func TestAbductiveHandler_HandleGenerateHypotheses_ReasonerError(t *testing.T) {
 
 func TestAbductiveHandler_HandleGenerateHypotheses_DefaultValues(t *testing.T) {
 	mockStorage := &MockStorage{}
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	params := map[string]interface{}{
@@ -184,7 +194,8 @@ func TestAbductiveHandler_HandleGenerateHypotheses_DefaultValues(t *testing.T) {
 
 func TestAbductiveHandler_HandleEvaluateHypotheses(t *testing.T) {
 	mockStorage := &MockStorage{}
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	tests := []struct {
@@ -289,7 +300,8 @@ func TestAbductiveHandler_HandleEvaluateHypotheses(t *testing.T) {
 
 func TestAbductiveHandler_HandleEvaluateHypotheses_WithDefaultPriors(t *testing.T) {
 	mockStorage := &MockStorage{}
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
 	params := map[string]interface{}{
@@ -318,7 +330,8 @@ func TestAbductiveHandler_HandleEvaluateHypotheses_WithDefaultPriors(t *testing.
 
 func TestAbductiveHandler_NewAbductiveHandler(t *testing.T) {
 	mockStorage := &MockStorage{}
-	realReasoner := reasoning.NewAbductiveReasoner(mockStorage)
+	mockGen := &mockHypothesisGenerator{}
+	realReasoner := reasoning.NewAbductiveReasoner(mockStorage, mockGen)
 
 	handler := NewAbductiveHandler(realReasoner, mockStorage)
 
