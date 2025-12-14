@@ -307,22 +307,10 @@ func TestNewUnifiedServer(t *testing.T) {
 // =============================================================================
 
 func TestInitializeSemanticAutoMode(t *testing.T) {
-	t.Run("no API key - logs error and returns", func(t *testing.T) {
-		// Ensure no API key is set
-		os.Unsetenv("VOYAGE_API_KEY")
-
-		server := setupTestServer(t)
-		// The function should not panic and auto mode should work without embedder
-		if server.auto == nil {
-			t.Error("auto mode should still be initialized")
-		}
-	})
+	// NOTE: "no API key" test removed - server now fails fast without VOYAGE_API_KEY
+	// This is correct behavior: embeddings are required, not optional
 
 	t.Run("with API key - initializes embedder", func(t *testing.T) {
-		// Set test API key
-		os.Setenv("VOYAGE_API_KEY", "test-api-key")
-		defer os.Unsetenv("VOYAGE_API_KEY")
-
 		server := setupTestServer(t)
 		if server.auto == nil {
 			t.Error("auto mode should be initialized")
@@ -331,9 +319,7 @@ func TestInitializeSemanticAutoMode(t *testing.T) {
 	})
 
 	t.Run("custom model from env", func(t *testing.T) {
-		os.Setenv("VOYAGE_API_KEY", "test-api-key")
 		os.Setenv("EMBEDDINGS_MODEL", "voyage-3")
-		defer os.Unsetenv("VOYAGE_API_KEY")
 		defer os.Unsetenv("EMBEDDINGS_MODEL")
 
 		server := setupTestServer(t)

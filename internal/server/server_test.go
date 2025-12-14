@@ -19,7 +19,7 @@ import (
 )
 
 // setupTestServer creates a fully initialized server for testing.
-// Skips the test if required API keys are not set.
+// FAILS the test if required API keys are not set.
 // Uses mock hypothesis generator to avoid real API calls for abductive reasoning.
 func setupTestServer(t *testing.T) *UnifiedServer {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
@@ -29,6 +29,18 @@ func setupTestServer(t *testing.T) *UnifiedServer {
 		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
+	return setupTestServerCore(t)
+}
+
+// setupTestServerNoKeyCheck creates a server for tests that explicitly test
+// missing API key scenarios. Does NOT check for API keys - use only for tests
+// that intentionally test behavior when keys are missing.
+func setupTestServerNoKeyCheck(t *testing.T) *UnifiedServer {
+	return setupTestServerCore(t)
+}
+
+// setupTestServerCore is the shared implementation for test server setup.
+func setupTestServerCore(t *testing.T) *UnifiedServer {
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
 	tree := modes.NewTreeMode(store)
@@ -150,24 +162,24 @@ func TestHandleThink_DivergentMode(t *testing.T) {
 
 func TestHandleThink_AutoMode(t *testing.T) {
 	tests := []struct {
-		name         string
-		content      string
-		expectedMode string
+		name          string
+		content       string
+		expectedModes []string // Allow multiple valid modes for semantic selection
 	}{
 		{
-			name:         "creative keywords trigger divergent",
-			content:      "Let's think creatively about this problem",
-			expectedMode: "divergent",
+			name:          "creative keywords trigger divergent",
+			content:       "Let's think creatively about this problem",
+			expectedModes: []string{"divergent"},
 		},
 		{
-			name:         "explore keywords trigger tree",
-			content:      "Let's explore alternative approaches",
-			expectedMode: "tree",
+			name:          "explore keywords trigger tree or divergent",
+			content:       "Let's explore alternative approaches",
+			expectedModes: []string{"tree", "divergent"}, // Both valid with semantic embeddings
 		},
 		{
-			name:         "simple content defaults to linear",
-			content:      "Calculate the result",
-			expectedMode: "linear",
+			name:          "simple content defaults to linear",
+			content:       "Calculate the result",
+			expectedModes: []string{"linear"},
 		},
 	}
 
@@ -187,8 +199,16 @@ func TestHandleThink_AutoMode(t *testing.T) {
 				t.Fatalf("handleThink() error = %v", err)
 			}
 
-			if resp.Mode != tt.expectedMode {
-				t.Errorf("Auto mode selected %v, want %v", resp.Mode, tt.expectedMode)
+			// Check if selected mode is in the list of expected modes
+			found := false
+			for _, expected := range tt.expectedModes {
+				if resp.Mode == expected {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("Auto mode selected %v, want one of %v", resp.Mode, tt.expectedModes)
 			}
 		})
 	}

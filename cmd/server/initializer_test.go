@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 // setupTestEnv sets required environment variables for testing
-// VOYAGE_API_KEY and ANTHROPIC_API_KEY must be real keys from environment
-// No fake keys - tests fail if keys are missing/invalid
+// VOYAGE_API_KEY, ANTHROPIC_API_KEY, and Neo4j must be available
+// No fake keys - tests fail if keys are missing/invalid or services unavailable
 func setupTestEnv(t *testing.T) {
 	t.Helper()
 
@@ -21,8 +25,45 @@ func setupTestEnv(t *testing.T) {
 		t.Fatal("ANTHROPIC_API_KEY not set: tests require real Anthropic API key")
 	}
 
+	// Verify Neo4j environment variables are set
+	if os.Getenv("NEO4J_URI") == "" {
+		t.Fatal("NEO4J_URI not set: tests require Neo4j connection")
+	}
+	if os.Getenv("NEO4J_USERNAME") == "" {
+		t.Fatal("NEO4J_USERNAME not set: tests require Neo4j credentials")
+	}
+	if os.Getenv("NEO4J_PASSWORD") == "" {
+		t.Fatal("NEO4J_PASSWORD not set: tests require Neo4j credentials")
+	}
+
+	// Verify Neo4j is reachable
+	checkNeo4jConnectivity(t)
+
 	// SQLite storage is default - set path for tests
 	t.Setenv("SQLITE_PATH", t.TempDir()+"/test.db")
+}
+
+// checkNeo4jConnectivity verifies Neo4j is running and reachable - FAILS if not
+func checkNeo4jConnectivity(t *testing.T) {
+	t.Helper()
+
+	uri := os.Getenv("NEO4J_URI")
+	username := os.Getenv("NEO4J_USERNAME")
+	password := os.Getenv("NEO4J_PASSWORD")
+
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
+	if err != nil {
+		t.Fatalf("Neo4j driver creation failed - required for knowledge graph: %v", err)
+	}
+	defer driver.Close(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = driver.VerifyConnectivity(ctx)
+	if err != nil {
+		t.Fatalf("Neo4j not reachable - required for knowledge graph: %v", err)
+	}
 }
 
 func TestInitializeServer(t *testing.T) {
