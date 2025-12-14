@@ -2,6 +2,7 @@ package benchmarks
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"unified-thinking/benchmarks/evaluators"
 	"unified-thinking/internal/storage"
 
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,11 +63,49 @@ func getServerPath() string {
 	return "../bin/unified-thinking"
 }
 
-// checkRequiredEnv verifies required environment variables are set - FAILS if missing
+// checkRequiredEnv verifies required environment variables are set AND services are reachable - FAILS if not
 func checkRequiredEnv(t *testing.T) {
 	t.Helper()
 	if os.Getenv("VOYAGE_API_KEY") == "" {
-		t.Fatal("VOYAGE_API_KEY not set - create .env file or set environment variable")
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
+	}
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Fatal("ANTHROPIC_API_KEY not set - required for GoT and LLM features")
+	}
+	if os.Getenv("NEO4J_URI") == "" {
+		t.Fatal("NEO4J_URI not set - required for knowledge graph")
+	}
+	if os.Getenv("NEO4J_USERNAME") == "" {
+		t.Fatal("NEO4J_USERNAME not set - required for knowledge graph")
+	}
+	if os.Getenv("NEO4J_PASSWORD") == "" {
+		t.Fatal("NEO4J_PASSWORD not set - required for knowledge graph")
+	}
+
+	// Verify Neo4j connectivity - fail fast if not reachable
+	checkNeo4jConnectivity(t)
+}
+
+// checkNeo4jConnectivity verifies Neo4j is running and reachable - FAILS if not
+func checkNeo4jConnectivity(t *testing.T) {
+	t.Helper()
+
+	uri := os.Getenv("NEO4J_URI")
+	username := os.Getenv("NEO4J_USERNAME")
+	password := os.Getenv("NEO4J_PASSWORD")
+
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
+	if err != nil {
+		t.Fatalf("Neo4j driver creation failed - required for knowledge graph: %v", err)
+	}
+	defer driver.Close(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = driver.VerifyConnectivity(ctx)
+	if err != nil {
+		t.Fatalf("Neo4j not reachable - required for knowledge graph: %v", err)
 	}
 }
 
