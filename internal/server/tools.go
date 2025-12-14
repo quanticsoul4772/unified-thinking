@@ -46,6 +46,10 @@ var ToolDefinitions = []mcp.Tool{
 	{
 		Name:        "list-branches",
 		Description: "List all thinking branches",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 	{
 		Name:        "focus-branch",
@@ -58,6 +62,10 @@ var ToolDefinitions = []mcp.Tool{
 	{
 		Name:        "recent-branches",
 		Description: "Get recently accessed branches for quick context switching",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 
 	// Validation Tools
@@ -82,6 +90,10 @@ var ToolDefinitions = []mcp.Tool{
 	{
 		Name:        "get-metrics",
 		Description: "Get system performance and usage metrics",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 	{
 		Name: "list-integration-patterns",
@@ -113,6 +125,10 @@ var ToolDefinitions = []mcp.Tool{
 - Discovering new ways to use the MCP ecosystem
 
 **Example:** {} (no parameters needed)`,
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 
 	// Probabilistic Reasoning Tools
@@ -309,6 +325,10 @@ var ToolDefinitions = []mcp.Tool{
 - Track calibration improvement over time
 
 **Example:** {}`,
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 
 	// Temporal & Perspective Tools
@@ -436,6 +456,10 @@ var ToolDefinitions = []mcp.Tool{
 	{
 		Name:        "list-workflows",
 		Description: "List all available reasoning workflows",
+		InputSchema: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
 	},
 	{
 		Name:        "register-workflow",

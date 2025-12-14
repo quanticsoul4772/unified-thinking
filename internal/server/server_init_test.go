@@ -13,10 +13,10 @@ import (
 
 func TestRegisterTools(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+		t.Fatal("ANTHROPIC_API_KEY not set - required for full server")
 	}
 	if os.Getenv("VOYAGE_API_KEY") == "" {
-		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	// Setup test server
@@ -54,10 +54,10 @@ func TestRegisterTools(t *testing.T) {
 
 func TestSetOrchestrator(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+		t.Fatal("ANTHROPIC_API_KEY not set - required for full server")
 	}
 	if os.Getenv("VOYAGE_API_KEY") == "" {
-		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	store := storage.NewMemoryStorage()
@@ -89,10 +89,10 @@ func TestSetOrchestrator(t *testing.T) {
 
 func TestInitializeAdvancedHandlers(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+		t.Fatal("ANTHROPIC_API_KEY not set - required for full server")
 	}
 	if os.Getenv("VOYAGE_API_KEY") == "" {
-		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	store := storage.NewMemoryStorage()

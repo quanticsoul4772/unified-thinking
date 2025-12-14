@@ -23,10 +23,10 @@ import (
 // Uses mock hypothesis generator to avoid real API calls for abductive reasoning.
 func setupTestServer(t *testing.T) *UnifiedServer {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+		t.Fatal("ANTHROPIC_API_KEY not set - required for full server")
 	}
 	if os.Getenv("VOYAGE_API_KEY") == "" {
-		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	store := storage.NewMemoryStorage()

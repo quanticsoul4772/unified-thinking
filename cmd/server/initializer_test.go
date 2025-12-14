@@ -28,7 +28,7 @@ func setupTestEnv(t *testing.T) {
 func TestInitializeServer(t *testing.T) {
 	setupTestEnv(t)
 
-	// Test default initialization (memory storage, no embedder)
+	// Test default initialization - requires Neo4j, VOYAGE_API_KEY, ANTHROPIC_API_KEY
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() failed: %v", err)
@@ -70,7 +70,7 @@ func TestInitializeServer(t *testing.T) {
 func TestInitializeServer_SQLiteStorage(t *testing.T) {
 	setupTestEnv(t)
 
-	// SQLite is now the default - this test verifies it works
+	// SQLite is now the default - this test verifies it works (requires Neo4j)
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() with SQLite failed: %v", err)
@@ -160,6 +160,7 @@ func TestRegisterPredefinedWorkflows_NilOrchestrator(t *testing.T) {
 func TestRegisterPredefinedWorkflows_ValidOrchestrator(t *testing.T) {
 	setupTestEnv(t)
 
+	// This test requires Neo4j, VOYAGE_API_KEY, ANTHROPIC_API_KEY
 	components, err := InitializeServer()
 	if err != nil {
 		t.Fatalf("InitializeServer() failed: %v", err)

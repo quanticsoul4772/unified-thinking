@@ -62,7 +62,10 @@ func (m *MockStorage) Close() error { m.closed = true; return nil }
 
 func TestMainInitialization(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+		t.Fatal("ANTHROPIC_API_KEY not set - required for full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	// Save original env vars
@@ -370,7 +373,10 @@ func BenchmarkWorkflowRegistration(b *testing.B) {
 
 func BenchmarkServerCreation(b *testing.B) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		b.Skip("ANTHROPIC_API_KEY not set, skipping benchmark requiring full server")
+		b.Fatal("ANTHROPIC_API_KEY not set - required for full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		b.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
 	store := &MockStorage{}

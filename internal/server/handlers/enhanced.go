@@ -162,6 +162,10 @@ func RegisterEnhancedTools(
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "list-workflows",
 		Description: "List all available reasoning workflows",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input EmptyRequest) (*mcp.CallToolResult, *ListWorkflowsResponse, error) {
 		workflows := orchestrator.ListWorkflows()
 
