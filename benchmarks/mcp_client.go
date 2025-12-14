@@ -82,9 +82,9 @@ type MCPClient struct {
 	requestID  int
 	mu         sync.Mutex
 	writeMu    sync.Mutex
-	readMu     sync.Mutex  // Protect stdout reader from concurrent access
-	waitOnce   sync.Once   // Ensure cmd.Wait() is only called once
-	waitErr    error       // Result of cmd.Wait()
+	readMu     sync.Mutex // Protect stdout reader from concurrent access
+	waitOnce   sync.Once  // Ensure cmd.Wait() is only called once
+	waitErr    error      // Result of cmd.Wait()
 	done       chan struct{}
 	config     Config
 	ctx        context.Context    // P2 #10: Context for lifecycle management
