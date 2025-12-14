@@ -318,7 +318,10 @@ func (s *UnifiedServer) initializeAdvancedHandlers(llmClient *modes.AnthropicLLM
 
 	// LLM-based perspective analyzer for analyze-perspectives tool
 	perspectiveGen := analysis.NewAnthropicPerspectiveGenerator(llmClient)
-	llmPerspectiveAnalyzer := analysis.NewLLMPerspectiveAnalyzer(perspectiveGen, s.perspectiveAnalyzer)
+	llmPerspectiveAnalyzer, err := analysis.NewLLMPerspectiveAnalyzer(perspectiveGen)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to create LLM perspective analyzer: %v", err)
+	}
 	s.temporalHandler.SetLLMPerspectiveAnalyzer(llmPerspectiveAnalyzer)
 
 	// LLM-based problem decomposer for decompose-problem tool
@@ -387,38 +390,38 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 
 	embeddingIntegration, err := memory.NewEmbeddingIntegration(store, sqliteStore)
 	if err != nil {
-		log.Printf("ERROR: Failed to initialize embeddings: %v", err)
-		// Don't set integration if there's an error
-	} else if embeddingIntegration != nil {
-		log.Printf("Embeddings initialized successfully with provider: %s", embeddingIntegration.GetProvider())
-		// Load any existing embeddings from storage
-		if err := embeddingIntegration.LoadEmbeddingsFromStorage(); err != nil {
-			log.Printf("Warning: Failed to load embeddings from storage: %v", err)
-		}
-
-		// Replace the store's retrieval method with the hybrid search version
-		store.SetEmbeddingIntegration(embeddingIntegration)
+		log.Fatalf("FATAL: Failed to initialize embeddings: %v - embeddings are required, no fallback", err)
 	}
-	// If embeddingIntegration is nil and err is nil, embeddings are simply disabled (not an error)
+	if embeddingIntegration == nil {
+		log.Fatalf("FATAL: Embedding integration is nil without error - this indicates a configuration problem")
+	}
+	log.Printf("Embeddings initialized successfully with provider: %s", embeddingIntegration.GetProvider())
+	// Load any existing embeddings from storage
+	if err := embeddingIntegration.LoadEmbeddingsFromStorage(); err != nil {
+		log.Fatalf("FATAL: Failed to load embeddings from storage: %v - storage must be accessible", err)
+	}
+
+	// Replace the store's retrieval method with the hybrid search version
+	store.SetEmbeddingIntegration(embeddingIntegration)
 
 	// Create signature integration for context bridge if SQLite is available
 	if sqliteStore != nil {
 		adapter := memory.NewSQLiteSignatureAdapter(sqliteStore)
 		signatureIntegration := memory.NewSignatureIntegration(adapter, nil)
 
-		// Set embedder for async embedding generation if available
-		if embeddingIntegration != nil {
-			signatureIntegration.SetEmbedder(embeddingIntegration.GetEmbedder())
-			log.Printf("Context signature integration enabled with async embedding generation")
-		} else {
-			log.Printf("Context signature integration enabled (without embeddings)")
-		}
+		// Set embedder for async embedding generation (embeddingIntegration is guaranteed non-nil)
+		signatureIntegration.SetEmbedder(embeddingIntegration.GetEmbedder())
+		log.Printf("Context signature integration enabled with async embedding generation")
 
 		store.SetSignatureIntegration(signatureIntegration)
 	}
 
-	// Create session tracker
-	s.sessionTracker = memory.NewSessionTracker(store)
+	// Create session tracker (store is guaranteed non-nil at this point)
+	sessionTracker, err := memory.NewSessionTracker(store)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to create session tracker: %v", err)
+	}
+	s.sessionTracker = sessionTracker
 
 	// Create learning engine
 	s.learningEngine = memory.NewLearningEngine(store)
@@ -431,12 +434,12 @@ func (s *UnifiedServer) initializeEpisodicMemory() {
 	s.episodicMemoryHandler = handlers.NewEpisodicMemoryHandler(s.episodicMemoryStore, s.sessionTracker, s.learningEngine, s.knowledgeGraph)
 }
 
-// initializeSemanticAutoMode sets up semantic mode detection for auto mode
+// initializeSemanticAutoMode sets up semantic mode detection for auto mode.
+// REQUIRES: VOYAGE_API_KEY must be set - no fallback to keyword detection.
 func (s *UnifiedServer) initializeSemanticAutoMode() {
 	apiKey := os.Getenv("VOYAGE_API_KEY")
 	if apiKey == "" {
-		log.Println("ERROR: VOYAGE_API_KEY not set, semantic auto mode detection disabled")
-		return
+		log.Fatalf("FATAL: VOYAGE_API_KEY not set - semantic auto mode detection requires this key, no fallback")
 	}
 
 	model := os.Getenv("EMBEDDINGS_MODEL")
@@ -542,6 +545,10 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "list-branches",
 		Description: "List all thinking branches",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleListBranches)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
@@ -577,6 +584,10 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "get-metrics",
 		Description: "Get system performance and usage metrics",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleGetMetrics)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
@@ -609,11 +620,19 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 - Discovering new ways to use the MCP ecosystem
 
 **Example:** {} (no parameters needed)`,
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleListIntegrationPatterns)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "recent-branches",
 		Description: "Get recently accessed branches for quick context switching",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleRecentBranches)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{
@@ -825,6 +844,10 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 - Track calibration improvement over time
 
 **Example:** {}`,
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleGetCalibrationReport)
 
 	// Phase 2: Multi-Perspective Analysis Tools
@@ -962,6 +985,10 @@ func (s *UnifiedServer) RegisterTools(mcpServer *mcp.Server) {
 	mcp.AddTool(mcpServer, &mcp.Tool{
 		Name:        "list-workflows",
 		Description: "List all available automated workflows for multi-tool reasoning pipelines",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
 	}, s.handleListWorkflows)
 
 	mcp.AddTool(mcpServer, &mcp.Tool{

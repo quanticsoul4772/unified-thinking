@@ -9,7 +9,7 @@ import (
 
 func TestNewEpisodicMemoryHandler(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
@@ -33,7 +33,7 @@ func TestNewEpisodicMemoryHandler(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleStartSession(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -108,7 +108,7 @@ func TestEpisodicMemoryHandler_HandleStartSession(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleCompleteSession(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -188,7 +188,7 @@ func TestEpisodicMemoryHandler_HandleCompleteSession(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleGetRecommendations(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -250,7 +250,7 @@ func TestEpisodicMemoryHandler_HandleGetRecommendations(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleSearchTrajectories(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -335,7 +335,7 @@ func TestEpisodicMemoryHandler_HandleSearchTrajectories(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleAnalyzeTrajectory(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -431,7 +431,7 @@ func TestComputeProblemHash(t *testing.T) {
 
 func TestEpisodicMemoryHandler_Integration(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -497,7 +497,7 @@ func TestEpisodicMemoryHandler_Integration(t *testing.T) {
 
 func TestEpisodicMemoryHandler_SessionLifecycle(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -631,7 +631,7 @@ func TestSearchTrajectoriesResponse_Structure(t *testing.T) {
 
 func TestEpisodicMemoryHandler_HandleAnalyzeTrajectory_WithValidTrajectory(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -670,7 +670,7 @@ func TestEpisodicMemoryHandler_HandleAnalyzeTrajectory_WithValidTrajectory(t *te
 
 func TestEpisodicMemoryHandler_HandleGetRecommendations_DetailedContext(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 
@@ -711,7 +711,7 @@ func TestEpisodicMemoryHandler_HandleGetRecommendations_DetailedContext(t *testi
 
 func TestEpisodicMemoryHandler_HandleSearchTrajectories_AllFilters(t *testing.T) {
 	store := memory.NewEpisodicMemoryStore()
-	tracker := memory.NewSessionTracker(store)
+	tracker, _ := memory.NewSessionTracker(store)
 	learner := memory.NewLearningEngine(store)
 	handler := NewEpisodicMemoryHandler(store, tracker, learner, nil)
 

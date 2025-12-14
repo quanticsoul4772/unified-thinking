@@ -35,12 +35,16 @@ type ActiveSession struct {
 	mu           sync.Mutex
 }
 
-// NewSessionTracker creates a new session tracker
-func NewSessionTracker(store *EpisodicMemoryStore) *SessionTracker {
+// NewSessionTracker creates a new session tracker.
+// REQUIRES: store must not be nil - trajectories must be persisted.
+func NewSessionTracker(store *EpisodicMemoryStore) (*SessionTracker, error) {
+	if store == nil {
+		return nil, fmt.Errorf("episodic memory store is required for SessionTracker - trajectories must be persisted")
+	}
 	return &SessionTracker{
 		activeSessions: make(map[string]*ActiveSession),
 		store:          store,
-	}
+	}, nil
 }
 
 // StartSession begins tracking a new reasoning session
@@ -200,16 +204,12 @@ func (t *SessionTracker) CompleteSession(ctx context.Context, sessionID string, 
 		Metadata:     session.Metadata,
 	}
 
-	// Store in episodic memory
-	if t.store != nil {
-		log.Printf("[DEBUG] Storing trajectory %s in episodic memory", trajectory.ID)
-		if err := t.store.StoreTrajectory(ctx, trajectory); err != nil {
-			return nil, fmt.Errorf("failed to store trajectory: %w", err)
-		}
-		log.Printf("[DEBUG] Successfully stored trajectory %s", trajectory.ID)
-	} else {
-		log.Printf("[WARN] No episodic memory store configured, trajectory not persisted")
+	// Store in episodic memory (store is guaranteed non-nil by constructor)
+	log.Printf("[DEBUG] Storing trajectory %s in episodic memory", trajectory.ID)
+	if err := t.store.StoreTrajectory(ctx, trajectory); err != nil {
+		return nil, fmt.Errorf("failed to store trajectory: %w", err)
 	}
+	log.Printf("[DEBUG] Successfully stored trajectory %s", trajectory.ID)
 
 	return trajectory, nil
 }

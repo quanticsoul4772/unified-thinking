@@ -3,6 +3,7 @@ package similarity
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"unified-thinking/internal/embeddings"
@@ -239,16 +240,15 @@ func TestThoughtSearcher_SearchSimilarWithRerankerError(t *testing.T) {
 	}
 	searcher.SetReranker(reranker)
 
-	// Search should still succeed (reranker errors are handled gracefully)
+	// Search should FAIL when reranker fails - errors must not be silently ignored
 	// Use minSimilarity of -1.0 to accept all results regardless of similarity score
-	results, err := searcher.SearchSimilar(ctx, "test search", 10, -1.0)
-	if err != nil {
-		t.Fatalf("SearchSimilar should not fail when reranker fails: %v", err)
+	_, err := searcher.SearchSimilar(ctx, "test search", 10, -1.0)
+	if err == nil {
+		t.Fatal("SearchSimilar should fail when reranker fails - errors must not be silently ignored")
 	}
-
-	// Should return embedding-based results (test exercises the error path in rerankResults)
-	// The key is that the search completes successfully despite reranker failure
-	t.Logf("Got %d results with failed reranker", len(results))
+	if !strings.Contains(err.Error(), "reranking failed") {
+		t.Errorf("Expected reranking failed error, got: %v", err)
+	}
 }
 
 // TestThoughtSearcher_NoEmbedder tests error when embedder is nil

@@ -190,6 +190,9 @@ func TestNewUnifiedServer(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	t.Run("creates server with all handlers initialized", func(t *testing.T) {
 		store := storage.NewMemoryStorage()
@@ -2336,6 +2339,9 @@ func TestBranchHistorySuccess(t *testing.T) {
 func TestInitializeEpisodicMemoryPaths(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	// This test exercises the initializeEpisodicMemory function by creating

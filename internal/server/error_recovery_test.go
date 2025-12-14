@@ -230,6 +230,9 @@ func TestUnifiedServer_ErrorRecovery_StorageFailures(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	tests := []struct {
 		name           string
@@ -355,6 +358,9 @@ func TestUnifiedServer_ErrorRecovery_InvalidInputs(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	// Create working storage for this test
 	storage := &MockFailingStorage{}
@@ -457,6 +463,9 @@ func TestUnifiedServer_ErrorRecovery_TimeoutHandling(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
@@ -523,6 +532,9 @@ func TestUnifiedServer_ErrorRecovery_ConcurrentFailures(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	storage := &MockFailingStorage{}
 	linearMode := modes.NewLinearMode(storage)
@@ -581,6 +593,9 @@ func TestUnifiedServer_ErrorRecovery_ConcurrentFailures(t *testing.T) {
 func TestUnifiedServer_ErrorRecovery_ResourceExhaustion(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	storage := &MockFailingStorage{}
@@ -650,6 +665,9 @@ func TestUnifiedServer_ErrorRecovery_ResourceExhaustion(t *testing.T) {
 func TestUnifiedServer_ErrorRecovery_NetworkFailures(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	storage := &MockFailingStorage{}
@@ -739,6 +757,9 @@ func TestUnifiedServer_ErrorRecovery_NetworkFailures(t *testing.T) {
 func TestUnifiedServer_ErrorRecovery_Cleanup(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	// Test proper cleanup even when errors occur

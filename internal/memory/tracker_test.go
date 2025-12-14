@@ -11,7 +11,10 @@ import (
 
 func TestNewSessionTracker(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, err := NewSessionTracker(store)
+	if err != nil {
+		t.Fatalf("NewSessionTracker failed: %v", err)
+	}
 
 	if tracker == nil {
 		t.Fatal("NewSessionTracker returned nil")
@@ -26,9 +29,16 @@ func TestNewSessionTracker(t *testing.T) {
 	}
 }
 
+func TestNewSessionTracker_NilStore(t *testing.T) {
+	_, err := NewSessionTracker(nil)
+	if err == nil {
+		t.Fatal("NewSessionTracker should fail with nil store")
+	}
+}
+
 func TestStartSession(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{
@@ -72,7 +82,7 @@ func TestStartSession(t *testing.T) {
 
 func TestRecordStep(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{
@@ -129,7 +139,7 @@ func TestRecordStep(t *testing.T) {
 
 func TestRecordMultipleSteps(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{
@@ -176,7 +186,7 @@ func TestRecordMultipleSteps(t *testing.T) {
 
 func TestCompleteSession(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{
@@ -435,7 +445,7 @@ func TestCalculateSuccessScore(t *testing.T) {
 
 func TestListActiveSessions(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	// Start multiple sessions
@@ -464,7 +474,7 @@ func TestListActiveSessions(t *testing.T) {
 
 func TestAutoStartSession(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	// Record step without starting session (should auto-start)
@@ -491,7 +501,7 @@ func TestAutoStartSession(t *testing.T) {
 
 func TestRecordThought(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{
@@ -554,7 +564,7 @@ func TestRecordThought(t *testing.T) {
 
 func TestRecordThought_AutoStartSession(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	thought := &types.Thought{
@@ -946,40 +956,13 @@ func TestInferTags_NilOutcome(t *testing.T) {
 	}
 }
 
-func TestCompleteSession_NilStore(t *testing.T) {
-	// Tracker without store
-	tracker := &SessionTracker{
-		activeSessions: make(map[string]*ActiveSession),
-		store:          nil, // No store
-	}
-	ctx := context.Background()
-
-	problem := &ProblemDescription{
-		Description: "Test problem",
-		Domain:      "testing",
-	}
-
-	tracker.StartSession(ctx, "session_001", problem)
-
-	outcome := &OutcomeDescription{
-		Status:     "success",
-		Confidence: 0.9,
-	}
-
-	// Should not panic even with nil store
-	trajectory, err := tracker.CompleteSession(ctx, "session_001", outcome)
-	if err != nil {
-		t.Fatalf("CompleteSession failed: %v", err)
-	}
-
-	if trajectory == nil {
-		t.Fatal("Expected trajectory to be returned")
-	}
-}
+// TestCompleteSession_NilStore removed - nil store is no longer allowed.
+// NewSessionTracker now requires a non-nil store and returns an error if nil.
+// See TestNewSessionTracker_NilStore for validation of this requirement.
 
 func TestCompleteSession_SessionNotFound(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	outcome := &OutcomeDescription{
@@ -1060,7 +1043,7 @@ func TestCalculateSuccessScore_DefaultStatus(t *testing.T) {
 
 func TestRecordStep_WithInsights(t *testing.T) {
 	store := NewEpisodicMemoryStore()
-	tracker := NewSessionTracker(store)
+	tracker, _ := NewSessionTracker(store)
 	ctx := context.Background()
 
 	problem := &ProblemDescription{

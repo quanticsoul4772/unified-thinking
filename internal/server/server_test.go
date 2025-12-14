@@ -19,11 +19,14 @@ import (
 )
 
 // setupTestServer creates a fully initialized server for testing.
-// Skips the test if ANTHROPIC_API_KEY is not set (required for GoT).
+// Skips the test if required API keys are not set.
 // Uses mock hypothesis generator to avoid real API calls for abductive reasoning.
 func setupTestServer(t *testing.T) *UnifiedServer {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	store := storage.NewMemoryStorage()

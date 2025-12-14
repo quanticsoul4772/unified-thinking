@@ -15,6 +15,9 @@ func TestRegisterTools(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	// Setup test server
 	store := storage.NewMemoryStorage()
@@ -53,6 +56,9 @@ func TestSetOrchestrator(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
@@ -84,6 +90,9 @@ func TestSetOrchestrator(t *testing.T) {
 func TestInitializeAdvancedHandlers(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
+	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
 	}
 
 	store := storage.NewMemoryStorage()

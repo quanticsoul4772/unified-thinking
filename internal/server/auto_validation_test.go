@@ -16,6 +16,9 @@ func TestAutoValidationTriggering(t *testing.T) {
 	if os.Getenv("ANTHROPIC_API_KEY") == "" {
 		t.Skip("ANTHROPIC_API_KEY not set, skipping test requiring full server")
 	}
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		t.Skip("VOYAGE_API_KEY not set, skipping test requiring embeddings")
+	}
 
 	// Enable debug mode for testing
 	_ = os.Setenv("DEBUG", "true")

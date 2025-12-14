@@ -82,9 +82,7 @@ func (ts *ThoughtSearcher) SearchSimilar(ctx context.Context, query string, limi
 	if ts.reranker != nil && len(results) > 0 {
 		results, err = ts.rerankResults(ctx, query, results, limit)
 		if err != nil {
-			// Log error but continue with embedding-based results
-			// Reranking is an optimization, not a requirement
-			_ = err
+			return nil, fmt.Errorf("reranking failed: %w - reranker errors must not be silently ignored", err)
 		}
 	}
 

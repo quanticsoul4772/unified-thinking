@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -19,28 +18,25 @@ type PerspectiveGenerator interface {
 // LLMPerspectiveAnalyzer uses LLM for generating context-aware perspectives
 type LLMPerspectiveAnalyzer struct {
 	generator PerspectiveGenerator
-	fallback  *PerspectiveAnalyzer // Fallback to template-based when LLM unavailable
 	counter   int
 }
 
-// NewLLMPerspectiveAnalyzer creates a new LLM-enhanced perspective analyzer
-func NewLLMPerspectiveAnalyzer(generator PerspectiveGenerator, fallback *PerspectiveAnalyzer) *LLMPerspectiveAnalyzer {
+// NewLLMPerspectiveAnalyzer creates a new LLM-enhanced perspective analyzer.
+// REQUIRES: generator must not be nil - no fallback to templates.
+func NewLLMPerspectiveAnalyzer(generator PerspectiveGenerator) (*LLMPerspectiveAnalyzer, error) {
+	if generator == nil {
+		return nil, fmt.Errorf("LLM generator is required for LLMPerspectiveAnalyzer - no fallback to templates")
+	}
 	return &LLMPerspectiveAnalyzer{
 		generator: generator,
-		fallback:  fallback,
-	}
+	}, nil
 }
 
-// AnalyzePerspectives generates perspectives using LLM when available
+// AnalyzePerspectives generates perspectives using LLM.
+// REQUIRES: generator must be configured (enforced at construction time).
 func (pa *LLMPerspectiveAnalyzer) AnalyzePerspectives(ctx context.Context, situation string, stakeholderHints []string) ([]*types.Perspective, error) {
 	if situation == "" {
 		return nil, fmt.Errorf("situation cannot be empty")
-	}
-
-	// If no LLM generator, use template-based fallback
-	if pa.generator == nil {
-		log.Printf("[WARN] No LLM generator configured for perspective analysis, using template fallback")
-		return pa.fallback.AnalyzePerspectives(situation, stakeholderHints)
 	}
 
 	// Build prompt for LLM
