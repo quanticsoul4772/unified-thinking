@@ -29,18 +29,6 @@ func setupTestServer(t *testing.T) *UnifiedServer {
 		t.Fatal("VOYAGE_API_KEY not set - required for embeddings")
 	}
 
-	return setupTestServerCore(t)
-}
-
-// setupTestServerNoKeyCheck creates a server for tests that explicitly test
-// missing API key scenarios. Does NOT check for API keys - use only for tests
-// that intentionally test behavior when keys are missing.
-func setupTestServerNoKeyCheck(t *testing.T) *UnifiedServer {
-	return setupTestServerCore(t)
-}
-
-// setupTestServerCore is the shared implementation for test server setup.
-func setupTestServerCore(t *testing.T) *UnifiedServer {
 	store := storage.NewMemoryStorage()
 	linear := modes.NewLinearMode(store)
 	tree := modes.NewTreeMode(store)
