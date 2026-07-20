@@ -2,6 +2,8 @@ module unified-thinking
 
 go 1.25.0
 
+toolchain go1.25.12
+
 require (
 	github.com/dominikbraun/graph v0.23.0
 	github.com/modelcontextprotocol/go-sdk v1.6.1
