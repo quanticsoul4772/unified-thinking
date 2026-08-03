@@ -10,7 +10,7 @@ require (
 	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/stretchr/testify v1.11.1
-	modernc.org/sqlite v1.54.0
+	modernc.org/sqlite v1.55.0
 )
 
 require (
