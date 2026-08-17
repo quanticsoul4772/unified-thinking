@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         continue-on-error: true  # Optional: requires GitHub Advanced Security for private repos
         with:
           fail-on-severity: moderate
