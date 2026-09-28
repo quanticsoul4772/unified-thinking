@@ -7,7 +7,7 @@ toolchain go1.25.12
 require (
 	github.com/dominikbraun/graph v0.23.0
 	github.com/modelcontextprotocol/go-sdk v1.7.0
-	github.com/neo4j/neo4j-go-driver/v5 v5.28.4
+	github.com/neo4j/neo4j-go-driver/v5 v5.28.5
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/stretchr/testify v1.11.1
 	modernc.org/sqlite v1.56.0
